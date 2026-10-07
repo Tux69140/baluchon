@@ -1,6 +1,6 @@
 // La bibliothèque de départ : décrite dans le fichier de traduction (src/i18n/fr.json,
 // « bibliothequeDeDepart »), elle devient au premier lancement les lignes de la bibliothèque de
-// l'utilisateur, qui lui appartiennent ensuite (docs/PRD.md, « Données »). Mini-bibliothèque de la
+// l’utilisateur, qui lui appartiennent ensuite (docs/PRD.md, « Données »). Mini-bibliothèque de la
 // phase 2 : tout y est « toujours inclus », les étiquettes arrivent en phase 4.
 export function construireBibliotheque(depart, { nouvelId, maintenant }) {
   const categories = [];

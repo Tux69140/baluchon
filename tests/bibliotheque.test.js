@@ -9,7 +9,7 @@ import { genererVoyage } from '../src/modele/voyage.js';
 const MAINTENANT = '2026-10-06T08:00:00.000Z';
 const construire = () => construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: MAINTENANT });
 
-test("quatre catégories dans l'ordre prévu, toutes toujours incluses", () => {
+test("quatre catégories dans l’ordre prévu, toutes toujours incluses", () => {
   const { categories } = construire();
   assert.deepEqual(
     categories.map(c => [c.nom, c.icone, c.couleur, c.ordre, c.toujoursIncluse]),
@@ -36,7 +36,7 @@ test('neuf objets rattachés à leur catégorie, avec leurs règles', () => {
       ['Toilette', 'Dentifrice', 'fixe', 1, null, false, false],
       ['Alimentation', 'Repas', 'par_jour', 2, null, true, true],
       ['Alimentation', 'Gourde', 'fixe', 1, null, true, false],
-      ['Papiers', "Pièce d'identité", 'fixe', 1, null, true, false],
+      ['Papiers', "Pièce d’identité", 'fixe', 1, null, true, false],
       ['Papiers', 'Chargeur de téléphone', 'fixe', 1, null, false, false],
     ],
   );
