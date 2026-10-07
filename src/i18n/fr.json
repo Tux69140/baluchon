@@ -19,6 +19,38 @@
   "dates": {
     "periode": "du {depart} au {retour}"
   },
+  "nouveauVoyage": {
+    "titre": "Nouveau voyage",
+    "nom": "Nom du voyage",
+    "destination": "Destination (facultatif)",
+    "dates": "Dates",
+    "voyageurs": "Voyageurs",
+    "moinsVoyageurs": "Un voyageur de moins",
+    "plusVoyageurs": "Un voyageur de plus",
+    "creer": "Créer le voyage",
+    "resume": {
+      "vide": "Touchez le jour du départ, puis celui du retour.",
+      "depart": "Départ le {depart} : touchez le jour du retour.",
+      "periode": "Du {depart} au {retour} · {jours}, {nuits}"
+    },
+    "erreurs": {
+      "nomManquant": "Donnez un nom à ce voyage.",
+      "datesManquantes": "Choisissez le jour du départ et celui du retour.",
+      "datesInvalides": "Ces dates n’existent pas dans le calendrier.",
+      "retourAvantDepart": "Le retour ne peut pas précéder le départ.",
+      "tropLong": "Un voyage dure au plus un an.",
+      "voyageursHorsLimites": "Le nombre de voyageurs va de 1 à 20.",
+      "enregistrement": "Le voyage n’a pas pu être enregistré. Rien n’a été modifié ; réessayez."
+    }
+  },
+  "calendrier": {
+    "moisPrecedent": "Mois précédent",
+    "moisSuivant": "Mois suivant"
+  },
+  "duree": {
+    "jours": { "one": "{n} jour", "other": "{n} jours" },
+    "nuits": { "one": "{n} nuit", "other": "{n} nuits" }
+  },
   "erreurs": {
     "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
   },

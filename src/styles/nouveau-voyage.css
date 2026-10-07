@@ -1,0 +1,69 @@
+/* Écran Nouveau voyage (src/ecrans/nouveau-voyage.js). */
+.formulaire {
+  display: grid;
+  gap: var(--e-md);
+  max-width: 640px;
+  margin-top: var(--e-lg);
+}
+
+.champ {
+  display: grid;
+  gap: var(--e-xs);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.champ label,
+.champ legend {
+  padding: 0;
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.champ input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-sm);
+  background: var(--carte);
+  color: var(--encre);
+  font: 400 var(--taille-objet) var(--police);
+}
+
+/* Place réservée : un message qui apparaît ne fait rien bouger à l'écran. */
+.erreur-champ {
+  display: flex;
+  gap: var(--e-xs);
+  align-items: flex-start;
+  min-height: calc(var(--taille-libelle) * 1.5);
+  margin: 0;
+  color: var(--erreur);
+  font-size: var(--taille-libelle);
+}
+
+.resume-dates {
+  min-height: calc(var(--taille-libelle) * 1.5);
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  font-variant-numeric: tabular-nums;
+}
+
+.compteur {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+}
+
+.compteur-valeur {
+  min-width: 2ch;
+  text-align: center;
+  font: 600 var(--taille-section) var(--police);
+  font-variant-numeric: tabular-nums;
+}
+
+.formulaire > .bouton-principal {
+  justify-self: start;
+}
