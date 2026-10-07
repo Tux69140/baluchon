@@ -11,6 +11,47 @@
     }
   },
   "erreurs": {
-    "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
+    "lecture": "Vos voyages n'ont pas pu être lus. Rien n'a été modifié ; fermez puis rouvrez Baluchon."
+  },
+  "bibliothequeDeDepart": {
+    "categories": [
+      {
+        "nom": "Vêtements",
+        "icone": "t-shirt",
+        "couleur": "ciel",
+        "objets": [
+          { "nom": "T-shirts", "regle": "par_jour", "valeur": 1, "plafond": 5, "parPersonne": true },
+          { "nom": "Sous-vêtements", "regle": "par_jour", "valeur": 1, "parPersonne": true },
+          { "nom": "Pyjama", "regle": "par_nuit", "valeur": 1, "plafond": 1, "parPersonne": true }
+        ]
+      },
+      {
+        "nom": "Toilette",
+        "icone": "tooth",
+        "couleur": "lagon",
+        "objets": [
+          { "nom": "Brosse à dents", "regle": "fixe", "valeur": 1, "parPersonne": true },
+          { "nom": "Dentifrice", "regle": "fixe", "valeur": 1, "parPersonne": false }
+        ]
+      },
+      {
+        "nom": "Alimentation",
+        "icone": "fork-knife",
+        "couleur": "pomme",
+        "objets": [
+          { "nom": "Repas", "regle": "par_jour", "valeur": 2, "parPersonne": true, "consommable": true },
+          { "nom": "Gourde", "regle": "fixe", "valeur": 1, "parPersonne": true }
+        ]
+      },
+      {
+        "nom": "Papiers",
+        "icone": "identification-card",
+        "couleur": "tournesol",
+        "objets": [
+          { "nom": "Pièce d'identité", "regle": "fixe", "valeur": 1, "parPersonne": true },
+          { "nom": "Chargeur de téléphone", "regle": "fixe", "valeur": 1, "parPersonne": false }
+        ]
+      }
+    ]
   }
 }
