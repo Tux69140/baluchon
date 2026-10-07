@@ -9,7 +9,9 @@ html:has(.fenetre:modal) {
 }
 
 .fenetre {
+  /* Marge autour de la fenêtre, et retrait de son contenu à gauche et à droite. */
   --marge-fenetre: var(--e-lg);
+  --retrait-fenetre: var(--e-xl);
   /* Les quatre bords à la marge des barres système, marges automatiques : la fenêtre, de la taille
      de son contenu, se centre dans cet espace, et sa hauteur maximale l'y tient. */
   inset: calc(var(--zone-haut) + var(--marge-fenetre)) calc(var(--zone-droite) + var(--marge-fenetre))
@@ -44,7 +46,7 @@ html:has(.fenetre:modal) {
   gap: var(--e-md);
   /* À droite, le « × » de 44 px a 12 px de vide autour de son picto : le picto s'aligne ainsi sur le
      bord du contenu, à la même distance du bord que le titre à gauche. */
-  padding: var(--e-lg) calc(var(--e-xl) - 12px) 0 var(--e-xl);
+  padding: var(--e-lg) max(0px, var(--retrait-fenetre) - 12px) 0 var(--retrait-fenetre);
 }
 
 .fenetre-entete h2 {
@@ -63,6 +65,17 @@ html:has(.fenetre:modal) {
 .bouton-fermer:hover {
   background: var(--releve);
   color: var(--encre);
+}
+
+/* Fenêtre d'ordinateur très étroite (jusqu'à 360 px, la largeur minimale de l'appli de bureau) : la
+   fenêtre prend toute la largeur moins 8 px de chaque côté, et son retrait se resserre juste assez
+   pour qu'une colonne garde sept jours de 44 px et les marges du calendrier (326 px) : 344 px =
+   326 px, plus les deux marges de 8 px et les deux bords de 1 px. */
+@media (max-width: 519px) {
+  .fenetre {
+    --marge-fenetre: var(--e-sm);
+    --retrait-fenetre: clamp(var(--e-sm), (100vw - 344px) / 2, var(--e-xl));
+  }
 }
 
 /* Ouverture : fondu et légère montée ; fermeture : l'inverse, puis la fenêtre reste effacée jusqu'à

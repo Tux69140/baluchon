@@ -1,10 +1,8 @@
 // Écran Nouveau voyage (#/nouveau-voyage), étape Informations (US-9, US-10) : nom, destination,
 // dates sur le calendrier unique, voyageurs. « Créer le voyage » copie la bibliothèque dans le voyage
 // et ouvre sa liste. Les étapes des étiquettes et l'aperçu arrivent en phase 4.
-// Sur tablette et ordinateur (au moins 600 px de large), le formulaire s'ouvre en fenêtre modale
-// par-dessus Mes voyages ; au téléphone, il occupe tout l'écran (décision du chef de projet,
-// 2026-10-07). Le même formulaire passe de l'un à l'autre quand la fenêtre change de taille, sans
-// rien perdre de la saisie.
+// Sur tablette et ordinateur, le formulaire s'ouvre en fenêtre modale par-dessus Mes voyages ; au
+// téléphone, il occupe tout l'écran (décision du chef de projet, 2026-10-07).
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
@@ -19,7 +17,10 @@ import { ecranVoyages } from './voyages.js';
 
 // Les champs qui ont un message, dans l'ordre de l'écran : le premier en erreur reçoit le focus.
 const CHAMPS = ['nom', 'dates'];
-const LARGE = '(min-width: 600px)';
+// Le choix se fait d'après le plus petit côté de l'écran de l'appareil, pas d'après la fenêtre : un
+// téléphone tourné reste un téléphone, et un clavier qui s'ouvre (la fenêtre perd la moitié de sa
+// hauteur) ne fait rien basculer (décision du contrôleur, 2026-10-07).
+const COTE_MIN_FENETRE = 600;
 const ID_TITRE = 'titre-nouveau-voyage';
 // La fenêtre fermée, le focus revient au bouton de Mes voyages qui l'ouvre.
 const OUVRE_LA_FENETRE = 'a[href="#/nouveau-voyage"]';
@@ -38,7 +39,7 @@ function resume({ depart, retour }, t, langue) {
 }
 
 // « Annuler » ne sert que dans la fenêtre : au téléphone, le lien « Mes voyages » en tient lieu.
-function vueFormulaire(t) {
+function vueFormulaire(t, { annuler }) {
   return `
       <form class="formulaire" novalidate>
         <div class="formulaire-corps">
@@ -68,7 +69,7 @@ function vueFormulaire(t) {
         </div>
         <div class="formulaire-pied">
           <div class="formulaire-actions">
-            <button type="button" class="bouton bouton-secondaire" data-fermer>${t('fenetre.annuler')}</button>
+            ${annuler ? `<button type="button" class="bouton bouton-secondaire" data-fermer>${t('fenetre.annuler')}</button>` : ''}
             <button class="bouton bouton-principal" type="submit">${t('nouveauVoyage.creer')}</button>
           </div>
           <p class="erreur-champ" id="erreur-creation" aria-live="polite"></p>
@@ -76,10 +77,10 @@ function vueFormulaire(t) {
       </form>`;
 }
 
-const vueEcranPlein = t => `
+const vueEcranPlein = (t, contenu) => `
     <main class="ecran">
       ${lienRetour(t)}
-      <h1 id="${ID_TITRE}">${t('nouveauVoyage.titre')}</h1>
+      <h1 id="${ID_TITRE}">${t('nouveauVoyage.titre')}</h1>${contenu}
     </main>`;
 
 export const ecranNouveauVoyage = {
@@ -98,9 +99,16 @@ export const ecranNouveauVoyage = {
     // Les messages n'apparaissent qu'après un premier essai, puis suivent chaque correction.
     let essaye = false;
     let enregistrement = false;
-    const gabarit = document.createElement('template');
-    gabarit.innerHTML = vueFormulaire(t);
-    const formulaire = gabarit.content.firstElementChild;
+    const enFenetre = Math.min(screen.width, screen.height) >= COTE_MIN_FENETRE;
+    if (enFenetre) {
+      ecranVoyages.dessiner(app, accueil, contexte);
+      const contenu = vueFormulaire(t, { annuler: true });
+      app.insertAdjacentHTML(
+        'beforeend',
+        vueFenetre({ t, idTitre: ID_TITRE, titre: t('nouveauVoyage.titre'), contenu }),
+      );
+    } else app.innerHTML = vueEcranPlein(t, vueFormulaire(t, { annuler: false }));
+    const formulaire = app.querySelector('form');
     const element = selecteur => formulaire.querySelector(selecteur);
     // Le champ que décrit un message est dit invalide au lecteur d'écran tant que le message est là.
     const message = (id, code) => {
@@ -175,31 +183,12 @@ export const ecranNouveauVoyage = {
 
     rafraichir();
 
-    // Fenêtre modale par-dessus Mes voyages, ou écran plein ; le formulaire, ses écouteurs et sa saisie
-    // passent tels quels de l'un à l'autre. Fermer la fenêtre fait comme le lien « Mes voyages ».
-    const large = matchMedia(LARGE);
-    function disposer() {
-      if (large.matches) {
-        ecranVoyages.dessiner(app, accueil, contexte);
-        app.insertAdjacentHTML('beforeend', vueFenetre({ t, idTitre: ID_TITRE, titre: t('nouveauVoyage.titre') }));
-        const fenetre = app.querySelector('dialog');
-        fenetre.append(formulaire);
-        ouvrirFenetre(fenetre, { surFermeture: () => revenirAccueil({ focus: OUVRE_LA_FENETRE }) });
-      } else {
-        app.innerHTML = vueEcranPlein(t);
-        app.querySelector('main').append(formulaire);
-      }
-      element('[data-fermer]').hidden = !large.matches;
-    }
-    disposer();
-    if (large.matches) element('#nom').focus();
-    // L'écran quitté, le formulaire n'est plus dans la page : l'écouteur se retire de lui-même.
-    large.addEventListener('change', function suivre() {
-      if (!formulaire.isConnected) return large.removeEventListener('change', suivre);
-      const avant = document.activeElement;
-      disposer();
-      if (formulaire.contains(avant)) avant.focus();
-      else if (large.matches) element('#nom').focus();
-    });
+    if (!enFenetre) return;
+    // Fermer la fenêtre fait comme le lien « Mes voyages ». À l'ouverture, le focus va au nom à la
+    // souris ; au doigt, au titre : le clavier surgirait et masquerait aussitôt le calendrier.
+    const fenetre = app.querySelector('dialog');
+    ouvrirFenetre(fenetre, { surFermeture: () => revenirAccueil({ focus: OUVRE_LA_FENETRE }) });
+    const souris = matchMedia('(pointer: fine)').matches;
+    (souris ? element('#nom') : fenetre.querySelector(`#${ID_TITRE}`)).focus();
   },
 };

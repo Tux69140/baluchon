@@ -1,15 +1,17 @@
-// Nouveau voyage en fenêtre modale (décision du chef de projet, 2026-10-07), hors navigation (voir
-// ecran-retour.mjs pour la fermeture) :
-// - ouverte depuis Mes voyages par le bouton flottant, en tablette (1280 × 800) : fenêtre modale
-//   nommée par son titre « Nouveau voyage », Mes voyages derrière ; un « × » nommé « Fermer » et
-//   « Annuler » ; pas de lien « Mes voyages » ; le focus est sur le nom ; au clavier, Tab et Maj+Tab
-//   n'atteignent jamais Mes voyages derrière — témoin : Tab passe bien par « × », « Annuler » et
-//   « Créer le voyage » ;
+// Nouveau voyage en fenêtre modale (décisions du chef de projet et du contrôleur, 2026-10-07), hors
+// navigation (voir ecran-retour.mjs pour la fermeture) :
+// - ouverte depuis Mes voyages par le bouton flottant, sur la tablette (1280 × 800, au doigt) : fenêtre
+//   modale nommée par son titre « Nouveau voyage », Mes voyages derrière ; un « × » nommé « Fermer » et
+//   « Annuler » ; pas de lien « Mes voyages » ; le focus est sur le titre, pas sur le nom (le clavier
+//   masquerait aussitôt le calendrier) ; au clavier, Tab et Maj+Tab n'atteignent jamais Mes voyages
+//   derrière — témoin : Tab passe bien par « × », « Annuler » et « Créer le voyage » ;
+// - à l'ordinateur (souris) : le focus est sur le nom ;
 // - au téléphone : écran plein, titre de l'écran, lien « Mes voyages », ni « × » ni « Annuler » ;
 // - panne d'enregistrement dans la fenêtre en une colonne (800 × 1280) : le message s'affiche en
 //   entier dans le pied, sans rien faire bouger (fenêtre, « Annuler », « Créer le voyage ») ;
-// - la fenêtre redimensionnée sous 600 px de large devient l'écran plein, et l'inverse, sans rien
-//   perdre de la saisie ; une fois l'écran quitté, redimensionner ne cause aucune erreur ;
+// - clavier ouvert sur la tablette en paysage (fenêtre réduite de 1280 × 800 à 1280 × 420) : la même
+//   fenêtre modale reste ouverte, toujours sur deux colonnes, « Créer le voyage » visible, le corps
+//   défile, la saisie est gardée ;
 // - ouverture animée (fondu et montée) ; aucune animation si l'appareil en demande moins.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -88,7 +90,7 @@ try {
     juge.exige(v.fermer === fr.fenetre.fermer, `tablette : bouton « × » nommé « ${v.fermer} »`);
     juge.exige(v.annuler === fr.fenetre.annuler, `tablette : bouton « Annuler » absent (${v.annuler})`);
     juge.exige(!v.lienRetour, 'tablette : le lien « Mes voyages » est resté');
-    juge.exige(v.focus === 'nom', `tablette : à l’ouverture, le focus est sur « ${v.focus} »`);
+    juge.exige(v.focus === 'titre-nouveau-voyage', `tablette : à l’ouverture, le focus est sur « ${v.focus} »`);
     const vus = new Set();
     for (let i = 0; i < 45; i++) {
       await page.keyboard.press('Tab');
@@ -104,6 +106,22 @@ try {
     for (const attendu of [fr.fenetre.fermer, fr.fenetre.annuler, fr.nouveauVoyage.creer])
       juge.exige(vus.has(attendu), `tablette : témoin, Tab ne passe pas par « ${attendu} » (${[...vus]})`);
     juge.exige(erreurs.length === 0, `tablette : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // À l'ordinateur, à la souris : le focus est sur le nom.
+  {
+    const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+      taille: FORMATS['tablette-paysage'],
+      ecran: { width: 1920, height: 1080 },
+      tactile: false,
+      theme: 'light',
+      maintenant: MAINTENANT,
+      adresse: '#/nouveau-voyage',
+    });
+    await attendreEcran(page, 'nouveau-voyage');
+    const v = await vue(page);
+    juge.exige(v.modale && v.focus === 'nom', `souris : à l’ouverture, le focus est sur « ${v.focus} »`);
     await contexte.close();
   }
 
@@ -159,7 +177,7 @@ try {
     await contexte.close();
   }
 
-  // Changer la taille de la fenêtre d'ordinateur : fenêtre modale ↔ écran plein, saisie gardée.
+  // Clavier ouvert sur la tablette en paysage : la fenêtre perd près de la moitié de sa hauteur.
   {
     const { contexte, page, erreurs } = await ouvrir(navigateur, serveur.url, {
       taille: FORMATS['tablette-paysage'],
@@ -171,33 +189,32 @@ try {
     await page.fill('#nom', 'Vercors');
     await page.click('[data-jour="2026-10-10"]');
     await page.click('[data-jour="2026-10-13"]');
-    const garde = v => v.nom === 'Vercors' && v.depart === '2026-10-10' && v.retour === '2026-10-13';
-    await page.setViewportSize(FORMATS.telephone);
-    await page.waitForFunction(() => !document.querySelector('dialog'));
+    await page.$eval('dialog', d => (d.dataset.temoin = 'avant'));
+    await page.setViewportSize({ width: 1280, height: 420 });
     await calme(page);
-    let v = await vue(page);
-    juge.exige(!v.modale && v.lienRetour, `rétrécie : pas d’écran plein (${JSON.stringify(v)})`);
-    juge.exige(garde(v), `rétrécie : saisie perdue ${JSON.stringify(v)}`);
-    await page.setViewportSize(FORMATS['tablette-paysage']);
-    await page.waitForFunction(() => document.querySelector('dialog'));
-    await calme(page);
-    v = await vue(page);
-    juge.exige(v.modale && !v.lienRetour, `élargie : pas de fenêtre modale (${JSON.stringify(v)})`);
-    juge.exige(garde(v), `élargie : saisie perdue ${JSON.stringify(v)}`);
-    await page.click('[data-fermer].bouton-secondaire');
-    await attendreEcran(page, 'voyages');
-    await page.setViewportSize(FORMATS.telephone);
-    await page.setViewportSize(FORMATS['tablette-paysage']);
-    await calme(page);
-    const apresDepart = await page.evaluate(() => ({
-      ecran: document.querySelector('#app').dataset.ecran,
-      fenetre: Boolean(document.querySelector('dialog')),
-    }));
+    const v = await vue(page);
+    const m = await page.evaluate(() => {
+      const boite = s => document.querySelector(s).getBoundingClientRect();
+      const creer = boite('button[type=submit]');
+      const corps = document.querySelector('.formulaire-corps');
+      return {
+        meme: document.querySelector('dialog')?.dataset.temoin === 'avant',
+        deuxColonnes: boite('.calendrier').left >= boite('#nom').right,
+        creerVisible: document
+          .querySelector('button[type=submit]')
+          .contains(document.elementFromPoint(creer.left + creer.width / 2, creer.top + creer.height / 2)),
+        corpsDefile: corps.scrollHeight > corps.clientHeight,
+      };
+    });
+    juge.exige(v.modale && m.meme, `clavier ouvert : la fenêtre a basculé ou s’est refermée (${JSON.stringify(m)})`);
+    juge.exige(m.deuxColonnes, 'clavier ouvert : la fenêtre est passée à une colonne');
+    juge.exige(m.creerVisible, 'clavier ouvert : « Créer le voyage » ne se voit plus');
+    juge.exige(m.corpsDefile, 'clavier ouvert : témoin, le corps de la fenêtre devrait défiler');
     juge.exige(
-      apresDepart.ecran === 'voyages' && !apresDepart.fenetre,
-      `écran quitté : redimensionner rouvre le formulaire (${JSON.stringify(apresDepart)})`,
+      v.nom === 'Vercors' && v.depart === '2026-10-10' && v.retour === '2026-10-13',
+      `clavier ouvert : saisie perdue ${JSON.stringify(v)}`,
     );
-    juge.exige(erreurs.length === 0, `redimensionnement : erreurs dans la page : ${erreurs.join(' | ')}`);
+    juge.exige(erreurs.length === 0, `clavier ouvert : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }
 
@@ -224,5 +241,5 @@ try {
 }
 juge.conclure(
   'Nouveau voyage en fenêtre modale',
-  'ouverture, focus gardé dans la fenêtre, écran plein au téléphone, panne, redimensionnement, animations',
+  'ouverture, focus selon le pointeur et gardé dans la fenêtre, écran plein au téléphone, panne, clavier ouvert, animations',
 );

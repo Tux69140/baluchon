@@ -36,8 +36,19 @@ export function creerJuge() {
 
 // donnees : l'état de départ du stockage du navigateur, déposé une seule fois par onglet, pour qu'un
 // rechargement de la page retrouve ce que l'appli a écrit. maintenant : l'horloge de la page.
-export async function ouvrir(navigateur, url, { taille, theme, donnees, maintenant, adresse = '' }) {
-  const contexte = await navigateur.newContext({ viewport: taille, colorScheme: theme, hasTouch: true });
+// ecran : l'écran de l'appareil, s'il diffère de la fenêtre (ordinateur, téléphone tourné) ;
+// tactile : pointeur au doigt (tablette, téléphone) ou à la souris (ordinateur).
+export async function ouvrir(
+  navigateur,
+  url,
+  { taille, theme, donnees, maintenant, adresse = '', ecran, tactile = true },
+) {
+  const contexte = await navigateur.newContext({
+    viewport: taille,
+    colorScheme: theme,
+    hasTouch: tactile,
+    ...(ecran && { screen: ecran }),
+  });
   const page = await contexte.newPage();
   const sorties = [];
   const erreurs = [];

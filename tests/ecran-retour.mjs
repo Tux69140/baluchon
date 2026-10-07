@@ -8,13 +8,14 @@
 // - trois appuis immédiats sur le lien ne remontent pas plus loin que l'accueil.
 // Témoins : depuis un voyage ou le formulaire ouverts depuis Mes voyages, et depuis un voyage tout
 // juste créé, le retour ramène bien à Mes voyages.
-// Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : la fermer par Échap, « × », « Annuler »
-// ou un appui sur le voile mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes
-// voyages » ; le focus revient au bouton qui l'a ouverte ; trois appuis immédiats sur « × » ne
+// Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : la fermer par Échap, « × » ou « Annuler »
+// mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes voyages » ; un appui sur le
+// voile ne la ferme pas (un geste accidentel perdrait la saisie) ; le focus revient au bouton qui l'a ouverte ; trois appuis immédiats sur « × » ne
 // remontent pas plus loin que l'accueil ; ouverte directement par son adresse, elle se ferme sur Mes
 // voyages, et le retour quitte l'appli. Témoin : le retour système ferme la fenêtre ouverte depuis
 // Mes voyages et ramène à Mes voyages.
 import { chromium } from 'playwright';
+import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
 
@@ -49,12 +50,11 @@ async function retourSysteme(page, url) {
   return ecranAffiche(page, url);
 }
 
-// Les quatre façons de fermer la fenêtre de Nouveau voyage ; le voile se touche à gauche de la fenêtre.
+// Les trois façons de fermer la fenêtre de Nouveau voyage (le retour système est le témoin).
 const FERMETURES = {
   Échap: page => page.keyboard.press('Escape'),
   '×': page => page.click('.bouton-fermer'),
   Annuler: page => page.click('[data-fermer].bouton-secondaire'),
-  voile: page => page.mouse.click(8, 400),
 };
 
 async function depuisMesVoyages(navigateur, url, taille = FORMATS.telephone) {
@@ -168,6 +168,26 @@ try {
     await contexte.close();
   }
 
+  // Un appui sur le voile, à gauche de la fenêtre, ne la ferme pas : la saisie reste.
+  {
+    const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.fill('#nom', 'Gardé');
+    await page.mouse.click(8, 400);
+    await page.touchscreen.tap(8, 400);
+    await calme(page);
+    const vu = await page.evaluate(() => ({
+      ouverte: Boolean(document.querySelector('dialog')?.matches(':modal')),
+      nom: document.querySelector('#nom')?.value,
+      adresse: location.hash,
+    }));
+    juge.exige(
+      vu.ouverte && vu.nom === 'Gardé' && vu.adresse === '#/nouveau-voyage',
+      `voile touché : la fenêtre s’est fermée ou la saisie est perdue (${JSON.stringify(vu)})`,
+    );
+    await contexte.close();
+  }
+
   // Trois appuis immédiats sur « × », avant la fin de la fermeture.
   {
     const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
@@ -219,5 +239,5 @@ try {
 }
 juge.conclure(
   'Retour système',
-  'voyage, formulaire, fenêtre (4 fermetures), création, adresse directe et appuis répétés, témoins compris',
+  'voyage, formulaire, fenêtre (3 fermetures, voile sans effet), création, adresse directe et appuis répétés, témoins compris',
 );

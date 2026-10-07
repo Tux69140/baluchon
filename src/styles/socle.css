@@ -70,11 +70,6 @@ h3 {
   background: var(--releve);
 }
 
-/* Un bouton masqué le reste, malgré son affichage en ligne. */
-.bouton[hidden] {
-  display: none;
-}
-
 a.bouton {
   text-decoration: none;
 }

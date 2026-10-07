@@ -122,7 +122,7 @@
   flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--e-md) var(--e-xl) var(--e-lg);
+  padding: var(--e-md) var(--retrait-fenetre) var(--e-lg);
 }
 
 .fenetre .formulaire-pied {
@@ -131,7 +131,7 @@
   flex-direction: row-reverse;
   align-items: center;
   gap: var(--e-md);
-  padding: var(--e-md) var(--e-xl);
+  padding: var(--e-md) var(--retrait-fenetre);
   border-top: 1px solid var(--separation);
 }
 
@@ -142,17 +142,31 @@
   line-height: 1.3;
 }
 
+/* Fenêtre très étroite : le message passe sous les boutons, sur toute la largeur, où deux lignes
+   lui suffisent. */
+@media (max-width: 519px) {
+  .fenetre .formulaire-pied {
+    flex-wrap: wrap;
+  }
+
+  .fenetre #erreur-creation {
+    flex-basis: 100%;
+    min-height: calc(2 * 1.3 * var(--taille-libelle));
+  }
+}
+
 /* Tablette en paysage et ordinateur : deux colonnes égales, les champs et les voyageurs à gauche,
    les dates à droite. L'ordre du document ne change pas : clavier et lecteur d'écran lisent nom,
-   destination, dates, voyageurs, comme au téléphone. Sous 600 px de haut, six semaines de jours de
-   44 px ne tiennent plus à côté des champs : une seule colonne, dont le corps défile.
+   destination, dates, voyageurs, comme au téléphone. La hauteur ne compte pas : un clavier ouvert
+   prend la moitié de l'écran de la tablette en paysage, et la disposition ne doit pas basculer
+   pendant la saisie ; c'est alors le corps de la fenêtre qui défile, le pied restant visible.
    La largeur d'une colonne suit la hauteur de l'écran, pour que six semaines de cercles tiennent sans
    défiler : un jour est large d'un septième de la colonne, marges du calendrier ôtées (18 px), et une
    semaine a 2 px de plus ; d'où colonne = 7/6 × (hauteur des six semaines) + 4 px. Les six semaines
    ont ce que laissent les barres système et tout le reste de la fenêtre (marges, en-tête, titre et
    résumé des dates, mois, jours de la semaine, message, pied : 418 px, mesurés). Au plus 392 px
-   (fenêtre de 880 px) ; au moins sept jours de 44 px, quitte à défiler (barres système très hautes). */
-@media (orientation: landscape) and (min-width: 900px) and (min-height: 600px) {
+   (fenêtre de 880 px) ; au moins sept jours de 44 px, quitte à défiler (fenêtre basse). */
+@media (orientation: landscape) and (min-width: 900px) {
   .fenetre:has(> .formulaire) {
     --colonne: clamp(
       7 * var(--cible) + 18px,
@@ -175,5 +189,37 @@
   .fenetre .champ-dates {
     grid-column: 2;
     grid-row: 1 / -1;
+  }
+}
+
+/* Téléphone tourné (écran plein en paysage) : un calendrier sur toute la largeur aurait des jours de
+   plus de 110 px. Deux colonnes égales, comme dans la fenêtre : à gauche les champs, les voyageurs
+   et « Créer le voyage » avec son message, à droite les dates ; le corps et le pied s'effacent pour
+   que leurs blocs se rangent dans la même grille. Dès 720 px de large, chaque colonne garde sept
+   jours de 44 px ; en deçà, une seule colonne. */
+@media (orientation: landscape) and (min-width: 720px) {
+  .ecran > .formulaire {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, auto) 1fr;
+    gap: var(--e-sm) var(--e-xl);
+  }
+
+  .ecran .formulaire-corps,
+  .ecran .formulaire-pied {
+    display: contents;
+  }
+
+  .ecran > .formulaire > * > * {
+    grid-column: 1;
+  }
+
+  .ecran .champ-dates {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  .ecran .formulaire-actions {
+    margin-top: var(--e-sm);
   }
 }
