@@ -45,6 +45,9 @@ let dernierAffichage = 0;
 // l'appli. Seul l'accueil ouvre d'autres écrans : sous une étape de profondeur 1 ou plus, l'étape 0
 // est donc toujours l'accueil.
 let profondeur = -1;
+// Un retour par history.go ne s'achève qu'à l'affichage suivant : d'ici là, un nouvel appui sur le
+// lien remonterait trop loin et quitterait l'appli (double appui sur la tablette).
+let retourEnCours = false;
 
 function noterProfondeur() {
   if (typeof history.state?.profondeur !== 'number') history.replaceState({ profondeur: profondeur + 1 }, '');
@@ -60,8 +63,11 @@ function remplacerAdresse(adresse) {
 // Un écran ouvert directement par son adresse (profondeur 0) n'a pas l'accueil derrière lui : l'accueil
 // prend alors sa place, sans étape de plus.
 function revenirAccueil() {
-  if (profondeur > 0) history.go(-profondeur);
-  else remplacerAdresse(ACCUEIL);
+  if (retourEnCours) return;
+  if (profondeur > 0) {
+    retourEnCours = true;
+    history.go(-profondeur);
+  } else remplacerAdresse(ACCUEIL);
 }
 
 // avecRetour : hors de l'accueil, l'appli démarrée peut encore ramener à Mes voyages.
@@ -72,6 +78,7 @@ function montrerErreur(avecRetour) {
 
 async function afficher() {
   const numero = ++dernierAffichage;
+  retourEnCours = false;
   noterProfondeur();
   const route = ECRANS.map(({ motif, ecran }) => ({ ecran, trouve: motif.exec(location.hash) })).find(r => r.trouve);
   if (!route) return remplacerAdresse(ACCUEIL);

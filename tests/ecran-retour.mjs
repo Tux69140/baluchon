@@ -4,7 +4,8 @@
 //   un formulaire abandonné ou un voyage tout juste créé ne se rouvrent pas ;
 // - une adresse ouverte directement (un voyage) : le lien mène à Mes voyages, et le retour quitte
 //   l'appli ;
-// - le lien reste un vrai lien : il s'active au clavier (Entrée).
+// - le lien reste un vrai lien : il s'active au clavier (Entrée) ;
+// - trois appuis immédiats sur le lien ne remontent pas plus loin que l'accueil.
 // Témoins : depuis un voyage ou le formulaire ouverts depuis Mes voyages, et depuis un voyage tout
 // juste créé, le retour ramène bien à Mes voyages.
 import { chromium } from 'playwright';
@@ -79,6 +80,20 @@ try {
     await contexte.close();
   }
 
+  // Trois appuis immédiats sur « Mes voyages », avant la fin du premier retour.
+  {
+    const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url);
+    await suivre(page, '.carte-voyage', 'voyage');
+    await page.evaluate(() => {
+      const lien = document.querySelector('.lien-retour');
+      for (let i = 0; i < 3; i++) lien.click();
+    });
+    await page.waitForFunction(() => !location.href.includes('#/voyage/'));
+    const vu = await ecranAffiche(page, serveur.url);
+    juge.exige(vu === 'voyages', `trois appuis sur « Mes voyages » : on arrive à « ${vu} »`);
+    await contexte.close();
+  }
+
   // Le formulaire, ouvert puis abandonné par « Mes voyages ».
   {
     const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url);
@@ -130,4 +145,4 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Retour système', 'voyage, formulaire, création et adresse directe, témoins compris');
+juge.conclure('Retour système', 'voyage, formulaire, création, adresse directe et appuis répétés, témoins compris');
