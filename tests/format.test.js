@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fr from '../src/i18n/fr.json' with { type: 'json' };
 import { creerTraducteur } from '../src/i18n/traduction.js';
-import { formaterDate, formaterPeriode, pluriel } from '../src/ecrans/format.js';
+import { detailsVoyage, formaterDate, formaterPeriode, pluriel } from '../src/ecrans/format.js';
 
 const t = creerTraducteur({ fr }, 'fr');
 
@@ -34,4 +34,13 @@ test('pluriel choisit la forme selon le nombre et la langue, et y pose le nombre
   // En français, zéro est au singulier ; en anglais, au pluriel.
   assert.equal(pluriel(tp, 'voyageurs', 0, 'fr'), '0 voyageur');
   assert.equal(pluriel(tp, 'voyageurs', 0, 'en'), '0 voyageurs');
+});
+
+test('detailsVoyage assemble la période et les voyageurs avec le séparateur de fr.json', () => {
+  const voyage = { depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 };
+  assert.equal(detailsVoyage(t, voyage, 'fr'), 'du sam. 10 oct. au mar. 13 oct. 2026 · 2 voyageurs');
+  assert.equal(
+    detailsVoyage(t, { ...voyage, voyageurs: 1 }, 'fr'),
+    'du sam. 10 oct. au mar. 13 oct. 2026 · 1 voyageur',
+  );
 });

@@ -1,7 +1,13 @@
-// Écran Voyages (#/voyages), l'accueil : la liste des voyages ou, au premier lancement, l'écran
-// vide qui invite à créer le premier (US-29). Le classement des voyages arrive en phase 2.
+// Écran Voyages (#/voyages), l'accueil : les voyages en cours, à venir puis passés (US-28) ou, au
+// premier lancement, l'écran vide qui invite à créer le premier (US-29).
 import { echapper } from './html.js';
+import { detailsVoyage } from './format.js';
+import { iconeInterface } from './icones.js';
+import { dateDuJour } from '../modele/dates.js';
+import { classerVoyages } from '../modele/voyage.js';
 import mascotte from '../images/baluchon.svg';
+
+const RUBRIQUES = ['enCours', 'aVenir', 'passes'];
 
 function vueVide(t) {
   return `
@@ -13,19 +19,42 @@ function vueVide(t) {
     </section>`;
 }
 
-const vueListe = voyages => `
-    <ul class="voyages">
-      ${voyages.map(v => `<li>${echapper(v.nom)}</li>`).join('')}
-    </ul>`;
+function carte(voyage, { t, langue }) {
+  const destination = voyage.destination
+    ? `<span class="carte-voyage-destination">${echapper(voyage.destination)}</span>`
+    : '';
+  return `
+        <li>
+          <a class="carte-voyage" href="#/voyage/${encodeURIComponent(voyage.id)}">
+            <span class="carte-voyage-nom">${echapper(voyage.nom)}</span>
+            ${destination}
+            <span class="carte-voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</span>
+          </a>
+        </li>`;
+}
+
+function vueListe(voyages, aujourdhui, contexte) {
+  const classes = classerVoyages(voyages, aujourdhui);
+  const rubriques = RUBRIQUES.filter(rubrique => classes[rubrique].length).map(
+    rubrique => `
+      <section class="rubrique" aria-labelledby="rubrique-${rubrique}">
+        <h2 id="rubrique-${rubrique}">${contexte.t(`voyages.rubriques.${rubrique}`)}</h2>
+        <ul class="voyages">${classes[rubrique].map(v => carte(v, contexte)).join('')}
+        </ul>
+      </section>`,
+  );
+  return `${rubriques.join('')}
+      <a class="bouton bouton-principal bouton-flottant" href="#/nouveau-voyage">${iconeInterface('plus')}${contexte.t('voyages.nouveau')}</a>`;
+}
 
 export const ecranVoyages = {
   nom: 'voyages',
-  charger: async ({ stockage }) => ({ voyages: await stockage.listerVoyages() }),
-  dessiner(app, { voyages }, { t }) {
+  charger: async ({ stockage }) => ({ voyages: await stockage.listerVoyages(), aujourdhui: dateDuJour(new Date()) }),
+  dessiner(app, { voyages, aujourdhui }, contexte) {
     app.innerHTML = `
-    <main class="ecran">
-      <h1>${t('voyages.titre')}</h1>
-      ${voyages.length ? vueListe(voyages) : vueVide(t)}
+    <main class="ecran${voyages.length ? ' ecran-avec-flottant' : ''}">
+      <h1>${contexte.t('voyages.titre')}</h1>
+      ${voyages.length ? vueListe(voyages, aujourdhui, contexte) : vueVide(contexte.t)}
     </main>`;
   },
 };

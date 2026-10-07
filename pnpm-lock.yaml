@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@phosphor-icons/core':
+        specifier: 2.1.1
+        version: 2.1.1
       '@tauri-apps/api':
         specifier: ^2.12.1
         version: 2.12.1
@@ -256,6 +259,9 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [glibc]
+
+  '@phosphor-icons/core@2.1.1':
+    resolution: {integrity: sha512-v4ARvrip4qBCImOE5rmPUylOEK4iiED9ZyKjcvzuezqMaiRASCHKcRIuvvxL/twvLpkfnEODCOJp5dM4eZilxQ==}
 
   '@rollup/rollup-android-arm-eabi@4.64.0':
     resolution: {integrity: sha512-FLLpX941CD/7aBvX3GqLGBM9OvY5PGXTryPJkG5r5/OuBpZpV5k45Uo3RxAvqd35tsyc3hH1bhtz921IKzoIzg==}
@@ -1010,6 +1016,8 @@ snapshots:
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
+
+  '@phosphor-icons/core@2.1.1': {}
 
   '@rollup/rollup-android-arm-eabi@4.64.0':
     optional: true

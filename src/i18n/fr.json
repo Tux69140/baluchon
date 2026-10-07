@@ -5,6 +5,9 @@
   "voyages": {
     "titre": "Mes voyages",
     "nouveau": "Nouveau voyage",
+    "rubriques": { "enCours": "En cours", "aVenir": "À venir", "passes": "Passés" },
+    "voyageurs": { "one": "{n} voyageur", "other": "{n} voyageurs" },
+    "details": "{periode} · {voyageurs}",
     "vide": {
       "titre": "Créez votre premier voyage",
       "texte": "Dites où et quand vous partez : Baluchon prépare la liste de vos bagages."

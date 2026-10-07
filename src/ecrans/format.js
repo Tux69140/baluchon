@@ -26,3 +26,11 @@ export function pluriel(t, cle, n, langue) {
   const forme = new Intl.PluralRules(langue).select(n) === 'one' ? 'one' : 'other';
   return remplir(t(`${cle}.${forme}`), { n });
 }
+
+// La ligne « du sam. 10 oct. au mar. 13 oct. 2026 · 2 voyageurs », commune à la carte du voyage et à
+// son en-tête.
+export const detailsVoyage = (t, voyage, langue) =>
+  remplir(t('voyages.details'), {
+    periode: formaterPeriode(t, voyage.depart, voyage.retour, langue),
+    voyageurs: pluriel(t, 'voyages.voyageurs', voyage.voyageurs, langue),
+  });
