@@ -4,6 +4,7 @@
 // ce voyage » (phase 11) et au changement de dates (phase 10).
 import { ajouterJours, ajouterMois, moisDe, moisEnSemaines, moisVoisin } from '../modele/dates.js';
 import { choisirJour, etatDuJour } from '../modele/periode.js';
+import { remplir } from '../i18n/traduction.js';
 import { formaterDate } from './format.js';
 import { iconeInterface } from './icones.js';
 
@@ -12,6 +13,14 @@ const SAUTS_DE_MOIS = { PageUp: -1, PageDown: 1 };
 // Un lundi quelconque : de lui, on tire les noms des sept jours, du lundi au dimanche.
 const UN_LUNDI = '2024-01-01';
 const SEMAINE = Array.from({ length: 7 }, (_, i) => ajouterJours(UN_LUNDI, i));
+
+// Le rôle d'un jour dans le voyage, dit au lecteur d'écran : jamais la couleur seule (AGENTS.md).
+function role(e) {
+  if (e.depart && e.retour) return 'departEtRetour';
+  if (e.depart) return 'depart';
+  if (e.retour) return 'retour';
+  return e.entre ? 'entre' : null;
+}
 
 export function creerCalendrier(conteneur, { t, langue, aujourdhui, periode, auChangement }) {
   let selection = { depart: periode.depart ?? null, retour: periode.retour ?? null };
@@ -33,7 +42,9 @@ export function creerCalendrier(conteneur, { t, langue, aujourdhui, periode, auC
     ]
       .filter(Boolean)
       .join(' ');
-    const nom = formaterDate(jour, langue, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const date = formaterDate(jour, langue, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const etat = role(e);
+    const nom = etat ? remplir(t('calendrier.jourAvecEtat'), { jour: date, etat: t(`calendrier.etat.${etat}`) }) : date;
     return `<td><button type="button" class="${classes}" data-jour="${jour}" tabindex="${jour === focus ? 0 : -1}"
       aria-label="${nom}" aria-pressed="${e.depart || e.retour}"${jour === aujourdhui ? ' aria-current="date"' : ''}${e.horsLimite ? ' aria-disabled="true"' : ''}>${Number(jour.slice(8))}</button></td>`;
   }

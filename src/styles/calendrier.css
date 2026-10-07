@@ -1,5 +1,6 @@
-/* Calendrier unique (src/ecrans/calendrier.js) : bornes à l'encre marine, période grisée, jours
-   trop lointains barrés (jamais la couleur seule). */
+/* Calendrier unique (src/ecrans/calendrier.js) : bornes à l'encre marine, période grisée et bordée
+   d'un trait haut et bas (le fond seul est trop pâle au soleil), jours trop lointains barrés
+   (jamais la couleur seule). */
 .calendrier {
   max-width: 420px;
   padding: var(--e-sm);
@@ -62,9 +63,20 @@
   font-weight: 700;
 }
 
-.jour-entre {
+/* Les traits de la période se rejoignent d'un jour à l'autre et vont jusqu'aux bornes : un bandeau
+   continu. Le survol ne l'efface pas (sur Android, il « colle » après un appui). */
+.jour-entre,
+.jour-entre:hover {
   border-radius: 0;
   background: var(--actif);
+  box-shadow:
+    inset 0 1.5px var(--contour),
+    inset 0 -1.5px var(--contour);
+}
+
+/* Aujourd'hui dans la période : le cadre complet garde son repère. */
+.jour-entre.jour-aujourdhui {
+  box-shadow: inset 0 0 0 1.5px var(--contour);
 }
 
 .jour-depart,

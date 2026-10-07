@@ -48,6 +48,26 @@ const PAQUES = {
   modifieLe: 'x',
 };
 const jour = date => `[data-jour="${date}"]`;
+// Nom accessible d'un jour : sa date en toutes lettres, puis son rôle dans le voyage s'il en a un.
+const nomDuJour = (date, etat) => {
+  const lettres = new Intl.DateTimeFormat('fr', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T12:00:00Z`));
+  return etat
+    ? fr.calendrier.jourAvecEtat.replace('{jour}', lettres).replace('{etat}', fr.calendrier.etat[etat])
+    : lettres;
+};
+const lireNom = (page, date) => page.getAttribute(`[data-jour="${date}"]`, 'aria-label');
+// Le repère de la période (fond et traits) d'un jour, tel qu'il est dessiné.
+const repere = (page, date) =>
+  page.$eval(`[data-jour="${date}"]`, b => {
+    const s = getComputedStyle(b);
+    return `${s.backgroundColor} | ${s.boxShadow}`;
+  });
 const titreMois = (annee, mois) =>
   new Intl.DateTimeFormat('fr', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
     Date.UTC(annee, mois - 1, 15),
@@ -86,10 +106,11 @@ async function nouveauFormulaire(navigateur, url, options = {}) {
   return ouvert;
 }
 
-async function remplirEtCreer(page, { nom, depart, retour, double = false }) {
+async function remplirEtCreer(page, { nom, depart, retour, double = false, avantCreer }) {
   await page.fill('#nom', nom);
   await page.click(jour(depart));
   await page.click(jour(retour));
+  await avantCreer?.();
   if (double) await page.dblclick('button[type=submit]');
   else await page.click('button[type=submit]');
 }
@@ -130,6 +151,32 @@ try {
         e.resume.includes(fr.duree.nuits.other.replace('{n}', 3)),
       `parcours : résumé « ${e.resume} »`,
     );
+    // Jamais la couleur seule : le rôle du jour est dit au lecteur d'écran, et la période porte un
+    // trait visible, qui reste quand le doigt (ou la souris) s'y attarde.
+    for (const [date, etatAttendu] of [
+      ['2026-10-10', 'depart'],
+      ['2026-10-11', 'entre'],
+      ['2026-10-13', 'retour'],
+      ['2026-10-14', null],
+    ]) {
+      const vu = await lireNom(page, date);
+      juge.exige(vu === nomDuJour(date, etatAttendu), `parcours : nom du ${date} « ${vu} »`);
+    }
+    const traitDeLaPeriode = await page.$eval(jour('2026-10-12'), b => getComputedStyle(b).boxShadow);
+    const traitHorsPeriode = await page.$eval(jour('2026-10-14'), b => getComputedStyle(b).boxShadow);
+    juge.exige(
+      traitDeLaPeriode !== 'none' && traitHorsPeriode === 'none',
+      `parcours : trait de la période « ${traitDeLaPeriode} », hors période « ${traitHorsPeriode} »`,
+    );
+    const auRepos = await repere(page, '2026-10-12');
+    await page.hover(jour('2026-10-12'));
+    const auSurvol = await repere(page, '2026-10-12');
+    juge.exige(auSurvol === auRepos, `parcours : au survol, la période change « ${auRepos} » → « ${auSurvol} »`);
+    await page.hover(jour('2026-10-14'));
+    juge.exige(
+      (await repere(page, '2026-10-14')) !== (await repere(page, '2026-10-15')),
+      'parcours : témoin, le survol ne se voit pas',
+    );
     await page.click('button[type=submit]');
     await attendreEcran(page, 'voyage');
     const hash = await page.evaluate(() => location.hash);
@@ -157,7 +204,15 @@ try {
   // Aller-retour dans la journée : pas de Pyjama.
   {
     const { contexte, page } = await nouveauFormulaire(navigateur, serveur.url);
-    await remplirEtCreer(page, { nom: 'Journée', depart: '2026-10-10', retour: '2026-10-10' });
+    await remplirEtCreer(page, {
+      nom: 'Journée',
+      depart: '2026-10-10',
+      retour: '2026-10-10',
+      avantCreer: async () => {
+        const vu = await lireNom(page, '2026-10-10');
+        juge.exige(vu === nomDuJour('2026-10-10', 'departEtRetour'), `journée : nom du jour « ${vu} »`);
+      },
+    });
     await attendreEcran(page, 'voyage');
     const vus = await objetsAffiches(page);
     juge.exige(!('Pyjama' in vus) && vus['T-shirts'] === '2', `journée : ${JSON.stringify(vus)}`);
@@ -313,6 +368,11 @@ try {
       await verifierCommandes(page, juge, cas);
       if (format === 'tablette-portrait')
         await page.screenshot({ path: join(CAPTURES, `nouveau-voyage-${NOMS_THEME[theme]}.png`), fullPage: true });
+      if (format === 'telephone')
+        await page.screenshot({
+          path: join(CAPTURES, `nouveau-voyage-telephone-${NOMS_THEME[theme]}.png`),
+          fullPage: true,
+        });
       await verifierBarres(page, juge, cas);
       juge.exige(sorties.length === 0, `${cas} : requêtes hors de l’appli : ${sorties.join(', ')}`);
       juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);

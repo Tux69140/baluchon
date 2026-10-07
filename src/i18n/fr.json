@@ -45,7 +45,14 @@
   },
   "calendrier": {
     "moisPrecedent": "Mois précédent",
-    "moisSuivant": "Mois suivant"
+    "moisSuivant": "Mois suivant",
+    "jourAvecEtat": "{jour}, {etat}",
+    "etat": {
+      "depart": "départ",
+      "retour": "retour",
+      "departEtRetour": "départ et retour",
+      "entre": "dans le voyage"
+    }
   },
   "duree": {
     "jours": { "one": "{n} jour", "other": "{n} jours" },
