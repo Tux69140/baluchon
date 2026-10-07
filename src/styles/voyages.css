@@ -1,0 +1,39 @@
+/* Écran Voyages (src/ecrans/voyages.js). */
+.vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: var(--e-2xl);
+  padding: var(--e-xl) var(--e-md);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+}
+
+.vide h2 {
+  font-size: var(--taille-section);
+  margin: var(--e-md) 0 var(--e-sm);
+}
+
+.vide p {
+  max-width: 62ch;
+  margin: 0 0 var(--e-lg);
+  color: var(--encre-douce);
+}
+
+.voyages {
+  list-style: none;
+  margin: var(--e-lg) 0 0;
+  padding: 0;
+}
+
+.voyages li {
+  min-height: 56px;
+  padding: var(--e-md);
+  margin-bottom: var(--e-sm);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  font-size: var(--taille-objet);
+}

@@ -1,0 +1,10 @@
+# Documents produit et règles des agents : rédigés à la main, jamais reformatés.
+*.md
+docs/
+LICENSE
+pnpm-lock.yaml
+dist/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/
+*-travail/

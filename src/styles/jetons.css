@@ -1,0 +1,83 @@
+/* Jetons du système de design (docs/DESIGN.md). Chaque couleur n'est écrite qu'une fois, en clair
+   et en sombre, avec light-dark() : le thème suit l'appareil (color-scheme), et un choix manuel
+   (phase 12) n'aura qu'à poser data-theme sur la racine. */
+:root {
+  color-scheme: light dark;
+
+  /* Socle : sable et encre marine ; nuit marine en sombre. */
+  --fond: light-dark(#f7f6f1, #0d1624);
+  --carte: light-dark(#fefdfb, #162131);
+  --releve: light-dark(#f1eee7, #1f2c3f);
+  --actif: light-dark(#e7e2d2, #273952);
+  --separation: light-dark(#d3d1ca, #414e60);
+  --contour: light-dark(#817d71, #7f8ba0);
+  --encre: light-dark(#1a263c, #f4f2ea);
+  --encre-douce: light-dark(#4d586c, #b4bfce);
+
+  /* « Vert départ » : actions principales et ce qui est réellement fait. */
+  --principal: light-dark(#007232, #6ec083);
+  --principal-survol: light-dark(#005f29, #86cf98);
+  --sur-principal: light-dark(#ffffff, #0d1624);
+
+  /* Messages : jamais la couleur seule, toujours un texte (et une icône). */
+  --succes: light-dark(#007232, #6ec083);
+  --attention: light-dark(#9c6400, #f2c36a);
+  --erreur: light-dark(#a82e27, #f38e81);
+  --info: light-dark(#006599, #82c3ee);
+  --fond-succes: light-dark(#e1f2e6, #17321f);
+  --fond-attention: light-dark(#fbf0da, #3a2f17);
+  --fond-erreur: light-dark(#f9e3e0, #3d1f1d);
+  --fond-info: light-dark(#dfeef7, #132e40);
+
+  /* Bagagerie : couleurs de catégorie, identiques dans les deux thèmes, icône toujours à l'encre marine. */
+  --corail: #ff7a5c;
+  --tournesol: #ffc93c;
+  --abricot: #ff9f45;
+  --pomme: #8ccb4e;
+  --lagon: #2bbfb0;
+  --ciel: #5aa9ff;
+  --framboise: #f0598a;
+  --lilas: #a98bf0;
+  --encre-categorie: #1a263c;
+
+  /* Typographie : Baumans pour les titres, Source Sans 3 pour tout le reste ; rien sous 13 px. */
+  --police-titre: 'Baumans', 'Source Sans 3', sans-serif;
+  --police: 'Source Sans 3', sans-serif;
+  --taille-mention: 13px;
+  --taille-libelle: 15px;
+  --taille-objet: 17px;
+  --taille-section: 24px;
+  --taille-ecran: 32px;
+
+  /* Espacements (base 8 px) et arrondis. */
+  --e-2xs: 2px;
+  --e-xs: 4px;
+  --e-sm: 8px;
+  --e-md: 16px;
+  --e-lg: 24px;
+  --e-xl: 32px;
+  --e-2xl: 48px;
+  --e-3xl: 64px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-plein: 9999px;
+
+  /* Cible tactile minimale (AGENTS.md, « Qualité et livraison »). */
+  --cible: 44px;
+  --largeur-max: 1080px;
+
+  /* Zones des barres système d'Android (heure, boutons) ; nulles sur ordinateur. */
+  --zone-haut: env(safe-area-inset-top, 0px);
+  --zone-bas: env(safe-area-inset-bottom, 0px);
+  --zone-gauche: env(safe-area-inset-left, 0px);
+  --zone-droite: env(safe-area-inset-right, 0px);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}

@@ -1,0 +1,105 @@
+/* Socle commun à tous les écrans : page, titres, boutons, messages, zones système. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--fond);
+  color: var(--encre);
+  font: 400 16px/1.5 var(--police);
+  -webkit-font-smoothing: antialiased;
+  /* Le contenu se range entre les barres système, jamais dessous. */
+  padding: var(--zone-haut) var(--zone-droite) var(--zone-bas) var(--zone-gauche);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--police-titre);
+  font-weight: 400;
+  margin: 0;
+}
+
+.ecran {
+  max-width: var(--largeur-max);
+  margin: 0 auto;
+  padding: var(--e-lg) var(--e-md) var(--e-2xl);
+}
+
+.ecran > h1 {
+  font-size: var(--taille-ecran);
+  line-height: 1.15;
+}
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-sm);
+  min-height: 48px;
+  min-width: var(--cible);
+  padding: 0 22px;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  font: 600 16px var(--police);
+  cursor: pointer;
+}
+
+.bouton-principal {
+  background: var(--principal);
+  color: var(--sur-principal);
+}
+
+.bouton-principal:hover {
+  background: var(--principal-survol);
+}
+
+.bouton:focus-visible {
+  outline: 3px solid var(--ciel);
+  outline-offset: 2px;
+}
+
+.message {
+  max-width: 62ch;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: var(--r-md);
+  font-size: var(--taille-libelle);
+}
+
+.message-erreur {
+  background: var(--fond-erreur);
+  border-color: var(--erreur);
+}
+
+/* Bandes opaques posées sur les barres système : ce qui défile passe dessous sans jamais se mêler
+   à l'heure ou aux boutons d'Android. */
+.zone-systeme {
+  position: fixed;
+  z-index: 100;
+  background: var(--fond);
+}
+
+.zone-systeme[data-zone='haut'] {
+  inset: 0 0 auto 0;
+  height: var(--zone-haut);
+}
+
+.zone-systeme[data-zone='bas'] {
+  inset: auto 0 0 0;
+  height: var(--zone-bas);
+}
+
+.zone-systeme[data-zone='gauche'] {
+  inset: 0 auto 0 0;
+  width: var(--zone-gauche);
+}
+
+.zone-systeme[data-zone='droite'] {
+  inset: 0 0 0 auto;
+  width: var(--zone-droite);
+}

@@ -1,0 +1,21 @@
+# Dépendances et sorties de construction
+node_modules/
+dist/
+src-tauri/target/
+
+# Projet Android généré par « tauri android init » : se régénère
+src-tauri/gen/
+
+# Paquets construits localement
+artifacts/
+
+# Brouillons, captures de travail
+*-travail/
+
+# Appli d'origine (propriétaire) : matériau d'étude seulement
+apk/
+
+# Secrets de signature : ne doivent jamais être publiés
+*.jks
+*.keystore
+keystore.properties

@@ -1,0 +1,16 @@
+{
+  "appli": {
+    "nom": "Baluchon"
+  },
+  "voyages": {
+    "titre": "Mes voyages",
+    "nouveau": "Nouveau voyage",
+    "vide": {
+      "titre": "Créez votre premier voyage",
+      "texte": "Dites où et quand vous partez : Baluchon prépare la liste de vos bagages."
+    }
+  },
+  "erreurs": {
+    "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
+  }
+}

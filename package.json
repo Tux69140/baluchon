@@ -1,0 +1,40 @@
+{
+  "name": "baluchon",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Baluchon — listes de bagages, libre et hors ligne",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "tauri": "tauri",
+    "icones": "node scripts/icones.mjs",
+    "android:essai": "node scripts/android.mjs",
+    "test": "node --test tests/*.test.js",
+    "test:ecrans": "node tests/ecrans.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:verif": "prettier --check .",
+    "controles": "node scripts/controles/tous.mjs",
+    "verif": "pnpm lint && pnpm format:verif && pnpm controles && pnpm test && pnpm test:ecrans"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@tauri-apps/cli": "^2.12.1",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "playwright": "1.62.1",
+    "prettier": "^3.9.9",
+    "vite": "^6.4.4"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.12.1"
+  },
+  "packageManager": "pnpm@10.33.4",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
