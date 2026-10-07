@@ -1,0 +1,125 @@
+{
+  "bibliotheque": {
+    "categories": [
+      {
+        "id": "cm-vetements",
+        "nom": "Vêtements",
+        "icone": "t-shirt",
+        "couleur": "ciel",
+        "ordre": 0,
+        "toujoursIncluse": true,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      },
+      {
+        "id": "cm-papiers",
+        "nom": "Papiers",
+        "icone": "identification-card",
+        "couleur": "tournesol",
+        "ordre": 1,
+        "toujoursIncluse": true,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ],
+    "objets": [
+      {
+        "id": "om-tshirts",
+        "categorieId": "cm-vetements",
+        "nom": "T-shirts",
+        "regle": "par_jour",
+        "valeur": 1,
+        "plafond": 5,
+        "parPersonne": true,
+        "consommable": false,
+        "toujoursInclus": true,
+        "note": "",
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      },
+      {
+        "id": "om-chargeur",
+        "categorieId": "cm-papiers",
+        "nom": "Chargeur de téléphone",
+        "regle": "fixe",
+        "valeur": 1,
+        "plafond": null,
+        "parPersonne": false,
+        "consommable": false,
+        "toujoursInclus": true,
+        "note": "Un pour deux suffit.",
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ]
+  },
+  "voyage": {
+    "voyage": {
+      "id": "v-vercors",
+      "nom": "Vercors",
+      "destination": "Autrans",
+      "depart": "2026-10-10",
+      "retour": "2026-10-13",
+      "voyageurs": 2,
+      "modifieLe": "2026-10-06T08:00:00.000Z"
+    },
+    "categories": [
+      {
+        "id": "cv-vetements",
+        "voyageId": "v-vercors",
+        "modeleId": "cm-vetements",
+        "nom": "Vêtements",
+        "icone": "t-shirt",
+        "couleur": "ciel",
+        "ordre": 0,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      },
+      {
+        "id": "cv-alimentation",
+        "voyageId": "v-vercors",
+        "modeleId": null,
+        "nom": "Alimentation",
+        "icone": "fork-knife",
+        "couleur": "pomme",
+        "ordre": 2,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ],
+    "objets": [
+      {
+        "id": "ov-tshirts",
+        "voyageId": "v-vercors",
+        "categorieId": "cv-vetements",
+        "modeleId": "om-tshirts",
+        "nom": "T-shirts",
+        "regle": "par_jour",
+        "valeur": 1,
+        "plafond": 5,
+        "parPersonne": true,
+        "consommable": false,
+        "quantite": 8,
+        "quantiteManuelle": false,
+        "dansLeSac": false,
+        "aAcheter": false,
+        "achete": false,
+        "note": "",
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      },
+      {
+        "id": "ov-repas",
+        "voyageId": "v-vercors",
+        "categorieId": "cv-alimentation",
+        "modeleId": null,
+        "nom": "Repas",
+        "regle": "par_jour",
+        "valeur": 2,
+        "plafond": null,
+        "parPersonne": true,
+        "consommable": true,
+        "quantite": 16,
+        "quantiteManuelle": false,
+        "dansLeSac": false,
+        "aAcheter": true,
+        "achete": false,
+        "note": "Midi et soir.",
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ]
+  }
+}

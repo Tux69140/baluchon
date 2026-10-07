@@ -13,11 +13,12 @@
     "android:essai": "node scripts/android.mjs",
     "test": "node --test tests/*.test.js",
     "test:ecrans": "node tests/ecrans.mjs",
+    "test:base": "cargo test --manifest-path src-tauri/Cargo.toml --quiet",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:verif": "prettier --check .",
     "controles": "node scripts/controles/tous.mjs",
-    "verif": "pnpm lint && pnpm format:verif && pnpm controles && pnpm test && pnpm test:ecrans"
+    "verif": "pnpm lint && pnpm format:verif && pnpm controles && pnpm test && pnpm test:base && pnpm test:ecrans"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
