@@ -4,8 +4,11 @@
 //   colonne ; tout tient sans défiler, dans un mois de cinq comme de six semaines, et encore avec
 //   les barres système de la tablette (haut 40 px, bas 48 px) ; le contenu reste centré et ne
 //   dépasse pas 1080 px ; Créer sans rien : les messages prennent leur place, rien ne bouge ;
-// - tablette en portrait et téléphone : une seule colonne, le calendrier sous les champs ;
-// - partout, les jours du calendrier sont des cercles (largeur = hauteur), jamais des ovales.
+// - tablette en portrait, téléphones (393 et 360 px) et fenêtre d'ordinateur basse (1280 × 500) :
+//   une seule colonne, le calendrier sous les champs ;
+// - deux colonnes à 1280 × 650 sous les barres de la tablette : les jours gardent 44 px (plancher) ;
+// - partout, chaque jour du calendrier est un cercle (largeur = hauteur) d'au moins 44 px qui tient
+//   dans sa case, sans chevaucher ses voisins.
 // Captures : 1280 × 800 vide, avec les messages d'erreur et après le choix des dates, en clair et
 // en sombre.
 import { mkdir } from 'node:fs/promises';
@@ -18,6 +21,13 @@ import { CAPTURES, FORMATS, NOMS_THEME, attendreEcran, creerJuge, ouvrir } from 
 const MAINTENANT = new Date('2026-10-06T10:00:00');
 // Barres système relevées sur la tablette SM-X210 en paysage (pixels CSS).
 const BARRES_TABLETTE = { haut: 40, bas: 48 };
+// En plus des trois formats communs : un téléphone étroit, et une fenêtre d'ordinateur large mais
+// trop basse pour deux colonnes (une seule colonne, qui défile).
+const FORMATS_ESSAYES = {
+  ...FORMATS,
+  'telephone-etroit': { width: 360, height: 740 },
+  'ordinateur-bas': { width: 1280, height: 500 },
+};
 
 // Les boîtes utiles, relevées en haut de page.
 const mesurer = page =>
@@ -25,10 +35,17 @@ const mesurer = page =>
     window.scrollTo(0, 0);
     const boite = selecteur => document.querySelector(selecteur).getBoundingClientRect().toJSON();
     const ecran = boite('main.ecran');
-    const ovales = [...document.querySelectorAll('.jour')]
-      .map(b => b.getBoundingClientRect())
-      .filter(r => Math.abs(r.width - r.height) > 1)
-      .map(r => `${Math.round(r.width)} × ${Math.round(r.height)}`);
+    // Un jour fautif : ovale, sous 44 px, ou qui déborde de sa case (il chevauche alors son voisin).
+    const joursFautifs = [...document.querySelectorAll('.jour')]
+      .map(b => [b.getBoundingClientRect(), b.parentElement.getBoundingClientRect()])
+      .filter(
+        ([r, c]) =>
+          Math.abs(r.width - r.height) > 1 ||
+          Math.min(r.width, r.height) < 43.5 ||
+          r.left < c.left - 0.5 ||
+          r.right > c.right + 0.5,
+      )
+      .map(([r, c]) => `${Math.round(r.width)} × ${Math.round(r.height)} dans ${Math.round(c.width)}`);
     return {
       fenetre: { largeur: window.innerWidth, hauteur: window.innerHeight },
       defilement: {
@@ -42,7 +59,7 @@ const mesurer = page =>
       calendrier: boite('.calendrier'),
       creer: boite('button[type=submit]'),
       semaines: document.querySelectorAll('.calendrier-grille tbody tr').length,
-      ovales,
+      joursFautifs,
     };
   });
 
@@ -68,13 +85,21 @@ function verifierUneColonne(m, juge, cas) {
   juge.exige(Math.abs(m.calendrier.left - m.nom.left) <= 1, `${cas} : le calendrier n’est pas aligné sur les champs`);
 }
 
+async function poserBarres(page) {
+  await page.evaluate(({ haut, bas }) => {
+    document.documentElement.style.setProperty('--zone-haut', `${haut}px`);
+    document.documentElement.style.setProperty('--zone-bas', `${bas}px`);
+  }, BARRES_TABLETTE);
+  await calme(page);
+}
+
 const juge = creerJuge();
 const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
 try {
   await mkdir(CAPTURES, { recursive: true });
   for (const theme of ['light', 'dark']) {
-    for (const [format, taille] of Object.entries(FORMATS)) {
+    for (const [format, taille] of Object.entries(FORMATS_ESSAYES)) {
       const cas = `${format}, ${NOMS_THEME[theme]}`;
       const { contexte, page } = await ouvrir(navigateur, serveur.url, {
         taille,
@@ -89,9 +114,16 @@ try {
         (await page.screenshot({ path: join(CAPTURES, `nouveau-voyage-paysage-${etape}-${NOMS_THEME[theme]}.png`) }));
       await capture('vide');
       let m = await mesurer(page);
-      juge.exige(m.ovales.length === 0, `${cas} : jours ovales ${[...new Set(m.ovales)].join(', ')}`);
+      juge.exige(
+        m.joursFautifs.length === 0,
+        `${cas} : jours ovales, trop petits ou hors de leur case : ${[...new Set(m.joursFautifs)].join(', ')}`,
+      );
       juge.exige(m.defilement.cote <= 0, `${cas} : la page défile de côté (${m.defilement.cote} px)`);
       if (!paysage) {
+        await page.screenshot({
+          path: join(CAPTURES, `nouveau-voyage-${format}-${NOMS_THEME[theme]}.png`),
+          fullPage: true,
+        });
         verifierUneColonne(m, juge, cas);
         await contexte.close();
         continue;
@@ -126,18 +158,36 @@ try {
       m = await mesurer(page);
       juge.exige(m.semaines === 6, `${cas} : témoin, novembre compte ${m.semaines} semaines`);
       verifierDeuxColonnes(m, juge, `${cas}, novembre`, m.fenetre.hauteur);
-      await page.evaluate(({ haut, bas }) => {
-        document.documentElement.style.setProperty('--zone-haut', `${haut}px`);
-        document.documentElement.style.setProperty('--zone-bas', `${bas}px`);
-      }, BARRES_TABLETTE);
-      await calme(page);
+      await poserBarres(page);
       m = await mesurer(page);
       verifierDeuxColonnes(m, juge, `${cas}, novembre, barres de la tablette`, m.fenetre.hauteur - BARRES_TABLETTE.bas);
       await contexte.close();
     }
   }
+
+  // Deux colonnes, mais si peu de hauteur sous les barres que le calcul donnerait des jours de
+  // moins de 44 px : le plancher les garde ronds, à 44 px, dans leur case.
+  {
+    const cas = 'ordinateur à 1280 × 650 avec les barres de la tablette';
+    const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+      taille: { width: 1280, height: 650 },
+      theme: 'light',
+      maintenant: MAINTENANT,
+      adresse: '#/nouveau-voyage',
+    });
+    await attendreEcran(page, 'nouveau-voyage');
+    await poserBarres(page);
+    const m = await mesurer(page);
+    juge.exige(m.calendrier.left >= m.nom.right, `${cas} : témoin, pas de deux colonnes`);
+    juge.exige(m.joursFautifs.length === 0, `${cas} : jours fautifs ${[...new Set(m.joursFautifs)].join(', ')}`);
+    juge.exige(m.defilement.cote <= 0, `${cas} : la page défile de côté (${m.defilement.cote} px)`);
+    await contexte.close();
+  }
 } finally {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Disposition de Nouveau voyage', 'deux colonnes en paysage, une en portrait, jours ronds, 2 thèmes');
+juge.conclure(
+  'Disposition de Nouveau voyage',
+  'deux colonnes en paysage, une en portrait, au téléphone et en fenêtre basse, jours ronds d’au moins 44 px, 2 thèmes',
+);

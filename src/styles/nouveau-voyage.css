@@ -71,8 +71,9 @@
 /* Tablette en paysage et ordinateur : deux colonnes, pour que tout tienne sans défiler (décision du
    chef de projet, 2026-10-07). Les champs, les voyageurs et « Créer le voyage » à gauche, les dates
    à droite. L'ordre du document ne change pas : clavier et lecteur d'écran lisent nom, destination,
-   dates, voyageurs, créer, comme au téléphone. */
-@media (orientation: landscape) and (min-width: 900px) {
+   dates, voyageurs, créer, comme au téléphone. Sous 600 px de haut, six semaines de jours de 44 px
+   ne tiennent plus à côté des champs : une seule colonne, qui défile. */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 600px) {
   .ecran:has(> .formulaire) {
     padding-bottom: var(--e-lg);
   }
@@ -82,9 +83,13 @@
      titre et résumé des dates, mois, jours de la semaine, message, marges : 324 px). Un jour est
      aussi haut qu'un septième de la largeur, marges du calendrier ôtées (18 px), et une semaine a
      2 px de plus : largeur = 7/6 × hauteur des six semaines + 4 px. La dernière rangée de gauche
-     (message de création) prend la hauteur laissée par le calendrier : les champs restent serrés. */
+     (message de création) prend la hauteur laissée par le calendrier : les champs restent serrés.
+     Plancher : sept jours de 44 px et les marges, quitte à défiler (barres système très hautes). */
   .formulaire {
-    --largeur-dates: calc(7 / 6 * (100dvh - var(--zone-haut) - var(--zone-bas) - 324px) + 4px);
+    --largeur-dates: max(
+      calc(7 * var(--cible) + 2 * var(--e-sm) + 2px),
+      calc(7 / 6 * (100dvh - var(--zone-haut) - var(--zone-bas) - 324px) + 4px)
+    );
     max-width: none;
     grid-template-columns: minmax(0, 1fr) min(calc((100% - var(--e-2xl)) / 2), var(--largeur-dates));
     grid-template-rows: repeat(4, auto) 1fr;
