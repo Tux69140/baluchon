@@ -1,0 +1,112 @@
+/* Fenêtre modale (src/ecrans/fenetre.js) : élément <dialog> ouvert par showModal(), centré entre les
+   barres système avec une marge tout autour, au-dessus de l'écran qu'elle laisse voir, assombri.
+   L'en-tête et le pied restent en place ; si la fenêtre est trop basse, c'est son corps qui défile,
+   jamais la page. Elle passe dans la couche du dessus du navigateur : aucun z-index à régler. */
+
+/* Derrière la fenêtre, la page ne défile plus (au doigt, elle partirait sous le voile). */
+html:has(.fenetre:modal) {
+  overflow: hidden;
+}
+
+.fenetre {
+  --marge-fenetre: var(--e-lg);
+  /* Les quatre bords à la marge des barres système, marges automatiques : la fenêtre, de la taille
+     de son contenu, se centre dans cet espace, et sa hauteur maximale l'y tient. */
+  inset: calc(var(--zone-haut) + var(--marge-fenetre)) calc(var(--zone-droite) + var(--marge-fenetre))
+    calc(var(--zone-bas) + var(--marge-fenetre)) calc(var(--zone-gauche) + var(--marge-fenetre));
+  width: min(var(--largeur-fenetre, 560px), 100vw - var(--zone-gauche) - var(--zone-droite) - 2 * var(--marge-fenetre));
+  max-width: none;
+  max-height: calc(100dvh - var(--zone-haut) - var(--zone-bas) - 2 * var(--marge-fenetre));
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  background: var(--carte);
+  color: var(--encre);
+  box-shadow: 0 24px 64px -16px rgb(13 22 36 / 0.45);
+}
+
+.fenetre[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.fenetre::backdrop {
+  background: var(--voile);
+}
+
+.fenetre-entete {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-md);
+  /* À droite, le « × » de 44 px a 12 px de vide autour de son picto : le picto s'aligne ainsi sur le
+     bord du contenu, à la même distance du bord que le titre à gauche. */
+  padding: var(--e-lg) calc(var(--e-xl) - 12px) 0 var(--e-xl);
+}
+
+.fenetre-entete h2 {
+  font-size: var(--taille-section);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.bouton-fermer {
+  border-color: transparent;
+  background: none;
+  color: var(--encre-douce);
+}
+
+.bouton-fermer:hover {
+  background: var(--releve);
+  color: var(--encre);
+}
+
+/* Ouverture : fondu et légère montée ; fermeture : l'inverse, puis la fenêtre reste effacée jusqu'à
+   ce que l'écran suivant la remplace. Rien ne bouge si l'appareil demande moins d'animations. */
+@media (prefers-reduced-motion: no-preference) {
+  .fenetre:modal {
+    animation: fenetre-entree 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .fenetre:modal::backdrop {
+    animation: voile-entree 200ms ease-out;
+  }
+
+  .fenetre[data-fermeture] {
+    animation: fenetre-sortie 200ms ease-in forwards;
+  }
+
+  .fenetre[data-fermeture]::backdrop {
+    animation: voile-sortie 200ms ease-in forwards;
+  }
+}
+
+@keyframes fenetre-entree {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes fenetre-sortie {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes voile-entree {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes voile-sortie {
+  to {
+    opacity: 0;
+  }
+}

@@ -59,6 +59,22 @@ h3 {
   background: var(--principal-survol);
 }
 
+/* Action d'à côté (« Annuler ») : même forme que le bouton principal, sans sa couleur. */
+.bouton-secondaire {
+  border-color: var(--contour);
+  background: var(--carte);
+  color: var(--encre);
+}
+
+.bouton-secondaire:hover {
+  background: var(--releve);
+}
+
+/* Un bouton masqué le reste, malgré son affichage en ligne. */
+.bouton[hidden] {
+  display: none;
+}
+
 a.bouton {
   text-decoration: none;
 }

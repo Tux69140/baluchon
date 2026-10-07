@@ -16,7 +16,7 @@ export const NOMS_THEME = { light: 'clair', dark: 'sombre' };
 // Barres système d'une tablette Android : heure en haut, boutons en bas, encoches sur les côtés.
 const ZONES = { haut: 64, bas: 48, gauche: 24, droite: 24 };
 const VISIBLES =
-  '#app h1, #app h2, #app h3, #app p, #app a, #app button, #app input, #app img, #app li, #app legend, #app label, #app output';
+  '#app h1, #app h2, #app h3, #app p, #app a, #app button, #app input, #app img, #app li, #app legend, #app label, #app output, #app dialog';
 const CLE = 'baluchon-essai';
 
 export function creerJuge() {
@@ -98,8 +98,10 @@ export async function verifierCommandes(page, juge, cas) {
 // Avec les barres système posées, aucun texte ni commande visible ne passe sous une bande, et chaque
 // bande, opaque, est bien au-dessus du contenu. Une page plus haute que l'écran défile sous les
 // bandes : on juge donc le bord haut en haut de page, le bord bas tout en bas après défilement, et
-// les côtés partout. Un élément fixé à l'écran (bouton flottant) ne défile pas : ses deux bords
-// sont jugés à chaque fois.
+// les côtés partout. Un élément fixé à l'écran (bouton flottant, fenêtre modale) ne défile pas avec
+// la page : ses deux bords sont jugés à chaque fois. Ce qui défile dans une boîte (corps d'une
+// fenêtre) est jugé sur sa seule partie visible, la boîte défilée en haut puis en bas. Une fenêtre
+// modale ouverte couvre les bandes de son voile, comme le reste de l'écran : c'est voulu.
 export async function verifierBarres(page, juge, cas) {
   await page.evaluate(zones => {
     for (const [cote, taille] of Object.entries(zones))
@@ -115,25 +117,45 @@ export async function verifierBarres(page, juge, cas) {
           for (let n = el; n; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return true;
           return false;
         };
+        // La partie d'un élément que ses boîtes à défilement (ou à bord coupé) laissent voir.
+        const partieVisible = el => {
+          let { left, top, right, bottom } = el.getBoundingClientRect();
+          for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+            const s = getComputedStyle(n);
+            if (s.overflowX === 'visible' && s.overflowY === 'visible') continue;
+            const c = n.getBoundingClientRect();
+            [left, top, right, bottom] = [
+              Math.max(left, c.left),
+              Math.max(top, c.top),
+              Math.min(right, c.right),
+              Math.min(bottom, c.bottom),
+            ];
+          }
+          return { left, top, right, bottom, width: right - left, height: bottom - top };
+        };
+        for (const boite of document.querySelectorAll('#app *')) {
+          if (boite.scrollHeight <= boite.clientHeight || !/auto|scroll/.test(getComputedStyle(boite).overflowY))
+            continue;
+          boite.scrollTop = bord === 'haut' ? 0 : boite.scrollHeight;
+        }
         const empietes = [];
         for (const el of document.querySelectorAll(visibles)) {
-          const r = el.getBoundingClientRect();
-          if (r.width === 0 || r.bottom <= 0 || r.top >= H) continue;
+          if (el.getBoundingClientRect().width === 0) continue;
+          const r = partieVisible(el);
+          if (r.width <= 0 || r.height <= 0 || r.bottom <= 0 || r.top >= H) continue;
           const touteHauteur = fixe(el);
           const dessus = (bord === 'haut' || touteHauteur) && r.top < haut - 0.5;
           const dessous = (bord === 'bas' || touteHauteur) && r.bottom > H - bas + 0.5;
           if (dessus || dessous || r.left < gauche - 0.5 || r.right > W - droite + 0.5)
             empietes.push(`${el.tagName.toLowerCase()} « ${el.textContent.trim().slice(0, 30)} »`);
         }
+        const modale = document.querySelector('dialog:modal');
         const bandes = ['haut', 'bas', 'gauche', 'droite'].filter(zone => {
           const bande = document.querySelector(`.zone-systeme[data-zone="${zone}"]`);
           const r = bande?.getBoundingClientRect();
-          return (
-            !r ||
-            r.width === 0 ||
-            r.height === 0 ||
-            document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) !== bande
-          );
+          if (!r || r.width === 0 || r.height === 0) return true;
+          const dessus = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return dessus !== bande && !(modale && dessus === modale);
         });
         return { empietes, bandes };
       },

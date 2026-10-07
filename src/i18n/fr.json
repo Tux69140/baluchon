@@ -44,6 +44,10 @@
       "enregistrement": "Le voyage n’a pas pu être enregistré. Rien n’a été modifié ; réessayez."
     }
   },
+  "fenetre": {
+    "fermer": "Fermer",
+    "annuler": "Annuler"
+  },
   "calendrier": {
     "moisPrecedent": "Mois précédent",
     "moisSuivant": "Mois suivant",

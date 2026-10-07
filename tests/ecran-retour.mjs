@@ -8,6 +8,12 @@
 // - trois appuis immédiats sur le lien ne remontent pas plus loin que l'accueil.
 // Témoins : depuis un voyage ou le formulaire ouverts depuis Mes voyages, et depuis un voyage tout
 // juste créé, le retour ramène bien à Mes voyages.
+// Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : la fermer par Échap, « × », « Annuler »
+// ou un appui sur le voile mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes
+// voyages » ; le focus revient au bouton qui l'a ouverte ; trois appuis immédiats sur « × » ne
+// remontent pas plus loin que l'accueil ; ouverte directement par son adresse, elle se ferme sur Mes
+// voyages, et le retour quitte l'appli. Témoin : le retour système ferme la fenêtre ouverte depuis
+// Mes voyages et ramène à Mes voyages.
 import { chromium } from 'playwright';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
@@ -43,9 +49,17 @@ async function retourSysteme(page, url) {
   return ecranAffiche(page, url);
 }
 
-async function depuisMesVoyages(navigateur, url) {
+// Les quatre façons de fermer la fenêtre de Nouveau voyage ; le voile se touche à gauche de la fenêtre.
+const FERMETURES = {
+  Échap: page => page.keyboard.press('Escape'),
+  '×': page => page.click('.bouton-fermer'),
+  Annuler: page => page.click('[data-fermer].bouton-secondaire'),
+  voile: page => page.mouse.click(8, 400),
+};
+
+async function depuisMesVoyages(navigateur, url, taille = FORMATS.telephone) {
   const ouvert = await ouvrir(navigateur, url, {
-    taille: FORMATS.telephone,
+    taille,
     theme: 'light',
     maintenant: MAINTENANT,
     donnees: DONNEES,
@@ -127,6 +141,64 @@ try {
     await contexte.close();
   }
 
+  // La fenêtre de Nouveau voyage, en tablette : témoin, puis chaque façon de la fermer.
+  {
+    const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    const temoin = await retourSysteme(page, serveur.url);
+    const fenetre = await page.evaluate(() => Boolean(document.querySelector('dialog')));
+    juge.exige(temoin === 'voyages' && !fenetre, `fenêtre : témoin, le retour mène à « ${temoin} » (${fenetre})`);
+    await contexte.close();
+  }
+  for (const [geste, fermer] of Object.entries(FERMETURES)) {
+    const { contexte, page, erreurs } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.fill('#nom', 'Abandonné');
+    await fermer(page);
+    await attendreEcran(page, 'voyages');
+    const apres = await page.evaluate(() => ({
+      fenetre: Boolean(document.querySelector('dialog')),
+      focus: document.activeElement?.classList.contains('bouton-flottant'),
+    }));
+    juge.exige(!apres.fenetre, `fenêtre fermée par ${geste} : elle est restée`);
+    juge.exige(apres.focus, `fenêtre fermée par ${geste} : le focus ne revient pas au bouton flottant`);
+    const vu = await retourSysteme(page, serveur.url);
+    juge.exige(vu === HORS, `fenêtre fermée par ${geste} : le retour mène à « ${vu} »`);
+    juge.exige(erreurs.length === 0, `fenêtre fermée par ${geste} : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Trois appuis immédiats sur « × », avant la fin de la fermeture.
+  {
+    const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.evaluate(() => {
+      const croix = document.querySelector('.bouton-fermer');
+      for (let i = 0; i < 3; i++) croix.click();
+    });
+    await page.waitForFunction(() => !location.href.includes('#/nouveau-voyage'));
+    const vu = await ecranAffiche(page, serveur.url);
+    juge.exige(vu === 'voyages', `trois appuis sur « × » : on arrive à « ${vu} »`);
+    await contexte.close();
+  }
+
+  // La fenêtre ouverte directement par son adresse, fermée par Échap.
+  {
+    const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+      taille: FORMATS['tablette-paysage'],
+      theme: 'light',
+      maintenant: MAINTENANT,
+      donnees: DONNEES,
+      adresse: '#/nouveau-voyage',
+    });
+    await attendreEcran(page, 'nouveau-voyage');
+    await page.keyboard.press('Escape');
+    await attendreEcran(page, 'voyages');
+    const vu = await retourSysteme(page, serveur.url);
+    juge.exige(vu === HORS, `fenêtre ouverte par son adresse, fermée : le retour mène à « ${vu} »`);
+    await contexte.close();
+  }
+
   // Un voyage ouvert directement par son adresse.
   {
     const { contexte, page } = await ouvrir(navigateur, serveur.url, {
@@ -145,4 +217,7 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Retour système', 'voyage, formulaire, création, adresse directe et appuis répétés, témoins compris');
+juge.conclure(
+  'Retour système',
+  'voyage, formulaire, fenêtre (4 fermetures), création, adresse directe et appuis répétés, témoins compris',
+);

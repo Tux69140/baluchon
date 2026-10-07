@@ -1,8 +1,7 @@
 /* Calendrier unique (src/ecrans/calendrier.js) : bornes à l'encre marine, période grisée et bordée
    d'un trait haut et bas (le fond seul est trop pâle au soleil), jours trop lointains barrés
-   (jamais la couleur seule). */
+   (jamais la couleur seule). Il prend la largeur de son conteneur, comme les champs voisins. */
 .calendrier {
-  max-width: 420px;
   padding: var(--e-sm);
   background: var(--carte);
   border: 1px solid var(--separation);

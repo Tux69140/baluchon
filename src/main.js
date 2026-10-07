@@ -9,6 +9,7 @@ import './styles/voyages.css';
 import './styles/voyage.css';
 import './styles/nouveau-voyage.css';
 import './styles/calendrier.css';
+import './styles/fenetre.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ouvrirStockage } from './stockage/index.js';
@@ -48,6 +49,8 @@ let profondeur = -1;
 // Un retour par history.go ne s'achève qu'à l'affichage suivant : d'ici là, un nouvel appui sur le
 // lien remonterait trop loin et quitterait l'appli (double appui sur la tablette).
 let retourEnCours = false;
+// Une fenêtre fermée rend le focus au bouton qui l'a ouverte, une fois l'accueil redessiné.
+let focusApresRetour = null;
 
 function noterProfondeur() {
   if (typeof history.state?.profondeur !== 'number') history.replaceState({ profondeur: profondeur + 1 }, '');
@@ -61,9 +64,10 @@ function remplacerAdresse(adresse) {
 }
 
 // Un écran ouvert directement par son adresse (profondeur 0) n'a pas l'accueil derrière lui : l'accueil
-// prend alors sa place, sans étape de plus.
-function revenirAccueil() {
+// prend alors sa place, sans étape de plus. focus : ce qui reçoit le focus une fois l'accueil dessiné.
+function revenirAccueil({ focus = null } = {}) {
   if (retourEnCours) return;
+  focusApresRetour = focus;
   if (profondeur > 0) {
     retourEnCours = true;
     history.go(-profondeur);
@@ -84,13 +88,15 @@ async function afficher() {
   if (!route) return remplacerAdresse(ACCUEIL);
   // Repère des tests d'écran : retiré pendant le chargement, posé une fois l'écran dessiné.
   delete app.dataset.ecran;
-  const contexte = { stockage, t, langue: LANGUE, parametre: route.trouve[1], remplacerAdresse };
+  const contexte = { stockage, t, langue: LANGUE, parametre: route.trouve[1], remplacerAdresse, revenirAccueil };
   try {
     const donnees = await route.ecran.charger(contexte);
     if (numero !== dernierAffichage) return;
     route.ecran.dessiner(app, donnees, contexte);
     app.dataset.ecran = route.ecran.nom;
     window.scrollTo(0, 0);
+    if (focusApresRetour) app.querySelector(focusApresRetour)?.focus();
+    focusApresRetour = null;
   } catch (erreur) {
     if (numero !== dernierAffichage) return;
     console.error(erreur);

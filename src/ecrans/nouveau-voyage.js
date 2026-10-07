@@ -1,18 +1,28 @@
 // Écran Nouveau voyage (#/nouveau-voyage), étape Informations (US-9, US-10) : nom, destination,
 // dates sur le calendrier unique, voyageurs. « Créer le voyage » copie la bibliothèque dans le voyage
 // et ouvre sa liste. Les étapes des étiquettes et l'aperçu arrivent en phase 4.
+// Sur tablette et ordinateur (au moins 600 px de large), le formulaire s'ouvre en fenêtre modale
+// par-dessus Mes voyages ; au téléphone, il occupe tout l'écran (décision du chef de projet,
+// 2026-10-07). Le même formulaire passe de l'un à l'autre quand la fenêtre change de taille, sans
+// rien perdre de la saisie.
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { joursEtNuits } from '../modele/periode.js';
 import { VOYAGEURS, genererVoyage, validerInformations } from '../modele/voyage.js';
 import { creerCalendrier } from './calendrier.js';
+import { ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { formaterJourCourt, pluriel } from './format.js';
 import { iconeInterface } from './icones.js';
 import { lienRetour } from './retour.js';
+import { ecranVoyages } from './voyages.js';
 
 // Les champs qui ont un message, dans l'ordre de l'écran : le premier en erreur reçoit le focus.
 const CHAMPS = ['nom', 'dates'];
+const LARGE = '(min-width: 600px)';
+const ID_TITRE = 'titre-nouveau-voyage';
+// La fenêtre fermée, le focus revient au bouton de Mes voyages qui l'ouvre.
+const OUVRE_LA_FENETRE = 'a[href="#/nouveau-voyage"]';
 
 function resume({ depart, retour }, t, langue) {
   const jour = date => formaterJourCourt(date, langue);
@@ -27,76 +37,92 @@ function resume({ depart, retour }, t, langue) {
   });
 }
 
-function vue(t) {
+// « Annuler » ne sert que dans la fenêtre : au téléphone, le lien « Mes voyages » en tient lieu.
+function vueFormulaire(t) {
   return `
+      <form class="formulaire" novalidate>
+        <div class="formulaire-corps">
+          <div class="champ">
+            <label for="nom">${t('nouveauVoyage.nom')}</label>
+            <input id="nom" name="nom" type="text" autocomplete="off" aria-describedby="erreur-nom" />
+            <p class="erreur-champ" id="erreur-nom" aria-live="polite"></p>
+          </div>
+          <div class="champ champ-sans-message">
+            <label for="destination">${t('nouveauVoyage.destination')}</label>
+            <input id="destination" name="destination" type="text" autocomplete="off" />
+          </div>
+          <fieldset class="champ champ-dates" aria-describedby="resume-dates erreur-dates">
+            <legend>${t('nouveauVoyage.dates')}</legend>
+            <p class="resume-dates" id="resume-dates" aria-live="polite"></p>
+            <div class="calendrier"></div>
+            <p class="erreur-champ" id="erreur-dates" aria-live="polite"></p>
+          </fieldset>
+          <fieldset class="champ champ-voyageurs">
+            <legend>${t('nouveauVoyage.voyageurs')}</legend>
+            <div class="compteur">
+              <button type="button" class="bouton-icone" data-voyageurs="-1" aria-label="${t('nouveauVoyage.moinsVoyageurs')}">${iconeInterface('moins')}</button>
+              <output class="compteur-valeur" aria-live="polite"></output>
+              <button type="button" class="bouton-icone" data-voyageurs="1" aria-label="${t('nouveauVoyage.plusVoyageurs')}">${iconeInterface('plus')}</button>
+            </div>
+          </fieldset>
+        </div>
+        <div class="formulaire-pied">
+          <div class="formulaire-actions">
+            <button type="button" class="bouton bouton-secondaire" data-fermer>${t('fenetre.annuler')}</button>
+            <button class="bouton bouton-principal" type="submit">${t('nouveauVoyage.creer')}</button>
+          </div>
+          <p class="erreur-champ" id="erreur-creation" aria-live="polite"></p>
+        </div>
+      </form>`;
+}
+
+const vueEcranPlein = t => `
     <main class="ecran">
       ${lienRetour(t)}
-      <h1>${t('nouveauVoyage.titre')}</h1>
-      <form class="formulaire" novalidate>
-        <div class="champ">
-          <label for="nom">${t('nouveauVoyage.nom')}</label>
-          <input id="nom" name="nom" type="text" autocomplete="off" aria-describedby="erreur-nom" />
-          <p class="erreur-champ" id="erreur-nom" aria-live="polite"></p>
-        </div>
-        <div class="champ">
-          <label for="destination">${t('nouveauVoyage.destination')}</label>
-          <input id="destination" name="destination" type="text" autocomplete="off" />
-        </div>
-        <fieldset class="champ" aria-describedby="resume-dates erreur-dates">
-          <legend>${t('nouveauVoyage.dates')}</legend>
-          <p class="resume-dates" id="resume-dates" aria-live="polite"></p>
-          <div class="calendrier"></div>
-          <p class="erreur-champ" id="erreur-dates" aria-live="polite"></p>
-        </fieldset>
-        <fieldset class="champ">
-          <legend>${t('nouveauVoyage.voyageurs')}</legend>
-          <div class="compteur">
-            <button type="button" class="bouton-icone" data-voyageurs="-1" aria-label="${t('nouveauVoyage.moinsVoyageurs')}">${iconeInterface('moins')}</button>
-            <output class="compteur-valeur" aria-live="polite"></output>
-            <button type="button" class="bouton-icone" data-voyageurs="1" aria-label="${t('nouveauVoyage.plusVoyageurs')}">${iconeInterface('plus')}</button>
-          </div>
-        </fieldset>
-        <button class="bouton bouton-principal" type="submit">${t('nouveauVoyage.creer')}</button>
-        <!-- Sous le bouton : ce message tient sur deux lignes au téléphone et ne doit pas le déplacer. -->
-        <p class="erreur-champ" id="erreur-creation" aria-live="polite"></p>
-      </form>
+      <h1 id="${ID_TITRE}">${t('nouveauVoyage.titre')}</h1>
     </main>`;
-}
 
 export const ecranNouveauVoyage = {
   nom: 'nouveau-voyage',
-  charger: async ({ stockage }) => ({
-    bibliotheque: await stockage.lireBibliotheque(),
-    aujourdhui: dateDuJour(new Date()),
-  }),
-  dessiner(app, { bibliotheque, aujourdhui }, { stockage, t, langue, remplacerAdresse }) {
+  // Mes voyages est chargé aussi : il se voit derrière la fenêtre.
+  charger: async contexte => {
+    const [bibliotheque, accueil] = await Promise.all([
+      contexte.stockage.lireBibliotheque(),
+      ecranVoyages.charger(contexte),
+    ]);
+    return { bibliotheque, accueil, aujourdhui: dateDuJour(new Date()) };
+  },
+  dessiner(app, { bibliotheque, accueil, aujourdhui }, contexte) {
+    const { stockage, t, langue, remplacerAdresse, revenirAccueil } = contexte;
     const infos = { nom: '', destination: '', depart: null, retour: null, voyageurs: VOYAGEURS.parDefaut };
     // Les messages n'apparaissent qu'après un premier essai, puis suivent chaque correction.
     let essaye = false;
     let enregistrement = false;
-    app.innerHTML = vue(t);
-    const formulaire = app.querySelector('form');
+    const gabarit = document.createElement('template');
+    gabarit.innerHTML = vueFormulaire(t);
+    const formulaire = gabarit.content.firstElementChild;
+    const element = selecteur => formulaire.querySelector(selecteur);
     // Le champ que décrit un message est dit invalide au lecteur d'écran tant que le message est là.
     const message = (id, code) => {
-      app.querySelector(`#erreur-${id}`).innerHTML = code
+      element(`#erreur-${id}`).innerHTML = code
         ? `${iconeInterface('erreur')}<span>${t(`nouveauVoyage.erreurs.${code}`)}</span>`
         : '';
-      const champ = app.querySelector(`[aria-describedby~="erreur-${id}"]`);
+      const champ = element(`[aria-describedby~="erreur-${id}"]`);
       if (code) champ?.setAttribute('aria-invalid', 'true');
       else champ?.removeAttribute('aria-invalid');
     };
 
     function rafraichir() {
-      app.querySelector('#resume-dates').textContent = resume(infos, t, langue);
-      app.querySelector('.compteur-valeur').textContent = infos.voyageurs;
-      app.querySelector('[data-voyageurs="-1"]').setAttribute('aria-disabled', infos.voyageurs <= VOYAGEURS.min);
-      app.querySelector('[data-voyageurs="1"]').setAttribute('aria-disabled', infos.voyageurs >= VOYAGEURS.max);
+      element('#resume-dates').textContent = resume(infos, t, langue);
+      element('.compteur-valeur').textContent = infos.voyageurs;
+      element('[data-voyageurs="-1"]').setAttribute('aria-disabled', infos.voyageurs <= VOYAGEURS.min);
+      element('[data-voyageurs="1"]').setAttribute('aria-disabled', infos.voyageurs >= VOYAGEURS.max);
       if (!essaye) return;
       const erreurs = validerInformations(infos);
       for (const champ of CHAMPS) message(champ, erreurs[champ]);
     }
 
-    creerCalendrier(app.querySelector('.calendrier'), {
+    creerCalendrier(element('.calendrier'), {
       t,
       langue,
       aujourdhui,
@@ -130,8 +156,8 @@ export const ecranNouveauVoyage = {
       rafraichir();
       const erreurs = validerInformations(infos);
       const premier = CHAMPS.find(champ => erreurs[champ]);
-      if (premier === 'nom') return app.querySelector('#nom').focus();
-      if (premier === 'dates') return app.querySelector('.jour[tabindex="0"]').focus();
+      if (premier === 'nom') return element('#nom').focus();
+      if (premier === 'dates') return element('.jour[tabindex="0"]').focus();
       // Les voyageurs sont bornés par − / + : une erreur ici serait une faute de programmation.
       if (erreurs.voyageurs) return message('creation', erreurs.voyageurs);
       enregistrement = true;
@@ -148,5 +174,32 @@ export const ecranNouveauVoyage = {
     });
 
     rafraichir();
+
+    // Fenêtre modale par-dessus Mes voyages, ou écran plein ; le formulaire, ses écouteurs et sa saisie
+    // passent tels quels de l'un à l'autre. Fermer la fenêtre fait comme le lien « Mes voyages ».
+    const large = matchMedia(LARGE);
+    function disposer() {
+      if (large.matches) {
+        ecranVoyages.dessiner(app, accueil, contexte);
+        app.insertAdjacentHTML('beforeend', vueFenetre({ t, idTitre: ID_TITRE, titre: t('nouveauVoyage.titre') }));
+        const fenetre = app.querySelector('dialog');
+        fenetre.append(formulaire);
+        ouvrirFenetre(fenetre, { surFermeture: () => revenirAccueil({ focus: OUVRE_LA_FENETRE }) });
+      } else {
+        app.innerHTML = vueEcranPlein(t);
+        app.querySelector('main').append(formulaire);
+      }
+      element('[data-fermer]').hidden = !large.matches;
+    }
+    disposer();
+    if (large.matches) element('#nom').focus();
+    // L'écran quitté, le formulaire n'est plus dans la page : l'écouteur se retire de lui-même.
+    large.addEventListener('change', function suivre() {
+      if (!formulaire.isConnected) return large.removeEventListener('change', suivre);
+      const avant = document.activeElement;
+      disposer();
+      if (formulaire.contains(avant)) avant.focus();
+      else if (large.matches) element('#nom').focus();
+    });
   },
 };

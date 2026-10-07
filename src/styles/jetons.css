@@ -29,6 +29,9 @@
   --fond-erreur: light-dark(#f9e3e0, #3d1f1d);
   --fond-info: light-dark(#dfeef7, #132e40);
 
+  /* Voile d'une fenêtre modale : l'encre marine en transparence assombrit l'écran derrière. */
+  --voile: light-dark(rgb(26 38 60 / 0.45), rgb(3 8 15 / 0.7));
+
   /* Bagagerie : couleurs de catégorie, identiques dans les deux thèmes, icône toujours à l'encre marine. */
   --corail: #ff7a5c;
   --tournesol: #ffc93c;

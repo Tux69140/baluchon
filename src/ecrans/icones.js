@@ -10,6 +10,7 @@ import caretRight from '@phosphor-icons/core/bold/caret-right-bold.svg?raw';
 import plus from '@phosphor-icons/core/bold/plus-bold.svg?raw';
 import minus from '@phosphor-icons/core/bold/minus-bold.svg?raw';
 import warningCircle from '@phosphor-icons/core/bold/warning-circle-bold.svg?raw';
+import x from '@phosphor-icons/core/bold/x-bold.svg?raw';
 import { echapper } from './html.js';
 
 const CATEGORIES = { 't-shirt': tShirt, tooth, 'fork-knife': forkKnife, 'identification-card': identificationCard };
@@ -21,6 +22,7 @@ const INTERFACE = {
   plus,
   moins: minus,
   erreur: warningCircle,
+  fermer: x,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.
