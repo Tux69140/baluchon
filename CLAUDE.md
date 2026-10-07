@@ -12,4 +12,4 @@ Commandes : `pnpm verif` (lint, formatage, contrôles, tests, tests d'écran —
 
 ## État
 
-PRD, design et plan validés (`docs/PRD.md`, `docs/DESIGN.md`, `docs/PLAN.md`, 2026-10-06) ; ils font autorité. Phase 1 (squelette qui tourne) validée par le chef de projet le 2026-10-06. Prochaine étape : phase 2 du plan (créer un voyage simple).
+PRD, design et plan validés (`docs/PRD.md`, `docs/DESIGN.md`, `docs/PLAN.md`, 2026-10-06) ; ils font autorité. Phase 1 (squelette qui tourne) validée le 2026-10-06 ; phase 2 (créer un voyage simple) validée par le chef de projet le 2026-10-07, avec « Nouveau voyage » en fenêtre modale sur tablette et ordinateur. Prochaine étape : phase 3 du plan (cocher dans le sac). Contexte de design pour les outils : `docs/PRODUCT.md`.

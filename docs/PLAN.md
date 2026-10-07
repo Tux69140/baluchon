@@ -74,12 +74,12 @@ Une mini-bibliothèque de départ (quelques catégories et objets « toujours in
 
 ### Critères d'acceptation
 
-- [ ] Du 10 au 13 à 2 voyageurs, « Repas : 2 par jour, par personne » vaut 16, et un objet partagé fixe à 1 vaut 1 (critère de succès 2).
-- [ ] Le plafond s'applique par personne, avant la multiplication par le nombre de voyageurs.
-- [ ] Sur un aller-retour dans la journée, un objet « par nuit » n'apparaît pas.
-- [ ] Les dates se choisissent sur un calendrier unique (départ puis retour, durée grisée). Un appui sur un jour antérieur au départ en fait le nouveau départ ; un voyage dont le retour précède le départ est refusé par l'appli. Une durée au-delà d'un an est refusée (jours grisés). (Décision du chef de projet, 2026-10-06.)
-- [ ] La liste des voyages classe correctement un voyage en cours, deux à venir et deux passés.
-- [ ] Un voyage créé survit à la fermeture de l'appli.
+- [x] Du 10 au 13 à 2 voyageurs, « Repas : 2 par jour, par personne » vaut 16, et un objet partagé fixe à 1 vaut 1 (critère de succès 2).
+- [x] Le plafond s'applique par personne, avant la multiplication par le nombre de voyageurs.
+- [x] Sur un aller-retour dans la journée, un objet « par nuit » n'apparaît pas.
+- [x] Les dates se choisissent sur un calendrier unique (départ puis retour, durée grisée). Un appui sur un jour antérieur au départ en fait le nouveau départ ; un voyage dont le retour précède le départ est refusé par l'appli. Une durée au-delà d'un an est refusée (jours grisés). (Décision du chef de projet, 2026-10-06.)
+- [x] La liste des voyages classe correctement un voyage en cours, deux à venir et deux passés.
+- [x] Un voyage créé survit à la fermeture de l'appli.
 
 ## Bloquée par
 
