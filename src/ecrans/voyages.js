@@ -3,6 +3,7 @@
 import { echapper } from './html.js';
 import { detailsVoyage } from './format.js';
 import { iconeInterface } from './icones.js';
+import { lienRetour } from './retour.js';
 import { dateDuJour } from '../modele/dates.js';
 import { classerVoyages } from '../modele/voyage.js';
 import mascotte from '../images/baluchon.svg';
@@ -59,9 +60,12 @@ export const ecranVoyages = {
   },
 };
 
-export function vueErreur({ t }) {
+// Hors de l'accueil, l'écran d'erreur garde le retour vers Mes voyages : sans lui, il faudrait
+// fermer l'appli (sur Debian, aucun bouton système ne ramène en arrière).
+export function vueErreur({ t, avecRetour }) {
   return `
     <main class="ecran">
+      ${avecRetour ? lienRetour(t) : ''}
       <h1>${t('voyages.titre')}</h1>
       <p class="message message-erreur" role="alert">${t('erreurs.lecture')}</p>
     </main>`;

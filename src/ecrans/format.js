@@ -8,14 +8,18 @@ const enDate = date => new Date(`${date}T12:00:00Z`);
 export const formaterDate = (date, langue, options) =>
   new Intl.DateTimeFormat(langue, { ...options, timeZone: 'UTC' }).format(enDate(date));
 
+// « sam. 10 oct. » : le jour court des périodes et du résumé des dates de l'assistant.
+const JOUR_COURT = { weekday: 'short', day: 'numeric', month: 'short' };
+
+export const formaterJourCourt = (date, langue) => formaterDate(date, langue, JOUR_COURT);
+
 // « du sam. 10 oct. au mar. 13 oct. 2026 » (spec phase 2) : l'année n'est dite qu'une fois quand
 // départ et retour la partagent, sinon aux deux dates.
 export function formaterPeriode(t, depart, retour, langue) {
-  const jour = { weekday: 'short', day: 'numeric', month: 'short' };
-  const avecAnnee = { ...jour, year: 'numeric' };
+  const avecAnnee = { ...JOUR_COURT, year: 'numeric' };
   const memeAnnee = depart.slice(0, 4) === retour.slice(0, 4);
   return remplir(t('dates.periode'), {
-    depart: formaterDate(depart, langue, memeAnnee ? jour : avecAnnee),
+    depart: memeAnnee ? formaterJourCourt(depart, langue) : formaterDate(depart, langue, avecAnnee),
     retour: formaterDate(retour, langue, avecAnnee),
   });
 }

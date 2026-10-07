@@ -3,6 +3,7 @@
     "nom": "Baluchon"
   },
   "voyage": {
+    "introuvableTitre": "Voyage introuvable",
     "introuvable": "Ce voyage est introuvable. Il a peut-être été supprimé."
   },
   "voyages": {

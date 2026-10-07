@@ -7,7 +7,7 @@ import { nouvelId } from '../modele/identifiant.js';
 import { joursEtNuits } from '../modele/periode.js';
 import { VOYAGEURS, genererVoyage, validerInformations } from '../modele/voyage.js';
 import { creerCalendrier } from './calendrier.js';
-import { formaterDate, pluriel } from './format.js';
+import { formaterJourCourt, pluriel } from './format.js';
 import { iconeInterface } from './icones.js';
 import { lienRetour } from './retour.js';
 
@@ -15,7 +15,7 @@ import { lienRetour } from './retour.js';
 const CHAMPS = ['nom', 'dates'];
 
 function resume({ depart, retour }, t, langue) {
-  const jour = date => formaterDate(date, langue, { weekday: 'short', day: 'numeric', month: 'short' });
+  const jour = date => formaterJourCourt(date, langue);
   if (!depart) return t('nouveauVoyage.resume.vide');
   if (!retour) return remplir(t('nouveauVoyage.resume.depart'), { depart: jour(depart) });
   const { jours, nuits } = joursEtNuits(depart, retour);
@@ -69,17 +69,21 @@ export const ecranNouveauVoyage = {
     bibliotheque: await stockage.lireBibliotheque(),
     aujourdhui: dateDuJour(new Date()),
   }),
-  dessiner(app, { bibliotheque, aujourdhui }, { stockage, t, langue }) {
+  dessiner(app, { bibliotheque, aujourdhui }, { stockage, t, langue, remplacerAdresse }) {
     const infos = { nom: '', destination: '', depart: null, retour: null, voyageurs: VOYAGEURS.parDefaut };
     // Les messages n'apparaissent qu'après un premier essai, puis suivent chaque correction.
     let essaye = false;
     let enregistrement = false;
     app.innerHTML = vue(t);
     const formulaire = app.querySelector('form');
+    // Le champ que décrit un message est dit invalide au lecteur d'écran tant que le message est là.
     const message = (id, code) => {
       app.querySelector(`#erreur-${id}`).innerHTML = code
         ? `${iconeInterface('erreur')}<span>${t(`nouveauVoyage.erreurs.${code}`)}</span>`
         : '';
+      const champ = app.querySelector(`[aria-describedby~="erreur-${id}"]`);
+      if (code) champ?.setAttribute('aria-invalid', 'true');
+      else champ?.removeAttribute('aria-invalid');
     };
 
     function rafraichir() {
@@ -135,7 +139,7 @@ export const ecranNouveauVoyage = {
         const contenu = genererVoyage(bibliotheque, infos, { nouvelId, maintenant: new Date().toISOString() });
         await stockage.creerVoyage(contenu);
         // Remplacer l'adresse : le retour depuis la liste du voyage mène à Mes voyages, pas au formulaire.
-        location.replace(`#/voyage/${contenu.voyage.id}`);
+        remplacerAdresse(`#/voyage/${contenu.voyage.id}`);
       } catch (erreur) {
         console.error(erreur);
         message('creation', 'enregistrement');

@@ -5,17 +5,20 @@
 //   Créer → la liste du voyage : Repas 16, T-shirts 8, Pyjama 2, Dentifrice 1 ; elle survit au
 //   rechargement ; le retour mène à Mes voyages, où le voyage figure dans « À venir » ; la
 //   bibliothèque n'est pas installée deux fois (mêmes catégories, mêmes identifiants) ;
+// - le résumé des dates dit la période en toutes lettres, comme la spec ;
 // - aller-retour dans la journée (deux appuis sur le 10) : pas de Pyjama ;
 // - choix A : après le 15, un appui sur le 12 en fait le nouveau départ ; un appui après un voyage
 //   complet recommence ;
 // - au-delà d'un an après le départ, les jours sont inactifs ; le dernier jour permis est choisissable ;
 // - Créer sans rien (au téléphone) : messages en toutes lettres à leur place réservée, rien ne
-//   bouge, focus sur le nom ; le message du nom s'efface une fois le nom saisi ;
+//   bouge, focus sur le nom ; le nom et les dates sont dits invalides au lecteur d'écran ; le
+//   message du nom (et son « invalide ») s'efface une fois le nom saisi, celui des dates reste ;
 // - au clavier : flèches, Page suiv., Entrée et Espace ;
 // - voyageurs : 2 par défaut, bornés à 1 et 20 (Playwright tient un bouton aria-disabled pour
 //   inactif et l'attendrait : les appuis qui doivent être refusés sont forcés) ;
 // - double appui sur Créer : un seul voyage ; panne d'enregistrement : message, on reste sur le
-//   formulaire, et le bouton Créer ne bouge pas.
+//   formulaire, la saisie est gardée, et le bouton Créer ne bouge pas ; la panne levée, un second
+//   appui crée le voyage (un seul).
 // 3 formats × 2 thèmes : cibles de 44 px, pas de défilement de côté, rien sous les barres système.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -29,6 +32,7 @@ import {
   RACINE,
   attendreEcran,
   creerJuge,
+  ecrireStockage,
   lireStockage,
   ouvrir,
   verifierBarres,
@@ -146,11 +150,7 @@ try {
       JSON.stringify(e.entre) === JSON.stringify(['2026-10-11', '2026-10-12']),
       `parcours : jours grisés ${e.entre}`,
     );
-    juge.exige(
-      e.resume.includes(fr.duree.jours.other.replace('{n}', 4)) &&
-        e.resume.includes(fr.duree.nuits.other.replace('{n}', 3)),
-      `parcours : résumé « ${e.resume} »`,
-    );
+    juge.exige(e.resume === 'Du sam. 10 oct. au mar. 13 oct. · 4 jours, 3 nuits', `parcours : résumé « ${e.resume} »`);
     // Jamais la couleur seule : le rôle du jour est dit au lecteur d'écran, et la période porte un
     // trait visible, qui reste quand le doigt (ou la souris) s'y attarde.
     for (const [date, etatAttendu] of [
@@ -270,12 +270,24 @@ try {
       `erreurs : messages ${JSON.stringify(textes)}`,
     );
     juge.exige((await etat(page)).focus === 'nom', `erreurs : focus sur ${(await etat(page)).focus}`);
+    const invalides = () =>
+      page.evaluate(() => ({
+        nom: document.querySelector('#nom').getAttribute('aria-invalid'),
+        dates: document.querySelector('[aria-describedby~="erreur-dates"]').getAttribute('aria-invalid'),
+      }));
+    let invalide = await invalides();
+    juge.exige(invalide.nom === 'true' && invalide.dates === 'true', `erreurs : invalides ${JSON.stringify(invalide)}`);
     juge.exige(
       (await page.evaluate(() => location.hash)) === '#/nouveau-voyage',
       'erreurs : le formulaire a été quitté',
     );
     await page.fill('#nom', 'Vercors');
     juge.exige((await page.textContent('#erreur-nom')).trim() === '', 'erreurs : le message du nom reste après saisie');
+    invalide = await invalides();
+    juge.exige(
+      invalide.nom === null && invalide.dates === 'true',
+      `erreurs : après saisie du nom, invalides ${JSON.stringify(invalide)}`,
+    );
     await contexte.close();
   }
 
@@ -345,6 +357,19 @@ try {
     await calme(page);
     const apres = await haut();
     juge.exige(avant === apres, `panne : le bouton Créer a bougé ${avant} → ${apres}`);
+    const garde = { ...(await etat(page)), nom: await page.inputValue('#nom') };
+    juge.exige(
+      garde.nom === 'Vercors' && garde.depart === '2026-10-10' && garde.retour === '2026-10-13',
+      `panne : saisie perdue ${JSON.stringify(garde)}`,
+    );
+    // La panne levée, un second appui sur Créer réussit, et ne crée qu'un voyage.
+    const { pannes, ...sansPanne } = await lireStockage(page);
+    juge.exige(pannes?.length === 1, 'panne : témoin, la panne n’était pas posée');
+    await ecrireStockage(page, sansPanne);
+    await page.click('button[type=submit]');
+    await attendreEcran(page, 'voyage');
+    const n = (await lireStockage(page)).voyages?.length;
+    juge.exige(n === 1, `panne levée : ${n} voyage(s) créé(s)`);
     await contexte.close();
   }
 

@@ -25,14 +25,28 @@ function vueCategorie({ categorie, objets }) {
       </section>`;
 }
 
+// Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
+// un voyage supprimé, plutôt que de passer pour une panne de lecture.
+function lireIdentifiant(parametre) {
+  try {
+    return decodeURIComponent(parametre);
+  } catch {
+    return null;
+  }
+}
+
 export const ecranVoyage = {
   nom: 'voyage',
-  charger: async ({ stockage, parametre }) => ({ contenu: await stockage.lireVoyage(decodeURIComponent(parametre)) }),
+  async charger({ stockage, parametre }) {
+    const id = lireIdentifiant(parametre);
+    return { contenu: id === null ? null : await stockage.lireVoyage(id) };
+  },
   dessiner(app, { contenu }, { t, langue }) {
     if (!contenu) {
       app.innerHTML = `
     <main class="ecran">
       ${lienRetour(t)}
+      <h1>${t('voyage.introuvableTitre')}</h1>
       <p class="message message-erreur" role="alert">${t('voyage.introuvable')}</p>
     </main>`;
       return;

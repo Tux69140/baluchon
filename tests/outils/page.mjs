@@ -55,6 +55,8 @@ export async function ouvrir(navigateur, url, { taille, theme, donnees, maintena
   if (donnees)
     await page.addInitScript(
       ({ cle, d }) => {
+        // Un retour qui quitte l'appli mène à une page vide, sans stockage : rien à y déposer.
+        if (location.protocol !== 'http:') return;
         if (sessionStorage.getItem('graine-posee')) return;
         localStorage.setItem(cle, JSON.stringify(d));
         sessionStorage.setItem('graine-posee', '1');
@@ -72,6 +74,8 @@ export async function attendreEcran(page, nom) {
 }
 
 export const lireStockage = page => page.evaluate(cle => JSON.parse(localStorage.getItem(cle) ?? '{}'), CLE);
+export const ecrireStockage = (page, donnees) =>
+  page.evaluate(({ cle, d }) => localStorage.setItem(cle, JSON.stringify(d)), { cle: CLE, d: donnees });
 
 // Toute commande visible offre une cible d'au moins 44 × 44 px ; la page ne défile pas de côté.
 export async function verifierCommandes(page, juge, cas) {

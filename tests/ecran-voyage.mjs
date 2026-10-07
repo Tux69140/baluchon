@@ -3,7 +3,10 @@
 //   vers Mes voyages ;
 // - catégories dans l'ordre de la bibliothèque, chacune avec son pavé coloré et son picto ; objets par
 //   ordre alphabétique avec leur quantité ; rien d'un autre voyage ;
-// - un voyage inconnu affiche un message en toutes lettres et un retour vers Mes voyages.
+// - un voyage inconnu, ou une adresse de voyage mal formée, affiche un titre, un message en toutes
+//   lettres et un retour vers Mes voyages ;
+// - une panne de lecture affiche l'écran d'erreur ; hors de l'accueil, il offre le retour vers Mes
+//   voyages, qui fonctionne ; témoin : sur l'accueil, il n'en offre pas (il mènerait au même écran).
 // 3 formats × 2 thèmes : cibles de 44 px, pas de défilement de côté (nom très long compris), rien
 // sous les barres système.
 import { mkdir, readFile } from 'node:fs/promises';
@@ -15,6 +18,7 @@ import {
   FORMATS,
   NOMS_THEME,
   RACINE,
+  attendreEcran,
   creerJuge,
   ouvrir,
   verifierBarres,
@@ -125,6 +129,15 @@ const lire = page =>
     picto: [...document.querySelectorAll('.pave')].every(p => p.querySelector('svg')),
   }));
 
+// Ce que montre un écran sans liste : son repère, son titre, son message et son lien de retour.
+const lireIssue = page =>
+  page.evaluate(() => ({
+    ecran: document.querySelector('#app').dataset.ecran,
+    titre: document.querySelector('main.ecran > h1')?.textContent.trim(),
+    message: document.querySelector('.message')?.textContent.trim(),
+    retour: document.querySelector('.lien-retour')?.getAttribute('href'),
+  }));
+
 const juge = creerJuge();
 const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
@@ -171,25 +184,65 @@ try {
   await verifierCommandes(long.page, juge, 'nom très long');
   await long.contexte.close();
 
-  // Voyage inconnu : message et retour.
-  const inconnu = await ouvrir(navigateur, serveur.url, {
+  // Voyage inconnu, ou adresse mal formée : titre, message et retour.
+  for (const [cas, adresse] of [
+    ['voyage inconnu', '#/voyage/inconnu'],
+    ['adresse mal formée', '#/voyage/%E0%A4%A'],
+  ]) {
+    const inconnu = await ouvrir(navigateur, serveur.url, {
+      taille: FORMATS.telephone,
+      theme: 'light',
+      donnees: DONNEES,
+      adresse,
+    });
+    const vu = await lireIssue(inconnu.page);
+    juge.exige(
+      vu.ecran === 'voyage' &&
+        Boolean(vu.titre) &&
+        vu.titre === fr.voyage.introuvableTitre &&
+        vu.message === fr.voyage.introuvable &&
+        vu.retour === '#/voyages',
+      `${cas} : ${JSON.stringify(vu)}`,
+    );
+    await inconnu.contexte.close();
+  }
+
+  // Panne de lecture hors de l'accueil : écran d'erreur avec un retour qui ramène à Mes voyages.
+  const panne = await ouvrir(navigateur, serveur.url, {
     taille: FORMATS.telephone,
     theme: 'light',
-    donnees: DONNEES,
-    adresse: '#/voyage/inconnu',
+    donnees: { ...DONNEES, pannes: ['lireVoyage'] },
+    adresse: '#/voyage/v1',
   });
-  const vu = await inconnu.page.evaluate(() => ({
-    ecran: document.querySelector('#app').dataset.ecran,
-    message: document.querySelector('.message')?.textContent.trim(),
-    retour: document.querySelector('.lien-retour')?.getAttribute('href'),
-  }));
+  const vuPanne = await lireIssue(panne.page);
   juge.exige(
-    vu.ecran === 'voyage' && vu.message === fr.voyage.introuvable && vu.retour === '#/voyages',
-    `voyage inconnu : ${JSON.stringify(vu)}`,
+    vuPanne.ecran === 'erreur' && vuPanne.message === fr.erreurs.lecture && vuPanne.retour === '#/voyages',
+    `panne de lecture : ${JSON.stringify(vuPanne)}`,
   );
-  await inconnu.contexte.close();
+  if (vuPanne.retour) {
+    await panne.page.click('.lien-retour');
+    await attendreEcran(panne.page, 'voyages');
+  }
+  await panne.contexte.close();
+
+  // Témoin : panne sur l'accueil, l'écran d'erreur n'offre pas de retour.
+  const panneAccueil = await ouvrir(navigateur, serveur.url, {
+    taille: FORMATS.telephone,
+    theme: 'light',
+    donnees: { ...DONNEES, pannes: ['listerVoyages'] },
+    adresse: '#/voyages',
+  });
+  const vuAccueil = await lireIssue(panneAccueil.page);
+  juge.exige(
+    vuAccueil.ecran === 'erreur' && vuAccueil.message === fr.erreurs.lecture && vuAccueil.retour === undefined,
+    `panne sur l’accueil : ${JSON.stringify(vuAccueil)}`,
+  );
+  await panneAccueil.contexte.close();
 } finally {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Écran d’un voyage', '3 formats × 2 thèmes, nom long et voyage inconnu compris');
+juge.conclure(
+  'Écran d’un voyage',
+  '3 formats × 2 thèmes, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
+);

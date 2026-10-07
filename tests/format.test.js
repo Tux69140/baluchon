@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fr from '../src/i18n/fr.json' with { type: 'json' };
 import { creerTraducteur } from '../src/i18n/traduction.js';
-import { detailsVoyage, formaterDate, formaterPeriode, pluriel } from '../src/ecrans/format.js';
+import { detailsVoyage, formaterDate, formaterJourCourt, formaterPeriode, pluriel } from '../src/ecrans/format.js';
 
 const t = creerTraducteur({ fr }, 'fr');
 
@@ -15,6 +15,11 @@ test('une date de calendrier se lit dans la langue demandée, sans décalage de 
   // Un 1er janvier reste un 1er janvier : lu à minuit locale, il pourrait reculer d'un jour.
   assert.equal(formaterDate('2026-01-01', 'fr', { day: 'numeric', month: 'long' }), '1 janvier');
   assert.equal(formaterDate('2026-10-10', 'en', { weekday: 'long' }), 'Saturday');
+});
+
+test('le jour court (« sam. 10 oct. ») est celui du résumé des dates et des périodes', () => {
+  assert.equal(formaterJourCourt('2026-10-10', 'fr'), 'sam. 10 oct.');
+  assert.equal(formaterJourCourt('2026-10-13', 'en'), 'Tue, Oct 13');
 });
 
 test('une période de la même année ne donne l’année qu’au retour', () => {

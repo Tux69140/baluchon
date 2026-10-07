@@ -63,9 +63,10 @@ a.bouton {
   text-decoration: none;
 }
 
-/* Focus visible sur toute commande, au clavier. */
+/* Focus visible sur toute commande, au clavier : à l'encre, il se détache à plus de 3:1 de la carte,
+   du fond et du gris de la période, en clair comme en sombre (le bleu ciel restait sous 2,5:1). */
 :focus-visible {
-  outline: 3px solid var(--ciel);
+  outline: 3px solid var(--encre);
   outline-offset: 2px;
 }
 

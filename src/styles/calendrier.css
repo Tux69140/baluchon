@@ -58,6 +58,13 @@
   background: var(--releve);
 }
 
+/* Le contour du focus déborde sur les jours voisins : le jour focalisé passe devant eux, sinon le
+   jour suivant, dessiné après lui, en cache le côté droit. */
+.jour:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
 .jour-aujourdhui {
   box-shadow: inset 0 0 0 1.5px var(--contour);
   font-weight: 700;
