@@ -2,6 +2,9 @@
   "appli": {
     "nom": "Baluchon"
   },
+  "voyage": {
+    "introuvable": "Ce voyage est introuvable. Il a peut-être été supprimé."
+  },
   "voyages": {
     "titre": "Mes voyages",
     "nouveau": "Nouveau voyage",

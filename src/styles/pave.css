@@ -1,0 +1,42 @@
+/* Pavé de catégorie (src/ecrans/icones.js) : 44 px, couleur de bagagerie, icône à l'encre marine. */
+.pave {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--cible);
+  height: var(--cible);
+  border-radius: var(--r-md);
+  background: var(--releve);
+  color: var(--encre-categorie);
+}
+
+.pave svg {
+  width: 28px;
+  height: 28px;
+}
+
+.pave[data-couleur='corail'] {
+  background: var(--corail);
+}
+.pave[data-couleur='tournesol'] {
+  background: var(--tournesol);
+}
+.pave[data-couleur='abricot'] {
+  background: var(--abricot);
+}
+.pave[data-couleur='pomme'] {
+  background: var(--pomme);
+}
+.pave[data-couleur='lagon'] {
+  background: var(--lagon);
+}
+.pave[data-couleur='ciel'] {
+  background: var(--ciel);
+}
+.pave[data-couleur='framboise'] {
+  background: var(--framboise);
+}
+.pave[data-couleur='lilas'] {
+  background: var(--lilas);
+}

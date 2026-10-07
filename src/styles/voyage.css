@@ -1,0 +1,58 @@
+/* Écran d'un voyage (src/ecrans/voyage.js) : une carte par catégorie, objets en lignes de 56 px. */
+.voyage-entete p {
+  margin: var(--e-xs) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  overflow-wrap: anywhere;
+}
+
+.voyage-details {
+  font-variant-numeric: tabular-nums;
+}
+
+.categories {
+  display: grid;
+  gap: var(--e-md);
+  margin-top: var(--e-lg);
+}
+
+.categorie {
+  padding: var(--e-sm) var(--e-md);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+}
+
+.categorie-entete {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  min-height: 56px;
+}
+
+.categorie-entete h2 {
+  font-size: var(--taille-section);
+  overflow-wrap: anywhere;
+}
+
+.objets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.objet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-md);
+  min-height: 56px;
+  border-top: 1px solid var(--separation);
+  font-size: var(--taille-objet);
+  overflow-wrap: anywhere;
+}
+
+.objet-quantite {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

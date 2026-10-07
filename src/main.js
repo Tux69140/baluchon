@@ -4,13 +4,16 @@
 import './styles/polices.css';
 import './styles/jetons.css';
 import './styles/socle.css';
+import './styles/pave.css';
 import './styles/voyages.css';
+import './styles/voyage.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ouvrirStockage } from './stockage/index.js';
 import { construireBibliotheque } from './modele/bibliotheque.js';
 import { nouvelId } from './modele/identifiant.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
+import { ecranVoyage } from './ecrans/voyage.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
 const LANGUE = 'fr';
@@ -22,7 +25,10 @@ document.title = t('appli.nom');
 
 // Une adresse inconnue ramène à l'accueil.
 const ACCUEIL = '#/voyages';
-const ECRANS = [{ motif: /^#\/voyages$/, ecran: ecranVoyages }];
+const ECRANS = [
+  { motif: /^#\/voyages$/, ecran: ecranVoyages },
+  { motif: /^#\/voyage\/([\w%-]+)$/, ecran: ecranVoyage },
+];
 
 let stockage;
 // Chaque affichage porte un numéro : un écran lent à charger ne recouvre jamais celui demandé après lui.
