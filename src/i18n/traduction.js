@@ -20,3 +20,9 @@ export function creerTraducteur(dictionnaires, langue) {
     return texte;
   };
 }
+
+// Les valeurs d'un texte : « {n} voyageurs » avec { n: 2 } → « 2 voyageurs ». Une valeur absente
+// laisse l'accolade visible, pour qu'un oubli se voie à l'écran et dans les tests.
+export function remplir(texte, valeurs) {
+  return texte.replace(/\{(\w+)\}/g, (accolade, nom) => (nom in valeurs ? String(valeurs[nom]) : accolade));
+}

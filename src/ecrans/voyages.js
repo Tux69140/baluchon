@@ -9,7 +9,7 @@ function vueVide(t) {
       <img src="${mascotte}" alt="" width="96" height="96" />
       <h2>${t('voyages.vide.titre')}</h2>
       <p>${t('voyages.vide.texte')}</p>
-      <button class="bouton bouton-principal" type="button" data-action="nouveau-voyage">${t('voyages.nouveau')}</button>
+      <a class="bouton bouton-principal" href="#/nouveau-voyage">${t('voyages.nouveau')}</a>
     </section>`;
 }
 
@@ -18,13 +18,17 @@ const vueListe = voyages => `
       ${voyages.map(v => `<li>${echapper(v.nom)}</li>`).join('')}
     </ul>`;
 
-export function vueVoyages({ voyages, t }) {
-  return `
+export const ecranVoyages = {
+  nom: 'voyages',
+  charger: async ({ stockage }) => ({ voyages: await stockage.listerVoyages() }),
+  dessiner(app, { voyages }, { t }) {
+    app.innerHTML = `
     <main class="ecran">
       <h1>${t('voyages.titre')}</h1>
       ${voyages.length ? vueListe(voyages) : vueVide(t)}
     </main>`;
-}
+  },
+};
 
 export function vueErreur({ t }) {
   return `

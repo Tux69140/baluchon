@@ -33,6 +33,7 @@ h3 {
 .ecran > h1 {
   font-size: var(--taille-ecran);
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .bouton {
@@ -58,9 +59,70 @@ h3 {
   background: var(--principal-survol);
 }
 
-.bouton:focus-visible {
+a.bouton {
+  text-decoration: none;
+}
+
+/* Focus visible sur toute commande, au clavier. */
+:focus-visible {
   outline: 3px solid var(--ciel);
   outline-offset: 2px;
+}
+
+.icone {
+  display: inline-flex;
+  flex: none;
+}
+
+.icone svg {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+/* Bouton carré d'un seul picto (− / +, mois précédent…) : son nom est dans aria-label. */
+.bouton-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cible);
+  height: var(--cible);
+  padding: 0;
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-md);
+  background: var(--carte);
+  color: var(--encre);
+  cursor: pointer;
+}
+
+.bouton-icone[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.lien-retour {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  min-height: var(--cible);
+  margin-left: calc(-1 * var(--e-sm));
+  padding: 0 var(--e-sm);
+  color: var(--encre-douce);
+  font: 600 var(--taille-libelle) var(--police);
+  text-decoration: none;
+}
+
+/* Bouton flottant : toujours au-dessus de la barre système du bas ; l'écran garde la place libre. */
+.bouton-flottant {
+  position: fixed;
+  right: calc(var(--zone-droite) + var(--e-md));
+  bottom: calc(var(--zone-bas) + var(--e-md));
+  z-index: 50;
+  border-radius: var(--r-lg);
+  box-shadow: 0 6px 16px rgb(26 38 60 / 0.25);
+}
+
+.ecran-avec-flottant {
+  padding-bottom: calc(var(--e-2xl) + 64px);
 }
 
 .message {

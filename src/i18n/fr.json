@@ -10,6 +10,9 @@
       "texte": "Dites où et quand vous partez : Baluchon prépare la liste de vos bagages."
     }
   },
+  "dates": {
+    "periode": "du {depart} au {retour}"
+  },
   "erreurs": {
     "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
   },
