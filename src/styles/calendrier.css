@@ -41,10 +41,13 @@
   text-align: center;
 }
 
+/* Un jour est un cercle aussi large que sa colonne : le calendrier grandit avec la place qu'on lui
+   donne sans tourner à l'ovale, et la période reste un bandeau continu d'un jour à l'autre. */
 .jour {
   width: 100%;
   min-width: var(--cible);
-  height: var(--cible);
+  min-height: var(--cible);
+  aspect-ratio: 1;
   border: 0;
   border-radius: var(--r-plein);
   background: none;

@@ -67,3 +67,40 @@
 .formulaire > .bouton-principal {
   justify-self: start;
 }
+
+/* Tablette en paysage et ordinateur : deux colonnes, pour que tout tienne sans défiler (décision du
+   chef de projet, 2026-10-07). Les champs, les voyageurs et « Créer le voyage » à gauche, les dates
+   à droite. L'ordre du document ne change pas : clavier et lecteur d'écran lisent nom, destination,
+   dates, voyageurs, créer, comme au téléphone. */
+@media (orientation: landscape) and (min-width: 900px) {
+  .ecran:has(> .formulaire) {
+    padding-bottom: var(--e-lg);
+  }
+
+  /* Le calendrier prend toute sa colonne, que la hauteur borne : six semaines de cercles doivent
+     tenir dans ce qui reste une fois ôtés les barres système et tout le reste de l'écran (en-tête,
+     titre et résumé des dates, mois, jours de la semaine, message, marges : 324 px). Un jour est
+     aussi haut qu'un septième de la largeur, marges du calendrier ôtées (18 px), et une semaine a
+     2 px de plus : largeur = 7/6 × hauteur des six semaines + 4 px. La dernière rangée de gauche
+     (message de création) prend la hauteur laissée par le calendrier : les champs restent serrés. */
+  .formulaire {
+    --largeur-dates: calc(7 / 6 * (100dvh - var(--zone-haut) - var(--zone-bas) - 324px) + 4px);
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) min(calc((100% - var(--e-2xl)) / 2), var(--largeur-dates));
+    grid-template-rows: repeat(4, auto) 1fr;
+    column-gap: var(--e-2xl);
+  }
+
+  .formulaire > * {
+    grid-column: 1;
+  }
+
+  .formulaire > .champ:has(.calendrier) {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  .formulaire .calendrier {
+    max-width: none;
+  }
+}
