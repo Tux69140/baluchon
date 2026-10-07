@@ -56,6 +56,12 @@ html:has(.fenetre:modal) {
   text-wrap: balance;
 }
 
+/* Le titre reçoit le focus par programme à l'ouverture au doigt : ce n'est pas une commande, il ne
+   porte pas d'anneau de focus. */
+.fenetre-entete h2:focus {
+  outline: none;
+}
+
 .bouton-fermer {
   border-color: transparent;
   background: none;

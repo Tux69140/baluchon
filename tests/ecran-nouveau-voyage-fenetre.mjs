@@ -2,13 +2,15 @@
 // navigation (voir ecran-retour.mjs pour la fermeture) :
 // - ouverte depuis Mes voyages par le bouton flottant, sur la tablette (1280 × 800, au doigt) : fenêtre
 //   modale nommée par son titre « Nouveau voyage », Mes voyages derrière ; un « × » nommé « Fermer » et
-//   « Annuler » ; pas de lien « Mes voyages » ; le focus est sur le titre, pas sur le nom (le clavier
-//   masquerait aussitôt le calendrier) ; au clavier, Tab et Maj+Tab n'atteignent jamais Mes voyages
-//   derrière — témoin : Tab passe bien par « × », « Annuler » et « Créer le voyage » ;
+//   « Annuler » ; pas de lien « Mes voyages » ; le focus est sur le titre, sans contour (ce n'est pas
+//   une commande), pas sur le nom (le clavier masquerait aussitôt le calendrier) ; au clavier, Tab et
+//   Maj+Tab n'atteignent jamais Mes voyages derrière — témoin : Tab passe bien par « × », « Annuler »
+//   et « Créer le voyage » ;
 // - à l'ordinateur (souris) : le focus est sur le nom ;
 // - au téléphone : écran plein, titre de l'écran, lien « Mes voyages », ni « × » ni « Annuler » ;
 // - panne d'enregistrement dans la fenêtre en une colonne (800 × 1280) : le message s'affiche en
 //   entier dans le pied, sans rien faire bouger (fenêtre, « Annuler », « Créer le voyage ») ;
+// - ouverte par son adresse, au doigt : le titre a le focus, sans contour ;
 // - clavier ouvert sur la tablette en paysage (fenêtre réduite de 1280 × 800 à 1280 × 420) : la même
 //   fenêtre modale reste ouverte, toujours sur deux colonnes, « Créer le voyage » visible, le corps
 //   défile, la saisie est gardée ;
@@ -186,6 +188,16 @@ try {
       adresse: '#/nouveau-voyage',
     });
     await attendreEcran(page, 'nouveau-voyage');
+    // Ouverte par son adresse, sans geste préalable : le titre reçoit le focus par programme ; ce n'est
+    // pas une commande, aucun contour autour de lui.
+    const titre = await page.evaluate(() => ({
+      id: document.activeElement.id,
+      contour: getComputedStyle(document.activeElement).outlineStyle,
+    }));
+    juge.exige(
+      titre.id === 'titre-nouveau-voyage' && titre.contour === 'none',
+      `adresse directe : focus sur « ${titre.id} », contour « ${titre.contour} »`,
+    );
     await page.fill('#nom', 'Vercors');
     await page.click('[data-jour="2026-10-10"]');
     await page.click('[data-jour="2026-10-13"]');
@@ -241,5 +253,5 @@ try {
 }
 juge.conclure(
   'Nouveau voyage en fenêtre modale',
-  'ouverture, focus selon le pointeur et gardé dans la fenêtre, écran plein au téléphone, panne, clavier ouvert, animations',
+  'ouverture, focus selon le pointeur et gardé dans la fenêtre, écran plein, panne, clavier ouvert, animations',
 );

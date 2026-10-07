@@ -4,10 +4,11 @@
 // - fenêtre modale : ouverte par-dessus Mes voyages, centrée entre les barres système (écarts gauche /
 //   droite et haut / bas égaux à 2 px près, au moins 24 px de marge), dont le bouton « Créer le voyage »
 //   se voit sans défiler, et la page derrière ne défile pas ;
-//   - en paysage d'au moins 900 px de large (1280 × 800 avec et sans les barres de la tablette,
+//   - en paysage d'au moins 800 px de large (1280 × 800 avec et sans les barres de la tablette,
 //     1440 × 900) : deux colonnes égales, les champs et les voyageurs à gauche, les dates à droite, le
 //     calendrier de la largeur de sa colonne ; la fenêtre fait au plus 880 px de large et tout y tient
 //     sans défiler, dans un mois de cinq comme de six semaines ; Créer sans rien : rien ne bouge ;
+//     à 800 × 600, le seuil, deux colonnes de jours de 44 px, dont le corps défile ;
 //   - la hauteur ne compte pas (un clavier ouvert la divise par deux) : fenêtre d'ordinateur basse
 //     (1280 × 500), toujours deux colonnes, c'est le corps de la fenêtre qui défile ; à 1280 × 650 sous
 //     les barres de la tablette, les jours gardent 44 px (plancher) ;
@@ -41,6 +42,7 @@ const FORMATS_ESSAYES = {
   ordinateur: { taille: { width: 1440, height: 900 }, mode: 'deux', capture: 'ordinateur', ...ORDINATEUR },
   'tablette-portrait': { taille: { width: 800, height: 1280 }, mode: 'une', capture: 'portrait' },
   'ordinateur-bas': { taille: { width: 1280, height: 500 }, mode: 'deux', defile: true, ...ORDINATEUR },
+  'ordinateur-petit': { taille: { width: 800, height: 600 }, mode: 'deux', defile: true, ...ORDINATEUR },
   'ordinateur-etroit': { taille: { width: 360, height: 740 }, mode: 'une', marge: 8, ...ORDINATEUR },
   telephone: { taille: { width: 393, height: 873 }, mode: 'plein', capture: 'telephone' },
   'telephone-etroit': { taille: { width: 360, height: 740 }, mode: 'plein' },
@@ -320,5 +322,5 @@ try {
 }
 juge.conclure(
   'Disposition de Nouveau voyage',
-  'fenêtre modale centrée selon l’écran de l’appareil (deux colonnes en paysage, une en portrait), écran plein au téléphone même tourné, jours ronds, 2 thèmes',
+  'fenêtre modale selon l’écran de l’appareil, une ou deux colonnes, écran plein au téléphone même tourné, 2 thèmes',
 );

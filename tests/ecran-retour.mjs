@@ -10,10 +10,10 @@
 // juste créé, le retour ramène bien à Mes voyages.
 // Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : la fermer par Échap, « × » ou « Annuler »
 // mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes voyages » ; un appui sur le
-// voile ne la ferme pas (un geste accidentel perdrait la saisie) ; le focus revient au bouton qui l'a ouverte ; trois appuis immédiats sur « × » ne
-// remontent pas plus loin que l'accueil ; ouverte directement par son adresse, elle se ferme sur Mes
-// voyages, et le retour quitte l'appli. Témoin : le retour système ferme la fenêtre ouverte depuis
-// Mes voyages et ramène à Mes voyages.
+// voile ne la ferme pas (un geste accidentel perdrait la saisie) ; le focus revient au bouton qui l'a
+// ouverte ; trois appuis immédiats sur « × » ne remontent pas plus loin que l'accueil ; ouverte
+// directement par son adresse, elle se ferme sur Mes voyages, et le retour quitte l'appli. Témoin : le
+// retour système ferme la fenêtre ouverte depuis Mes voyages et ramène à Mes voyages.
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -239,5 +239,5 @@ try {
 }
 juge.conclure(
   'Retour système',
-  'voyage, formulaire, fenêtre (3 fermetures, voile sans effet), création, adresse directe et appuis répétés, témoins compris',
+  'voyage, formulaire, fenêtre (3 fermetures, voile sans effet), création, adresse directe, appuis répétés, témoins',
 );
