@@ -26,9 +26,9 @@ Décisions durables qui s'appliquent à toutes les phases :
     - `voyage` (nom, destination, départ, retour, voyageurs) ;
     - `etiquette_du_voyage` (identifiant d'origine, nom copié) ;
     - `categorie_du_voyage` (nom, icône, couleur, ordre copiés) ;
-    - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac, à_acheter, acheté, note copiée).
+    - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité ; l'objet est coché quand il atteint la quantité —, à_acheter, acheté, note copiée).
   - Méta : version du schéma, langue de la bibliothèque de départ, bibliothèque de départ installée.
-  - Le thème est un réglage de l'appareil, hors base et hors sauvegarde.
+  - Le thème et le filtre « Reste à emballer » de chaque voyage sont des réglages de l'appareil, hors base et hors sauvegarde.
 - **Modèles clés** : Bibliothèque, GroupeEtiquettes, Etiquette, CategorieModele, ObjetModele, Voyage, CategorieDuVoyage, ObjetDuVoyage, Sauvegarde.
 - **Dates** : dates de calendrier locales sans heure (`AAAA-MM-JJ`). Jours = dates du départ au retour inclus ; nuits = jours − 1.
 - **Sauvegarde** :
@@ -89,19 +89,26 @@ Une mini-bibliothèque de départ (quelques catégories et objets « toujours in
 
 ## Phase 3 : Cocher dans le sac
 
-**User stories** : US-15, US-16, US-17, US-22
+**User stories** : US-15, US-16, US-17, US-22, US-40
 
 ### Ce qu'on livre
 
-Dans la liste du voyage, on coche un objet « dans le sac ». Il reste barré environ une seconde puis descend en bas de sa catégorie, et plusieurs coches rapides ne déplacent la liste qu'une fois. Chaque catégorie et le voyage entier affichent leur progression avec un compteur. Une catégorie entièrement cochée reçoit le tampon « Bouclé ! » et se replie ; un appui la rouvre. Le filtre « Reste à emballer » masque ce qui est coché. L'icône ⓘ ouvre la note d'un objet, en lecture seule.
+L'écran du voyage est d'abord conçu **dans sa forme définitive**, fiche de l'objet comprise (phases 3, 8 et 9). Ses maquettes au téléphone, à la tablette en portrait et en paysage et à l'ordinateur, en clair et en sombre, sont validées avant tout code ; la phase 3 en construit sa part, que les phases 8 et 9 complètent sans rien défaire. Sur la tablette en paysage et sur l'ordinateur, l'écran du voyage est en deux panneaux dès cette phase (catégories à gauche, objets de la catégorie choisie à droite) ; quand la catégorie affichée est bouclée, le panneau de droite passe de lui-même, une seconde après le tampon, à la suivante non bouclée (décision du chef de projet, 2026-10-24).
+
+Dans la liste du voyage, chaque appui sur la case d'un objet met une pièce de plus dans le sac ; un objet complet est coché, reste barré environ une seconde puis descend en bas de sa catégorie, et plusieurs coches rapides ne déplacent la liste qu'une fois. Un objet en partie rempli affiche « 6 / 16 » et reste à sa place. Sur un objet coché, la case remet le compte à 0, après confirmation s'il compte plus d'une pièce. Le reste de la ligne ouvre la fiche de l'objet : nombre dans le sac (− / +), « Tout dans le sac », « Vider » et la note en lecture seule ; ⓘ signale une note.
+
+Chaque catégorie et le voyage entier affichent leur progression ; la liste des voyages aussi, pour les voyages en cours et à venir. Une catégorie bouclée reçoit le tampon « Bouclé ! » et se replie ; un appui la rouvre. Le voyage entièrement coché affiche le bandeau « Sac bouclé ! ». Le filtre « Reste à emballer », retenu par voyage sur l'appareil, masque les objets cochés et envoie les catégories bouclées en bas, atténuées. La mini-bibliothèque de départ reçoit quelques notes.
 
 ### Critères d'acceptation
 
-- [ ] Les objets sont classés par ordre alphabétique, les cochés en bas ; les catégories suivent l'ordre de la bibliothèque.
+- [x] Les maquettes de l'écran du voyage et de la fiche sont validées par le chef de projet avant tout code (2026-10-24).
+- [ ] Les objets sont classés par ordre alphabétique, les cochés en bas ; les catégories suivent l'ordre de la bibliothèque, et une catégorie bouclée ne bouge que sous le filtre.
+- [ ] « Repas » à 16 : six appuis sur la case affichent « 6 / 16 », sans déplacement ; seize le cochent.
+- [ ] Vider un objet coché de plus d'une pièce, par la case ou par « Vider » dans la fiche, demande une confirmation ; une seule pièce se retire directement.
 - [ ] Trois coches en moins d'une seconde ne provoquent qu'un seul déplacement.
-- [ ] Les compteurs « cochés / total » sont justes pour chaque catégorie et pour le voyage.
-- [ ] Quand l'appareil demande moins d'animations, rien ne glisse et le tampon apparaît fixe.
-- [ ] Les coches survivent à la fermeture de l'appli.
+- [ ] Les compteurs « cochés / total » comptent les objets complets ; ils sont justes pour chaque catégorie, pour le voyage et dans la liste des voyages.
+- [ ] Quand l'appareil demande moins d'animations, rien ne glisse, le tampon et le bandeau apparaissent fixes.
+- [ ] Les coches et les comptes partiels survivent à la fermeture de l'appli ; le filtre aussi, sur le même appareil.
 - [ ] Chaque commande offre une cible de 44 × 44 px au moins.
 
 ## Bloquée par
@@ -203,7 +210,7 @@ Supprimer une catégorie, un objet, un groupe ou une étiquette demande une conf
 
 ### Ce qu'on livre
 
-Dans un voyage, les boutons − / + corrigent une quantité, qui devient alors « manuelle ». On ajoute un objet ponctuel, puis l'appli propose « Ajouter aussi à la bibliothèque ? ». On ajoute une catégorie ponctuelle, avec une icône et une couleur. On retire un objet, avec une confirmation et un « Annuler » de 10 s.
+Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité prévue, qui devient alors « manuelle » ; si elle descend sous le nombre de pièces déjà dans le sac, ce nombre la suit. Renommer et retirer passent aussi par la fiche. On ajoute un objet ponctuel, puis l'appli propose « Ajouter aussi à la bibliothèque ? ». On ajoute une catégorie ponctuelle, avec une icône et une couleur. On retire un objet, avec une confirmation et un « Annuler » de 10 s.
 
 ### Critères d'acceptation
 
@@ -225,7 +232,7 @@ Dans un voyage, les boutons − / + corrigent une quantité, qui devient alors �
 
 ### Ce qu'on livre
 
-À la création d'un voyage, les objets consommables sont marqués « à acheter » ; la marque se pose ou se retire sur n'importe quel objet. L'écran Courses rassemble ces objets par catégorie, avec leurs quantités. Un objet indiqué acheté perd sa marque « à acheter », mais reste à mettre dans le sac.
+À la création d'un voyage, les objets consommables sont marqués « à acheter » ; la marque se pose ou se retire sur n'importe quel objet, depuis sa fiche. L'écran Courses rassemble ces objets par catégorie, avec leurs quantités. Un objet indiqué acheté perd sa marque « à acheter », mais reste à mettre dans le sac.
 
 ### Critères d'acceptation
 
@@ -335,7 +342,7 @@ Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes 
 
 ### Ce qu'on livre
 
-Sur la tablette en paysage et sur l'ordinateur, la liste d'un voyage et la bibliothèque s'affichent en deux panneaux : les catégories à gauche, les objets de la catégorie choisie à droite. Sur téléphone et tablette en portrait, tout reste en une colonne. On vérifie tous les écrans à chaque format.
+Sur la tablette en paysage et sur l'ordinateur, la bibliothèque s'affiche à son tour en deux panneaux, comme la liste d'un voyage depuis la phase 3 : les catégories à gauche, les objets de la catégorie choisie à droite. Sur téléphone et tablette en portrait, tout reste en une colonne. On vérifie tous les écrans à chaque format.
 
 ### Critères d'acceptation
 

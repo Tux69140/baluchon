@@ -48,14 +48,15 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 
 **Liste d'un voyage**
 
-- **US-15** : En tant qu'utilisateur, je veux cocher un objet « dans le sac » et le voir descendre en bas de sa catégorie environ une seconde après, sans que la liste saute pendant une série de coches, afin de voir en haut ce qu'il reste à faire.
-- **US-16** : En tant qu'utilisateur, je veux voir la progression de chaque catégorie et du voyage entier, afin de savoir où j'en suis.
-- **US-17** : En tant qu'utilisateur, je veux un filtre « Reste à emballer » qui masque ce qui est coché, afin de boucler le sac sans me perdre dans une longue liste.
+- **US-15** : En tant qu'utilisateur, je veux toucher la case d'un objet à chaque pièce mise dans le sac, et voir l'objet complet descendre en bas de sa catégorie environ une seconde après, sans que la liste saute pendant une série de coches, afin de voir en haut ce qu'il reste à faire.
+- **US-16** : En tant qu'utilisateur, je veux voir la progression de chaque catégorie, du voyage entier, et de chaque voyage en cours ou à venir dès la liste des voyages, et voir célébré le sac entièrement bouclé, afin de savoir où j'en suis.
+- **US-17** : En tant qu'utilisateur, je veux un filtre « Reste à emballer » qui masque ce qui est entièrement dans le sac, afin de boucler le sac sans me perdre dans une longue liste.
 - **US-18** : En tant qu'utilisateur, je veux corriger la quantité d'un objet dans un voyage, afin de l'ajuster à ce voyage précis.
 - **US-19** : En tant qu'utilisateur, je veux ajouter un objet ponctuel dans un voyage, avec la proposition « Ajouter aussi à la bibliothèque ? », afin de ne pas oublier ce même objet la prochaine fois.
 - **US-20** : En tant qu'utilisateur, je veux ajouter une catégorie ponctuelle dans un voyage, afin de traiter un besoin exceptionnel.
 - **US-21** : En tant qu'utilisateur, je veux retirer un objet d'un voyage, afin d'alléger la liste sans toucher à la bibliothèque.
-- **US-22** : En tant qu'utilisateur, je veux voir une icône ⓘ sur les objets qui ont une note, et la lire d'un appui, afin de profiter des conseils de la bibliothèque.
+- **US-22** : En tant qu'utilisateur, je veux voir une icône ⓘ sur les objets qui ont une note, et la lire dans la fiche de l'objet, afin de profiter des conseils de la bibliothèque.
+- **US-40** : En tant qu'utilisateur, je veux indiquer qu'une partie seulement d'un objet est dans le sac (6 repas sur 16), afin de savoir ce qu'il manque pour terminer les préparatifs.
 - **US-23** : En tant qu'utilisateur, je veux que les objets consommables soient marqués « à acheter » d'office, et pouvoir poser ou retirer cette marque sur n'importe quel objet, afin de préparer mes courses.
 - **US-24** : En tant qu'utilisateur, je veux un écran Courses qui rassemble les objets « à acheter » du voyage, par catégorie et avec leurs quantités, où j'indique ce qui est acheté, afin de faire mes courses avec une seule liste.
 - **US-25** : En tant qu'utilisateur, je veux modifier les dates ou le nombre de voyageurs d'un voyage et voir les quantités calculées se mettre à jour, sauf celles que j'ai corrigées à la main, afin que la liste reste juste quand les plans changent.
@@ -135,8 +136,14 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Création d'un voyage en étapes : informations (nom, destination, dates, voyageurs), puis un groupe d'étiquettes par étape, puis l'aperçu. On peut revenir en arrière à toute étape sans rien perdre.
 - Nombre de voyageurs de 1 à 20 ; durée d'un voyage de 1 jour à 1 an.
 - Catégories dans l'ordre réglé dans la bibliothèque ; objets par ordre alphabétique dans leur catégorie, les objets cochés en bas.
-- Un objet coché reste barré à sa place environ une seconde avant de descendre ; plusieurs coches rapides ne déplacent la liste qu'une fois.
-- Catégorie entièrement cochée : repliée automatiquement, et rouvrable d'un appui.
+- Liste d'un voyage : une vue unique. La case d'un objet compte les pièces mises dans le sac : chaque appui en ajoute une. Un objet est **coché** quand toutes ses pièces sont dans le sac ; un objet en partie rempli affiche « 6 / 16 », sa case montre un état intermédiaire (un trait), et il reste à sa place. Sur un objet coché, la case remet le compte à 0, après confirmation s'il compte plus d'une pièce.
+- Le reste de la ligne ouvre la **fiche de l'objet** : nombre dans le sac (− / +, jamais au-delà de la quantité prévue), « Tout dans le sac », « Vider » (après confirmation s'il y a plus d'une pièce dans le sac), note en lecture seule, puis quantité prévue, renommer, retirer (phase 8) et « à acheter » (phase 9). Au téléphone, la fiche monte du bas de l'écran ; sur tablette et ordinateur, c'est une fenêtre centrée.
+- Un objet coché reste barré à sa place environ une seconde avant de descendre, et un objet décoché remonte après le même délai ; plusieurs coches rapides ne déplacent la liste qu'une fois.
+- Compteurs « cochés / total » : ils comptent les objets (une ligne), pas les pièces ; un objet en partie rempli ne compte pas encore.
+- À l'ouverture d'un voyage, toutes les catégories sont dépliées, sauf les bouclées ; une catégorie repliée à la main le reste jusqu'à ce qu'on quitte le voyage.
+- Catégorie entièrement cochée (« bouclée ») : tampon « Bouclé ! », repliée automatiquement, rouvrable d'un appui. Sans filtre, elle reste à sa place ; avec le filtre « Reste à emballer », elle descend en bas de la liste, atténuée (texte toujours lisible à 4,5:1).
+- Voyage entièrement coché : la jauge passe au vert et un bandeau avec la mascotte annonce « Sac bouclé ! », tant que tout reste coché.
+- Liste des voyages : une jauge de progression sur chaque voyage en cours ou à venir, pas sur les voyages passés.
 - La marque « à acheter » disparaît quand l'objet est indiqué acheté dans Courses ; l'objet reste à mettre dans le sac.
 - Note d'un objet : en lecture seule dans le voyage, modifiable seulement dans la bibliothèque.
 - Liste des voyages : en cours en premier, puis à venir (du plus proche au plus lointain), puis passés (du plus récent au plus ancien).
@@ -148,6 +155,7 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Sauvegarde : un seul fichier, daté dans son nom, déposé dans le dossier Téléchargements de l'appareil.
 - Restauration : remplace tout, après confirmation, et après une copie automatique de l'état actuel au même endroit.
 - Thème clair et sombre, qui suit l'appareil par défaut ; ce réglage reste propre à chaque appareil.
+- Le filtre « Reste à emballer » est retenu voyage par voyage, sur l'appareil, hors base et hors sauvegarde.
 - Langue : celle de l'appareil si une traduction existe, sinon le français. La bibliothèque de départ est installée une fois, dans la langue du premier lancement, puis devient la propriété de l'utilisateur.
 
 **Identité**

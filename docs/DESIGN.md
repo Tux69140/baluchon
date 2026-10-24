@@ -50,7 +50,7 @@
 - **Scale** : 2xs(2) xs(4) sm(8) md(16) lg(24) xl(32) 2xl(48) 3xl(64)
 
 ## Layout
-- **Approche** : grid-disciplined — une carte par catégorie, en accordéon ; objets en lignes (case, nom, pastilles, − quantité +, ⓘ).
+- **Approche** : grid-disciplined — une carte par catégorie, en accordéon ; objets en lignes (case, nom, pastilles, quantité ou « 6 / 16 », ⓘ) ; la case compte les pièces, le reste de la ligne ouvre la fiche de l'objet (panneau montant du bas au téléphone, fenêtre centrée sur tablette et ordinateur), qui porte les − / +.
 - **Grid** : téléphone et tablette en portrait : une colonne, marges de 16–18 px ; tablette en paysage et ordinateur : deux panneaux (catégories à gauche, objets à droite).
 - **Max content width** : 1080px sur ordinateur ; textes d'explication limités à 62 caractères par ligne.
 - **Border radius** : sm:8px (champs), md:12px (boutons, pavés, messages), lg:16px (cartes, bouton flottant), full:9999px (puces, pastilles, jauges).
@@ -60,8 +60,8 @@
 - **Approche** : intentionnel — le mouvement explique ce qui change et célèbre ce qui est fini.
 - **Easing** : enter(ease-out) exit(ease-in) move(ease-in-out) ; rebond léger pour le tampon.
 - **Duration** : micro(50-100ms) court(150-250ms) moyen(250-400ms) long(400-700ms)
-- **Gestes clés** : un objet coché reste barré environ 1 s puis glisse en bas de sa catégorie (moyen) ; plusieurs coches rapides ne déplacent la liste qu'une fois ; catégorie bouclée → tampon « Bouclé ! » posé avec un rebond (long) ; accordéon (court).
-- **Réduction** : si l'appareil demande moins d'animations, tout se pose sans mouvement (le tampon apparaît fixe, l'objet change de place sans glisser).
+- **Gestes clés** : un objet coché reste barré environ 1 s puis glisse en bas de sa catégorie (moyen) ; plusieurs coches rapides ne déplacent la liste qu'une fois ; catégorie bouclée → tampon « Bouclé ! » posé avec un rebond (long) ; sac entier bouclé → bandeau avec la mascotte, « Sac bouclé ! », posé avec un rebond (long) ; accordéon (court) ; fiche de l'objet qui monte du bas au téléphone (court).
+- **Réduction** : si l'appareil demande moins d'animations, tout se pose sans mouvement (le tampon et le bandeau apparaissent fixes, l'objet change de place sans glisser).
 
 ## Decisions Log
 | Date | Décision | Rationale |
@@ -69,3 +69,5 @@
 | 2026-10-06 | Création initiale | /design — appli de listes de bagages pour un couple ; disposition BagPacker restylée, socle et règles de Paré, joie de Packlane en accents (pavés de catégorie colorés, mascotte, tampon « Bouclé ! »), mode sombre marine. Aperçu validé : `docs/design-preview.html`. |
 | 2026-10-06 | Pictos Phosphor ; Duotone dans les pavés, Bold dans l'interface ; catalogue d'environ 80 pictos pour les catégories | Une bibliothèque libre garantit 120 icônes cohérentes, ce qu'une création maison ne peut pas assurer ; le Duotone répond au reproche « un peu plate » du chef de projet ; seul le Baluchon est dessiné sur mesure. |
 | 2026-10-07 | Fenêtre modale pour « Nouveau voyage » sur tablette et ordinateur (plus petit côté de l'écran ≥ 600 px) : centrée, marge de 24 px, voile marine, en-tête titre + ×, pied fixe « Annuler » + action principale à droite ; deux colonnes (champs \| calendrier) dès 800 px de large en paysage, une colonne de largeur égale sinon ; écran plein au téléphone ; jours du calendrier toujours ronds | Le chef de projet a rejeté la page alignée à gauche qui laissait la moitié de l'écran vide (ordinateur, tablette en portrait et en paysage) et a demandé une modale bien positionnée ; validé le 2026-10-07. |
+| 2026-10-24 | Écran du voyage : vue unique, la case compte les pièces (« 6 / 16 », trait dans la case), le reste de la ligne ouvre la fiche de l'objet (panneau du bas au téléphone, fenêtre centrée ailleurs), qui porte tous les − / + ; bandeau « Sac bouclé ! » avec la mascotte ; catégories bouclées en bas et atténuées sous le filtre « Reste à emballer » | Le chef de projet veut noter « 6 repas sur 16 » et un outil pensé en entier : deux paires de − / + ne tiennent pas sur une ligne de téléphone, et une fiche évite les modes « Préparer / Emballer ». La maquette « Liste d'un voyage » de `docs/design-preview.html` (− / + sur la ligne) est remplacée par les maquettes de la phase 3. |
+| 2026-10-24 | Maquettes de l'écran du voyage validées : une colonne en accordéon (téléphone, tablette en portrait), deux panneaux dès 1000 px de large en paysage (catégories à gauche, choisie sur fond actif avec bord à l'encre et flèche ; objets à droite) ; progression dans une carte de hauteur fixe qui devient le bandeau « Sac bouclé ! » ; case de 56 px (vide, entamée avec un trait, pleine) ; fiche avec « Dans le sac » − / +, « Tout dans le sac » et « Vider » (confirmation au-delà d'une pièce), note, puis « Ajuster cet objet » (phases 8 et 9) ; catégories bouclées sous le filtre en bas, bord pointillé et pavé atténué ; erreur d'enregistrement en bandeau au bas de l'écran, par-dessus la liste ; jauge sur les cartes de l'accueil | Validé par le chef de projet le 2026-10-24, avec une seule demande : la confirmation de « Vider » dans la fiche. |
