@@ -15,7 +15,9 @@
 // - le dernier objet du voyage : bandeau « Sac bouclé ! » (témoin : absent avant), à sa place réservée :
 //   la liste en dessous ne bouge pas ;
 // - panne d'enregistrement : message en bas, la case revient à son état enregistré ; le message part
-//   au bout de six secondes ;
+//   au bout de six secondes ; une panne au milieu d'une rafale ramène aux pièces vraiment enregistrées,
+//   et la case sert encore ensuite ;
+// - le filtre basculé pendant la seconde de répit, dans les deux sens : liste rangée sans reste ;
 // - animations réduites : la liste se range sans aucune animation ; témoin : sans réglage, elle glisse.
 // Téléphone et tablette en portrait × 2 thèmes : cibles de 44 px, pas de défilement de côté, rien sous
 // les barres système (filtre, sac bouclé, panne), et captures de ces états et du tampon.
@@ -352,6 +354,70 @@ try {
     await contexte.close();
   }
 
+  // Panne au milieu d'une rafale : dix appuis d'un coup sur Repas (0 / 16), la panne armée par la
+  // 3e écriture. L'écran revient aux trois pièces enregistrées, le dit, et la case sert encore.
+  {
+    const { contexte, page, erreurs } = await ouvrirVoyage({ donnees: avecPieces({ 'o-rep': 0 }) });
+    await page.evaluate(() => {
+      const ecrire = Storage.prototype.setItem;
+      let ecritures = 0;
+      Storage.prototype.setItem = function (cle, valeur) {
+        if (cle === 'baluchon-essai' && ++ecritures === 3)
+          valeur = JSON.stringify({ ...JSON.parse(valeur), pannes: ['reglerDansLeSac'] });
+        ecrire.call(this, cle, valeur);
+      };
+      for (let i = 0; i < 10; i++) document.querySelector('.objet[data-id="o-rep"] .case').click();
+    });
+    const message = await attendreQue(page, () => document.querySelector('.alerte[role="alert"]')?.textContent.trim());
+    const repas = await ligne(page, 'o-rep');
+    const garde = (await lireStockage(page)).objetsDuVoyage.find(o => o.id === 'o-rep').dansLeSac;
+    juge.exige(
+      message === fr.voyage.erreurEnregistrement && repas?.quantite === '3 / 16' && garde === 3,
+      `panne en rafale : message « ${message} », ${JSON.stringify(repas)}, ${garde} enregistrées`,
+    );
+    const { pannes, ...sansPanne } = await lireStockage(page);
+    await ecrireStockage(page, sansPanne);
+    await appuyer(page, 'o-rep');
+    const reprise = await ligne(page, 'o-rep');
+    juge.exige(
+      pannes?.length === 1 && reprise?.quantite === '4 / 16' && (await enregistre(page, 'o-rep', 4)),
+      `panne en rafale, la case ensuite : ${JSON.stringify(reprise)}`,
+    );
+    const autres = erreurs.filter(e => !e.includes('Panne simulée : reglerDansLeSac'));
+    juge.exige(autres.length === 0, `panne en rafale : erreurs dans la page : ${autres.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Le filtre basculé pendant la seconde de répit, un objet tout juste complété (allumé : Pantalons ;
+  // éteint : Pyjama, qui doit réapparaître puis descendre) : une fois la liste rangée, aucun objet à
+  // demi effacé (immobile, opaque), l'ordre de Vêtements et les masqués sont justes.
+  for (const [allume, id, attendu, masques] of [
+    [false, 'o-pan', 'o-pul,o-pyj,o-sou,o-tsh', remplir(fr.voyage.masques.other, { n: 7 })],
+    [true, 'o-pyj', 'o-pan,o-pul,o-sou,o-tsh,o-cha,o-pyj', null],
+  ]) {
+    const { contexte, page, erreurs } = await ouvrirVoyage();
+    if (allume) await page.click('[data-action="filtre"]');
+    await appuyer(page, id);
+    await page.clock.runFor(500);
+    await page.click('[data-action="filtre"]');
+    await page.clock.runFor(1000);
+    await attendreQue(page, () => !document.getAnimations().some(a => a.playState === 'running'));
+    const vu = await page.evaluate(() => ({
+      vetements: [...document.querySelectorAll('.categorie[data-id="c-vet"] .objet')].map(o => o.dataset.id).join(),
+      masques: document.querySelector('.masques')?.textContent.trim() ?? null,
+      troubles: [...document.querySelectorAll('.objet')]
+        .filter(o => getComputedStyle(o).opacity !== '1' || getComputedStyle(o).transform !== 'none')
+        .map(o => o.dataset.id),
+    }));
+    const cas = `filtre ${allume ? 'éteint' : 'allumé'} pendant le répit`;
+    juge.exige(
+      vu.vetements === attendu && vu.masques === masques && vu.troubles.length === 0,
+      `${cas} : ${JSON.stringify(vu)}`,
+    );
+    juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
   // Animations réduites : la liste se range sans glisser.
   {
     const { contexte, page, erreurs } = await ouvrirVoyage();
@@ -428,5 +494,5 @@ try {
 }
 juge.conclure(
   'Gestes dans la liste d’un voyage',
-  'pièce par pièce, seconde de répit, confirmation, tampon, filtre, sac bouclé, panne, animations réduites, 2 formats × 2 thèmes',
+  'pièce par pièce, seconde de répit, confirmation, tampon, filtre, sac bouclé, panne (rafale comprise), filtre pendant le répit, animations réduites, 2 formats × 2 thèmes',
 );
