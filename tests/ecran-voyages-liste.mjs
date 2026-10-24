@@ -8,6 +8,9 @@
 // - le bouton flottant « Nouveau voyage » mène à l'assistant et ne cache jamais la dernière carte ;
 // - une adresse inconnue ramène à Mes voyages.
 // Témoin : avec seulement des voyages à venir, une seule rubrique s'affiche.
+// Phase 3 : la progression sur la carte des voyages en cours et à venir ayant des objets (« 1 / 3 dans
+// le sac », ou la pastille « Sac bouclé » avec son picto) ; rien sur un voyage passé ni sans objet ;
+// une panne de lecture des états garde la liste, sans jauges.
 // 3 formats × 2 thèmes : cibles de 44 px, pas de défilement de côté, rien sous les barres système.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -56,6 +59,31 @@ const ATTENDU = [
   [fr.voyages.rubriques.passes, ['Week-end', 'Pâques']],
 ];
 
+const objet = (voyageId, quantite, dansLeSac) => ({ voyageId, quantite, dansLeSac });
+const OBJETS = [
+  objet('c1', 1, 1),
+  objet('c1', 2, 1),
+  objet('c1', 1, 0),
+  objet('a1', 1, 1),
+  objet('a1', 3, 3),
+  objet('p2', 1, 1),
+  objet('p2', 1, 0),
+];
+
+const lireProgressions = page =>
+  page.evaluate(() =>
+    Object.fromEntries(
+      [...document.querySelectorAll('.carte-voyage')].map(c => [
+        c.getAttribute('href').slice('#/voyage/'.length),
+        {
+          texte: c.querySelector('.carte-progression')?.textContent.trim().replace(/\s+/g, ' ') ?? null,
+          jauge: !!c.querySelector('.carte-progression .jauge'),
+          pastille: !!c.querySelector('.carte-progression .pastille-boucle svg'),
+        },
+      ]),
+    ),
+  );
+
 const lireRubriques = page =>
   page.evaluate(() =>
     [...document.querySelectorAll('.rubrique')].map(r => [
@@ -76,7 +104,7 @@ try {
         taille,
         theme,
         maintenant: MAINTENANT,
-        donnees: { voyages: VOYAGES },
+        donnees: { voyages: VOYAGES, objetsDuVoyage: OBJETS },
       });
       juge.exige(
         JSON.stringify(await lireRubriques(page)) === JSON.stringify(ATTENDU),
@@ -92,6 +120,17 @@ try {
         flottant.href === '#/nouveau-voyage' && flottant.texte === fr.voyages.nouveau,
         `${cas} : bouton flottant ${JSON.stringify(flottant)}`,
       );
+      const p = await lireProgressions(page);
+      juge.exige(
+        p.c1.texte === '1 / 3 dans le sac' && p.c1.jauge && !p.c1.pastille,
+        `${cas} : en cours ${JSON.stringify(p.c1)}`,
+      );
+      juge.exige(
+        p.a1.texte === fr.voyages.sacBoucle && p.a1.pastille && !p.a1.jauge,
+        `${cas} : à venir bouclé ${JSON.stringify(p.a1)}`,
+      );
+      juge.exige(p.p2.texte === null, `${cas} : progression sur un voyage passé ${JSON.stringify(p.p2)}`);
+      juge.exige(p.a2.texte === null, `${cas} : progression sur un voyage sans objet ${JSON.stringify(p.a2)}`);
       await verifierCommandes(page, juge, cas);
       if (format === 'tablette-portrait')
         await page.screenshot({ path: join(CAPTURES, `voyages-liste-${NOMS_THEME[theme]}.png`) });
@@ -139,8 +178,25 @@ try {
     `témoin : rubriques ${JSON.stringify(seule)}`,
   );
   await temoin.contexte.close();
+
+  // Panne de lecture des états : la liste reste, sans aucune jauge.
+  const panne = await ouvrir(navigateur, serveur.url, {
+    taille: FORMATS.telephone,
+    theme: 'light',
+    maintenant: MAINTENANT,
+    donnees: { voyages: VOYAGES, objetsDuVoyage: OBJETS, pannes: ['etatsDesObjets'] },
+  });
+  const sansJauge = await lireProgressions(panne.page);
+  juge.exige(
+    Object.keys(sansJauge).length === VOYAGES.length && Object.values(sansJauge).every(c => c.texte === null),
+    `panne des états : ${JSON.stringify(sansJauge)}`,
+  );
+  await panne.contexte.close();
 } finally {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Écran Voyages classé', '3 formats × 2 thèmes, adresse inconnue et témoin compris');
+juge.conclure(
+  'Écran Voyages classé',
+  '3 formats × 2 thèmes, progression, panne des états, adresse inconnue et témoin compris',
+);

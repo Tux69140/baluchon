@@ -3,8 +3,11 @@
 import { echapper } from './html.js';
 import { detailsVoyage } from './format.js';
 import { iconeInterface } from './icones.js';
+import { jauge } from './jauge.js';
 import { lienRetour } from './retour.js';
+import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
+import { progressionParVoyage } from '../modele/sac.js';
 import { classerVoyages } from '../modele/voyage.js';
 import mascotte from '../images/baluchon.svg';
 
@@ -20,7 +23,17 @@ function vueVide(t) {
     </section>`;
 }
 
-function carte(voyage, { t, langue }) {
+// Seuls les voyages en cours ou à venir et qui ont des objets montrent leur avancement.
+function vueProgression(avancement, t) {
+  if (!avancement) return '';
+  if (avancement.faits === avancement.total)
+    return `
+            <span class="carte-progression"><span class="pastille-boucle">${iconeInterface('boucle')}${t('voyages.sacBoucle')}</span></span>`;
+  return `
+            <span class="carte-progression">${jauge(avancement, true)}<span>${remplir(t('voyages.progression'), avancement)}</span></span>`;
+}
+
+function carte(voyage, { t, langue }, avancement) {
   const destination = voyage.destination
     ? `<span class="carte-voyage-destination">${echapper(voyage.destination)}</span>`
     : '';
@@ -29,18 +42,18 @@ function carte(voyage, { t, langue }) {
           <a class="carte-voyage" href="#/voyage/${encodeURIComponent(voyage.id)}">
             <span class="carte-voyage-nom">${echapper(voyage.nom)}</span>
             ${destination}
-            <span class="carte-voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</span>
+            <span class="carte-voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</span>${vueProgression(avancement, t)}
           </a>
         </li>`;
 }
 
-function vueListe(voyages, aujourdhui, contexte) {
+function vueListe(voyages, aujourdhui, progressions, contexte) {
   const classes = classerVoyages(voyages, aujourdhui);
   const rubriques = RUBRIQUES.filter(rubrique => classes[rubrique].length).map(
     rubrique => `
       <section class="rubrique" aria-labelledby="rubrique-${rubrique}">
         <h2 id="rubrique-${rubrique}">${contexte.t(`voyages.rubriques.${rubrique}`)}</h2>
-        <ul class="voyages">${classes[rubrique].map(v => carte(v, contexte)).join('')}
+        <ul class="voyages">${classes[rubrique].map(v => carte(v, contexte, rubrique === 'passes' ? undefined : progressions.get(v.id))).join('')}
         </ul>
       </section>`,
   );
@@ -50,12 +63,17 @@ function vueListe(voyages, aujourdhui, contexte) {
 
 export const ecranVoyages = {
   nom: 'voyages',
-  charger: async ({ stockage }) => ({ voyages: await stockage.listerVoyages(), aujourdhui: dateDuJour(new Date()) }),
-  dessiner(app, { voyages, aujourdhui }, contexte) {
+  charger: async ({ stockage }) => ({
+    voyages: await stockage.listerVoyages(),
+    // La progression est un plus : sans elle, la liste s'affiche quand même.
+    progressions: progressionParVoyage(await stockage.etatsDesObjets().catch(() => [])),
+    aujourdhui: dateDuJour(new Date()),
+  }),
+  dessiner(app, { voyages, aujourdhui, progressions }, contexte) {
     app.innerHTML = `
     <main class="ecran${voyages.length ? ' ecran-avec-flottant' : ''}">
       <h1>${contexte.t('voyages.titre')}</h1>
-      ${voyages.length ? vueListe(voyages, aujourdhui, contexte) : vueVide(contexte.t)}
+      ${voyages.length ? vueListe(voyages, aujourdhui, progressions, contexte) : vueVide(contexte.t)}
     </main>`;
   },
 };

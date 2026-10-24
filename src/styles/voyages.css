@@ -70,3 +70,35 @@
 .carte-voyage-details {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Progression sur la carte ---------- */
+.carte-progression {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  margin-top: var(--e-xs);
+  color: var(--encre-douce);
+  font: 600 var(--taille-libelle) var(--police);
+  font-variant-numeric: tabular-nums;
+}
+
+.carte-progression .jauge {
+  flex: 1;
+  max-width: 240px;
+}
+
+.pastille-boucle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 2px 10px;
+  border-radius: var(--r-plein);
+  background: var(--fond-succes);
+  color: var(--succes);
+  font: 600 var(--taille-libelle) / 1.5 var(--police);
+}
+
+.pastille-boucle svg {
+  width: 14px;
+  height: 14px;
+}

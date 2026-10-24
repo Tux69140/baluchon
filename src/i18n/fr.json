@@ -60,6 +60,8 @@
   "voyages": {
     "titre": "Mes voyages",
     "nouveau": "Nouveau voyage",
+    "progression": "{faits} / {total} dans le sac",
+    "sacBoucle": "Sac bouclé",
     "rubriques": {
       "enCours": "En cours",
       "aVenir": "À venir",

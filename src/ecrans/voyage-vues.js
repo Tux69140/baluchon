@@ -8,17 +8,12 @@ import { appuiSurCase, estComplet, etatDansLeSac, progression } from '../modele/
 import { detailsVoyage, pluriel } from './format.js';
 import { echapper } from './html.js';
 import { iconeInterface, paveCategorie } from './icones.js';
+import { jauge } from './jauge.js';
 import { categoriesAffichees } from './rangement.js';
 import { lienRetour } from './retour.js';
 import mascotte from '../images/baluchon.svg';
 
 const compte = (t, { faits, total }) => remplir(t('voyage.compte'), { faits, total });
-
-function jauge({ faits, total }, mini = false) {
-  const pourcent = total ? Math.round((100 * faits) / total) : 0;
-  const fini = total && faits === total ? ' data-fini' : '';
-  return `<span class="jauge${mini ? ' jauge-mini' : ''}"${fini}><i style="width: ${pourcent}%"></i></span>`;
-}
 
 // Une hauteur réservée (voyage.css) : le bandeau « Sac bouclé ! » prend la place de la jauge.
 // pose : le sac vient de boucler, le bandeau entre avec un rebond.

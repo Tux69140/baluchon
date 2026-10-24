@@ -66,30 +66,6 @@
   color: var(--encre);
 }
 
-.jauge {
-  display: block;
-  height: 10px;
-  overflow: hidden;
-  background: var(--actif);
-  border-radius: var(--r-plein);
-}
-
-.jauge i {
-  display: block;
-  height: 100%;
-  background: var(--encre);
-  border-radius: var(--r-plein);
-  transition: width 250ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.jauge[data-fini] i {
-  background: var(--principal);
-}
-
-.jauge-mini {
-  height: 6px;
-}
-
 /* ---------- Outils : le filtre « Reste à emballer » ---------- */
 .outils {
   display: flex;
