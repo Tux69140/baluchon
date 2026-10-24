@@ -1,6 +1,7 @@
 // Phase 3 (docs/PLAN.md) : quitter la liste d'un voyage ne laisse rien derrière soi.
-// - confirmation « Vider » ouverte, retour système (historique) : Mes voyages s'affiche sans fenêtre
-//   restée par-dessus, ses cartes répondent, et rien n'a été vidé ;
+// - confirmation « Vider » ouverte, deux retours système d'affilée (le premier ferme la confirmation,
+//   le second quitte le voyage pendant qu'elle s'efface) : Mes voyages s'affiche sans fenêtre restée
+//   par-dessus, ses cartes répondent, et rien n'a été vidé ;
 // - même chose quand l'adresse change sans passer par l'historique (voyage ouvert directement) ;
 // - une coche puis « Mes voyages » sur un voyage ouvert directement (retour sans changement d'adresse
 //   suivi) : la seconde de répit qui court ensuite ne fait ni erreur ni message sur Mes voyages.
@@ -36,7 +37,7 @@ async function ouvrirConfirmation(page) {
 const gourde = async page => (await lireStockage(page)).objetsDuVoyage.find(o => o.id === 'o-gou').dansLeSac;
 
 try {
-  // Retour système, confirmation ouverte.
+  // Deux retours système d'affilée, confirmation ouverte.
   {
     const { contexte, page, erreurs } = await ouvrir(navigateur, serveur.url, {
       taille: FORMATS.telephone,
@@ -47,19 +48,22 @@ try {
     await page.click('a.carte-voyage[href="#/voyage/v1"]');
     await attendreEcran(page, 'voyage');
     const ouverte = await ouvrirConfirmation(page);
-    await page.goBack();
+    await page.evaluate(() => {
+      history.back();
+      history.back();
+    });
     await attendreEcran(page, 'voyages');
     const vu = await accueilLibre(page);
     juge.exige(
       ouverte && vu.ecran === 'voyages' && vu.fenetres === 0 && vu.touchable,
-      `retour système, confirmation ouverte : ${JSON.stringify({ ouverte, ...vu })}`,
+      `deux retours, confirmation ouverte : ${JSON.stringify({ ouverte, ...vu })}`,
     );
-    juge.exige((await gourde(page)) === 2, 'retour système : Gourde vidée');
+    juge.exige((await gourde(page)) === 2, 'deux retours : Gourde vidée');
     if (vu.touchable) {
       await page.click('a.carte-voyage[href="#/voyage/v1"]');
       await attendreEcran(page, 'voyage');
     }
-    juge.exige(erreurs.length === 0, `retour système : erreurs dans la page : ${erreurs.join(' | ')}`);
+    juge.exige(erreurs.length === 0, `deux retours : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }
 
@@ -114,5 +118,5 @@ try {
 }
 juge.conclure(
   'Quitter la liste d’un voyage',
-  'retour système et changement d’adresse avec la confirmation ouverte, retour pendant la seconde de répit',
+  'deux retours d’affilée et changement d’adresse avec la confirmation ouverte, retour pendant la seconde de répit',
 );

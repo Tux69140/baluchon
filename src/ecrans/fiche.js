@@ -103,6 +103,7 @@ export function ouvrirFiche({ t, objet, categorie, surChangement, surFermeture, 
   signal.addEventListener('abort', effacer, { once: true });
   fermer = ouvrirFenetre(fenetre, {
     fermerSurVoile: true,
+    fermerAuRetour: true,
     surFermeture: () => {
       signal.removeEventListener('abort', effacer);
       effacer();

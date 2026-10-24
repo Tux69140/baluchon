@@ -62,15 +62,67 @@ function glisserPourFermer(fenetre, fermer) {
   entete.addEventListener('pointercancel', lacher);
 }
 
+// Le retour système (Android, ou celui du navigateur) remonte l'historique de la page ; il ferme le
+// dernier niveau ouvert (docs/PRD.md, « Écrans et gestes »). Chaque niveau (fiche, confirmation)
+// pose donc à son ouverture une étape d'historique à lui, sans changer d'adresse : son rang
+// (niveau) s'ajoute à l'état de l'étape, qui garde la profondeur lue par le routeur (src/main.js).
+// Un retour qui reste à la même adresse ferme les niveaux au-dessus de l'étape atteinte ; le
+// routeur, qui ne suit que les changements d'adresse, ne redessine rien. Un retour qui change
+// d'adresse emporte l'écran, et ses niveaux avec lui (signal de l'écran).
+const niveaux = [];
+// Un niveau fermé autrement (×, Échap, un bouton…) retire son étape par history.back(), sinon le
+// retour suivant ne fermerait rien de visible. L'étape ne part que peu après (le navigateur traite
+// les retours dans l'ordre) : le prochain retour reçu est donc le nôtre, pas celui de la personne,
+// et un niveau ouvert entre-temps attend pour poser la sienne (l'historique reculerait sous elle).
+let retraitsEnAttente = 0;
+
+// Une étape par niveau ouvert au-dessus de celle où l'on est.
+function poserEtapes() {
+  for (let n = history.state?.niveau ?? 0; n < niveaux.length; n++)
+    history.pushState({ ...history.state, niveau: n + 1 }, '');
+}
+
+window.addEventListener('popstate', () => {
+  if (retraitsEnAttente) {
+    retraitsEnAttente -= 1;
+    return poserEtapes();
+  }
+  for (const niveau of niveaux.splice(history.state?.niveau ?? 0).reverse())
+    if (niveau.adresse === location.href && niveau.fenetre.isConnected) niveau.fermer();
+});
+
+function ouvrirNiveau(fenetre, fermer) {
+  // Une fenêtre partie avec son écran (retirée sans fermeture) ne compte plus.
+  niveaux.splice(0, Infinity, ...niveaux.filter(n => n.fenetre.isConnected));
+  const niveau = { fenetre, fermer, adresse: location.href };
+  niveaux.push(niveau);
+  if (!retraitsEnAttente) poserEtapes();
+  return niveau;
+}
+
+// Un niveau encore dans la pile se ferme par un autre geste que le retour : son étape s'en va.
+function quitterNiveau(niveau) {
+  const rang = niveaux.indexOf(niveau);
+  if (rang < 0) return;
+  niveaux.splice(rang, 1);
+  retraitsEnAttente += 1;
+  history.back();
+}
+
 // surFermeture est appelé une seule fois, la fenêtre effacée : appuis répétés, Échap pendant
 // l'animation ou fermeture par le navigateur n'en font pas une seconde. fermerSurVoile : une fenêtre
 // sans saisie à perdre (fiche d'un objet) se ferme aussi d'un appui sur le voile ou d'un glissé de
-// son en-tête vers le bas. Rend fermer(), pour qui doit fermer la fenêtre sans geste de la personne.
-export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false }) {
+// son en-tête vers le bas. fermerAuRetour : la fenêtre est un niveau que le retour système ferme
+// (fiche, confirmation) ; pas Nouveau voyage, qui a son adresse. Rend fermer(), pour qui doit fermer
+// la fenêtre sans geste de la personne.
+export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false, fermerAuRetour = false }) {
   let fermeture = false;
+  let niveau = null;
   async function fermer() {
     if (fermeture) return;
     fermeture = true;
+    // Dès le geste, pas après l'animation : l'étape est partie avant que l'écran reprenne la main.
+    if (niveau) quitterNiveau(niveau);
     fenetre.dataset.fermeture = '';
     // Aucune animation si l'appareil en demande moins : la liste est vide, on ferme aussitôt.
     await Promise.allSettled(fenetre.getAnimations({ subtree: true }).map(a => a.finished));
@@ -91,6 +143,7 @@ export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false })
   });
   fenetre.addEventListener('close', () => fenetre.isConnected && fermer());
   fenetre.showModal();
+  if (fermerAuRetour) niveau = ouvrirNiveau(fenetre, fermer);
   return fermer;
 }
 
@@ -126,7 +179,7 @@ export function confirmer({ t, titre, texte, action, signal }) {
       resoudre(choisie);
     };
     fenetre.querySelector('[data-confirmer]').addEventListener('click', () => (choisie = true));
-    ouvrirFenetre(fenetre, { surFermeture: retirer });
+    ouvrirFenetre(fenetre, { surFermeture: retirer, fermerAuRetour: true });
     signal?.addEventListener('abort', retirer, { once: true });
     if (signal?.aborted) retirer();
   });
