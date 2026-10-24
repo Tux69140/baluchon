@@ -77,7 +77,7 @@ export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
         consommable: o.consommable,
         quantite,
         quantiteManuelle: false,
-        dansLeSac: false,
+        dansLeSac: 0,
         aAcheter: o.consommable,
         achete: false,
         note: o.note,

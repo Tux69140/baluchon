@@ -6,9 +6,10 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: [&str; 2] = [
+const MIGRATIONS: [&str; 3] = [
     include_str!("../migrations/001_initial.sql"),
     include_str!("../migrations/002_bibliotheque_et_voyages.sql"),
+    include_str!("../migrations/003_dans_le_sac_en_pieces.sql"),
 ];
 
 pub struct Base(Mutex<Connection>);
@@ -143,8 +144,43 @@ mod tests {
                 .unwrap();
         }
         let base = Base::ouvrir(&chemin).unwrap();
-        assert_eq!(version(&base), 2);
+        assert_eq!(version(&base), MIGRATIONS.len() as i64);
         assert_eq!(base.lister_voyages().unwrap()[0].nom, "Vercors");
         assert!(!base.bibliotheque_installee().unwrap());
+    }
+
+    #[test]
+    fn la_migration_003_convertit_les_coches_en_pieces() {
+        let dossier = Dossier::nouveau();
+        let chemin = dossier.chemin.join("phase2.sqlite3");
+        {
+            let connexion = Connection::open(&chemin).unwrap();
+            connexion.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            for (indice, sql) in MIGRATIONS[0..2].iter().enumerate() {
+                connexion.execute_batch(sql).unwrap();
+                connexion
+                    .execute("INSERT INTO schema_migrations (version) VALUES (?1)", [indice as i64 + 1])
+                    .unwrap();
+            }
+            connexion
+                .execute_batch(
+                    "INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
+                       VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 2, 'x');
+                     INSERT INTO categorie_du_voyage (id, voyage_id, nom, icone, couleur, ordre, modifie_le)
+                       VALUES ('c1', 'v1', 'Repas', 'i', 'c', 1, 'x');
+                     INSERT INTO objet_du_voyage (id, voyage_id, categorie_id, nom, regle, valeur, par_personne,
+                       consommable, quantite, dans_le_sac, modifie_le)
+                       VALUES ('o1', 'v1', 'c1', 'Repas', 'fixe', 16, 0, 1, 16, 1, 'x'),
+                              ('o2', 'v1', 'c1', 'Thé', 'fixe', 2, 0, 1, 2, 0, 'x');",
+                )
+                .unwrap();
+        }
+        let base = Base::ouvrir(&chemin).unwrap();
+        assert_eq!(version(&base), 3);
+        let voyage = base.lire_voyage("v1").unwrap().unwrap();
+        assert_eq!(voyage.voyage.nom, "Vercors");
+        assert_eq!(voyage.categories.len(), 1);
+        let pieces: Vec<_> = voyage.objets.iter().map(|o| (o.id.as_str(), o.dans_le_sac)).collect();
+        assert_eq!(pieces, vec![("o1", 16), ("o2", 0)]);
     }
 }

@@ -8,7 +8,7 @@ use base::Base;
 use bibliotheque::Bibliotheque;
 use std::fs;
 use tauri::{AppHandle, Manager, State};
-use voyages::{Voyage, VoyageComplet};
+use voyages::{EtatObjet, Voyage, VoyageComplet};
 
 fn chemin_de_la_base(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let dossier = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -46,6 +46,16 @@ fn lire_voyage(base: State<'_, Base>, id: String) -> Result<Option<VoyageComplet
     base.lire_voyage(&id)
 }
 
+#[tauri::command]
+fn regler_dans_le_sac(base: State<'_, Base>, id: String, dans_le_sac: i64, modifie_le: String) -> Result<(), String> {
+    base.regler_dans_le_sac(&id, dans_le_sac, &modifie_le)
+}
+
+#[tauri::command]
+fn etats_des_objets(base: State<'_, Base>) -> Result<Vec<EtatObjet>, String> {
+    base.etats_des_objets()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -60,7 +70,9 @@ pub fn run() {
             installer_bibliotheque,
             lire_bibliotheque,
             creer_voyage,
-            lire_voyage
+            lire_voyage,
+            regler_dans_le_sac,
+            etats_des_objets
         ])
         .run(tauri::generate_context!())
         .expect("Baluchon n'a pas pu démarrer");

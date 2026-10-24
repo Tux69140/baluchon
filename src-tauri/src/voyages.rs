@@ -45,11 +45,20 @@ pub struct ObjetDuVoyage {
     pub consommable: bool,
     pub quantite: i64,
     pub quantite_manuelle: bool,
-    pub dans_le_sac: bool,
+    pub dans_le_sac: i64,
     pub a_acheter: bool,
     pub achete: bool,
     pub note: String,
     pub modifie_le: String,
+}
+
+// Ce qu'il faut pour compter l'avancement de tous les voyages sans lire leur contenu.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EtatObjet {
+    pub voyage_id: String,
+    pub quantite: i64,
+    pub dans_le_sac: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -165,6 +174,32 @@ impl Base {
         tx.commit().map_err(en_texte)
     }
 
+    // La base refuse toute valeur hors de 0..=quantité (contrainte de la table) ; aucune ligne
+    // modifiée veut dire objet inconnu.
+    pub fn regler_dans_le_sac(&self, id: &str, dans_le_sac: i64, modifie_le: &str) -> Result<(), String> {
+        let modifiees = self
+            .connexion()?
+            .execute(
+                "UPDATE objet_du_voyage SET dans_le_sac = ?2, modifie_le = ?3 WHERE id = ?1",
+                params![id, dans_le_sac, modifie_le],
+            )
+            .map_err(en_texte)?;
+        if modifiees == 0 {
+            return Err("Objet introuvable.".to_owned());
+        }
+        Ok(())
+    }
+
+    pub fn etats_des_objets(&self) -> Result<Vec<EtatObjet>, String> {
+        let connexion = self.connexion()?;
+        lire_lignes(
+            &connexion,
+            "SELECT voyage_id, quantite, dans_le_sac FROM objet_du_voyage ORDER BY rowid",
+            [],
+            |r| Ok(EtatObjet { voyage_id: r.get(0)?, quantite: r.get(1)?, dans_le_sac: r.get(2)? }),
+        )
+    }
+
     pub fn lire_voyage(&self, id: &str) -> Result<Option<VoyageComplet>, String> {
         let connexion = self.connexion()?;
         let voyage = connexion
@@ -262,5 +297,48 @@ mod tests {
                 modifie_le: "2026-10-06T09:00:00Z".into(),
             }]
         );
+    }
+
+    #[test]
+    fn regler_dans_le_sac_est_relu_et_survit_a_la_fermeture() {
+        let dossier = Dossier::nouveau();
+        let chemin = dossier.chemin.join("essai.sqlite3");
+        let contenu = contrat().voyage;
+        let id = contenu.objets[0].id.clone();
+        Base::ouvrir(&chemin).unwrap().creer_voyage(&contenu).unwrap();
+        Base::ouvrir(&chemin)
+            .unwrap()
+            .regler_dans_le_sac(&id, 1, "2026-10-24T10:00:00.000Z")
+            .unwrap();
+        let relu = Base::ouvrir(&chemin).unwrap().lire_voyage("v-vercors").unwrap().unwrap();
+        assert_eq!(relu.objets[0].dans_le_sac, 1);
+        assert_eq!(relu.objets[0].modifie_le, "2026-10-24T10:00:00.000Z");
+    }
+
+    #[test]
+    fn regler_dans_le_sac_refuse_hors_bornes_et_objet_inconnu() {
+        let (_dossier, base) = base_jetable();
+        let contenu = contrat().voyage;
+        let objet = contenu.objets[0].clone();
+        base.creer_voyage(&contenu).unwrap();
+        assert!(base.regler_dans_le_sac(&objet.id, -1, "x").is_err());
+        assert!(base.regler_dans_le_sac(&objet.id, objet.quantite + 1, "x").is_err());
+        assert!(base.regler_dans_le_sac("inconnu", 0, "x").is_err());
+        let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
+        assert_eq!(relu.objets[0].dans_le_sac, objet.dans_le_sac);
+        assert_eq!(relu.objets[0].modifie_le, objet.modifie_le);
+    }
+
+    #[test]
+    fn etats_des_objets_donne_quantite_et_pieces_de_chaque_objet() {
+        let (_dossier, base) = base_jetable();
+        let contenu = contrat().voyage;
+        base.creer_voyage(&contenu).unwrap();
+        let etats = base.etats_des_objets().unwrap();
+        assert_eq!(etats.len(), contenu.objets.len());
+        assert!(etats.iter().all(|e| e.voyage_id == "v-vercors"));
+        let quantites: Vec<_> = etats.iter().map(|e| (e.quantite, e.dans_le_sac)).collect();
+        let attendues: Vec<_> = contenu.objets.iter().map(|o| (o.quantite, o.dans_le_sac)).collect();
+        assert_eq!(quantites, attendues);
     }
 }
