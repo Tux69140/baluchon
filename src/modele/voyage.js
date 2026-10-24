@@ -3,6 +3,7 @@
 import { estDate } from './dates.js';
 import { dateLimite, joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
+import { ordreDansLeSac } from './sac.js';
 
 export const VOYAGEURS = Object.freeze({ min: 1, max: 20, parDefaut: 2 });
 
@@ -92,7 +93,7 @@ export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
 export function listeParCategorie({ categories, objets }) {
   return [...categories]
     .sort(parOrdre)
-    .map(categorie => ({ categorie, objets: objets.filter(o => o.categorieId === categorie.id).sort(parNom) }));
+    .map(categorie => ({ categorie, objets: ordreDansLeSac(objets.filter(o => o.categorieId === categorie.id)) }));
 }
 
 // En cours (départ ≤ aujourd'hui ≤ retour), puis à venir du plus proche au plus lointain, puis

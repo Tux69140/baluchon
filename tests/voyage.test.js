@@ -212,3 +212,17 @@ test('classement : en cours, à venir du plus proche, passés du plus récent', 
   assert.deepEqual(noms(classes.aVenir), ['Toussaint', 'Noël']);
   assert.deepEqual(noms(classes.passes), ['Week-end', 'Pâques']);
 });
+
+test('la liste d’un voyage place les objets complets après les incomplets de leur catégorie', () => {
+  const liste = listeParCategorie({
+    categories: [{ id: 'a', nom: 'A', ordre: 0 }],
+    objets: [
+      { id: '1', categorieId: 'a', nom: 'Duvet', quantite: 1, dansLeSac: 1 },
+      { id: '2', categorieId: 'a', nom: 'Tente', quantite: 1, dansLeSac: 0 },
+    ],
+  });
+  assert.deepEqual(
+    liste[0].objets.map(x => x.nom),
+    ['Tente', 'Duvet'],
+  );
+});
