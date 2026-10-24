@@ -19,7 +19,7 @@ function jauge({ faits, total }, mini = false) {
   return `<span class="jauge${mini ? ' jauge-mini' : ''}"${fini}><i style="width: ${pourcent}%"></i></span>`;
 }
 
-// Une hauteur réservée : le bandeau « Sac bouclé ! » prend la place de la jauge, à peine plus haut.
+// Une hauteur réservée (voyage.css) : le bandeau « Sac bouclé ! » prend la place de la jauge.
 // pose : le sac vient de boucler, le bandeau entre avec un rebond.
 function vueProgression(t, objets, { sacBoucle, pose }) {
   const avancement = progression(objets);

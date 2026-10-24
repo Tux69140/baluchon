@@ -14,12 +14,14 @@
 }
 
 /* ---------- Progression ---------- */
-/* Hauteur réservée : le bandeau « Sac bouclé ! » prend la place de la jauge. */
+/* Hauteur réservée : la carte a d'emblée la hauteur du bandeau « Sac bouclé ! » (mascotte, titre,
+   ligne et jauge : 88 px), qui prend donc sa place sans rien pousser en dessous (AGENTS.md). La
+   maquette réservait 76 px et poussait la liste de 12 px (décision du contrôleur, 2026-10-24). */
 .progression {
   display: flex;
   align-items: center;
   gap: var(--e-md);
-  min-height: 76px;
+  min-height: 88px;
   margin-top: var(--e-md);
   padding: var(--e-sm) var(--e-md);
   background: var(--carte);

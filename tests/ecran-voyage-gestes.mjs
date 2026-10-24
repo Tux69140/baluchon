@@ -12,7 +12,8 @@
 //   dernier et atténuée ; une coche sous le filtre disparaît après la seconde ; après rechargement de
 //   la page, filtre toujours actif et coches gardées ; une catégorie qui y boucle dit pendant son tampon
 //   que ses objets sont masqués, puis descend au fond ;
-// - le dernier objet du voyage : bandeau « Sac bouclé ! » (témoin : absent avant) ;
+// - le dernier objet du voyage : bandeau « Sac bouclé ! » (témoin : absent avant), à sa place réservée :
+//   la liste en dessous ne bouge pas ;
 // - panne d'enregistrement : message en bas, la case revient à son état enregistré ; le message part
 //   au bout de six secondes ;
 // - animations réduites : la liste se range sans aucune animation ; témoin : sans réglage, elle glisse.
@@ -314,11 +315,20 @@ try {
         const p = document.querySelector('.progression');
         return p.hasAttribute('data-boucle') ? p.querySelector('.progression-titre')?.textContent.trim() : null;
       });
+    // Le bandeau a sa place réservée : rien ne bouge en dessous (mesuré sans animation).
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const haut = () => page.evaluate(() => document.querySelector('.categorie').getBoundingClientRect().top);
     const avant = await bandeau();
+    const hautAvant = await haut();
     await appuyer(page, 'o-den');
     await page.clock.runFor(1000);
     const apres = await bandeau();
+    const hautApres = await haut();
     juge.exige(avant === null && apres === fr.voyage.sacBoucle, `sac bouclé : avant ${avant}, après ${apres}`);
+    juge.exige(
+      Math.abs(hautApres - hautAvant) < 0.5,
+      `sac bouclé : la liste a bougé de ${hautApres - hautAvant} px sous le bandeau`,
+    );
     juge.exige(erreurs.length === 0, `sac bouclé : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }

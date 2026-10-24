@@ -51,8 +51,10 @@ export function ouvrirFenetre(fenetre, { surFermeture }) {
 // Avant un geste qui défait quelque chose (vider un objet du sac) : une fenêtre d'alerte avec
 // « Annuler » et le bouton de l'action. La promesse rend true si l'action est choisie, false pour
 // « Annuler » ou Échap, une fois la fenêtre effacée : l'écran derrière reprend alors la main.
-// Le focus va d'abord à « Annuler », le geste sans perte.
-export function confirmer({ t, titre, texte, action }) {
+// Le focus va d'abord à « Annuler », le geste sans perte. signal (AbortSignal) : l'écran qui a posé
+// la question s'en va ; la fenêtre disparaît aussitôt et la réponse est non (sinon elle resterait
+// par-dessus l'écran suivant, posée dans document.body).
+export function confirmer({ t, titre, texte, action, signal }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueFenetre({
     t,
@@ -73,12 +75,13 @@ export function confirmer({ t, titre, texte, action }) {
   document.body.append(fenetre);
   return new Promise(resoudre => {
     let choisie = false;
+    const retirer = () => {
+      fenetre.remove();
+      resoudre(choisie);
+    };
     fenetre.querySelector('[data-confirmer]').addEventListener('click', () => (choisie = true));
-    ouvrirFenetre(fenetre, {
-      surFermeture: () => {
-        fenetre.remove();
-        resoudre(choisie);
-      },
-    });
+    ouvrirFenetre(fenetre, { surFermeture: retirer });
+    signal?.addEventListener('abort', retirer, { once: true });
+    if (signal?.aborted) retirer();
   });
 }

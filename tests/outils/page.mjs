@@ -55,6 +55,8 @@ export async function ouvrir(
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
   page.on('console', m => m.type() === 'error' && erreurs.push(m.text()));
+  // Un plantage du navigateur ferme la page : on le dit, plutôt qu'une suite d'erreurs « page fermée ».
+  page.on('crash', () => erreurs.push('la page a planté (processus du navigateur arrêté)'));
   // Hors ligne : toute requête qui quitte l'appli est coupée, et comptée comme une faute.
   await page.route(
     lien => lien.hostname !== 'localhost',

@@ -71,6 +71,10 @@ function ouvrirListe(app, donnees, contexte) {
   let file = Promise.resolve();
   let generation = 0;
   let relecture = false;
+  // La fin de l'écran, quel que soit le chemin (retour système, lien, adresse, redessin) : dès que
+  // ce main n'est plus dans la page, minuteries arrêtées, question en cours retirée, et plus rien ne
+  // touche la page.
+  const fin = new AbortController();
 
   function peindre({ glissement = false } = {}) {
     const avant = glissement && !moinsDAnimations.matches ? places(main) : null;
@@ -89,7 +93,14 @@ function ouvrirListe(app, donnees, contexte) {
     for (const cle of Object.keys(minuteries)) clearTimeout(minuteries[cle]);
   }
 
+  // Vrai si l'écran est parti ; le constat suffit à tout arrêter, sans attendre l'observateur.
+  function parti() {
+    if (!fin.signal.aborted && !main.isConnected) fin.abort();
+    return fin.signal.aborted;
+  }
+
   function finDuRepit() {
+    if (parti()) return;
     const resultat = apresRepit(etat, liste);
     etat = resultat.etat;
     poses = { tampons: new Set(resultat.nouvelles), bandeau: resultat.sacVientDeBoucler };
@@ -99,6 +110,7 @@ function ouvrirListe(app, donnees, contexte) {
   }
 
   function finDuTampon() {
+    if (parti()) return;
     etat = apresTampon(etat, aReplier, liste);
     aReplier = [];
     peindre({ glissement: true });
@@ -139,7 +151,7 @@ function ouvrirListe(app, donnees, contexte) {
     } finally {
       relecture = false;
     }
-    if (!main.isConnected) return;
+    if (parti()) return;
     peindre();
     alerter(t('voyage.erreurEnregistrement'));
   }
@@ -148,7 +160,9 @@ function ouvrirListe(app, donnees, contexte) {
     const sienne = generation;
     file = file
       .then(() => sienne === generation && stockage.reglerDansLeSac(id, dansLeSac, new Date().toISOString()))
-      .catch(erreur => sienne === generation && echec(erreur));
+      .catch(erreur => sienne === generation && echec(erreur))
+      // Un échec qui échoue lui-même ne doit pas bloquer la file pour toujours.
+      .catch(erreur => console.error(erreur));
   }
 
   // Le chemin commun de tout changement de pièces : l'écran d'abord, la liste figée, puis la base.
@@ -172,8 +186,9 @@ function ouvrirListe(app, donnees, contexte) {
         titre: remplir(t('fiche.confirmerTitre'), { nom: objet.nom }),
         texte: remplir(t('fiche.confirmerTexte'), { n: objet.dansLeSac }),
         action: t('fiche.vider'),
+        signal: fin.signal,
       });
-      if (!main.isConnected) return;
+      if (parti()) return;
       // Le dessin a pu changer pendant la question : le focus revient à la case de l'objet.
       trouverCommande('case', id)?.focus();
       if (!accord || relecture) return;
@@ -195,8 +210,9 @@ function ouvrirListe(app, donnees, contexte) {
       peindre({ glissement: true });
     }
   });
-  // Quitter l'écran arrête les minuteries : elles ne toucheraient plus qu'une page partie.
-  window.addEventListener('hashchange', arreter, { once: true });
+  fin.signal.addEventListener('abort', arreter);
+  const observateur = new MutationObserver(() => parti() && observateur.disconnect());
+  observateur.observe(app, { childList: true });
   peindre();
 }
 
