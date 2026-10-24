@@ -102,14 +102,14 @@ Chaque catégorie et le voyage entier affichent leur progression ; la liste des 
 ### Critères d'acceptation
 
 - [x] Les maquettes de l'écran du voyage et de la fiche sont validées par le chef de projet avant tout code (2026-10-24).
-- [ ] Les objets sont classés par ordre alphabétique, les cochés en bas ; les catégories suivent l'ordre de la bibliothèque, et une catégorie bouclée ne bouge que sous le filtre.
-- [ ] « Repas » à 16 : six appuis sur la case affichent « 6 / 16 », sans déplacement ; seize le cochent.
-- [ ] Vider un objet coché de plus d'une pièce, par la case ou par « Vider » dans la fiche, demande une confirmation ; une seule pièce se retire directement.
-- [ ] Trois coches en moins d'une seconde ne provoquent qu'un seul déplacement.
-- [ ] Les compteurs « cochés / total » comptent les objets complets ; ils sont justes pour chaque catégorie, pour le voyage et dans la liste des voyages.
-- [ ] Quand l'appareil demande moins d'animations, rien ne glisse, le tampon et le bandeau apparaissent fixes.
-- [ ] Les coches et les comptes partiels survivent à la fermeture de l'appli ; le filtre aussi, sur le même appareil.
-- [ ] Chaque commande offre une cible de 44 × 44 px au moins.
+- [x] Les objets sont classés par ordre alphabétique, les cochés en bas ; les catégories suivent l'ordre de la bibliothèque, et une catégorie bouclée ne bouge que sous le filtre.
+- [x] « Repas » à 16 : six appuis sur la case affichent « 6 / 16 », sans déplacement ; seize le cochent.
+- [x] Vider un objet coché de plus d'une pièce, par la case ou par « Vider » dans la fiche, demande une confirmation ; une seule pièce se retire directement.
+- [x] Trois coches en moins d'une seconde ne provoquent qu'un seul déplacement.
+- [x] Les compteurs « cochés / total » comptent les objets complets ; ils sont justes pour chaque catégorie, pour le voyage et dans la liste des voyages.
+- [x] Quand l'appareil demande moins d'animations, rien ne glisse, le tampon et le bandeau apparaissent fixes.
+- [x] Les coches et les comptes partiels survivent à la fermeture de l'appli ; le filtre aussi, sur le même appareil.
+- [x] Chaque commande offre une cible de 44 × 44 px au moins.
 
 ## Bloquée par
 
