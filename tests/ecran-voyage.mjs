@@ -13,9 +13,11 @@
 //   lettres et un retour vers Mes voyages ;
 // - une panne de lecture affiche l'écran d'erreur ; hors de l'accueil, il offre le retour vers Mes
 //   voyages, qui fonctionne ; témoin : sur l'accueil, il n'en offre pas (il mènerait au même écran).
-// Téléphone et tablette en portrait × 2 thèmes : cibles de 44 px, pas de défilement de côté (nom très
-// long compris), rien sous les barres système. La tablette en paysage passe en deux panneaux : son
-// test vient avec eux (tâche 8 de la phase 3).
+// - sur la tablette en paysage, deux panneaux : les mêmes catégories à gauche (nom, pavé, compte ou
+//   tampon), les objets de Vêtements, première non bouclée, à droite ; voyage sans objet en une colonne
+//   (le reste des deux panneaux : tests/ecran-voyage-panneaux.mjs).
+// Téléphone, tablette en portrait et en paysage × 2 thèmes : cibles de 44 px, pas de défilement de
+// côté (nom très long compris), rien sous les barres système.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -35,7 +37,7 @@ import { DONNEES, NOM } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
-const UNE_COLONNE = { telephone: FORMATS.telephone, 'tablette-portrait': FORMATS['tablette-portrait'] };
+const DEUX_PANNEAUX = new Set(['tablette-paysage']);
 
 // [nom, couleur du pavé, compte ou tampon, ouverte, [nom, quantité, état de la case, note, partagé]].
 const ATTENDU = [
@@ -101,6 +103,19 @@ const lire = page =>
       boucle: document.querySelector('.progression')?.hasAttribute('data-boucle'),
       filtre: document.querySelector('[data-action="filtre"]')?.getAttribute('aria-pressed'),
       masques: Boolean(document.querySelector('.masques')),
+      // Deux panneaux : chaque choix de gauche, puis les objets de la catégorie choisie, à droite.
+      choix: [...document.querySelectorAll('.choix')].map(c => [
+        c.querySelector('.categorie-nom b')?.textContent,
+        getComputedStyle(c.querySelector('.pave')).backgroundColor,
+        (c.querySelector('.tampon') ?? c.querySelector('.compte'))?.textContent.trim(),
+      ]),
+      detail: [...document.querySelectorAll('.panneau-droit .objet')].map(o => [
+        o.querySelector('.objet-nom').textContent,
+        o.querySelector('.objet-quantite').textContent,
+        o.dataset.etat,
+        Boolean(o.querySelector('.objet-note svg')),
+        Boolean(o.querySelector('.objet-sous')?.textContent.includes(partage)),
+      ]),
       categories: [...document.querySelectorAll('.categorie')].map(c => [
         c.querySelector('.categorie-nom b')?.textContent,
         getComputedStyle(c.querySelector('.pave')).backgroundColor,
@@ -144,7 +159,7 @@ const navigateur = await chromium.launch();
 try {
   await mkdir(CAPTURES, { recursive: true });
   for (const theme of ['light', 'dark']) {
-    for (const [format, taille] of Object.entries(UNE_COLONNE)) {
+    for (const [format, taille] of Object.entries(FORMATS)) {
       const cas = `${format}, ${NOMS_THEME[theme]}`;
       const { contexte, page, sorties, erreurs } = await ouvrir(navigateur, serveur.url, {
         taille,
@@ -164,11 +179,23 @@ try {
         `${cas} : progression « ${m.progression} »${m.boucle ? ', bouclée' : ''}`,
       );
       juge.exige(m.filtre === 'false' && !m.masques, `${cas} : filtre ${m.filtre}, masqués ${m.masques}`);
-      juge.exige(
-        JSON.stringify(m.categories) === JSON.stringify(ATTENDU),
-        `${cas} : liste ${JSON.stringify(m.categories)}`,
-      );
-      for (const [id, attendus] of Object.entries(LIBELLES))
+      if (DEUX_PANNEAUX.has(format)) {
+        const choix = ATTENDU.map(([nom, couleur, compte]) => [nom, couleur, compte]);
+        juge.exige(
+          m.categories.length === 0 && JSON.stringify(m.choix) === JSON.stringify(choix),
+          `${cas} : choix ${JSON.stringify(m.choix)}, ${m.categories.length} cartes`,
+        );
+        juge.exige(
+          JSON.stringify(m.detail) === JSON.stringify(ATTENDU[1][4]),
+          `${cas} : détail ${JSON.stringify(m.detail)}`,
+        );
+      } else
+        juge.exige(
+          JSON.stringify(m.categories) === JSON.stringify(ATTENDU),
+          `${cas} : liste ${JSON.stringify(m.categories)}`,
+        );
+      // Les lignes de Toilette et d'Alimentation : en deux panneaux, elles ne sont pas à droite.
+      for (const [id, attendus] of DEUX_PANNEAUX.has(format) ? [] : Object.entries(LIBELLES))
         juge.exige(
           JSON.stringify(m.libelles[id]) === JSON.stringify(attendus),
           `${cas} : noms de la ligne ${id} ${JSON.stringify(m.libelles[id])}`,
@@ -277,5 +304,5 @@ try {
 }
 juge.conclure(
   'Écran d’un voyage',
-  '2 formats en une colonne × 2 thèmes, voyage sans objet, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
+  '3 formats (dont deux panneaux en paysage) × 2 thèmes, voyage sans objet, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
 );

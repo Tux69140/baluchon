@@ -1,0 +1,93 @@
+/* Écran d'un voyage en deux panneaux, sur la tablette en paysage et l'ordinateur : repris de la
+   maquette validée le 2026-10-24 (docs/maquettes/voyage/maquette.css). Les cartes, lignes et tampons
+   sont ceux de voyage.css ; ici, la grille et ce qui n'existe qu'en deux panneaux.
+   La requête est celle de DEUX_PANNEAUX (src/ecrans/voyage.js), qui choisit la disposition : les
+   deux doivent rester identiques. */
+@media (min-width: 1000px) and (orientation: landscape) {
+  /* Le contenu tient dans 1080 px, centré, à la hauteur de l'écran ; chaque panneau défile seul. */
+  .panneaux {
+    display: grid;
+    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+    gap: var(--e-lg);
+    max-width: var(--largeur-max);
+    height: calc(100dvh - var(--zone-haut) - var(--zone-bas));
+    margin: 0 auto;
+    padding: 0 var(--e-lg);
+  }
+
+  .panneau {
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--e-lg) 0 var(--e-2xl);
+  }
+
+  /* ---------- À gauche : en-tête, progression, filtre, choix de catégorie ---------- */
+  .choix-liste {
+    display: grid;
+    gap: var(--e-sm);
+    margin: var(--e-sm) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .choix {
+    display: flex;
+    align-items: center;
+    gap: var(--e-md);
+    width: 100%;
+    min-height: 72px;
+    padding: var(--e-sm) var(--e-sm) var(--e-sm) var(--e-md);
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--encre);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .choix:hover {
+    background: var(--releve);
+  }
+
+  /* La catégorie choisie : fond actif, bord à l'encre de 2 px (le contenu ne bouge pas d'un pixel),
+     flèche vers ses objets. Les autres gardent la place de la flèche : les comptes restent alignés. */
+  .choix[aria-current='true'] {
+    background: var(--actif);
+    border: 2px solid var(--encre);
+    padding-left: calc(var(--e-md) - 1px);
+  }
+
+  .choix .chevron {
+    visibility: hidden;
+  }
+
+  .choix[aria-current='true'] .chevron {
+    visibility: visible;
+    color: var(--encre);
+  }
+
+  /* ---------- À droite : la catégorie choisie et ses objets ---------- */
+  .detail {
+    background: var(--carte);
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+
+  .detail-tete {
+    display: flex;
+    align-items: center;
+    gap: var(--e-md);
+    min-height: 80px;
+    padding: var(--e-md);
+    border-bottom: 1px solid var(--separation);
+  }
+
+  .detail-tete h2 {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--taille-section);
+    overflow-wrap: anywhere;
+  }
+}

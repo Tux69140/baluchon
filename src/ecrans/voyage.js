@@ -1,5 +1,7 @@
-// Écran d'un voyage (#/voyage/:id) : sa liste en une colonne, où l'on compte pièce par pièce ce qui
-// est dans le sac (docs/PRD.md, US-15, US-16, US-17, US-22 ; maquette docs/maquettes/voyage/).
+// Écran d'un voyage (#/voyage/:id) : sa liste, où l'on compte pièce par pièce ce qui est dans le sac
+// (docs/PRD.md, US-15, US-16, US-17, US-22 ; maquette docs/maquettes/voyage/). Une colonne de cartes
+// au téléphone et sur la tablette en portrait ; deux panneaux sur la tablette en paysage et
+// l'ordinateur, la catégorie choisie à gauche et ses objets à droite.
 // Ce fichier branche les gestes, les minuteries et le stockage ; le dessin est dans voyage-vues.js,
 // l'état d'affichage figé dans rangement.js, les règles du sac dans le modèle.
 //
@@ -10,7 +12,14 @@
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
-import { apresRepit, apresTampon, basculerCategorie, basculerFiltre, etatInitial } from './rangement.js';
+import {
+  apresRepit,
+  apresTampon,
+  basculerCategorie,
+  basculerFiltre,
+  choisirCategorie,
+  etatInitial,
+} from './rangement.js';
 import { vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
 
 // Une seconde sans appui avant tout déplacement, une seconde de tampon avant le repli (docs/PRD.md).
@@ -20,6 +29,10 @@ const DUREE_ALERTE = 6000;
 // Glissement des lignes qui changent de place (docs/DESIGN.md, journal du 2026-10-24).
 const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
 const moinsDAnimations = matchMedia('(prefers-reduced-motion: reduce)');
+// Deux panneaux dès que l'écran est large et couché : la même requête habille la disposition dans
+// src/styles/voyage-panneaux.css ; les deux doivent rester identiques.
+const DEUX_PANNEAUX = '(min-width: 1000px) and (orientation: landscape)';
+const deuxPanneaux = matchMedia(DEUX_PANNEAUX);
 
 // Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
 // un voyage supprimé, plutôt que de passer pour une panne de lecture.
@@ -78,13 +91,20 @@ function ouvrirListe(app, donnees, contexte) {
   // La fiche ouverte : l'objet qu'elle montre et de quoi la repeindre.
   let fiche = null;
 
+  // Chaque dessin suit la disposition du moment : tourner l'appareil ou élargir la fenêtre redessine
+  // le même état (coches, catégorie choisie, filtre). Les panneaux défilent chacun : un dessin dans
+  // la même disposition les laisse là où on les avait menés.
   function peindre({ glissement = false } = {}) {
     const avant = glissement && !moinsDAnimations.matches ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    main.innerHTML = vueVoyage(contexte, { contenu, liste, etat, poses });
+    const { classe, html } = vueVoyage(contexte, { contenu, liste, etat, poses, deuxPanneaux: deuxPanneaux.matches });
+    const defilements = classe === main.className ? [...main.querySelectorAll('.panneau')].map(p => p.scrollTop) : [];
+    main.className = classe;
+    main.innerHTML = html;
+    main.querySelectorAll('.panneau').forEach((p, i) => (p.scrollTop = defilements[i] ?? 0));
     poses = { tampons: new Set(), bandeau: false };
-    if (cle) trouverCommande(cle.action, cle.id)?.focus({ preventScroll: true });
+    if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
     if (avant) glisser(main, avant);
     // Un objet disparu à la relecture ferme la fiche (repeindre(undefined)).
     fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
@@ -92,6 +112,23 @@ function ouvrirListe(app, donnees, contexte) {
 
   const trouverCommande = (action, id) =>
     main.querySelector(`[data-action="${action}"]${id ? `[data-id="${CSS.escape(id)}"]` : ''}`);
+
+  // La commande qui reprend le focus quand celle d'avant n'est plus dessinée (ligne masquée, catégorie
+  // repliée ou quittée, disposition changée) : la même, sinon la ligne de l'objet, sinon sa catégorie
+  // (en-tête d'accordéon en une colonne, choix à gauche en deux panneaux), sinon le filtre ; jamais la
+  // page entière.
+  function commandeProche(action, id) {
+    const objet = contenu.objets.find(o => o.id === id);
+    const categorieId = objet ? objet.categorieId : id;
+    const deSaCategorie = () =>
+      categorieId && (trouverCommande('accordeon', categorieId) ?? trouverCommande('choisir', categorieId));
+    return (
+      trouverCommande(action, id) ??
+      (objet && trouverCommande('fiche', id)) ??
+      deSaCategorie() ??
+      trouverCommande('filtre')
+    );
+  }
 
   function arreter() {
     for (const cle of Object.keys(minuteries)) clearTimeout(minuteries[cle]);
@@ -199,9 +236,8 @@ function ouvrirListe(app, donnees, contexte) {
     changer(id, dansLeSac);
   }
 
-  // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps ; si la
-  // ligne n'est plus dessinée (catégorie repliée après son tampon, objet masqué par le filtre), à
-  // l'en-tête de sa catégorie, sinon au filtre : jamais à la page entière.
+  // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps, ou à la
+  // commande la plus proche si la ligne n'est plus dessinée (commandeProche).
   function ouvrirLaFiche(id) {
     const objet = contenu.objets.find(o => o.id === id);
     if (!objet || fiche) return;
@@ -214,11 +250,7 @@ function ouvrirListe(app, donnees, contexte) {
         surChangement: valeur => changer(id, valeur),
         surFermeture: () => {
           fiche = null;
-          const retour =
-            trouverCommande('fiche', id) ??
-            trouverCommande('accordeon', objet.categorieId) ??
-            trouverCommande('filtre');
-          retour?.focus();
+          commandeProche('fiche', id)?.focus();
         },
         signal: fin.signal,
         dans: app,
@@ -235,6 +267,11 @@ function ouvrirListe(app, donnees, contexte) {
     else if (action === 'accordeon') {
       etat = basculerCategorie(etat, id);
       peindre();
+    } else if (action === 'choisir') {
+      etat = choisirCategorie(etat, id);
+      peindre();
+      // Une autre catégorie se lit depuis son début.
+      main.querySelector('.panneau-droit')?.scrollTo(0, 0);
     } else if (action === 'filtre') {
       etat = basculerFiltre(etat, liste);
       stockage.ecrireFiltre(contenu.voyage.id, etat.filtre);
@@ -242,6 +279,13 @@ function ouvrirListe(app, donnees, contexte) {
     }
   });
   fin.signal.addEventListener('abort', arreter);
+  deuxPanneaux.addEventListener(
+    'change',
+    () => {
+      if (!parti()) peindre();
+    },
+    { signal: fin.signal },
+  );
   const observateur = new MutationObserver(() => parti() && observateur.disconnect());
   observateur.observe(app, { childList: true });
   peindre();

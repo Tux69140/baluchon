@@ -211,7 +211,8 @@
 }
 
 /* Catégorie bouclée sous le filtre : descendue en bas, atténuée ; le tampon dit pourquoi. */
-.categorie[data-attenuee] {
+.categorie[data-attenuee],
+.choix[data-attenuee] {
   background: transparent;
   border-style: dashed;
 }

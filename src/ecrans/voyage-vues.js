@@ -1,7 +1,8 @@
 // Le HTML de l'écran d'un voyage (src/ecrans/voyage.js), d'après la maquette validée le 2026-10-24
-// (docs/maquettes/voyage/) : en-tête, progression, filtre, cartes de catégorie, lignes d'objet, voyage
-// vide. Rien ne vit ici que du dessin : l'ordre, les masqués et les replis viennent de l'état
-// d'affichage (src/ecrans/rangement.js), les pièces du voyage lui-même.
+// (docs/maquettes/voyage/) : en-tête, progression, filtre, cartes de catégorie ou deux panneaux (choix
+// à gauche, détail à droite), lignes d'objet, voyage vide. Rien ne vit ici que du dessin : l'ordre,
+// les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les pièces du
+// voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
 import { appuiSurCase, estComplet, etatDansLeSac, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
@@ -125,6 +126,52 @@ function vueCategorie({ t, langue }, affichee, toute, etat, poses) {
       </section>`;
 }
 
+// Deux panneaux : à gauche, une catégorie se choisit ; la choisie porte aria-current et sa flèche.
+function vueChoix({ t }, affichee, toute, etat, poses) {
+  const { categorie } = affichee;
+  const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
+  return `
+          <li data-flip="cat-${echapper(categorie.id)}">
+            <button type="button" class="choix" data-action="choisir" data-id="${echapper(categorie.id)}" aria-current="${etat.choisie === categorie.id}"${attenuee}>
+              ${paveCategorie(categorie)}
+              <span class="categorie-nom"><b>${echapper(categorie.nom)}</b>${jauge(progression(toute.objets), true)}</span>
+              ${compteOuTampon(t, toute, etat, poses)}
+              <span class="chevron" aria-hidden="true">${iconeInterface('suivant')}</span>
+            </button>
+          </li>`;
+}
+
+// Deux panneaux : à droite, la catégorie choisie, son tampon dans sa tête, puis ses objets.
+function vueDetail({ t, langue }, affichee, toute, etat, poses) {
+  const { categorie } = affichee;
+  return `
+      <section class="panneau panneau-droit" aria-labelledby="detail-titre">
+        <div class="detail">
+          <div class="detail-tete">
+            ${paveCategorie(categorie)}
+            <h2 id="detail-titre">${echapper(categorie.nom)}</h2>
+            ${compteOuTampon(t, toute, etat, poses)}
+          </div>
+          ${vueLignes(t, langue, affichee, toute.objets.length)}
+        </div>
+      </section>`;
+}
+
+// debut : l'en-tête, la progression et le filtre, en haut du panneau de gauche.
+function vuePanneaux(contexte, { liste, etat, poses }, debut) {
+  const parId = new Map(liste.map(c => [c.categorie.id, c]));
+  const affichees = categoriesAffichees(etat, liste);
+  const choisie = affichees.find(c => c.categorie.id === etat.choisie);
+  const choix = affichees.map(c => vueChoix(contexte, c, parId.get(c.categorie.id), etat, poses.tampons)).join('');
+  return `
+      <div class="panneau panneau-gauche">${debut}
+        <nav aria-label="${contexte.t('voyage.categories')}">
+          <ul class="choix-liste">${choix}
+          </ul>
+        </nav>
+      </div>${vueDetail(contexte, choisie, parId.get(etat.choisie), etat, poses.tampons)}`;
+}
+
 function vueVide(t) {
   return `
       <section class="vide-voyage">
@@ -134,18 +181,26 @@ function vueVide(t) {
       </section>`;
 }
 
-// Le contenu de l'écran. liste : les catégories du voyage et leurs pièces (listeParCategorie) ;
-// poses : les tampons et le bandeau qui viennent d'apparaître, animés une seule fois.
-export function vueVoyage(contexte, { contenu, liste, etat, poses }) {
+// Le contenu de l'écran et sa disposition (la classe de <main>) : une colonne de cartes, ou deux
+// panneaux si deuxPanneaux (tablette en paysage, ordinateur) ; un voyage vide reste en une colonne.
+// liste : les catégories du voyage et leurs pièces (listeParCategorie) ; poses : les tampons et le
+// bandeau qui viennent d'apparaître, animés une seule fois.
+export function vueVoyage(contexte, { contenu, liste, etat, poses, deuxPanneaux }) {
   const { t, langue } = contexte;
-  if (!contenu.objets.length) return vueEntete(contexte, contenu.voyage) + vueVide(t);
+  const entete = vueEntete(contexte, contenu.voyage);
+  if (!contenu.objets.length) return { classe: 'ecran', html: entete + vueVide(t) };
+  const debut = `${entete}${vueProgression(t, contenu.objets, { sacBoucle: etat.sacBoucle, pose: poses.bandeau })}${vueOutils(t, langue, etat)}`;
+  if (deuxPanneaux) return { classe: 'panneaux', html: vuePanneaux(contexte, { liste, etat, poses }, debut) };
   const parId = new Map(liste.map(c => [c.categorie.id, c]));
   const categories = categoriesAffichees(etat, liste)
     .map(c => vueCategorie(contexte, c, parId.get(c.categorie.id), etat, poses.tampons))
     .join('');
-  return `${vueEntete(contexte, contenu.voyage)}${vueProgression(t, contenu.objets, { sacBoucle: etat.sacBoucle, pose: poses.bandeau })}${vueOutils(t, langue, etat)}
+  return {
+    classe: 'ecran',
+    html: `${debut}
       <div class="categories">${categories}
-      </div>`;
+      </div>`,
+  };
 }
 
 export const vueIntrouvable = t => `

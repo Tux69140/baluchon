@@ -7,6 +7,7 @@ import './styles/socle.css';
 import './styles/pave.css';
 import './styles/voyages.css';
 import './styles/voyage.css';
+import './styles/voyage-panneaux.css';
 import './styles/nouveau-voyage.css';
 import './styles/calendrier.css';
 import './styles/fenetre.css';

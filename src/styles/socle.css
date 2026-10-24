@@ -30,7 +30,8 @@ h3 {
   padding: var(--e-lg) var(--e-md) var(--e-2xl);
 }
 
-.ecran > h1 {
+.ecran > h1,
+.panneau-gauche > h1 {
   font-size: var(--taille-ecran);
   line-height: 1.15;
   overflow-wrap: anywhere;
