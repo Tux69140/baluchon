@@ -1,6 +1,8 @@
 // Variante navigateur du stockage, pour les tests d’écran : même forme que le stockage Tauri, données
 // rangées dans le navigateur sous une seule clé. Un test y dépose son état de départ avant le
 // chargement de la page ; « pannes » y simule une erreur de lecture ou d’enregistrement.
+import { lireFiltre, ecrireFiltre } from './preferences.js';
+
 const CLE = 'baluchon-essai';
 
 function lire() {
@@ -54,5 +56,28 @@ export function creerStockageNavigateur() {
         objets: (donnees.objetsDuVoyage ?? []).filter(o => o.voyageId === id),
       };
     },
+    async reglerDansLeSac(id, dansLeSac, modifieLe) {
+      const donnees = lire();
+      panne(donnees, 'reglerDansLeSac');
+      const objets = donnees.objetsDuVoyage ?? [];
+      const objet = objets.find(o => o.id === id);
+      if (!objet) throw new Error(`Objet inconnu : ${id}`);
+      // Même refus que la base : un nombre entier de pièces, de 0 à la quantité de l’objet.
+      if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > objet.quantite) {
+        throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
+      }
+      ecrire({ ...donnees, objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, dansLeSac, modifieLe } : o)) });
+    },
+    async etatsDesObjets() {
+      const donnees = lire();
+      panne(donnees, 'etatsDesObjets');
+      return (donnees.objetsDuVoyage ?? []).map(({ voyageId, quantite, dansLeSac }) => ({
+        voyageId,
+        quantite,
+        dansLeSac,
+      }));
+    },
+    lireFiltre,
+    ecrireFiltre,
   });
 }

@@ -49,3 +49,62 @@ test('une panne simulée fait échouer la création sans rien écrire', async ()
   await assert.rejects(stockage.creerVoyage(contrat.voyage));
   assert.deepEqual(await stockage.listerVoyages(), []);
 });
+
+test('régler les pièces dans le sac se relit, change la date et apparaît dans les états', async () => {
+  const stockage = creerStockageNavigateur();
+  await stockage.creerVoyage(contrat.voyage);
+  await stockage.reglerDansLeSac('ov-repas', 6, '2026-10-24T09:00:00.000Z');
+  const objet = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-repas');
+  assert.equal(objet.dansLeSac, 6);
+  assert.equal(objet.modifieLe, '2026-10-24T09:00:00.000Z');
+  const etats = await stockage.etatsDesObjets();
+  assert.deepEqual(
+    etats.find(e => e.dansLeSac === 6),
+    { voyageId: 'v-vercors', quantite: 16, dansLeSac: 6 },
+  );
+  assert.equal(etats.length, contrat.voyage.objets.length);
+});
+
+test('régler un objet inconnu ou hors bornes est refusé et ne change rien', async () => {
+  const stockage = creerStockageNavigateur();
+  await stockage.creerVoyage(contrat.voyage);
+  await assert.rejects(stockage.reglerDansLeSac('inconnu', 1, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 17, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', -1, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 1.5, 'x'));
+  assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);
+});
+
+test('une panne simulée fait échouer le réglage ou la lecture des états', async () => {
+  const stockage = creerStockageNavigateur();
+  await stockage.creerVoyage(contrat.voyage);
+  const donnees = JSON.parse(localStorage.getItem('baluchon-essai'));
+  localStorage.setItem('baluchon-essai', JSON.stringify({ ...donnees, pannes: ['reglerDansLeSac', 'etatsDesObjets'] }));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 6, 'x'));
+  await assert.rejects(stockage.etatsDesObjets());
+  localStorage.setItem('baluchon-essai', JSON.stringify(donnees));
+  assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);
+});
+
+test('le filtre « Reste à emballer » est retenu par voyage, d’une instance à l’autre', () => {
+  creerStockageNavigateur().ecrireFiltre('v-vercors', true);
+  const stockage = creerStockageNavigateur();
+  assert.equal(stockage.lireFiltre('v-vercors'), true);
+  assert.equal(stockage.lireFiltre('autre'), false);
+  stockage.ecrireFiltre('v-vercors', false);
+  assert.equal(stockage.lireFiltre('v-vercors'), false);
+});
+
+test('un localStorage qui échoue donne un filtre inactif, sans erreur', () => {
+  globalThis.localStorage = {
+    getItem: () => {
+      throw new Error('illisible');
+    },
+    setItem: () => {
+      throw new Error('plein');
+    },
+  };
+  const stockage = creerStockageNavigateur();
+  assert.equal(stockage.lireFiltre('v-vercors'), false);
+  assert.doesNotThrow(() => stockage.ecrireFiltre('v-vercors', true));
+});
