@@ -4,15 +4,21 @@
 // avant de rendre la main. Un appui sur le voile ne ferme rien : un geste accidentel perdrait la
 // saisie (décision du contrôleur, 2026-10-07). Partagé par les écrans qui s'ouvrent par-dessus un
 // autre (Nouveau voyage, décision du chef de projet, 2026-10-07).
+import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
 
 // Le titre peut recevoir le focus (sans être atteint par Tab) : à l'ouverture au doigt, c'est lui qui
-// le prend, plutôt qu'un champ qui ferait surgir le clavier.
-export const vueFenetre = ({ t, idTitre, titre, contenu }) => `
+// le prend, plutôt qu'un champ qui ferait surgir le clavier. croix : le « × » de fermeture, absent
+// d'une confirmation, où « Annuler » dit déjà la même chose (maquette du 2026-10-24).
+export const vueFenetre = ({ t, idTitre, titre, contenu, croix = true }) => `
     <dialog class="fenetre" aria-labelledby="${idTitre}">
       <header class="fenetre-entete">
-        <h2 id="${idTitre}" tabindex="-1">${titre}</h2>
-        <button type="button" class="bouton-icone bouton-fermer" data-fermer aria-label="${t('fenetre.fermer')}">${iconeInterface('fermer')}</button>
+        <h2 id="${idTitre}" tabindex="-1">${titre}</h2>${
+          croix
+            ? `
+        <button type="button" class="bouton-icone bouton-fermer" data-fermer aria-label="${t('fenetre.fermer')}">${iconeInterface('fermer')}</button>`
+            : ''
+        }
       </header>${contenu}
     </dialog>`;
 
@@ -40,4 +46,39 @@ export function ouvrirFenetre(fenetre, { surFermeture }) {
   });
   fenetre.addEventListener('close', () => fenetre.isConnected && fermer());
   fenetre.showModal();
+}
+
+// Avant un geste qui défait quelque chose (vider un objet du sac) : une fenêtre d'alerte avec
+// « Annuler » et le bouton de l'action. La promesse rend true si l'action est choisie, false pour
+// « Annuler » ou Échap, une fois la fenêtre effacée : l'écran derrière reprend alors la main.
+// Le focus va d'abord à « Annuler », le geste sans perte.
+export function confirmer({ t, titre, texte, action }) {
+  const gabarit = document.createElement('template');
+  gabarit.innerHTML = vueFenetre({
+    t,
+    idTitre: 'titre-confirmation',
+    titre: echapper(titre),
+    croix: false,
+    contenu: `
+      <p id="texte-confirmation">${echapper(texte)}</p>
+      <div class="fenetre-pied">
+        <button type="button" class="bouton bouton-secondaire" data-fermer autofocus>${t('fenetre.annuler')}</button>
+        <button type="button" class="bouton bouton-principal" data-fermer data-confirmer>${echapper(action)}</button>
+      </div>`,
+  });
+  const fenetre = gabarit.content.firstElementChild;
+  fenetre.classList.add('confirmation');
+  fenetre.setAttribute('role', 'alertdialog');
+  fenetre.setAttribute('aria-describedby', 'texte-confirmation');
+  document.body.append(fenetre);
+  return new Promise(resoudre => {
+    let choisie = false;
+    fenetre.querySelector('[data-confirmer]').addEventListener('click', () => (choisie = true));
+    ouvrirFenetre(fenetre, {
+      surFermeture: () => {
+        fenetre.remove();
+        resoudre(choisie);
+      },
+    });
+  });
 }

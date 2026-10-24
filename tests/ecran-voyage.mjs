@@ -1,14 +1,21 @@
-// Phase 2 (docs/PLAN.md) : un voyage s'ouvre en lecture (US-28).
+// Phases 2 et 3 (docs/PLAN.md) : la liste d'un voyage, en une colonne (US-15, US-16, US-28).
 // - en-tête : nom (caractères spéciaux affichés tels quels), destination, période, voyageurs, retour
 //   vers Mes voyages ;
-// - catégories dans l'ordre de la bibliothèque, chacune avec son pavé coloré et son picto ; objets par
-//   ordre alphabétique avec leur quantité ; rien d'un autre voyage ;
+// - progression : objets complets sur objets du voyage ; filtre « Reste à emballer » éteint ;
+// - catégories dans l'ordre de la bibliothèque, chacune avec son pavé coloré, son picto et son compte ;
+//   objets par nom, les complets en bas ; chaque case dans son état (vide, entamée, pleine) ; « 6 / 16 »
+//   sur une ligne entamée ; ⓘ seulement sur l'objet qui a une note ; « partagé » seulement sous l'objet
+//   partagé ; la case et la ligne nommées pour un lecteur d'écran (état, geste, tout ce que montre la
+//   ligne) ; rien d'un autre voyage ;
+// - une catégorie bouclée est repliée et porte son tampon « Bouclé ! » ;
+// - un voyage sans objet affiche la mascotte, un titre et un texte, sans progression ni filtre ;
 // - un voyage inconnu, ou une adresse de voyage mal formée, affiche un titre, un message en toutes
 //   lettres et un retour vers Mes voyages ;
 // - une panne de lecture affiche l'écran d'erreur ; hors de l'accueil, il offre le retour vers Mes
 //   voyages, qui fonctionne ; témoin : sur l'accueil, il n'en offre pas (il mènerait au même écran).
-// 3 formats × 2 thèmes : cibles de 44 px, pas de défilement de côté (nom très long compris), rien
-// sous les barres système.
+// Téléphone et tablette en portrait × 2 thèmes : cibles de 44 px, pas de défilement de côté (nom très
+// long compris), rien sous les barres système. La tablette en paysage passe en deux panneaux : son
+// test vient avec eux (tâche 8 de la phase 3).
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -24,110 +31,103 @@ import {
   verifierBarres,
   verifierCommandes,
 } from './outils/page.mjs';
+import { DONNEES, NOM } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
-const NOM = 'Vercors <i>&</i> "amis"';
-const voyage = (id, nom) => ({
-  id,
-  nom,
-  destination: 'Autrans',
-  depart: '2026-10-10',
-  retour: '2026-10-13',
-  voyageurs: 2,
-  modifieLe: 'x',
-});
-const categorie = (id, voyageId, nom, icone, couleur, ordre) => ({
-  id,
-  voyageId,
-  modeleId: null,
-  nom,
-  icone,
-  couleur,
-  ordre,
-  modifieLe: 'x',
-});
-const objet = (id, voyageId, categorieId, nom, quantite) => ({
-  id,
-  voyageId,
-  categorieId,
-  modeleId: null,
-  nom,
-  regle: 'fixe',
-  valeur: quantite,
-  plafond: null,
-  parPersonne: false,
-  consommable: false,
-  quantite,
-  quantiteManuelle: false,
-  dansLeSac: false,
-  aAcheter: false,
-  achete: false,
-  note: '',
-  modifieLe: 'x',
-});
-// Rangés dans le désordre, avec un second voyage dont rien ne doit apparaître.
-const DONNEES = {
-  voyages: [voyage('v1', NOM), voyage('v2', 'Autre'), voyage('v3', 'B'.repeat(120))],
-  categoriesDuVoyage: [
-    categorie('c-pap', 'v1', 'Papiers', 'identification-card', 'tournesol', 3),
-    categorie('c-vet', 'v1', 'Vêtements', 't-shirt', 'ciel', 0),
-    categorie('c-ali', 'v1', 'Alimentation', 'fork-knife', 'pomme', 2),
-    categorie('c-autre', 'v2', 'Ski', 'tooth', 'lilas', 1),
-  ],
-  objetsDuVoyage: [
-    objet('o1', 'v1', 'c-vet', 'T-shirts', 8),
-    objet('o2', 'v1', 'c-vet', 'Pyjama', 2),
-    objet('o3', 'v1', 'c-vet', 'Sous-vêtements', 8),
-    objet('o4', 'v1', 'c-ali', 'Repas', 16),
-    objet('o5', 'v1', 'c-ali', 'Gourde', 2),
-    objet('o6', 'v1', 'c-pap', 'Pièce d’identité', 2),
-    objet('o7', 'v1', 'c-pap', 'Chargeur de téléphone', 1),
-    objet('o8', 'v2', 'c-autre', 'Skis', 2),
-  ],
-};
+const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
+const UNE_COLONNE = { telephone: FORMATS.telephone, 'tablette-portrait': FORMATS['tablette-portrait'] };
+
+// [nom, couleur du pavé, compte ou tampon, ouverte, [nom, quantité, état de la case, note, partagé]].
 const ATTENDU = [
+  ['Papiers', 'rgb(255, 201, 60)', fr.voyage.boucle, false, []],
   [
     'Vêtements',
     'rgb(90, 169, 255)',
+    '1 / 6',
+    true,
     [
-      ['Pyjama', '2'],
-      ['Sous-vêtements', '8'],
-      ['T-shirts', '8'],
+      ['Pantalons', '3 / 4', 'entame', false, false],
+      ['Pull', '1 / 2', 'entame', false, false],
+      ['Pyjama', '1 / 2', 'entame', false, false],
+      ['Sous-vêtements', '8', 'vide', false, false],
+      ['T-shirts', '8', 'vide', false, false],
+      ['Chaussettes', '8', 'plein', false, false],
+    ],
+  ],
+  [
+    'Toilette',
+    'rgb(43, 191, 176)',
+    '2 / 3',
+    true,
+    [
+      ['Dentifrice', '1', 'vide', false, false],
+      ['Brosse à dents', '2', 'plein', false, false],
+      ['Gel douche', '1', 'plein', false, false],
     ],
   ],
   [
     'Alimentation',
     'rgb(140, 203, 78)',
+    '1 / 3',
+    true,
     [
-      ['Gourde', '2'],
-      ['Repas', '16'],
-    ],
-  ],
-  [
-    'Papiers',
-    'rgb(255, 201, 60)',
-    [
-      ['Chargeur de téléphone', '1'],
-      ['Pièce d’identité', '2'],
+      ['Café soluble', '1', 'vide', false, true],
+      ['Repas', '6 / 16', 'entame', true, false],
+      ['Gourde', '2', 'plein', false, false],
     ],
   ],
 ];
 
+// Le nom de la case dit l'état et ce que fera l'appui ; celui de la ligne, tout ce qu'elle montre.
+const fiche = (nom, quantite) => remplir(fr.voyage.ouvrirFiche, { nom, quantite });
+const LIBELLES = {
+  'o-rep': [
+    remplir(fr.voyage.case.ajouter, { nom: 'Repas', n: 6, total: 16 }),
+    fiche('Repas', `6 / 16, ${fr.voyage.avecNote}`),
+  ],
+  'o-den': [remplir(fr.voyage.case.cocher, { nom: 'Dentifrice' }), fiche('Dentifrice', '1')],
+  'o-gou': [remplir(fr.voyage.case.vider, { nom: 'Gourde' }), fiche('Gourde', '2')],
+  'o-gel': [remplir(fr.voyage.case.decocher, { nom: 'Gel douche' }), fiche('Gel douche', '1')],
+  'o-caf': [remplir(fr.voyage.case.cocher, { nom: 'Café soluble' }), fiche(`Café soluble, ${fr.voyage.partage}`, '1')],
+};
+
 const lire = page =>
-  page.evaluate(() => ({
-    titre: document.querySelector('h1')?.textContent,
-    entete: document.querySelector('.voyage-entete')?.textContent ?? '',
-    retour: document.querySelector('.lien-retour')?.getAttribute('href'),
-    categories: [...document.querySelectorAll('.categorie')].map(c => [
-      c.querySelector('h2').textContent.trim(),
-      getComputedStyle(c.querySelector('.pave')).backgroundColor,
-      [...c.querySelectorAll('.objet')].map(o => [
-        o.querySelector('.objet-nom').textContent,
-        o.querySelector('.objet-quantite').textContent,
+  page.evaluate(
+    partage => ({
+      titre: document.querySelector('h1')?.textContent,
+      entete: document.querySelector('.voyage-entete')?.textContent ?? '',
+      retour: document.querySelector('.lien-retour')?.getAttribute('href'),
+      progression: [...document.querySelectorAll('.progression-ligne > *')].map(e => e.textContent.trim()).join(' '),
+      boucle: document.querySelector('.progression')?.hasAttribute('data-boucle'),
+      filtre: document.querySelector('[data-action="filtre"]')?.getAttribute('aria-pressed'),
+      masques: Boolean(document.querySelector('.masques')),
+      categories: [...document.querySelectorAll('.categorie')].map(c => [
+        c.querySelector('.categorie-nom b')?.textContent,
+        getComputedStyle(c.querySelector('.pave')).backgroundColor,
+        (c.querySelector('.tampon') ?? c.querySelector('.compte'))?.textContent.trim(),
+        c.querySelector('.categorie-tete')?.getAttribute('aria-expanded') === 'true',
+        [...c.querySelectorAll('.objet')].map(o => [
+          o.querySelector('.objet-nom').textContent,
+          o.querySelector('.objet-quantite').textContent,
+          o.dataset.etat,
+          Boolean(o.querySelector('.objet-note svg')),
+          Boolean(o.querySelector('.objet-sous')?.textContent.includes(partage)),
+        ]),
       ]),
-    ]),
-    picto: [...document.querySelectorAll('.pave')].every(p => p.querySelector('svg')),
-  }));
+      // Chaque ligne a sa case et son bouton de fiche, tous deux nommés pour un lecteur d'écran.
+      libelles: Object.fromEntries(
+        [...document.querySelectorAll('.objet')].map(o => [
+          o.dataset.id,
+          [
+            o.querySelector('.case')?.getAttribute('aria-label'),
+            o.querySelector('.objet-corps')?.getAttribute('aria-label'),
+          ],
+        ]),
+      ),
+      picto: [...document.querySelectorAll('.pave')].every(p => p.querySelector('svg')),
+    }),
+    fr.voyage.partage,
+  );
 
 // Ce que montre un écran sans liste : son repère, son titre, son message et son lien de retour.
 const lireIssue = page =>
@@ -144,7 +144,7 @@ const navigateur = await chromium.launch();
 try {
   await mkdir(CAPTURES, { recursive: true });
   for (const theme of ['light', 'dark']) {
-    for (const [format, taille] of Object.entries(FORMATS)) {
+    for (const [format, taille] of Object.entries(UNE_COLONNE)) {
       const cas = `${format}, ${NOMS_THEME[theme]}`;
       const { contexte, page, sorties, erreurs } = await ouvrir(navigateur, serveur.url, {
         taille,
@@ -160,17 +160,50 @@ try {
       );
       juge.exige(m.retour === '#/voyages', `${cas} : retour ${m.retour}`);
       juge.exige(
+        m.progression === `${fr.voyage.dansLeSac} ${remplir(fr.voyage.compte, { faits: 6, total: 14 })}` && !m.boucle,
+        `${cas} : progression « ${m.progression} »${m.boucle ? ', bouclée' : ''}`,
+      );
+      juge.exige(m.filtre === 'false' && !m.masques, `${cas} : filtre ${m.filtre}, masqués ${m.masques}`);
+      juge.exige(
         JSON.stringify(m.categories) === JSON.stringify(ATTENDU),
         `${cas} : liste ${JSON.stringify(m.categories)}`,
       );
+      for (const [id, attendus] of Object.entries(LIBELLES))
+        juge.exige(
+          JSON.stringify(m.libelles[id]) === JSON.stringify(attendus),
+          `${cas} : noms de la ligne ${id} ${JSON.stringify(m.libelles[id])}`,
+        );
+      juge.exige(
+        Object.values(m.libelles).every(([laCase, laFiche]) => laCase && laFiche),
+        `${cas} : une case ou un bouton de fiche sans nom`,
+      );
       juge.exige(m.picto, `${cas} : un pavé sans picto`);
       await verifierCommandes(page, juge, cas);
-      if (format === 'tablette-portrait')
-        await page.screenshot({ path: join(CAPTURES, `voyage-${NOMS_THEME[theme]}.png`), fullPage: true });
+      await page.screenshot({
+        path: join(CAPTURES, `voyage-liste-${format}-${NOMS_THEME[theme]}.png`),
+        fullPage: true,
+      });
       await verifierBarres(page, juge, cas);
       juge.exige(sorties.length === 0, `${cas} : requêtes hors de l’appli : ${sorties.join(', ')}`);
       juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
       await contexte.close();
+
+      // Voyage sans objet : mascotte, titre et texte, ni progression ni filtre.
+      const vide = await ouvrir(navigateur, serveur.url, { taille, theme, donnees: DONNEES, adresse: '#/voyage/v4' });
+      const vu = await vide.page.evaluate(() => ({
+        image: Boolean(document.querySelector('.vide-voyage img')),
+        titre: document.querySelector('.vide-voyage h2')?.textContent.trim(),
+        texte: document.querySelector('.vide-voyage p')?.textContent.trim(),
+        autres: document.querySelectorAll('.progression, .outils, .categorie').length,
+      }));
+      juge.exige(
+        vu.image && vu.titre === fr.voyage.vide.titre && vu.texte === fr.voyage.vide.texte && vu.autres === 0,
+        `${cas} : voyage sans objet ${JSON.stringify(vu)}`,
+      );
+      await verifierCommandes(vide.page, juge, `${cas}, voyage sans objet`);
+      await vide.page.screenshot({ path: join(CAPTURES, `voyage-vide-${format}-${NOMS_THEME[theme]}.png`) });
+      await verifierBarres(vide.page, juge, `${cas}, voyage sans objet`);
+      await vide.contexte.close();
     }
   }
 
@@ -244,5 +277,5 @@ try {
 }
 juge.conclure(
   'Écran d’un voyage',
-  '3 formats × 2 thèmes, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
+  '2 formats en une colonne × 2 thèmes, voyage sans objet, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
 );

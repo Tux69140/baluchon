@@ -37,11 +37,12 @@ export function creerJuge() {
 // donnees : l'état de départ du stockage du navigateur, déposé une seule fois par onglet, pour qu'un
 // rechargement de la page retrouve ce que l'appli a écrit. maintenant : l'horloge de la page.
 // ecran : l'écran de l'appareil, s'il diffère de la fenêtre (ordinateur, téléphone tourné) ;
-// tactile : pointeur au doigt (tablette, téléphone) ou à la souris (ordinateur).
+// tactile : pointeur au doigt (tablette, téléphone) ou à la souris (ordinateur). horloge : horloge
+// simulée posée avant le chargement (page.clock.install), que le test arrête et avance à sa guise.
 export async function ouvrir(
   navigateur,
   url,
-  { taille, theme, donnees, maintenant, adresse = '', ecran, tactile = true },
+  { taille, theme, donnees, maintenant, adresse = '', ecran, tactile = true, horloge = false },
 ) {
   const contexte = await navigateur.newContext({
     viewport: taille,
@@ -63,6 +64,7 @@ export async function ouvrir(
     },
   );
   if (maintenant) await page.clock.setFixedTime(maintenant);
+  if (horloge) await page.clock.install();
   if (donnees)
     await page.addInitScript(
       ({ cle, d }) => {

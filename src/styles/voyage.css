@@ -1,4 +1,7 @@
-/* Écran d'un voyage (src/ecrans/voyage.js) : une carte par catégorie, objets en lignes de 56 px. */
+/* Écran d'un voyage (src/ecrans/voyage.js), en une colonne : repris de la maquette validée le
+   2026-10-24 (docs/maquettes/voyage/maquette.css). Les deux panneaux et la fiche ont leurs fichiers. */
+
+/* ---------- En-tête du voyage ---------- */
 .voyage-entete p {
   margin: var(--e-xs) 0 0;
   color: var(--encre-douce);
@@ -10,49 +13,472 @@
   font-variant-numeric: tabular-nums;
 }
 
-.categories {
-  display: grid;
+/* ---------- Progression ---------- */
+/* Hauteur réservée : le bandeau « Sac bouclé ! » prend la place de la jauge. */
+.progression {
+  display: flex;
+  align-items: center;
   gap: var(--e-md);
-  margin-top: var(--e-lg);
-}
-
-.categorie {
+  min-height: 76px;
+  margin-top: var(--e-md);
   padding: var(--e-sm) var(--e-md);
   background: var(--carte);
   border: 1px solid var(--separation);
   border-radius: var(--r-lg);
 }
 
-.categorie-entete {
+.progression-texte {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--e-xs);
+  min-width: 0;
+}
+
+.progression-ligne {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-sm);
+  font-size: var(--taille-libelle);
+  color: var(--encre-douce);
+}
+
+.progression-ligne b {
+  color: var(--encre);
+  font-size: var(--taille-objet);
+  font-variant-numeric: tabular-nums;
+}
+
+.progression img {
+  flex: none;
+}
+
+.progression[data-boucle] {
+  background: var(--fond-succes);
+  border-color: var(--succes);
+}
+
+.progression-titre {
+  font: 400 var(--taille-section) / 1.1 var(--police-titre);
+  color: var(--encre);
+}
+
+.jauge {
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  background: var(--actif);
+  border-radius: var(--r-plein);
+}
+
+.jauge i {
+  display: block;
+  height: 100%;
+  background: var(--encre);
+  border-radius: var(--r-plein);
+  transition: width 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jauge[data-fini] i {
+  background: var(--principal);
+}
+
+.jauge-mini {
+  height: 6px;
+}
+
+/* ---------- Outils : le filtre « Reste à emballer » ---------- */
+.outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-sm);
+  margin-top: var(--e-md);
+}
+
+.puce {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-sm);
+  min-height: var(--cible);
+  padding: 0 var(--e-md);
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-plein);
+  background: var(--carte);
+  color: var(--encre);
+  font: 600 var(--taille-libelle) var(--police);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.puce:hover {
+  background: var(--releve);
+}
+
+.puce[aria-pressed='true'] {
+  background: var(--encre);
+  border-color: var(--encre);
+  color: var(--fond);
+}
+
+.masques {
+  margin: var(--e-sm) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+/* ---------- Cartes de catégorie en accordéon ---------- */
+.categories {
+  display: grid;
+  gap: var(--e-md);
+  margin-top: var(--e-sm);
+}
+
+.categorie {
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+/* Le titre de la carte n'est qu'un repère pour la lecture d'écran : le bouton porte l'apparence. */
+.categorie-titre {
+  margin: 0;
+  font: inherit;
+}
+
+.categorie-tete {
   display: flex;
   align-items: center;
   gap: var(--e-md);
-  min-height: 56px;
+  width: 100%;
+  min-height: 72px;
+  padding: var(--e-sm) var(--e-sm) var(--e-sm) var(--e-md);
+  border: 0;
+  background: none;
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.categorie-entete h2 {
-  font-size: var(--taille-section);
+.categorie-tete:hover {
+  background: var(--releve);
+}
+
+.categorie-nom {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.categorie-nom b {
+  font: 600 var(--taille-objet) / 1.25 var(--police);
   overflow-wrap: anywhere;
 }
 
+.compte {
+  flex: none;
+  color: var(--encre-douce);
+  font: 600 var(--taille-libelle) var(--police);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--cible);
+  height: var(--cible);
+  color: var(--encre-douce);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chevron svg {
+  width: 22px;
+  height: 22px;
+}
+
+.categorie-tete[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+}
+
+/* Catégorie bouclée sous le filtre : descendue en bas, atténuée ; le tampon dit pourquoi. */
+.categorie[data-attenuee] {
+  background: transparent;
+  border-style: dashed;
+}
+
+[data-attenuee] .pave {
+  opacity: 0.55;
+}
+
+[data-attenuee] .categorie-nom b {
+  color: var(--encre-douce);
+}
+
+/* Le tampon « Bouclé ! » : Baumans, vert départ, posé de travers avec un rebond. */
+.tampon {
+  flex: none;
+  padding: 1px 10px;
+  border: 2.5px solid var(--principal);
+  border-radius: 10px;
+  background: var(--carte);
+  color: var(--principal);
+  font: 400 19px / 1.3 var(--police-titre);
+  transform: rotate(-7deg);
+  white-space: nowrap;
+}
+
+/* ---------- Lignes d'objet ---------- */
 .objets {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+.categorie .objets {
+  border-top: 1px solid var(--separation);
+}
+
 .objet {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-md);
+  align-items: stretch;
   min-height: 56px;
   border-top: 1px solid var(--separation);
+  background: var(--carte);
+}
+
+.objets > .objet:first-child {
+  border-top: 0;
+}
+
+/* La case : toute la hauteur de la ligne, 56 px de large ; seule sa boîte de 28 px se dessine. */
+.case {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sur-principal);
+  cursor: pointer;
+}
+
+.case-boite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--contour);
+  border-radius: 8px;
+  background: var(--carte);
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.case-boite svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Entamée : un trait à l'encre sur fond actif — ni vide, ni cochée. */
+.objet[data-etat='entame'] .case-boite {
+  border-color: var(--encre);
+  background: var(--actif);
+}
+
+.objet[data-etat='entame'] .case-boite::after {
+  content: '';
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--encre);
+}
+
+.objet[data-etat='plein'] .case-boite {
+  border-color: var(--principal);
+  background: var(--principal);
+}
+
+/* Le reste de la ligne : un seul bouton, qui ouvre la fiche. */
+.objet-corps {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--e-sm);
+  min-width: 0;
+  padding: var(--e-sm) var(--e-sm) var(--e-sm) 0;
+  border: 0;
+  background: none;
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.objet-corps:hover {
+  background: var(--releve);
+}
+
+.objet-texte {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.objet-nom {
   font-size: var(--taille-objet);
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
+.objet-sous {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-xs) var(--e-sm);
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.objet[data-etat='plein'] .objet-nom {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
 .objet-quantite {
+  flex: none;
+  min-width: 3ch;
   font-weight: 600;
+  font-size: var(--taille-objet);
   font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.objet-quantite small {
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+}
+
+.objet[data-etat='plein'] .objet-quantite {
+  color: var(--encre-douce);
+}
+
+/* La place de ⓘ est gardée sur toutes les lignes : les quantités restent alignées. */
+.objet-note {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  color: var(--info);
+}
+
+.objet-note svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ligne-info {
+  margin: 0;
+  padding: var(--e-md);
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+/* ---------- Voyage vide ---------- */
+.vide-voyage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e-sm);
+  margin-top: var(--e-lg);
+  padding: var(--e-xl) var(--e-md);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  text-align: center;
+}
+
+.vide-voyage h2 {
+  font-size: var(--taille-section);
+}
+
+.vide-voyage p {
+  max-width: 62ch;
+  margin: 0 0 var(--e-md);
+  color: var(--encre-douce);
+}
+
+/* ---------- Alerte d'enregistrement : en bas, par-dessus, sans rien pousser ---------- */
+.alerte {
+  position: fixed;
+  right: calc(var(--zone-droite) + var(--e-md));
+  bottom: calc(var(--zone-bas) + var(--e-md));
+  left: calc(var(--zone-gauche) + var(--e-md));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  max-width: 560px;
+  margin: 0 auto;
+  color: var(--encre);
+  box-shadow: 0 10px 28px -12px rgb(13 22 36 / 0.45);
+}
+
+.alerte p {
+  margin: 0;
+}
+
+.alerte .icone {
+  color: var(--erreur);
+}
+
+/* ---------- Mouvements : tampon, bandeau, case touchée. Rien si l'appareil en demande moins. ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .tampon[data-pose] {
+    animation: tampon-pose 500ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+
+  .progression[data-pose] {
+    animation: bandeau-pose 550ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  }
+
+  .case[data-pulse] .case-boite {
+    animation: pulse 160ms ease-out;
+  }
+}
+
+@keyframes tampon-pose {
+  from {
+    opacity: 0;
+    transform: rotate(-7deg) scale(1.7);
+  }
+}
+
+@keyframes bandeau-pose {
+  from {
+    transform: scale(0.94);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.14);
+  }
 }

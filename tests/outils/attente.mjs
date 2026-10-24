@@ -38,3 +38,17 @@ export async function calme(page, { max = 10000 } = {}) {
   }
   console.warn(`calme : l’écran bouge encore au bout de ${max} ms`);
 }
+
+// Attendre qu'une condition lue dans la page soit vraie, en relisant depuis Node : contrairement à
+// calme() et à waitForFunction, rien ne dépend des minuteries de la page, qu'une horloge simulée
+// (page.clock) peut tenir arrêtées. Rend la dernière valeur lue ; c'est au test de la juger.
+export async function attendreQue(page, condition, argument, { max = 5000 } = {}) {
+  const fin = Date.now() + max;
+  let valeur;
+  do {
+    valeur = await page.evaluate(condition, argument);
+    if (valeur) return valeur;
+    await dormir(40);
+  } while (Date.now() < fin);
+  return valeur;
+}

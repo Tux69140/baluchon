@@ -73,6 +73,24 @@ html:has(.fenetre:modal) {
   color: var(--encre);
 }
 
+/* Confirmation (confirmer() dans src/ecrans/fenetre.js) : une question, « Annuler » et l'action. */
+.confirmation {
+  --largeur-fenetre: 420px;
+}
+
+.confirmation p {
+  margin: var(--e-sm) var(--retrait-fenetre) 0;
+  color: var(--encre-douce);
+}
+
+.fenetre-pied {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e-sm);
+  padding: var(--e-lg) var(--retrait-fenetre);
+}
+
 /* Fenêtre d'ordinateur très étroite (jusqu'à 360 px, la largeur minimale de l'appli de bureau) : la
    fenêtre prend toute la largeur moins 8 px de chaque côté, et son retrait se resserre juste assez
    pour qu'une colonne garde sept jours de 44 px et les marges du calendrier (326 px) : 344 px =
