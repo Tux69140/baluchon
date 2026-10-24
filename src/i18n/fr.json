@@ -25,7 +25,7 @@
       "titre": "Rien à emballer pour l’instant",
       "texte": "Aucun objet de la bibliothèque ne correspondait à ce voyage."
     },
-    "erreurEnregistrement": "La coche n’a pas pu être enregistrée. Rien n’a changé ; réessayez.",
+    "erreurEnregistrement": "La coche n’a pas pu être enregistrée. Réessayez.",
     "case": {
       "ajouter": "{nom} : {n} sur {total} dans le sac. Ajouter une pièce",
       "cocher": "{nom} : pas encore dans le sac. Cocher",
