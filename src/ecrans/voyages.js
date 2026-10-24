@@ -65,8 +65,13 @@ export const ecranVoyages = {
   nom: 'voyages',
   charger: async ({ stockage }) => ({
     voyages: await stockage.listerVoyages(),
-    // La progression est un plus : sans elle, la liste s'affiche quand même.
-    progressions: progressionParVoyage(await stockage.etatsDesObjets().catch(() => [])),
+    // La progression est un plus : sans elle, la liste s'affiche quand même ; la panne reste au journal.
+    progressions: progressionParVoyage(
+      await stockage.etatsDesObjets().catch(erreur => {
+        console.error(erreur);
+        return [];
+      }),
+    ),
     aujourdhui: dateDuJour(new Date()),
   }),
   dessiner(app, { voyages, aujourdhui, progressions }, contexte) {

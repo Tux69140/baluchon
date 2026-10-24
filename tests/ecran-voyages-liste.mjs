@@ -191,6 +191,11 @@ try {
     Object.keys(sansJauge).length === VOYAGES.length && Object.values(sansJauge).every(c => c.texte === null),
     `panne des états : ${JSON.stringify(sansJauge)}`,
   );
+  // Sans effet visible, la panne est tout de même journalisée : exactement son message, rien d'autre.
+  juge.exige(
+    panne.erreurs.length === 1 && panne.erreurs[0].includes('Panne simulée : etatsDesObjets'),
+    `panne des états : journal ${JSON.stringify(panne.erreurs)}`,
+  );
   await panne.contexte.close();
 } finally {
   await navigateur.close();
