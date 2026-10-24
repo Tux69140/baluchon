@@ -1,9 +1,9 @@
 // Fenêtre modale (src/styles/fenetre.css) : un <dialog> ouvert par showModal(), qui garde le focus en
 // lui, rend inerte l'écran derrière et répond à Échap. Ce module y ajoute le reste : un en-tête avec
 // son titre et son « × », la fermeture par tout bouton [data-fermer], et l'animation de fermeture
-// avant de rendre la main. Un appui sur le voile ne ferme rien : un geste accidentel perdrait la
-// saisie (décision du contrôleur, 2026-10-07). Partagé par les écrans qui s'ouvrent par-dessus un
-// autre (Nouveau voyage, décision du chef de projet, 2026-10-07).
+// avant de rendre la main. Par défaut, un appui sur le voile ne ferme rien : un geste accidentel
+// perdrait la saisie (décision du contrôleur, 2026-10-07). Partagé par les écrans qui s'ouvrent
+// par-dessus un autre (Nouveau voyage, décision du chef de projet, 2026-10-07 ; fiche d'un objet).
 import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
 
@@ -22,9 +22,51 @@ export const vueFenetre = ({ t, idTitre, titre, contenu, croix = true }) => `
       </header>${contenu}
     </dialog>`;
 
+// Glissé de plus de 80 px vers le bas : la fenêtre se ferme ; en deçà, elle revient à sa place.
+const SEUIL_GLISSE = 80;
+
+// Un appui sur le voile, pas dans la fenêtre : le clic vise la fenêtre elle-même (son voile en fait
+// partie), en dehors de son cadre.
+function surLeVoile(fenetre, evenement) {
+  if (evenement.target !== fenetre) return false;
+  const r = fenetre.getBoundingClientRect();
+  const { clientX: x, clientY: y } = evenement;
+  return x < r.left || x > r.right || y < r.top || y > r.bottom;
+}
+
+// La fenêtre suit le doigt (ou la souris) posé sur son en-tête, vers le bas seulement. Le décalage
+// passe par « translate », qui s'ajoute à l'animation de fermeture (« transform ») : lâchée au-delà
+// du seuil, la fenêtre continue de descendre depuis là où on l'a laissée. Un appui sur un bouton de
+// l'en-tête (« × ») reste un appui : la capture du pointeur lui volerait son clic.
+function glisserPourFermer(fenetre, fermer) {
+  const entete = fenetre.querySelector('.fenetre-entete');
+  let depart = null;
+  entete.addEventListener('pointerdown', evenement => {
+    if (!evenement.isPrimary || evenement.button !== 0 || evenement.target.closest('button')) return;
+    depart = evenement.clientY;
+    entete.setPointerCapture(evenement.pointerId);
+    fenetre.dataset.glisse = '';
+  });
+  entete.addEventListener('pointermove', evenement => {
+    if (depart !== null) fenetre.style.translate = `0 ${Math.max(0, evenement.clientY - depart)}px`;
+  });
+  const lacher = evenement => {
+    if (depart === null) return;
+    const ecart = evenement.type === 'pointerup' ? evenement.clientY - depart : 0;
+    depart = null;
+    delete fenetre.dataset.glisse;
+    if (ecart > SEUIL_GLISSE) fermer();
+    else fenetre.style.translate = '';
+  };
+  entete.addEventListener('pointerup', lacher);
+  entete.addEventListener('pointercancel', lacher);
+}
+
 // surFermeture est appelé une seule fois, la fenêtre effacée : appuis répétés, Échap pendant
-// l'animation ou fermeture par le navigateur n'en font pas une seconde.
-export function ouvrirFenetre(fenetre, { surFermeture }) {
+// l'animation ou fermeture par le navigateur n'en font pas une seconde. fermerSurVoile : une fenêtre
+// sans saisie à perdre (fiche d'un objet) se ferme aussi d'un appui sur le voile ou d'un glissé de
+// son en-tête vers le bas.
+export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false }) {
   let fermeture = false;
   async function fermer() {
     if (fermeture) return;
@@ -36,7 +78,10 @@ export function ouvrirFenetre(fenetre, { surFermeture }) {
     surFermeture();
   }
 
-  fenetre.addEventListener('click', evenement => evenement.target.closest('[data-fermer]') && fermer());
+  fenetre.addEventListener('click', evenement => {
+    if (evenement.target.closest('[data-fermer]') || (fermerSurVoile && surLeVoile(fenetre, evenement))) fermer();
+  });
+  if (fermerSurVoile) glisserPourFermer(fenetre, fermer);
   // Échap : on ferme nous-mêmes, pour animer. Sans geste préalable de la personne, le navigateur
   // ferme la fenêtre sans attendre (événement close) : on suit. Une fenêtre retirée de la page avec
   // l'écran qu'elle couvrait (voyage créé) n'est pas une fermeture.

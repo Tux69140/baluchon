@@ -5,11 +5,11 @@
 //
 // Le déroulé d'une coche : l'objet change aussitôt à l'écran, sans que rien ne bouge ; l'écriture part
 // dans la file ; une seconde sans nouvel appui, la liste se range en glissant ; une catégorie qui vient
-// de boucler reçoit son tampon, puis se replie une seconde plus tard.
-import { remplir } from '../i18n/traduction.js';
+// de boucler reçoit son tampon, puis se replie une seconde plus tard. La fiche d'un objet (fiche.js)
+// passe par le même chemin que la case.
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
-import { confirmer } from './fenetre.js';
+import { confirmerVider, ouvrirFiche } from './fiche.js';
 import { apresRepit, apresTampon, basculerCategorie, basculerFiltre, etatInitial } from './rangement.js';
 import { vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
 
@@ -75,6 +75,8 @@ function ouvrirListe(app, donnees, contexte) {
   // ce main n'est plus dans la page, minuteries arrêtées, question en cours retirée, et plus rien ne
   // touche la page.
   const fin = new AbortController();
+  // La fiche ouverte : l'objet qu'elle montre et de quoi la repeindre.
+  let fiche = null;
 
   function peindre({ glissement = false } = {}) {
     const avant = glissement && !moinsDAnimations.matches ? places(main) : null;
@@ -84,6 +86,7 @@ function ouvrirListe(app, donnees, contexte) {
     poses = { tampons: new Set(), bandeau: false };
     if (cle) trouverCommande(cle.action, cle.id)?.focus({ preventScroll: true });
     if (avant) glisser(main, avant);
+    fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
   }
 
   const trouverCommande = (action, id) =>
@@ -122,11 +125,14 @@ function ouvrirListe(app, donnees, contexte) {
     minuteries.repit = setTimeout(finDuRepit, REPIT);
   }
 
+  // Une fenêtre ouverte (la fiche) rend l'écran derrière inerte et voilé : le message se pose alors
+  // en elle, pour être vu et lu.
   function alerter(texte) {
     app.querySelector('.alerte')?.remove();
     clearTimeout(minuteries.alerte);
-    app.insertAdjacentHTML('beforeend', vueAlerte(texte));
-    const alerte = app.lastElementChild;
+    const hote = app.querySelector('dialog:modal') ?? app;
+    hote.insertAdjacentHTML('beforeend', vueAlerte(texte));
+    const alerte = hote.lastElementChild;
     minuteries.alerte = setTimeout(() => alerte.remove(), DUREE_ALERTE);
   }
 
@@ -165,8 +171,10 @@ function ouvrirListe(app, donnees, contexte) {
       .catch(erreur => console.error(erreur));
   }
 
-  // Le chemin commun de tout changement de pièces : l'écran d'abord, la liste figée, puis la base.
+  // Le chemin commun de tout changement de pièces, case ou fiche : l'écran d'abord, la liste figée,
+  // puis la base. Pendant la relecture qui suit un échec, rien ne change.
   function changer(id, dansLeSac) {
+    if (relecture) return;
     contenu = { ...contenu, objets: contenu.objets.map(o => (o.id === id ? { ...o, dansLeSac } : o)) };
     liste = listeParCategorie(contenu);
     peindre();
@@ -181,19 +189,34 @@ function ouvrirListe(app, donnees, contexte) {
     if (!objet || relecture) return;
     const { dansLeSac, confirmer: demander } = appuiSurCase(objet);
     if (demander) {
-      const accord = await confirmer({
-        t,
-        titre: remplir(t('fiche.confirmerTitre'), { nom: objet.nom }),
-        texte: remplir(t('fiche.confirmerTexte'), { n: objet.dansLeSac }),
-        action: t('fiche.vider'),
-        signal: fin.signal,
-      });
+      const accord = await confirmerVider({ t, objet, signal: fin.signal });
       if (parti()) return;
       // Le dessin a pu changer pendant la question : le focus revient à la case de l'objet.
       trouverCommande('case', id)?.focus();
-      if (!accord || relecture) return;
+      if (!accord) return;
     }
     changer(id, dansLeSac);
+  }
+
+  // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps.
+  function ouvrirLaFiche(id) {
+    const objet = contenu.objets.find(o => o.id === id);
+    if (!objet || fiche) return;
+    fiche = {
+      id,
+      repeindre: ouvrirFiche({
+        t,
+        objet,
+        categorie: contenu.categories.find(c => c.id === objet.categorieId),
+        surChangement: valeur => changer(id, valeur),
+        surFermeture: () => {
+          fiche = null;
+          trouverCommande('fiche', id)?.focus();
+        },
+        signal: fin.signal,
+        dans: app,
+      }),
+    };
   }
 
   main.addEventListener('click', evenement => {
@@ -201,6 +224,7 @@ function ouvrirListe(app, donnees, contexte) {
     if (!commande) return;
     const { action, id } = commande.dataset;
     if (action === 'case') appuyerSurCase(id);
+    else if (action === 'fiche') ouvrirLaFiche(id);
     else if (action === 'accordeon') {
       etat = basculerCategorie(etat, id);
       peindre();

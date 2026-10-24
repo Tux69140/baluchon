@@ -1,0 +1,173 @@
+/* Fiche d'un objet du voyage (src/ecrans/fiche.js), d'après la maquette validée le 2026-10-24
+   (docs/maquettes/voyage/, état « fiche ») : une fenêtre modale (fenetre.css) de 480 px, centrée ;
+   au téléphone, un panneau qui monte du bas de l'écran, pleine largeur, poignée en haut. */
+.fiche {
+  --largeur-fenetre: 480px;
+}
+
+/* L'en-tête se glisse vers le bas pour fermer (src/ecrans/fenetre.js) : au doigt, le navigateur ne
+   doit pas prendre ce geste pour un défilement. */
+.fiche .fenetre-entete {
+  touch-action: none;
+}
+
+.fiche-corps {
+  display: grid;
+  gap: var(--e-lg);
+  overflow-y: auto;
+  padding: var(--e-sm) var(--retrait-fenetre) var(--e-lg);
+}
+
+.fiche-regle {
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+.fiche-bloc {
+  display: grid;
+  gap: var(--e-sm);
+}
+
+.fiche-bloc h3 {
+  font: 600 var(--taille-libelle) var(--police);
+  color: var(--encre-douce);
+}
+
+.compteur {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+}
+
+.compteur .bouton-icone {
+  width: 52px;
+  height: 52px;
+}
+
+.compteur output {
+  min-width: 3ch;
+  font: 700 32px / 1 var(--police);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.compteur-total {
+  color: var(--encre-douce);
+  font-size: var(--taille-objet);
+}
+
+/* Les deux actions passent l'une sous l'autre plutôt que de couper un libellé. */
+.fiche-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-sm);
+}
+
+.fiche-actions .bouton {
+  flex: 1 1 auto;
+  padding: 0 var(--e-md);
+  white-space: nowrap;
+}
+
+/* Désactivé mais toujours atteignable (aria-disabled) : le focus reste sur le bouton qu'on vient
+   d'appuyer, même quand il ne peut plus rien. */
+.fiche-actions .bouton[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.fiche-actions .bouton-principal[aria-disabled='true']:hover {
+  background: var(--principal);
+}
+
+.fiche-actions .bouton-secondaire[aria-disabled='true']:hover {
+  background: var(--carte);
+}
+
+.fiche-note {
+  display: flex;
+  gap: var(--e-sm);
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--fond-info);
+  color: var(--encre);
+  font-size: var(--taille-libelle);
+}
+
+.fiche-note .icone {
+  color: var(--info);
+}
+
+/* Téléphone (ou appareil couché, trop bas pour une fenêtre centrée) : la fiche est posée sur la
+   barre système du bas, entre les barres des côtés, et monte jusqu'à 88 % de la hauteur. Une ombre
+   pleine, de la couleur de la fiche, la prolonge sous la barre du bas : elle paraît toucher le bord
+   de l'écran sans qu'aucun texte ne passe sous les boutons d'Android. */
+@media (max-width: 599px), (max-height: 599px) {
+  .fiche {
+    --retrait-fenetre: var(--e-md);
+    inset: auto var(--zone-droite) var(--zone-bas) var(--zone-gauche);
+    width: auto;
+    max-width: 640px;
+    max-height: calc(88dvh - var(--zone-haut) - var(--zone-bas));
+    margin: 0 auto;
+    border-width: 1px 1px 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    box-shadow:
+      0 var(--zone-bas) 0 var(--carte),
+      0 24px 64px -16px rgb(13 22 36 / 0.45);
+  }
+
+  .fiche .fenetre-entete {
+    position: relative;
+  }
+
+  /* La poignée : le signe qu'on peut faire glisser la fiche. */
+  .fiche .fenetre-entete::before {
+    content: '';
+    position: absolute;
+    top: var(--e-sm);
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 2px;
+    background: var(--separation);
+  }
+}
+
+/* Lâchée avant le seuil, la fiche revient à sa place en glissant ; pendant le geste, elle suit le
+   doigt sans retard. */
+@media (prefers-reduced-motion: no-preference) {
+  .fiche {
+    transition: translate 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .fiche[data-glisse] {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and ((max-width: 599px) or (max-height: 599px)) {
+  .fiche:modal {
+    animation: fiche-monte 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .fiche[data-fermeture] {
+    animation: fiche-descend 200ms ease-in forwards;
+  }
+}
+
+/* Le panneau part entièrement sous le bord de l'écran, barre du bas comprise. */
+@keyframes fiche-monte {
+  from {
+    transform: translateY(calc(100% + var(--zone-bas)));
+  }
+}
+
+@keyframes fiche-descend {
+  to {
+    transform: translateY(calc(100% + var(--zone-bas)));
+  }
+}
