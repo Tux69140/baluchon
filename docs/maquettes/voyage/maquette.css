@@ -1,0 +1,882 @@
+/* Maquette de l'écran du voyage (phase 3, forme définitive). Brouillon : les styles retenus seront
+   repris dans src/styles/ à la construction. */
+
+/* ---------- En-tête du voyage ---------- */
+.voyage-details {
+  margin: var(--e-xs) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Zone de progression : hauteur réservée, le bandeau « Sac bouclé ! » prend sa place sans rien
+   pousser. */
+.progression {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  min-height: 76px;
+  margin-top: var(--e-md);
+  padding: var(--e-sm) var(--e-md);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+}
+
+.progression-texte {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--e-xs);
+  min-width: 0;
+}
+
+.progression-ligne {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-sm);
+  font-size: var(--taille-libelle);
+  color: var(--encre-douce);
+}
+
+.progression-ligne b {
+  color: var(--encre);
+  font-size: var(--taille-objet);
+  font-variant-numeric: tabular-nums;
+}
+
+.jauge {
+  height: 10px;
+  overflow: hidden;
+  background: var(--actif);
+  border-radius: var(--r-plein);
+}
+
+.jauge i {
+  display: block;
+  height: 100%;
+  background: var(--encre);
+  border-radius: var(--r-plein);
+  transition: width 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jauge[data-fini] i {
+  background: var(--principal);
+}
+
+.mini {
+  height: 6px;
+}
+
+.progression img {
+  flex: none;
+}
+
+.progression[data-boucle] {
+  background: var(--fond-succes);
+  border-color: var(--succes);
+}
+
+.progression[data-boucle] .progression-titre {
+  font: 400 var(--taille-section) / 1.1 var(--police-titre);
+  color: var(--encre);
+}
+
+/* ---------- Outils : filtre, Courses ---------- */
+.outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-sm);
+  margin-top: var(--e-md);
+}
+
+.puce {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-sm);
+  min-height: var(--cible);
+  padding: 0 var(--e-md);
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-plein);
+  background: var(--carte);
+  color: var(--encre);
+  font: 600 var(--taille-libelle) var(--police);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.puce:hover {
+  background: var(--releve);
+}
+
+.puce[aria-pressed='true'] {
+  background: var(--encre);
+  border-color: var(--encre);
+  color: var(--fond);
+}
+
+.masques {
+  margin: var(--e-sm) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+/* ---------- Une colonne : cartes de catégorie en accordéon ---------- */
+.categories {
+  display: grid;
+  gap: var(--e-md);
+  margin-top: var(--e-sm);
+}
+
+.categorie {
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.categorie-tete {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  width: 100%;
+  min-height: 72px;
+  padding: var(--e-sm) var(--e-sm) var(--e-sm) var(--e-md);
+  border: 0;
+  background: none;
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.categorie-tete:hover {
+  background: var(--releve);
+}
+
+.categorie-nom {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.categorie-nom b {
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.compte {
+  flex: none;
+  color: var(--encre-douce);
+  font: 600 var(--taille-libelle) var(--police);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--cible);
+  height: var(--cible);
+  color: var(--encre-douce);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chevron svg {
+  width: 22px;
+  height: 22px;
+}
+
+.categorie-tete[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+}
+
+/* Catégorie bouclée sous le filtre : descendue en bas, atténuée ; le tampon dit pourquoi. */
+.categorie[data-attenuee],
+.choix[data-attenuee] {
+  background: transparent;
+  border-style: dashed;
+}
+
+[data-attenuee] .pave {
+  opacity: 0.55;
+}
+
+[data-attenuee] .categorie-nom b {
+  color: var(--encre-douce);
+}
+
+/* Le tampon « Bouclé ! » : Baumans, vert départ, posé de travers avec un rebond. */
+.tampon {
+  flex: none;
+  padding: 1px 10px;
+  border: 2.5px solid var(--principal);
+  border-radius: 10px;
+  background: var(--carte);
+  color: var(--principal);
+  font: 400 19px / 1.3 var(--police-titre);
+  transform: rotate(-7deg);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tampon[data-pose] {
+    animation: tampon-pose 500ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+  .progression[data-pose] {
+    animation: bandeau-pose 550ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  }
+}
+
+@keyframes tampon-pose {
+  from {
+    opacity: 0;
+    transform: rotate(-7deg) scale(1.7);
+  }
+}
+
+@keyframes bandeau-pose {
+  from {
+    transform: scale(0.94);
+  }
+}
+
+/* ---------- Lignes d'objet ---------- */
+.objets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.categorie .objets {
+  border-top: 1px solid var(--separation);
+}
+
+.objet {
+  display: flex;
+  align-items: stretch;
+  min-height: 56px;
+  border-top: 1px solid var(--separation);
+  background: var(--carte);
+}
+
+.objets > .objet:first-child {
+  border-top: 0;
+}
+
+/* La case : toute la hauteur de la ligne, 56 px de large ; seule sa boîte de 28 px se dessine. */
+.case {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sur-principal);
+  cursor: pointer;
+}
+
+.case-boite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--contour);
+  border-radius: 8px;
+  background: var(--carte);
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.case-boite svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Entamée : un trait à l'encre sur fond actif — ni vide, ni cochée. */
+.objet[data-etat='entame'] .case-boite {
+  border-color: var(--encre);
+  background: var(--actif);
+}
+
+.objet[data-etat='entame'] .case-boite::after {
+  content: '';
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--encre);
+}
+
+.objet[data-etat='plein'] .case-boite {
+  border-color: var(--principal);
+  background: var(--principal);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .case[data-pulse] .case-boite {
+    animation: pulse 160ms ease-out;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.14);
+  }
+}
+
+/* Le reste de la ligne : un seul bouton, qui ouvre la fiche. */
+.objet-corps {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--e-sm);
+  min-width: 0;
+  padding: var(--e-sm) var(--e-sm) var(--e-sm) 0;
+  border: 0;
+  background: none;
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.objet-corps:hover {
+  background: var(--releve);
+}
+
+.objet-texte {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.objet-nom {
+  font-size: var(--taille-objet);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.objet-sous {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-xs) var(--e-sm);
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.objet[data-etat='plein'] .objet-nom {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.objet-quantite {
+  flex: none;
+  min-width: 3ch;
+  font-weight: 600;
+  font-size: var(--taille-objet);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.objet-quantite small {
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+}
+
+.objet[data-etat='plein'] .objet-quantite {
+  color: var(--encre-douce);
+}
+
+.objet-note {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  color: var(--info);
+}
+
+.objet-note svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pastille-achat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 1px 8px;
+  border-radius: var(--r-plein);
+  background: var(--fond-attention);
+  color: var(--attention);
+  font: 600 var(--taille-mention) / 1.4 var(--police);
+  white-space: nowrap;
+}
+
+.pastille-achat svg {
+  width: 13px;
+  height: 13px;
+}
+
+.ligne-info {
+  padding: var(--e-md);
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+/* ---------- Deux panneaux : tablette en paysage, ordinateur ---------- */
+.panneaux {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  gap: var(--e-lg);
+  max-width: var(--largeur-max);
+  height: calc(100dvh - var(--zone-haut) - var(--zone-bas));
+  margin: 0 auto;
+  padding: 0 var(--e-lg);
+}
+
+.panneau {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-lg) 0 var(--e-2xl);
+}
+
+.panneau-gauche h1 {
+  font-size: var(--taille-ecran);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.choix-liste {
+  display: grid;
+  gap: var(--e-sm);
+  margin: var(--e-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choix {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  width: 100%;
+  min-height: 72px;
+  padding: var(--e-sm) var(--e-sm) var(--e-sm) var(--e-md);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  background: var(--carte);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choix:hover {
+  background: var(--releve);
+}
+
+/* La catégorie choisie : fond actif, bord à l'encre, flèche vers les objets. */
+.choix[aria-current='true'] {
+  background: var(--actif);
+  border: 2px solid var(--encre);
+  padding-left: calc(var(--e-md) - 1px);
+}
+
+.choix .chevron {
+  visibility: hidden;
+}
+
+.choix[aria-current='true'] .chevron {
+  visibility: visible;
+  color: var(--encre);
+}
+
+.panneau-droit {
+  padding-top: var(--e-lg);
+}
+
+.detail {
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.detail-tete {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  min-height: 80px;
+  padding: var(--e-md);
+  border-bottom: 1px solid var(--separation);
+}
+
+.detail-tete h2 {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--taille-section);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Voyage vide ---------- */
+.vide-voyage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e-sm);
+  margin-top: var(--e-lg);
+  padding: var(--e-xl) var(--e-md);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  text-align: center;
+}
+
+.vide-voyage h2 {
+  font-size: var(--taille-section);
+}
+
+.vide-voyage p {
+  max-width: 62ch;
+  margin: 0 0 var(--e-md);
+  color: var(--encre-douce);
+}
+
+/* ---------- Fiche de l'objet ---------- */
+.fiche {
+  --largeur-fenetre: 480px;
+}
+
+.fiche-corps {
+  display: grid;
+  gap: var(--e-lg);
+  overflow-y: auto;
+  padding: var(--e-sm) var(--retrait-fenetre) var(--e-lg);
+}
+
+.fiche-regle {
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+.fiche-bloc {
+  display: grid;
+  gap: var(--e-sm);
+}
+
+.fiche-bloc h3 {
+  font: 600 var(--taille-libelle) var(--police);
+  color: var(--encre-douce);
+}
+
+.compteur {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+}
+
+.compteur .bouton-icone {
+  width: 52px;
+  height: 52px;
+}
+
+.compteur output {
+  min-width: 3ch;
+  font: 700 32px / 1 var(--police);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.compteur span {
+  color: var(--encre-douce);
+  font-size: var(--taille-objet);
+}
+
+.fiche-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-sm);
+}
+
+.fiche-actions .bouton {
+  flex: 1 1 auto;
+  padding: 0 var(--e-md);
+  white-space: nowrap;
+}
+
+.fiche-note {
+  display: flex;
+  gap: var(--e-sm);
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--fond-info);
+  color: var(--encre);
+  font-size: var(--taille-libelle);
+}
+
+.fiche-note .icone {
+  color: var(--info);
+}
+
+.fiche-venir {
+  display: grid;
+  gap: var(--e-md);
+  padding-top: var(--e-lg);
+  border-top: 1px solid var(--separation);
+}
+
+.fiche-venir h3 {
+  font: 600 var(--taille-libelle) var(--police);
+  color: var(--encre-douce);
+}
+
+.ligne-reglage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-md);
+  min-height: var(--cible);
+}
+
+.ligne-reglage small {
+  display: block;
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.etiquette-phase {
+  display: inline-block;
+  margin-left: var(--e-xs);
+  padding: 0 6px;
+  border: 1px dashed var(--contour);
+  border-radius: var(--r-plein);
+  color: var(--encre-douce);
+  font: 600 10px / 1.5 var(--police);
+  vertical-align: middle;
+}
+
+/* Deux panneaux : le bouton flottant reste au bord droit du contenu, pas de l'écran. */
+.panneaux ~ .bouton-flottant {
+  right: max(calc(var(--zone-droite) + var(--e-md)), (100vw - var(--largeur-max)) / 2 + var(--e-lg));
+}
+
+.interrupteur {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  border: 2px solid var(--contour);
+  border-radius: var(--r-plein);
+  background: var(--releve);
+}
+
+.interrupteur::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--contour);
+}
+
+.interrupteur[aria-checked='true'] {
+  border-color: var(--attention);
+  background: var(--fond-attention);
+}
+
+.interrupteur[aria-checked='true']::after {
+  left: 23px;
+  background: var(--attention);
+}
+
+.bouton-danger {
+  border-color: var(--erreur);
+  background: var(--carte);
+  color: var(--erreur);
+}
+
+/* Téléphone : la fiche monte du bas de l'écran, pleine largeur, poignée en haut. */
+@media (max-width: 599px), (max-height: 599px) {
+  .fiche {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: 640px;
+    max-height: calc(88dvh - var(--zone-haut));
+    margin: 0 auto;
+    padding-bottom: var(--zone-bas);
+    border-width: 1px 1px 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    --retrait-fenetre: var(--e-md);
+  }
+  .fiche .fenetre-entete {
+    position: relative;
+    padding-top: var(--e-lg);
+  }
+  .fiche .fenetre-entete::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 2px;
+    background: var(--separation);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and ((max-width: 599px) or (max-height: 599px)) {
+  .fiche:modal {
+    animation: fiche-monte 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .fiche[data-fermeture] {
+    animation: fiche-descend 200ms ease-in forwards;
+  }
+}
+
+@keyframes fiche-monte {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fiche-descend {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* ---------- Confirmation ---------- */
+.confirmation {
+  --largeur-fenetre: 420px;
+}
+
+.confirmation p {
+  margin: var(--e-sm) var(--retrait-fenetre) 0;
+  color: var(--encre-douce);
+}
+
+.fenetre-pied {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--e-sm);
+  padding: var(--e-lg) var(--retrait-fenetre);
+}
+
+/* ---------- Alerte d'enregistrement : en bas, par-dessus, sans rien pousser ---------- */
+.alerte {
+  position: fixed;
+  right: calc(var(--zone-droite) + var(--e-md));
+  bottom: calc(var(--zone-bas) + var(--e-md));
+  left: calc(var(--zone-gauche) + var(--e-md));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  max-width: 560px;
+  margin: 0 auto;
+  color: var(--encre);
+  box-shadow: 0 10px 28px -12px rgb(13 22 36 / 0.45);
+}
+
+.alerte .icone {
+  color: var(--erreur);
+}
+
+/* ---------- Accueil : progression sur la carte ---------- */
+.carte-progression {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  margin-top: var(--e-sm);
+  color: var(--encre-douce);
+  font: 600 var(--taille-mention) var(--police);
+  font-variant-numeric: tabular-nums;
+}
+
+.carte-progression .jauge {
+  flex: 1;
+  max-width: 240px;
+}
+
+.pastille-boucle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 2px 10px;
+  border-radius: var(--r-plein);
+  background: var(--fond-succes);
+  color: var(--succes);
+  font: 600 var(--taille-mention) / 1.5 var(--police);
+}
+
+.pastille-boucle svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- Commandes de la maquette (absentes des captures) ---------- */
+.maquette-menu {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 70;
+}
+
+.maquette-menu summary {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: #2a1a4a;
+  color: #fff;
+  font: 600 14px var(--police);
+  cursor: pointer;
+  list-style: none;
+}
+
+.maquette-menu nav {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: var(--r-md);
+  background: #2a1a4a;
+}
+
+.maquette-menu a,
+.maquette-menu label {
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font: 500 14px var(--police);
+  text-decoration: none;
+}
+
+.maquette-menu a:hover {
+  background: #4a3a6a;
+}
+
+.maquette-menu[open] {
+  display: flex;
+  flex-direction: column-reverse;
+}
