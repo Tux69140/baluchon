@@ -7,6 +7,7 @@ import {
   categorieSuivante,
   estBouclee,
   estComplet,
+  estFini,
   etatDansLeSac,
   ordreDansLeSac,
   progression,
@@ -50,6 +51,12 @@ test('les compteurs comptent les objets complets, pas les pièces', () => {
   assert.equal(estBouclee([]), false);
   assert.equal(estBouclee([o(2, 2), o(1, 1)]), true);
   assert.equal(estBouclee([o(2, 2), o(0, 1)]), false);
+});
+
+test('fini : tous les objets comptés sont complets, et il y en a au moins un', () => {
+  assert.equal(estFini({ faits: 0, total: 0 }), false);
+  assert.equal(estFini({ faits: 2, total: 2 }), true);
+  assert.equal(estFini({ faits: 1, total: 2 }), false);
 });
 
 test('ordre : par nom, les complets en bas', () => {

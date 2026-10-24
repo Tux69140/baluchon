@@ -29,10 +29,11 @@ export function progression(objets) {
   return { faits: objets.filter(estComplet).length, total: objets.length };
 }
 
-// Une catégorie vide n'est jamais « bouclée » : il n'y a rien à avoir fini.
-export function estBouclee(objets) {
-  return objets.length > 0 && objets.every(estComplet);
-}
+// Fini : tout ce qui est compté est complet ; sans rien à compter (catégorie ou voyage vide), rien
+// n'est jamais fini. Une catégorie bouclée, une jauge pleine, un sac bouclé : la même règle.
+export const estFini = ({ faits, total }) => total > 0 && faits === total;
+
+export const estBouclee = objets => estFini(progression(objets));
 
 // Alphabétique, les complets au fond de la liste pour garder le reste à faire en haut.
 export function ordreDansLeSac(objets) {

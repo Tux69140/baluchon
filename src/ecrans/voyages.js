@@ -7,7 +7,7 @@ import { jauge } from './jauge.js';
 import { lienRetour } from './retour.js';
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
-import { progressionParVoyage } from '../modele/sac.js';
+import { estFini, progressionParVoyage } from '../modele/sac.js';
 import { classerVoyages } from '../modele/voyage.js';
 import mascotte from '../images/baluchon.svg';
 
@@ -26,7 +26,7 @@ function vueVide(t) {
 // Seuls les voyages en cours ou à venir et qui ont des objets montrent leur avancement.
 function vueProgression(avancement, t) {
   if (!avancement) return '';
-  if (avancement.faits === avancement.total)
+  if (estFini(avancement))
     return `
             <span class="carte-progression"><span class="pastille-boucle">${iconeInterface('boucle')}${t('voyages.sacBoucle')}</span></span>`;
   return `
