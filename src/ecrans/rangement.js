@@ -27,10 +27,9 @@ function masquesPour(liste, filtre) {
   );
 }
 
-// Un sac vide n'est pas « bouclé » : comme une catégorie vide, il n'y a rien à avoir fini.
+// Un sac vide n'est pas « bouclé » (même règle que pour une catégorie vide).
 function sacEstBoucle(liste) {
-  const objets = tousLesObjets(liste);
-  return objets.length > 0 && objets.every(estComplet);
+  return estBouclee(tousLesObjets(liste));
 }
 
 // Les bouclées vont au fond sous le filtre seulement ; hors filtre, elles restent à leur place.
@@ -77,13 +76,18 @@ export function apresRepit(etat, liste) {
 // Une seconde après le tampon : on replie les nouvelles encore bouclées (une décochée entre-temps
 // reste ouverte) et, si l'une était la catégorie choisie, la sélection passe à la suivante.
 export function apresTampon(etat, nouvelles, liste) {
-  const aReplier = nouvelles.filter(id => etat.bouclees.has(id));
-  const ouvertes = new Set([...etat.ouvertes].filter(id => !aReplier.includes(id)));
-  const enBas = etat.filtre ? new Set([...etat.enBas, ...aReplier]) : new Set(etat.enBas);
-  const choisie = aReplier.includes(etat.choisie)
-    ? (categorieSuivante(idsDeLaListe(liste), etat.choisie, id => etat.bouclees.has(id)) ?? etat.choisie)
-    : etat.choisie;
-  return { ...etat, ouvertes, enBas, choisie };
+  // On juge sur les pièces de maintenant : une décochée entre le répit et le tampon n'est plus bouclée.
+  const encoreBouclee = id => estBouclee(liste.find(c => c.categorie.id === id)?.objets ?? []);
+  const aReplier = nouvelles.filter(encoreBouclee);
+  const replie = {
+    ...etat,
+    ouvertes: new Set([...etat.ouvertes].filter(id => !aReplier.includes(id))),
+    enBas: etat.filtre ? new Set([...etat.enBas, ...aReplier]) : new Set(etat.enBas),
+  };
+  if (!aReplier.includes(etat.choisie)) return replie;
+  // La suivante se cherche dans l'ordre affiché, une fois les bouclées descendues.
+  const affichees = categoriesAffichees(replie, liste).map(c => c.categorie.id);
+  return { ...replie, choisie: categorieSuivante(affichees, etat.choisie, encoreBouclee) ?? etat.choisie };
 }
 
 export function basculerFiltre(etat, liste) {
@@ -119,7 +123,5 @@ export function categoriesAffichees(etat, liste) {
     };
   });
   const enHaut = rangees.filter(c => !etat.enBas.has(c.categorie.id));
-  // Au fond, dans l'ordre où elles ont été bouclées : la dernière bouclée est tout en bas.
-  const auFond = [...etat.enBas].map(id => rangees.find(c => c.categorie.id === id));
-  return [...enHaut, ...auFond];
+  return [...enHaut, ...rangees.filter(c => etat.enBas.has(c.categorie.id))];
 }

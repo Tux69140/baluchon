@@ -107,8 +107,7 @@ test('sous le filtre : Crème cochée est masquée après le répit, Toilette de
   const final = apresTampon(r.etat, r.nouvelles, apres);
   assert.equal(final.enBas.has('toi'), true);
   const ordre = noms(final, apres);
-  assert.equal(ordre.at(-1), 'toi');
-  assert.deepEqual(ordre, ['vet', 'pap', 'toi']);
+  assert.deepEqual(ordre, ['vet', 'toi', 'pap'], "le fond garde l'ordre de la bibliothèque");
   assert.equal(final.choisie, 'vet', 'la sélection ne change que si la catégorie bouclée était choisie');
 });
 
@@ -163,4 +162,33 @@ test('hors filtre, un objet coché descend au fond de sa catégorie seulement ap
   const apres = liste({ creme: 1 });
   assert.deepEqual(objetsDe(etat, apres, 'toi'), ['creme', 'brosse']);
   assert.deepEqual(objetsDe(apresRepit(etat, apres).etat, apres, 'toi'), ['brosse', 'creme']);
+});
+
+test('rouvrir et refermer le filtre ne réordonne pas le fond', () => {
+  const l = liste({ creme: 1 });
+  const un = basculerFiltre(etatInitial(l, { filtre: false }), l);
+  const deux = basculerFiltre(basculerFiltre(un, l), l);
+  assert.deepEqual(noms(deux, l), noms(un, l));
+  assert.deepEqual(noms(un, l), ['vet', 'toi', 'pap']);
+});
+
+test("la suivante se cherche dans l'ordre affiché, après la descente des bouclées", () => {
+  const objet = (id, dansLeSac) => ({ id, nom: id, quantite: 1, dansLeSac });
+  const l = pieces =>
+    ['A', 'B', 'C'].map(id => ({ categorie: { id, nom: id }, objets: [objet(`o${id}`, pieces[id] ?? 0)] }));
+  const etat = choisirCategorie(etatInitial(l({}), { filtre: true }), 'B');
+  const apres = l({ B: 1 });
+  const r = apresRepit(etat, apres);
+  const final = apresTampon(r.etat, r.nouvelles, apres);
+  assert.deepEqual(noms(final, apres), ['A', 'C', 'B']);
+  assert.equal(final.choisie, 'A');
+});
+
+test('décochée entre le répit et le tampon : la catégorie ne se replie pas et la sélection reste', () => {
+  const bouclee = liste({ pantalons: 4 });
+  const r = apresRepit(etatInitial(liste(), { filtre: true }), bouclee);
+  const final = apresTampon(r.etat, r.nouvelles, liste({ pantalons: 3 }));
+  assert.equal(final.ouvertes.has('vet'), true);
+  assert.equal(final.enBas.has('vet'), false);
+  assert.equal(final.choisie, 'vet');
 });
