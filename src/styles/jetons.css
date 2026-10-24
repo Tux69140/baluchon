@@ -1,7 +1,10 @@
 /* Jetons du système de design (docs/DESIGN.md). Chaque couleur n'est écrite qu'une fois, en clair
    et en sombre, avec light-dark() : le thème suit l'appareil (color-scheme), et un choix manuel
-   (phase 12) n'aura qu'à poser data-theme sur la racine. */
-:root {
+   (phase 12) n'aura qu'à poser data-theme sur la racine.
+   Le voile des fenêtres (::backdrop) les reçoit lui-même : les moteurs d'avant Chrome 122 (Android 7)
+   ne les lui transmettent pas, et l'écran ne s'assombrissait plus derrière la fiche. */
+:root,
+::backdrop {
   color-scheme: light dark;
 
   /* Socle : sable et encre marine ; nuit marine en sombre. */
@@ -77,10 +80,12 @@
   --zone-droite: env(safe-area-inset-right, 0px);
 }
 
-:root[data-theme='light'] {
+:root[data-theme='light'],
+:root[data-theme='light'] ::backdrop {
   color-scheme: light;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+:root[data-theme='dark'] ::backdrop {
   color-scheme: dark;
 }
