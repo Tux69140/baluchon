@@ -1,0 +1,125 @@
+// L'état d'affichage de l'écran d'un voyage. Les pièces sont comptées au fil des appuis, mais la
+// liste ne doit pas bouger sous le doigt (docs/PRD.md, US-15) : on la fige ici, et elle ne se
+// range qu'après une seconde sans appui (apresRepit), puis les catégories bouclées se replient
+// une seconde après leur tampon (apresTampon). Fonctions pures : chacune rend un nouvel état,
+// sans toucher ni au navigateur ni aux minuteries, qui vivent dans l'écran.
+import { categorieSuivante, estBouclee, estComplet, ordreDansLeSac } from '../modele/sac.js';
+
+const idsDeLaListe = liste => liste.map(c => c.categorie.id);
+const tousLesObjets = liste => liste.flatMap(c => c.objets);
+
+function bouclees(liste) {
+  return new Set(liste.filter(c => estBouclee(c.objets)).map(c => c.categorie.id));
+}
+
+function ordres(liste) {
+  return new Map(liste.map(c => [c.categorie.id, ordreDansLeSac(c.objets).map(o => o.id)]));
+}
+
+// Sous le filtre « Reste à emballer », les objets complets disparaissent de la liste.
+function masquesPour(liste, filtre) {
+  return new Set(
+    filtre
+      ? tousLesObjets(liste)
+          .filter(estComplet)
+          .map(o => o.id)
+      : [],
+  );
+}
+
+// Un sac vide n'est pas « bouclé » : comme une catégorie vide, il n'y a rien à avoir fini.
+function sacEstBoucle(liste) {
+  const objets = tousLesObjets(liste);
+  return objets.length > 0 && objets.every(estComplet);
+}
+
+// Les bouclées vont au fond sous le filtre seulement ; hors filtre, elles restent à leur place.
+const enBasPour = (bouclee, filtre) => new Set(filtre ? bouclee : []);
+
+export function etatInitial(liste, { filtre }) {
+  const bouclee = bouclees(liste);
+  const ids = idsDeLaListe(liste);
+  return {
+    filtre,
+    ordre: ordres(liste),
+    bouclees: bouclee,
+    ouvertes: new Set(ids.filter(id => !bouclee.has(id))),
+    enBas: enBasPour(bouclee, filtre),
+    masques: masquesPour(liste, filtre),
+    sacBoucle: sacEstBoucle(liste),
+    choisie: ids.find(id => !bouclee.has(id)) ?? ids[0] ?? null,
+  };
+}
+
+// La seconde de répit est passée : on range. Les nouvelles bouclées restent ouvertes jusqu'au
+// tampon ; celles qu'un décochage a rouvertes reprennent leur place et s'ouvrent.
+export function apresRepit(etat, liste) {
+  const maintenant = bouclees(liste);
+  const nouvelles = [...maintenant].filter(id => !etat.bouclees.has(id));
+  const rouvertes = [...etat.bouclees].filter(id => !maintenant.has(id));
+  const sacBoucle = sacEstBoucle(liste);
+  const enBas = new Set([...etat.enBas].filter(id => maintenant.has(id)));
+  return {
+    etat: {
+      ...etat,
+      ordre: ordres(liste),
+      bouclees: maintenant,
+      ouvertes: new Set([...etat.ouvertes, ...rouvertes]),
+      enBas,
+      masques: masquesPour(liste, etat.filtre),
+      sacBoucle,
+    },
+    nouvelles,
+    sacVientDeBoucler: sacBoucle && !etat.sacBoucle,
+  };
+}
+
+// Une seconde après le tampon : on replie les nouvelles encore bouclées (une décochée entre-temps
+// reste ouverte) et, si l'une était la catégorie choisie, la sélection passe à la suivante.
+export function apresTampon(etat, nouvelles, liste) {
+  const aReplier = nouvelles.filter(id => etat.bouclees.has(id));
+  const ouvertes = new Set([...etat.ouvertes].filter(id => !aReplier.includes(id)));
+  const enBas = etat.filtre ? new Set([...etat.enBas, ...aReplier]) : new Set(etat.enBas);
+  const choisie = aReplier.includes(etat.choisie)
+    ? (categorieSuivante(idsDeLaListe(liste), etat.choisie, id => etat.bouclees.has(id)) ?? etat.choisie)
+    : etat.choisie;
+  return { ...etat, ouvertes, enBas, choisie };
+}
+
+export function basculerFiltre(etat, liste) {
+  const filtre = !etat.filtre;
+  return {
+    ...etat,
+    filtre,
+    masques: masquesPour(liste, filtre),
+    enBas: enBasPour(etat.bouclees, filtre),
+  };
+}
+
+// Accordéon : en une colonne, chaque catégorie s'ouvre et se replie à la main.
+export function basculerCategorie(etat, categorieId) {
+  const ouvertes = new Set(etat.ouvertes);
+  if (!ouvertes.delete(categorieId)) ouvertes.add(categorieId);
+  return { ...etat, ouvertes };
+}
+
+export const choisirCategorie = (etat, categorieId) => ({ ...etat, choisie: categorieId });
+
+// Ce que l'écran dessine : les catégories dans l'ordre de la bibliothèque (celles du fond à la
+// fin), chacune avec ses objets dans l'ordre figé, les pièces à jour, sans les masqués.
+export function categoriesAffichees(etat, liste) {
+  const rangees = liste.map(({ categorie, objets }) => {
+    const parId = new Map(objets.map(o => [o.id, o]));
+    const figes = etat.ordre.get(categorie.id) ?? [];
+    // Un objet apparu depuis le dernier rangement s'ajoute en queue plutôt que de disparaître.
+    const ids = [...figes.filter(id => parId.has(id)), ...objets.map(o => o.id).filter(id => !figes.includes(id))];
+    return {
+      categorie,
+      objets: ids.filter(id => !etat.masques.has(id)).map(id => parId.get(id)),
+    };
+  });
+  const enHaut = rangees.filter(c => !etat.enBas.has(c.categorie.id));
+  // Au fond, dans l'ordre où elles ont été bouclées : la dernière bouclée est tout en bas.
+  const auFond = [...etat.enBas].map(id => rangees.find(c => c.categorie.id === id));
+  return [...enHaut, ...auFond];
+}

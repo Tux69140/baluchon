@@ -1,0 +1,166 @@
+// L'état d'affichage figé pendant la seconde de répit (docs/PRD.md, US-15).
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  apresRepit,
+  apresTampon,
+  basculerCategorie,
+  basculerFiltre,
+  categoriesAffichees,
+  choisirCategorie,
+  etatInitial,
+} from '../src/ecrans/rangement.js';
+
+// Vêtements : Pantalons 0/4, Pull 2/2 ; Toilette : Crème 0/1, Brosse 2/2 ; Papiers : Pièce 2/2.
+const CATEGORIES = [
+  [
+    'vet',
+    'Vêtements',
+    [
+      ['pantalons', 'Pantalons', 4, 0],
+      ['pull', 'Pull', 2, 2],
+    ],
+  ],
+  [
+    'toi',
+    'Toilette',
+    [
+      ['creme', 'Crème', 1, 0],
+      ['brosse', 'Brosse', 2, 2],
+    ],
+  ],
+  ['pap', 'Papiers', [['piece', 'Pièce', 2, 2]]],
+];
+
+// Une liste telle que listeParCategorie la rend, avec des pièces modifiées : { creme: 1 }.
+function liste(pieces = {}) {
+  return CATEGORIES.map(([id, nom, objets]) => ({
+    categorie: { id, nom },
+    objets: objets
+      .map(([oid, onom, quantite, dansLeSac]) => ({
+        id: oid,
+        nom: onom,
+        quantite,
+        dansLeSac: pieces[oid] ?? dansLeSac,
+      }))
+      .sort((a, b) => Number(a.dansLeSac >= a.quantite) - Number(b.dansLeSac >= b.quantite)),
+  }));
+}
+
+const noms = (etat, l) => categoriesAffichees(etat, l).map(c => c.categorie.id);
+const objetsDe = (etat, l, id) =>
+  categoriesAffichees(etat, l)
+    .find(c => c.categorie.id === id)
+    .objets.map(o => o.id);
+
+test('état initial : Papiers bouclée et repliée, les autres ouvertes, la première à faire choisie', () => {
+  const etat = etatInitial(liste(), { filtre: false });
+  assert.deepEqual([...etat.bouclees], ['pap']);
+  assert.deepEqual([...etat.ouvertes], ['vet', 'toi']);
+  assert.equal(etat.choisie, 'vet');
+  assert.equal(etat.sacBoucle, false);
+  assert.equal(etat.masques.size, 0);
+  assert.equal(etat.enBas.size, 0);
+});
+
+test('tout bouclé au départ : la première catégorie est choisie', () => {
+  const l = liste({ pantalons: 4, creme: 1 });
+  assert.equal(etatInitial(l, { filtre: false }).choisie, 'vet');
+  assert.equal(etatInitial(l, { filtre: false }).sacBoucle, true);
+});
+
+test('rien ne bouge avant la fin du répit, puis Vêtements est bouclée mais encore ouverte', () => {
+  const avant = liste();
+  const etat = etatInitial(avant, { filtre: false });
+  const apres = liste({ pantalons: 4 });
+  assert.deepEqual(objetsDe(etat, apres, 'vet'), ['pantalons', 'pull']);
+  assert.equal(etat.bouclees.has('vet'), false);
+
+  const r = apresRepit(etat, apres);
+  assert.deepEqual(r.nouvelles, ['vet']);
+  assert.equal(r.etat.bouclees.has('vet'), true);
+  assert.equal(r.etat.ouvertes.has('vet'), true);
+  assert.equal(r.sacVientDeBoucler, false);
+  assert.deepEqual(objetsDe(r.etat, apres, 'vet'), ['pantalons', 'pull']);
+});
+
+test('apresTampon replie Vêtements et la sélection passe à Toilette', () => {
+  const apres = liste({ pantalons: 4 });
+  const r = apresRepit(etatInitial(liste(), { filtre: false }), apres);
+  const etat = apresTampon(r.etat, r.nouvelles, apres);
+  assert.equal(etat.ouvertes.has('vet'), false);
+  assert.equal(etat.choisie, 'toi');
+  assert.equal(r.etat.choisie, 'vet', "l'ancien état n'est pas modifié");
+});
+
+test('sous le filtre : Crème cochée est masquée après le répit, Toilette descend après le tampon', () => {
+  const etat = etatInitial(liste(), { filtre: true });
+  assert.deepEqual([...etat.masques].sort(), ['brosse', 'piece', 'pull']);
+  assert.deepEqual([...etat.enBas], ['pap']);
+
+  const apres = liste({ creme: 1 });
+  assert.deepEqual(objetsDe(etat, apres, 'toi'), ['creme'], 'tant que le répit court, Crème reste');
+  const r = apresRepit(etat, apres);
+  assert.deepEqual(r.nouvelles, ['toi']);
+  assert.equal(r.etat.masques.has('creme'), true);
+
+  const final = apresTampon(r.etat, r.nouvelles, apres);
+  assert.equal(final.enBas.has('toi'), true);
+  const ordre = noms(final, apres);
+  assert.equal(ordre.at(-1), 'toi');
+  assert.deepEqual(ordre, ['vet', 'pap', 'toi']);
+  assert.equal(final.choisie, 'vet', 'la sélection ne change que si la catégorie bouclée était choisie');
+});
+
+test('décocher dans une catégorie bouclée la rouvre', () => {
+  const etat = basculerFiltre(etatInitial(liste(), { filtre: false }), liste());
+  assert.equal(etat.enBas.has('pap'), true);
+  const apres = liste({ piece: 0 });
+  const r = apresRepit(etat, apres);
+  assert.equal(r.etat.bouclees.has('pap'), false);
+  assert.equal(r.etat.ouvertes.has('pap'), true);
+  assert.equal(r.etat.enBas.has('pap'), false);
+  assert.deepEqual(r.nouvelles, []);
+});
+
+test('le sac se boucle quand tout est complet, et se débouclé en décochant', () => {
+  const plein = liste({ pantalons: 4, creme: 1 });
+  const r = apresRepit(etatInitial(liste(), { filtre: false }), plein);
+  assert.equal(r.sacVientDeBoucler, true);
+  assert.equal(r.etat.sacBoucle, true);
+
+  const r2 = apresRepit(r.etat, liste({ pantalons: 3, creme: 1 }));
+  assert.equal(r2.etat.sacBoucle, false);
+  assert.equal(r2.sacVientDeBoucler, false);
+  const r3 = apresRepit(r2.etat, plein);
+  assert.equal(r3.sacVientDeBoucler, true, 'il peut reboucler');
+});
+
+test("basculer le filtre deux fois ramène à l'état sans masqués ni enBas", () => {
+  const l = liste();
+  const depart = etatInitial(l, { filtre: false });
+  const filtre = basculerFiltre(depart, l);
+  assert.equal(filtre.filtre, true);
+  assert.deepEqual([...filtre.masques].sort(), ['brosse', 'piece', 'pull']);
+  assert.deepEqual(noms(filtre, l), ['vet', 'toi', 'pap']);
+  const retour = basculerFiltre(filtre, l);
+  assert.equal(retour.filtre, false);
+  assert.equal(retour.masques.size, 0);
+  assert.equal(retour.enBas.size, 0);
+});
+
+test('accordéon et choix de catégorie', () => {
+  const etat = etatInitial(liste(), { filtre: false });
+  const ferme = basculerCategorie(etat, 'vet');
+  assert.equal(ferme.ouvertes.has('vet'), false);
+  assert.equal(etat.ouvertes.has('vet'), true, "l'état d'origine reste intact");
+  assert.equal(basculerCategorie(ferme, 'vet').ouvertes.has('vet'), true);
+  assert.equal(choisirCategorie(etat, 'toi').choisie, 'toi');
+});
+
+test('hors filtre, un objet coché descend au fond de sa catégorie seulement après le répit', () => {
+  const etat = etatInitial(liste(), { filtre: false });
+  const apres = liste({ creme: 1 });
+  assert.deepEqual(objetsDe(etat, apres, 'toi'), ['creme', 'brosse']);
+  assert.deepEqual(objetsDe(apresRepit(etat, apres).etat, apres, 'toi'), ['brosse', 'creme']);
+});
