@@ -36,7 +36,7 @@ function vueFiche(t, objet, categorie) {
     titre: echapper(objet.nom),
     contenu: `
       <div class="fiche-corps">
-        <p class="fiche-regle">${echapper(categorie.nom)} · ${echapper(decrireRegle(t, objet))}</p>
+        <p class="fiche-regle">${echapper(remplir(t('fiche.regle'), { categorie: categorie.nom, regle: decrireRegle(t, objet) }))}</p>
         <section class="fiche-bloc" aria-labelledby="fiche-sac">
           <h3 id="fiche-sac">${t('fiche.dansLeSac')}</h3>
           <div class="compteur">
@@ -65,15 +65,18 @@ const BOUTONS = {
 
 // Ouvre la fiche dans dans (l'écran du voyage, pour qu'elle parte avec lui). surChangement(valeur) :
 // le nouveau nombre de pièces dans le sac ; surFermeture : la fiche effacée ; signal : l'écran s'en
-// va, la fiche disparaît avec lui. Rend repeindre(objet), que l'écran appelle à chaque changement.
+// va, la fiche disparaît avec lui. Rend repeindre(objet), que l'écran appelle à chaque changement ;
+// un objet qui n'existe plus (relu après une panne) ferme la fiche.
 export function ouvrirFiche({ t, objet, categorie, surChangement, surFermeture, signal, dans }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueFiche(t, objet, categorie);
   const fenetre = gabarit.content.firstElementChild;
   fenetre.classList.add('fiche');
   let actuel = objet;
+  let fermer = null;
 
   function repeindre(nouveau) {
+    if (!nouveau) return fermer?.();
     actuel = nouveau;
     fenetre.querySelector('output').textContent = actuel.dansLeSac;
     fenetre.querySelector('.compteur-total').textContent = remplir(t('fiche.sur'), { total: actuel.quantite });
@@ -98,7 +101,7 @@ export function ouvrirFiche({ t, objet, categorie, surChangement, surFermeture, 
   dans.append(fenetre);
   const effacer = () => fenetre.remove();
   signal.addEventListener('abort', effacer, { once: true });
-  ouvrirFenetre(fenetre, {
+  fermer = ouvrirFenetre(fenetre, {
     fermerSurVoile: true,
     surFermeture: () => {
       signal.removeEventListener('abort', effacer);

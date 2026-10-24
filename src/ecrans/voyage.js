@@ -86,6 +86,7 @@ function ouvrirListe(app, donnees, contexte) {
     poses = { tampons: new Set(), bandeau: false };
     if (cle) trouverCommande(cle.action, cle.id)?.focus({ preventScroll: true });
     if (avant) glisser(main, avant);
+    // Un objet disparu à la relecture ferme la fiche (repeindre(undefined)).
     fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
   }
 
@@ -126,11 +127,11 @@ function ouvrirListe(app, donnees, contexte) {
   }
 
   // Une fenêtre ouverte (la fiche) rend l'écran derrière inerte et voilé : le message se pose alors
-  // en elle, pour être vu et lu.
+  // en elle, pour être vu et lu ; pas dans une fenêtre en train de se fermer, qui l'emporterait.
   function alerter(texte) {
     app.querySelector('.alerte')?.remove();
     clearTimeout(minuteries.alerte);
-    const hote = app.querySelector('dialog:modal') ?? app;
+    const hote = app.querySelector('dialog:modal:not([data-fermeture])') ?? app;
     hote.insertAdjacentHTML('beforeend', vueAlerte(texte));
     const alerte = hote.lastElementChild;
     minuteries.alerte = setTimeout(() => alerte.remove(), DUREE_ALERTE);
@@ -198,7 +199,9 @@ function ouvrirListe(app, donnees, contexte) {
     changer(id, dansLeSac);
   }
 
-  // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps.
+  // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps ; si la
+  // ligne n'est plus dessinée (catégorie repliée après son tampon, objet masqué par le filtre), à
+  // l'en-tête de sa catégorie, sinon au filtre : jamais à la page entière.
   function ouvrirLaFiche(id) {
     const objet = contenu.objets.find(o => o.id === id);
     if (!objet || fiche) return;
@@ -211,7 +214,11 @@ function ouvrirListe(app, donnees, contexte) {
         surChangement: valeur => changer(id, valeur),
         surFermeture: () => {
           fiche = null;
-          trouverCommande('fiche', id)?.focus();
+          const retour =
+            trouverCommande('fiche', id) ??
+            trouverCommande('accordeon', objet.categorieId) ??
+            trouverCommande('filtre');
+          retour?.focus();
         },
         signal: fin.signal,
         dans: app,

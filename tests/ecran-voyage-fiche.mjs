@@ -14,6 +14,11 @@
 //   la ferme pas, elle revient à sa place ;
 // - un objet sans note n'a pas de bloc « Note » ;
 // - quitter le voyage, fiche et confirmation ouvertes : Mes voyages s'affiche sans fenêtre ;
+// - focus à la fermeture quand la ligne n'est plus dessinée (horloge simulée) : « Tout dans le sac » sur
+//   Dentifrice, dernière pièce de Toilette, répit puis tampon passés (catégorie repliée), Échap : focus
+//   sur l'en-tête de Toilette ; sous le filtre, Café soluble complété puis masqué : focus sur une
+//   commande visible, jamais sur la page ; témoin : sans attendre, le focus revient à la ligne ;
+// - l'objet de la fiche disparaît à la relecture qui suit une panne : la fiche se ferme, le message reste ;
 // - téléphone et tablette en portrait × 2 thèmes : cibles de 44 px, rien sous les barres système,
 //   captures de la fiche et de sa confirmation.
 import { mkdir, readFile } from 'node:fs/promises';
@@ -42,15 +47,35 @@ const juge = creerJuge();
 const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
 
-const ouvrirVoyage = ({ taille = FORMATS.telephone, theme = 'light' } = {}) =>
-  ouvrir(navigateur, serveur.url, { taille, theme, donnees: DONNEES, adresse: '#/voyage/v1' });
+// horloge : l'horloge de la page arrêtée, que seul le test fait avancer (seconde de répit, tampon).
+async function ouvrirVoyage({ taille = FORMATS.telephone, theme = 'light', horloge = false } = {}) {
+  const ouvert = await ouvrir(navigateur, serveur.url, {
+    taille,
+    theme,
+    donnees: DONNEES,
+    adresse: '#/voyage/v1',
+    horloge,
+  });
+  if (horloge) await ouvert.page.clock.pauseAt((await ouvert.page.evaluate(() => Date.now())) + 10);
+  return ouvert;
+}
 
-async function ouvrirFiche(page, id) {
+// attendreCalme : faux sous horloge arrêtée (calme() compte sur les images de la page).
+async function ouvrirFiche(page, id, { attendreCalme = true } = {}) {
   await page.click(`.objet[data-id="${id}"] .objet-corps`);
   const ouverte = await attendreQue(page, () => document.querySelector('dialog.fiche[open]') !== null);
-  await calme(page);
+  if (attendreCalme) await calme(page);
   return ouverte;
 }
+
+// Ce qui a le focus : une commande visible (action et objet ou catégorie), ou la page elle-même.
+const focusActuel = page =>
+  page.evaluate(() => {
+    const el = document.activeElement;
+    if (!el || el === document.body) return 'body';
+    const visible = el.getBoundingClientRect().width > 0;
+    return `${el.dataset.action ?? el.tagName.toLowerCase()}:${el.dataset.id ?? ''}${visible ? '' : ' (invisible)'}`;
+  });
 
 // Ce que la fiche montre : titre, ligne de règle, compteur, boutons désactivés, note.
 const fiche = page =>
@@ -307,6 +332,75 @@ try {
       `quitter, fiche ouverte : ${JSON.stringify({ question, ...vu, gourde })}`,
     );
     juge.exige(erreurs.length === 0, `quitter : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Focus à la fermeture : la ligne d'origine, sinon l'en-tête de sa catégorie, sinon une commande visible.
+  {
+    const { contexte, page, erreurs } = await ouvrirVoyage({ horloge: true });
+    // Témoin : fermée aussitôt, la fiche rend le focus à la ligne.
+    await ouvrirFiche(page, 'o-den', { attendreCalme: false });
+    await page.keyboard.press('Escape');
+    await fermee(page);
+    const temoin = await focusActuel(page);
+    juge.exige(temoin === 'fiche:o-den', `focus, fiche fermée aussitôt : ${temoin}`);
+    // Dentifrice complète Toilette : après le répit et le tampon, la catégorie est repliée.
+    await ouvrirFiche(page, 'o-den', { attendreCalme: false });
+    await appuyerFiche(page, 'tout');
+    await page.clock.runFor(1000);
+    await page.clock.runFor(1000);
+    const repliee = await page.evaluate(() =>
+      document.querySelector('[data-action="accordeon"][data-id="c-toi"]').getAttribute('aria-expanded'),
+    );
+    await page.keyboard.press('Escape');
+    await fermee(page);
+    const focus = await focusActuel(page);
+    juge.exige(
+      repliee === 'false' && focus === 'accordeon:c-toi',
+      `focus, Toilette repliée pendant la fiche : repliée ${repliee}, focus ${focus}`,
+    );
+    juge.exige(erreurs.length === 0, `focus, catégorie repliée : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+  {
+    const { contexte, page, erreurs } = await ouvrirVoyage({ horloge: true });
+    await page.click('[data-action="filtre"]');
+    await page.clock.runFor(1000);
+    await ouvrirFiche(page, 'o-caf', { attendreCalme: false });
+    await appuyerFiche(page, 'tout');
+    await page.clock.runFor(1000);
+    const masque = await page.evaluate(() => !document.querySelector('.objet[data-id="o-caf"]'));
+    await page.keyboard.press('Escape');
+    await fermee(page);
+    const focus = await focusActuel(page);
+    juge.exige(
+      masque && focus !== 'body' && !focus.endsWith('(invisible)'),
+      `focus, Café masqué par le filtre pendant la fiche : masqué ${masque}, focus ${focus}`,
+    );
+    juge.exige(erreurs.length === 0, `focus, filtre : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // L'objet disparaît à la relecture qui suit une panne : la fiche se ferme.
+  {
+    const { contexte, page } = await ouvrirVoyage();
+    await ouvrirFiche(page, 'o-rep');
+    const stocke = await lireStockage(page);
+    await ecrireStockage(page, {
+      ...stocke,
+      objetsDuVoyage: stocke.objetsDuVoyage.filter(o => o.id !== 'o-rep'),
+      pannes: ['reglerDansLeSac'],
+    });
+    await appuyerFiche(page, 'plus');
+    await attendreQue(page, () => document.querySelector('.alerte') !== null);
+    await attendreQue(page, () => !document.querySelector('dialog.fiche'));
+    const vu = await page.evaluate(() => ({
+      fiche: Boolean(document.querySelector('dialog.fiche')),
+      ligne: Boolean(document.querySelector('.objet[data-id="o-rep"]')),
+      alerte: Boolean(document.querySelector('.alerte')),
+    }));
+    // Le message d'échec reste à l'écran : il ne part pas avec la fiche qui se ferme.
+    juge.exige(!vu.fiche && !vu.ligne && vu.alerte, `objet disparu à la relecture : ${JSON.stringify(vu)}`);
     await contexte.close();
   }
 

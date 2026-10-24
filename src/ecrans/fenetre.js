@@ -65,7 +65,7 @@ function glisserPourFermer(fenetre, fermer) {
 // surFermeture est appelé une seule fois, la fenêtre effacée : appuis répétés, Échap pendant
 // l'animation ou fermeture par le navigateur n'en font pas une seconde. fermerSurVoile : une fenêtre
 // sans saisie à perdre (fiche d'un objet) se ferme aussi d'un appui sur le voile ou d'un glissé de
-// son en-tête vers le bas.
+// son en-tête vers le bas. Rend fermer(), pour qui doit fermer la fenêtre sans geste de la personne.
 export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false }) {
   let fermeture = false;
   async function fermer() {
@@ -91,6 +91,7 @@ export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false })
   });
   fenetre.addEventListener('close', () => fenetre.isConnected && fermer());
   fenetre.showModal();
+  return fermer;
 }
 
 // Avant un geste qui défait quelque chose (vider un objet du sac) : une fenêtre d'alerte avec

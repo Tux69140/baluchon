@@ -44,7 +44,8 @@
     "vider": "Vider",
     "note": "Note",
     "confirmerTitre": "Vider « {nom} » ?",
-    "confirmerTexte": "Les {n} pièces repartent hors du sac."
+    "confirmerTexte": "Les {n} pièces repartent hors du sac.",
+    "regle": "{categorie} · {regle}"
   },
   "regle": {
     "fixe": "{valeur} en tout",
