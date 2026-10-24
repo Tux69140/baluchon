@@ -10,10 +10,12 @@
 //   masqués par le filtre ;
 // - fiche ouverte sur Dentifrice, Toilette bouclée et quittée entre-temps : à la fermeture, le focus va
 //   au choix de Toilette à gauche (l'en-tête d'accordéon n'existe pas en deux panneaux) ;
-// - une coche ne ramène pas en haut un panneau qu'on avait fait défiler (fenêtre basse) ;
+// - une coche ne ramène pas en haut un panneau qu'on avait fait défiler (fenêtre basse) ; témoin
+//   inverse : la catégorie suivante, venue seule après le tampon, se montre depuis son début ;
 // - tourner la tablette dans la même page après une coche : en portrait, une colonne, la coche
 //   gardée ; de retour en paysage, la même catégorie choisie et la coche toujours là ; une fiche
-//   ouverte pendant la rotation se ferme ensuite en rendant le focus à une commande visible.
+//   ouverte pendant la rotation se ferme ensuite en rendant le focus à une commande visible ; le
+//   lien « Mes voyages » qui a le focus le garde à travers la rotation.
 // 2 formats × 2 thèmes : cibles de 44 px, pas de défilement de côté, rien sous les barres système,
 // et captures.
 import { mkdir, readFile } from 'node:fs/promises';
@@ -31,7 +33,7 @@ import {
   verifierBarres,
   verifierCommandes,
 } from './outils/page.mjs';
-import { DONNEES } from './outils/voyage-essai.mjs';
+import { DONNEES, avecPieces } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
@@ -44,12 +46,18 @@ const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
 
 // horloge : l'horloge de la page arrêtée, que seul le test fait avancer (seconde de répit, tampon).
-async function ouvrirVoyage({ format = 'tablette-paysage', theme = 'light', horloge = false, taille } = {}) {
+async function ouvrirVoyage({
+  format = 'tablette-paysage',
+  theme = 'light',
+  horloge = false,
+  taille,
+  donnees = DONNEES,
+} = {}) {
   const ouvert = await ouvrir(navigateur, serveur.url, {
     taille: taille ?? LARGES[format].taille,
     tactile: LARGES[format].tactile,
     theme,
-    donnees: DONNEES,
+    donnees,
     adresse: '#/voyage/v1',
     horloge,
   });
@@ -236,6 +244,47 @@ try {
     const apres = await page.evaluate(() => document.querySelector('.panneau-droit')?.scrollTop);
     juge.exige(defile > 0 && apres === defile, `panneau défilé de ${defile} px, ${apres} px après une coche`);
     juge.exige(erreurs.length === 0, `défilement : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Fenêtre très basse, Alimentation déjà bouclée : Toilette finie, la suite passe à Vêtements, qui
+  // se montre depuis son début, même si Toilette avait été défilée.
+  {
+    const { contexte, page, erreurs } = await ouvrirVoyage({
+      taille: { width: 1280, height: 300 },
+      donnees: avecPieces({ 'o-rep': 16, 'o-caf': 1 }),
+      horloge: true,
+    });
+    await choisir(page, 'c-toi');
+    await toucher(page, '.objet[data-id="o-den"] .case');
+    const defile = await page.evaluate(() => {
+      const droit = document.querySelector('.panneau-droit');
+      if (droit) droit.scrollTop = droit.scrollHeight;
+      return droit?.scrollTop ?? 0;
+    });
+    await page.clock.runFor(1000);
+    await page.clock.runFor(1000);
+    const vu = await page.evaluate(() => ({
+      titre: document.querySelector('#detail-titre')?.textContent.trim(),
+      haut: document.querySelector('.panneau-droit')?.scrollTop,
+    }));
+    juge.exige(
+      defile > 0 && vu.titre === 'Vêtements' && vu.haut === 0,
+      `suivante venue seule : Toilette défilée de ${defile} px, puis ${vu.titre} à ${vu.haut} px`,
+    );
+    juge.exige(erreurs.length === 0, `suivante : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Le lien « Mes voyages » garde le focus à travers la rotation.
+  {
+    const { contexte, page, erreurs } = await ouvrirVoyage();
+    await page.focus('.lien-retour');
+    await page.setViewportSize(FORMATS['tablette-portrait']);
+    await attendreQue(page, () => !document.querySelector('.panneaux'));
+    const focus = await page.evaluate(() => document.activeElement?.matches('.lien-retour'));
+    juge.exige(focus, 'rotation : le lien « Mes voyages » a perdu le focus');
+    juge.exige(erreurs.length === 0, `retour, rotation : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }
 

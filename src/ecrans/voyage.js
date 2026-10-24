@@ -90,10 +90,13 @@ function ouvrirListe(app, donnees, contexte) {
   const fin = new AbortController();
   // La fiche ouverte : l'objet qu'elle montre et de quoi la repeindre.
   let fiche = null;
+  // La catégorie choisie au dernier dessin : une autre (touchée, ou venue seule après un tampon) se
+  // lit depuis son début.
+  let choisieDessinee = null;
 
   // Chaque dessin suit la disposition du moment : tourner l'appareil ou élargir la fenêtre redessine
   // le même état (coches, catégorie choisie, filtre). Les panneaux défilent chacun : un dessin dans
-  // la même disposition les laisse là où on les avait menés.
+  // la même disposition les laisse là où on les avait menés, sauf le détail d'une autre catégorie.
   function peindre({ glissement = false } = {}) {
     const avant = glissement && !moinsDAnimations.matches ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
@@ -103,6 +106,8 @@ function ouvrirListe(app, donnees, contexte) {
     main.className = classe;
     main.innerHTML = html;
     main.querySelectorAll('.panneau').forEach((p, i) => (p.scrollTop = defilements[i] ?? 0));
+    if (etat.choisie !== choisieDessinee) main.querySelector('.panneau-droit')?.scrollTo(0, 0);
+    choisieDessinee = etat.choisie;
     poses = { tampons: new Set(), bandeau: false };
     if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
     if (avant) glisser(main, avant);
@@ -270,8 +275,6 @@ function ouvrirListe(app, donnees, contexte) {
     } else if (action === 'choisir') {
       etat = choisirCategorie(etat, id);
       peindre();
-      // Une autre catégorie se lit depuis son début.
-      main.querySelector('.panneau-droit')?.scrollTo(0, 0);
     } else if (action === 'filtre') {
       etat = basculerFiltre(etat, liste);
       stockage.ecrireFiltre(contenu.voyage.id, etat.filtre);
