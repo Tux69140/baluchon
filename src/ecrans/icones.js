@@ -10,6 +10,11 @@ import caretRight from '@phosphor-icons/core/bold/caret-right-bold.svg?raw';
 import plus from '@phosphor-icons/core/bold/plus-bold.svg?raw';
 import minus from '@phosphor-icons/core/bold/minus-bold.svg?raw';
 import warningCircle from '@phosphor-icons/core/bold/warning-circle-bold.svg?raw';
+import check from '@phosphor-icons/core/bold/check-bold.svg?raw';
+import info from '@phosphor-icons/core/bold/info-bold.svg?raw';
+import caretDown from '@phosphor-icons/core/bold/caret-down-bold.svg?raw';
+import funnel from '@phosphor-icons/core/bold/funnel-bold.svg?raw';
+import checkCircle from '@phosphor-icons/core/bold/check-circle-bold.svg?raw';
 import x from '@phosphor-icons/core/bold/x-bold.svg?raw';
 import { echapper } from './html.js';
 
@@ -23,6 +28,11 @@ const INTERFACE = {
   moins: minus,
   erreur: warningCircle,
   fermer: x,
+  coche: check,
+  info,
+  deplier: caretDown,
+  filtre: funnel,
+  boucle: checkCircle,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.

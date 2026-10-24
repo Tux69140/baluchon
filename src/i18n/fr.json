@@ -4,13 +4,70 @@
   },
   "voyage": {
     "introuvableTitre": "Voyage introuvable",
-    "introuvable": "Ce voyage est introuvable. Il a peut-être été supprimé."
+    "introuvable": "Ce voyage est introuvable. Il a peut-être été supprimé.",
+    "dansLeSac": "Dans le sac",
+    "compte": "{faits} / {total}",
+    "sacBoucle": "Sac bouclé !",
+    "toutEstDansLeSac": "Tout est dans le sac",
+    "boucle": "Bouclé !",
+    "filtre": "Reste à emballer",
+    "masques": {
+      "one": "{n} objet dans le sac, masqué",
+      "other": "{n} objets dans le sac, masqués"
+    },
+    "partage": "partagé",
+    "categories": "Catégories",
+    "categorieMasquee": {
+      "one": "Catégorie bouclée : son objet est dans le sac, masqué par le filtre.",
+      "other": "Catégorie bouclée : ses {n} objets sont dans le sac, masqués par le filtre."
+    },
+    "vide": {
+      "titre": "Rien à emballer pour l’instant",
+      "texte": "Aucun objet de la bibliothèque ne correspondait à ce voyage."
+    },
+    "erreurEnregistrement": "La coche n’a pas pu être enregistrée. Rien n’a changé ; réessayez.",
+    "case": {
+      "ajouter": "{nom} : {n} sur {total} dans le sac. Ajouter une pièce",
+      "cocher": "{nom} : pas encore dans le sac. Cocher",
+      "vider": "{nom} : dans le sac. Vider",
+      "decocher": "{nom} : dans le sac. Décocher"
+    },
+    "ouvrirFiche": "{nom}, {quantite}. Ouvrir la fiche",
+    "avecNote": "une note"
+  },
+  "fiche": {
+    "dansLeSac": "Dans le sac",
+    "sur": "sur {total}",
+    "moins": "Une pièce de moins",
+    "plus": "Une pièce de plus",
+    "tout": "Tout dans le sac",
+    "vider": "Vider",
+    "note": "Note",
+    "confirmerTitre": "Vider « {nom} » ?",
+    "confirmerTexte": "Les {n} pièces repartent hors du sac."
+  },
+  "regle": {
+    "fixe": "{valeur} en tout",
+    "fixeParPersonne": "{valeur} par personne",
+    "parJour": "{valeur} par jour",
+    "parJourParPersonne": "{valeur} par jour et par personne",
+    "parNuit": "{valeur} par nuit",
+    "parNuitParPersonne": "{valeur} par nuit et par personne",
+    "plafond": "{regle}, au plus {plafond}",
+    "plafondParPersonne": "{regle}, au plus {plafond} par personne"
   },
   "voyages": {
     "titre": "Mes voyages",
     "nouveau": "Nouveau voyage",
-    "rubriques": { "enCours": "En cours", "aVenir": "À venir", "passes": "Passés" },
-    "voyageurs": { "one": "{n} voyageur", "other": "{n} voyageurs" },
+    "rubriques": {
+      "enCours": "En cours",
+      "aVenir": "À venir",
+      "passes": "Passés"
+    },
+    "voyageurs": {
+      "one": "{n} voyageur",
+      "other": "{n} voyageurs"
+    },
     "details": "{periode} · {voyageurs}",
     "vide": {
       "titre": "Créez votre premier voyage",
@@ -60,8 +117,14 @@
     }
   },
   "duree": {
-    "jours": { "one": "{n} jour", "other": "{n} jours" },
-    "nuits": { "one": "{n} nuit", "other": "{n} nuits" }
+    "jours": {
+      "one": "{n} jour",
+      "other": "{n} jours"
+    },
+    "nuits": {
+      "one": "{n} nuit",
+      "other": "{n} nuits"
+    }
   },
   "erreurs": {
     "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
@@ -124,7 +187,8 @@
             "regle": "par_jour",
             "valeur": 2,
             "parPersonne": true,
-            "consommable": true
+            "consommable": true,
+            "note": "Prévoir un repas de secours par personne en plus."
           },
           {
             "nom": "Gourde",
@@ -143,13 +207,15 @@
             "nom": "Pièce d’identité",
             "regle": "fixe",
             "valeur": 1,
-            "parPersonne": true
+            "parPersonne": true,
+            "note": "Vérifier la date de validité avant de partir : certaines démarches prennent des semaines."
           },
           {
             "nom": "Chargeur de téléphone",
             "regle": "fixe",
             "valeur": 1,
-            "parPersonne": false
+            "parPersonne": false,
+            "note": "Une multiprise de voyage dépanne dans les chambres à prise unique."
           }
         ]
       }

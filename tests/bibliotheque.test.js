@@ -40,7 +40,12 @@ test('neuf objets rattachés à leur catégorie, avec leurs règles', () => {
       ['Papiers', 'Chargeur de téléphone', 'fixe', 1, null, false, false],
     ],
   );
-  assert.ok(objets.every(o => o.toujoursInclus && o.note === '' && o.modifieLe === MAINTENANT));
+  assert.ok(objets.every(o => o.toujoursInclus && typeof o.note === 'string' && o.modifieLe === MAINTENANT));
+  // Trois objets partent avec une note rédigée ; les autres n'en ont pas.
+  assert.deepEqual(
+    objets.filter(o => o.note !== '').map(o => o.nom),
+    ['Repas', 'Pièce d’identité', 'Chargeur de téléphone'],
+  );
   const ids = [...categories, ...objets].map(x => x.id);
   assert.equal(new Set(ids).size, ids.length);
 });

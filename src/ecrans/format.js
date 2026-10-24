@@ -38,3 +38,13 @@ export const detailsVoyage = (t, voyage, langue) =>
     periode: formaterPeriode(t, voyage.depart, voyage.retour, langue),
     voyageurs: pluriel(t, 'voyages.voyageurs', voyage.voyageurs, langue),
   });
+
+// « 2 par jour et par personne, au plus 5 par personne » : la règle de quantité d'un objet, dite en
+// toutes lettres sur la fiche. Le plafond reprend « par personne » seulement si la règle le dit.
+export function decrireRegle(t, objet) {
+  const base = { fixe: 'fixe', par_jour: 'parJour', par_nuit: 'parNuit' }[objet.regle];
+  const suffixe = objet.parPersonne ? 'ParPersonne' : '';
+  const regle = remplir(t(`regle.${base}${suffixe}`), { valeur: objet.valeur });
+  if (objet.plafond === null) return regle;
+  return remplir(t(`regle.plafond${suffixe}`), { regle, plafond: objet.plafond });
+}

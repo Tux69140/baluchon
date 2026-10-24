@@ -3,7 +3,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fr from '../src/i18n/fr.json' with { type: 'json' };
 import { creerTraducteur } from '../src/i18n/traduction.js';
-import { detailsVoyage, formaterDate, formaterJourCourt, formaterPeriode, pluriel } from '../src/ecrans/format.js';
+import {
+  decrireRegle,
+  detailsVoyage,
+  formaterDate,
+  formaterJourCourt,
+  formaterPeriode,
+  pluriel,
+} from '../src/ecrans/format.js';
 
 const t = creerTraducteur({ fr }, 'fr');
 
@@ -48,4 +55,12 @@ test('detailsVoyage assemble la période et les voyageurs avec le séparateur de
     detailsVoyage(t, { ...voyage, voyageurs: 1 }, 'fr'),
     'du sam. 10 oct. au mar. 13 oct. 2026 · 1 voyageur',
   );
+});
+
+test('une règle se décrit en toutes lettres', () => {
+  const r = (regle, valeur, parPersonne, plafond = null) => decrireRegle(t, { regle, valeur, parPersonne, plafond });
+  assert.equal(r('par_jour', 2, true), '2 par jour et par personne');
+  assert.equal(r('fixe', 1, false), '1 en tout');
+  assert.equal(r('par_jour', 1, true, 5), '1 par jour et par personne, au plus 5 par personne');
+  assert.equal(r('par_nuit', 1, false, 3), '1 par nuit, au plus 3');
 });
