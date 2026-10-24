@@ -5,8 +5,8 @@
 // - catégories dans l'ordre de la bibliothèque, chacune avec son pavé coloré, son picto et son compte ;
 //   objets par nom, les complets en bas ; chaque case dans son état (vide, entamée, pleine) ; « 6 / 16 »
 //   sur une ligne entamée ; ⓘ seulement sur l'objet qui a une note ; « partagé » seulement sous l'objet
-//   partagé ; la case et la ligne nommées pour un lecteur d'écran (état, geste, tout ce que montre la
-//   ligne) ; rien d'un autre voyage ;
+//   partagé, et seulement à plusieurs voyageurs ; la case et la ligne nommées pour un lecteur d'écran
+//   (état, geste, tout ce que montre la ligne) ; rien d'un autre voyage ;
 // - une catégorie bouclée est repliée et porte son tampon « Bouclé ! » ;
 // - un voyage sans objet affiche la mascotte, un titre et un texte, sans progression ni filtre ;
 // - un voyage inconnu, ou une adresse de voyage mal formée, affiche un titre, un message en toutes
@@ -244,6 +244,26 @@ try {
   await verifierCommandes(long.page, juge, 'nom très long');
   await long.contexte.close();
 
+  // Seul en voyage : « partagé » ne veut rien dire, ni sous Café soluble ni dans le nom de sa ligne
+  // (le témoin à deux voyageurs, plus haut, le montre).
+  const seul = await ouvrir(navigateur, serveur.url, {
+    taille: FORMATS.telephone,
+    theme: 'light',
+    donnees: { ...DONNEES, voyages: DONNEES.voyages.map(v => (v.id === 'v1' ? { ...v, voyageurs: 1 } : v)) },
+    adresse: '#/voyage/v1',
+  });
+  const vuSeul = await lire(seul.page);
+  const partages = vuSeul.categories.flatMap(c => c[4]).filter(o => o[4]);
+  juge.exige(
+    vuSeul.categories.length === ATTENDU.length && partages.length === 0,
+    `un seul voyageur : « partagé » affiché sous ${JSON.stringify(partages)}`,
+  );
+  juge.exige(
+    vuSeul.libelles['o-caf']?.[1] === fiche('Café soluble', '1'),
+    `un seul voyageur : nom de la ligne Café soluble ${JSON.stringify(vuSeul.libelles['o-caf'])}`,
+  );
+  await seul.contexte.close();
+
   // Voyage inconnu, ou adresse mal formée : titre, message et retour.
   for (const [cas, adresse] of [
     ['voyage inconnu', '#/voyage/inconnu'],
@@ -304,5 +324,5 @@ try {
 }
 juge.conclure(
   'Écran d’un voyage',
-  '3 formats (dont deux panneaux en paysage) × 2 thèmes, voyage sans objet, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
+  '3 formats (dont deux panneaux en paysage) × 2 thèmes, voyage sans objet, voyageur seul, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
 );

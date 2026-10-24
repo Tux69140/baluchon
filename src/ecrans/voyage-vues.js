@@ -72,14 +72,15 @@ function libelleCase(t, objet) {
   return remplir(t(`voyage.case.${objet.quantite === 1 ? 'cocher' : 'ajouter'}`), valeurs);
 }
 
-function vueObjet(t, objet) {
+function vueObjet(t, objet, voyageurs) {
   const etat = etatDansLeSac(objet);
   const entame = etat === 'entame';
   const quantite = entame ? `${objet.dansLeSac}<small> / ${objet.quantite}</small>` : `${objet.quantite}`;
   const quantiteDite = entame ? `${objet.dansLeSac} / ${objet.quantite}` : `${objet.quantite}`;
   const note = objet.note ? `, ${t('voyage.avecNote')}` : '';
-  // « partagé » : la quantité vaut pour tout le groupe, pas par personne (docs/PRD.md, US-3).
-  const partage = objet.parPersonne ? '' : t('voyage.partage');
+  // « partagé » : la quantité vaut pour tout le groupe, pas par personne (docs/PRD.md, US-3) ; seul en
+  // voyage, il n'y a personne avec qui partager, le mot ne dirait rien.
+  const partage = objet.parPersonne || voyageurs < 2 ? '' : t('voyage.partage');
   const sous = partage && `<span class="objet-sous"><span>${partage}</span></span>`;
   // Le nom du bouton reprend tout ce que la ligne montre, dans le même ordre.
   const nomDit = partage ? `${objet.nom}, ${partage}` : objet.nom;
@@ -97,13 +98,14 @@ function vueObjet(t, objet) {
 }
 
 // Une catégorie ouverte dont le filtre masque tout le dit en toutes lettres, plutôt que d'être vide.
-function vueLignes(t, langue, { objets }, nombre) {
+function vueLignes({ t, langue, voyageurs }, { objets }, nombre) {
   if (!objets.length) return `<p class="ligne-info">${pluriel(t, 'voyage.categorieMasquee', nombre, langue)}</p>`;
-  return `<ul class="objets">${objets.map(o => vueObjet(t, o)).join('')}
+  return `<ul class="objets">${objets.map(o => vueObjet(t, o, voyageurs)).join('')}
         </ul>`;
 }
 
-function vueCategorie({ t, langue }, affichee, toute, etat, poses) {
+function vueCategorie(contexte, affichee, toute, etat, poses) {
+  const { t } = contexte;
   const { categorie } = affichee;
   const ouverte = etat.ouvertes.has(categorie.id);
   const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
@@ -117,7 +119,7 @@ function vueCategorie({ t, langue }, affichee, toute, etat, poses) {
             <span class="chevron" aria-hidden="true">${iconeInterface('deplier')}</span>
           </button>
         </h2>
-        ${ouverte ? vueLignes(t, langue, affichee, toute.objets.length) : ''}
+        ${ouverte ? vueLignes(contexte, affichee, toute.objets.length) : ''}
       </section>`;
 }
 
@@ -137,7 +139,8 @@ function vueChoix({ t }, affichee, toute, etat, poses) {
 }
 
 // Deux panneaux : à droite, la catégorie choisie, son tampon dans sa tête, puis ses objets.
-function vueDetail({ t, langue }, affichee, toute, etat, poses) {
+function vueDetail(contexte, affichee, toute, etat, poses) {
+  const { t } = contexte;
   const { categorie } = affichee;
   return `
       <section class="panneau panneau-droit" aria-labelledby="detail-titre">
@@ -147,7 +150,7 @@ function vueDetail({ t, langue }, affichee, toute, etat, poses) {
             <h2 id="detail-titre">${echapper(categorie.nom)}</h2>
             ${compteOuTampon(t, toute, etat, poses)}
           </div>
-          ${vueLignes(t, langue, affichee, toute.objets.length)}
+          ${vueLignes(contexte, affichee, toute.objets.length)}
         </div>
       </section>`;
 }
@@ -180,7 +183,9 @@ function vueVide(t) {
 // panneaux si deuxPanneaux (tablette en paysage, ordinateur) ; un voyage vide reste en une colonne.
 // liste : les catégories du voyage et leurs pièces (listeParCategorie) ; poses : les tampons et le
 // bandeau qui viennent d'apparaître, animés une seule fois.
-export function vueVoyage(contexte, { contenu, liste, etat, poses, deuxPanneaux }) {
+export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, deuxPanneaux }) {
+  // Le nombre de voyageurs suit le contexte jusqu'aux lignes, qui en ont besoin pour « partagé ».
+  const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs };
   const { t, langue } = contexte;
   const entete = vueEntete(contexte, contenu.voyage);
   if (!contenu.objets.length) return { classe: 'ecran', html: entete + vueVide(t) };
