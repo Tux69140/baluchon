@@ -88,8 +88,8 @@ export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
   return { voyage, categories, objets };
 }
 
-// La liste d'un voyage à l'écran : catégories dans l'ordre de la bibliothèque, objets par ordre
-// alphabétique (docs/PRD.md, « Écrans et gestes » ; les cochés en bas viendront en phase 3).
+// La liste d'un voyage à l'écran : catégories dans l'ordre de la bibliothèque, objets par nom,
+// les complets en bas (ordreDansLeSac ; docs/PRD.md, « Écrans et gestes »).
 export function listeParCategorie({ categories, objets }) {
   return [...categories]
     .sort(parOrdre)

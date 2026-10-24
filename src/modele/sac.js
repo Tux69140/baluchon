@@ -14,7 +14,8 @@ export function etatDansLeSac(objet) {
 // d'abord confirmation (sauf pour une seule pièce : rien à perdre).
 export function appuiSurCase(objet) {
   if (!estComplet(objet)) return { dansLeSac: objet.dansLeSac + 1, confirmer: false };
-  return { dansLeSac: 0, confirmer: objet.dansLeSac > 1 };
+  // Un objet complet a dansLeSac === quantite (la base interdit de dépasser), d'où la même règle.
+  return { dansLeSac: 0, confirmer: viderDemandeConfirmation(objet) };
 }
 
 export function bornerDansLeSac(objet, valeur) {
