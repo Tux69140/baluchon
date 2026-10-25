@@ -15,6 +15,7 @@ import './styles/fiche.css';
 import './styles/assistant.css';
 import './styles/assistant-questions.css';
 import './styles/menu.css';
+import './styles/bibliotheque.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';
@@ -24,6 +25,7 @@ import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
 import { ecranVoyage } from './ecrans/voyage.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
 import { ecranReglages } from './ecrans/reglages.js';
+import { ecranBibliotheque } from './ecrans/bibliotheque.js';
 import { retourDansLAppli } from './ecrans/retour-systeme.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
@@ -41,6 +43,7 @@ const ECRANS = [
   { motif: /^#\/voyage\/([\w%-]+)$/, ecran: ecranVoyage },
   { motif: /^#\/nouveau-voyage$/, ecran: ecranNouveauVoyage },
   { motif: /^#\/reglages$/, ecran: ecranReglages },
+  { motif: /^#\/bibliotheque$/, ecran: ecranBibliotheque },
 ];
 
 let stockage;

@@ -11,6 +11,7 @@
 // passe par le même chemin que la case.
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
+import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import {
   apresRepit,
@@ -27,10 +28,6 @@ const REPIT = 1000;
 const TAMPON = 1000;
 // Glissement des lignes qui changent de place (docs/DESIGN.md, journal du 2026-10-24).
 const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
-const moinsDAnimations = matchMedia('(prefers-reduced-motion: reduce)');
-// Deux panneaux dès que l'écran est large et couché : la même requête habille la disposition dans
-// src/styles/voyage-panneaux.css ; les deux doivent rester identiques.
-const DEUX_PANNEAUX = '(min-width: 1000px) and (orientation: landscape)';
 const deuxPanneaux = matchMedia(DEUX_PANNEAUX);
 
 // Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
@@ -40,28 +37,6 @@ function lireIdentifiant(parametre) {
     return decodeURIComponent(parametre);
   } catch {
     return null;
-  }
-}
-
-// La place de chaque élément mobile, relevée par rapport à l'élément mobile qui le contient : une
-// ligne qui descend avec sa carte ne glisse qu'une fois, avec elle.
-function places(racine) {
-  const resultat = new Map();
-  for (const el of racine.querySelectorAll('[data-flip]')) {
-    const parent = el.parentElement.closest('[data-flip]');
-    resultat.set(el.dataset.flip, el.getBoundingClientRect().top - (parent?.getBoundingClientRect().top ?? 0));
-  }
-  return resultat;
-}
-
-// Chaque élément part de son ancienne place et glisse jusqu'à la nouvelle (technique « FLIP »).
-function glisser(racine, avant) {
-  const apres = places(racine);
-  for (const el of racine.querySelectorAll('[data-flip]')) {
-    // Un élément qui vient d'apparaître (filtre retiré) n'a pas d'ancienne place : il est là, simplement.
-    if (!avant.has(el.dataset.flip)) continue;
-    const delta = avant.get(el.dataset.flip) - apres.get(el.dataset.flip);
-    if (Math.abs(delta) > 1) el.animate([{ transform: `translateY(${delta}px)` }, { transform: 'none' }], GLISSEMENT);
   }
 }
 
@@ -97,7 +72,7 @@ function ouvrirListe(app, donnees, contexte) {
   // le même état (coches, catégorie choisie, filtre). Les panneaux défilent chacun : un dessin dans
   // la même disposition les laisse là où on les avait menés, sauf le détail d'une autre catégorie.
   function peindre({ glissement = false } = {}) {
-    const avant = glissement && !moinsDAnimations.matches ? places(main) : null;
+    const avant = glissement ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
     const { classe, html } = vueVoyage(contexte, { contenu, liste, etat, poses, deuxPanneaux: deuxPanneaux.matches });
@@ -109,7 +84,7 @@ function ouvrirListe(app, donnees, contexte) {
     choisieDessinee = etat.choisie;
     poses = { tampons: new Set(), bandeau: false };
     if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
-    if (avant) glisser(main, avant);
+    glisser(main, avant, GLISSEMENT);
     // Un objet disparu à la relecture ferme la fiche (repeindre(undefined)).
     fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
   }

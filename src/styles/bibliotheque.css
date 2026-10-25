@@ -1,0 +1,207 @@
+/* L'écran Bibliothèque (src/ecrans/bibliotheque.js), repris de la maquette validée le 2026-10-25
+   (docs/maquettes/bibliotheque/maquette.css). Les cartes, lignes, choix et panneaux sont ceux de
+   voyage.css et voyage-panneaux.css ; ici, ce qui n'existe que dans la bibliothèque. */
+
+/* Un texte pour le seul lecteur d'écran (annonce du rangement, « une note »). */
+.lecteur {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.biblio-resume {
+  margin: var(--e-xs) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+/* ---------- Cartes de catégorie : l'accordéon, puis le crayon ---------- */
+.categorie-entete {
+  display: flex;
+  align-items: center;
+}
+
+.categorie-entete .categorie-titre {
+  flex: 1;
+  min-width: 0;
+}
+
+.bouton-modifier {
+  flex: none;
+  margin: 0 var(--e-sm) 0 0;
+  border-color: transparent;
+  background: none;
+  color: var(--encre-douce);
+}
+
+.bouton-modifier:hover {
+  background: var(--releve);
+  color: var(--encre);
+}
+
+/* Sous le nom : « N objets · Toujours incluse », ou « N objets » et les étiquettes en puces. */
+.categorie-infos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-xs) var(--e-sm);
+}
+
+.inclusion {
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.puces-mini {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--e-xs);
+}
+
+.puces-mini span {
+  padding: 0 8px;
+  border-radius: var(--r-plein);
+  background: var(--releve);
+  color: var(--encre-douce);
+  font: 600 var(--taille-mention) / 1.6 var(--police);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Lignes d'objet modèle : pas de case, toute la ligne ouvre la fiche ---------- */
+.objet-modele .objet-corps,
+.objet-ajout .objet-corps {
+  min-height: 56px;
+  padding-left: var(--e-md);
+}
+
+.objet-modele .chevron {
+  width: 28px;
+}
+
+.objet-modele .chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+.objet-ajout .objet-corps {
+  gap: var(--e-sm);
+  color: var(--principal);
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.objet-ajout .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Deux panneaux : « Nouvelle catégorie » sous les choix, nom et infos à droite ---------- */
+.bouton-large {
+  width: 100%;
+  margin-top: var(--e-md);
+}
+
+.detail-titre {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detail-titre h2 {
+  font-size: var(--taille-section);
+  overflow-wrap: anywhere;
+}
+
+/* Ce qui vient d'être enregistré s'éclaire un instant, puis reprend sa couleur. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-recent] > .objet-corps,
+  [data-recent] .categorie-tete,
+  [data-recent] > .choix {
+    animation: eclaire 1600ms ease-out;
+  }
+}
+
+@keyframes eclaire {
+  from {
+    background: var(--fond-succes);
+  }
+}
+
+/* ---------- Ranger les catégories ---------- */
+.rangement {
+  margin-top: var(--e-md);
+  padding: var(--e-md);
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+}
+
+.rangement-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-sm) var(--e-md);
+}
+
+.rangement-tete h2 {
+  font-size: var(--taille-section);
+}
+
+.aide {
+  max-width: 62ch;
+  margin: var(--e-xs) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  text-wrap: pretty;
+}
+
+.rangement-liste {
+  margin: var(--e-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rangement-liste li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  border-top: 1px solid var(--separation);
+  background: var(--carte);
+}
+
+.rangement-liste b {
+  flex: 1;
+  min-width: 0;
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Écriture refusée : en haut, par-dessus une fiche (src/ecrans/alerte.js) ---------- */
+.alerte-haut {
+  position: fixed;
+  inset: calc(var(--zone-haut) + var(--e-md)) calc(var(--zone-droite) + var(--e-md)) auto
+    calc(var(--zone-gauche) + var(--e-md));
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: auto;
+  max-width: 560px;
+  height: auto;
+  margin: 0 auto;
+  color: var(--encre);
+  box-shadow: 0 10px 28px -12px rgb(13 22 36 / 0.45);
+}
+
+.alerte-haut p {
+  margin: 0;
+}
+
+.alerte-haut .icone {
+  color: var(--erreur);
+}

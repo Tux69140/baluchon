@@ -1,8 +1,8 @@
 /* Écran d'un voyage en deux panneaux, sur la tablette en paysage et l'ordinateur : repris de la
    maquette validée le 2026-10-24 (docs/maquettes/voyage/maquette.css). Les cartes, lignes et tampons
    sont ceux de voyage.css ; ici, la grille et ce qui n'existe qu'en deux panneaux.
-   La requête est celle de DEUX_PANNEAUX (src/ecrans/voyage.js), qui choisit la disposition : les
-   deux doivent rester identiques. */
+   La requête est celle de DEUX_PANNEAUX (src/ecrans/disposition.js), qui choisit la disposition de
+   l'écran d'un voyage et de la Bibliothèque : les deux doivent rester identiques. */
 @media (min-width: 1000px) and (orientation: landscape) {
   /* Le contenu tient dans 1080 px, centré, à la hauteur de l'écran ; chaque panneau défile seul. */
   .panneaux {
