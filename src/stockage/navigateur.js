@@ -31,6 +31,25 @@ async function lenteur(donnees, operation) {
   });
 }
 
+// Les écritures de la bibliothèque calculent le résultat entier avant d'écrire : refusées, elles ne
+// laissent rien. Mêmes refus que la base (src-tauri/src/edition.rs).
+function bibliothequeDe(donnees) {
+  return donnees.bibliotheque ?? { groupes: [], etiquettes: [], categories: [], objets: [] };
+}
+
+function verifierEtiquettes(bibliotheque, ids) {
+  const inconnue = ids.find(id => !bibliotheque.etiquettes.some(e => e.id === id));
+  if (inconnue) throw new Error(`Étiquette inconnue : ${inconnue}`);
+}
+
+// Remplace l'élément de même id, ou l'ajoute à la fin ; `garder` liste les champs qu'une modification ne touche pas.
+function remplacerOuAjouter(liste, element, garder) {
+  const existant = liste.find(x => x.id === element.id);
+  if (!existant) return [...liste, element];
+  const fusion = { ...element, ...Object.fromEntries(garder.map(champ => [champ, existant[champ]])) };
+  return liste.map(x => (x === existant ? fusion : x));
+}
+
 export function creerStockageNavigateur() {
   return Object.freeze({
     async listerVoyages() {
@@ -45,7 +64,44 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque, meta: { bibliothequeInstallee: true, langueBibliotheque: langue } });
       return true;
     },
-    lireBibliotheque: async () => lire().bibliotheque ?? { groupes: [], etiquettes: [], categories: [], objets: [] },
+    lireBibliotheque: async () => bibliothequeDe(lire()),
+    async enregistrerCategorie(categorie) {
+      const donnees = lire();
+      panne(donnees, 'enregistrerCategorie');
+      const bibliotheque = bibliothequeDe(donnees);
+      verifierEtiquettes(bibliotheque, categorie.etiquettes);
+      // Le rang ne change qu'à la création : seul rangerCategories déplace une catégorie existante.
+      const categories = remplacerOuAjouter(bibliotheque.categories, categorie, ['ordre']);
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, categories } });
+    },
+    async enregistrerObjet(objet) {
+      const donnees = lire();
+      panne(donnees, 'enregistrerObjet');
+      const bibliotheque = bibliothequeDe(donnees);
+      verifierEtiquettes(bibliotheque, objet.etiquettes);
+      const existant = bibliotheque.objets.find(o => o.id === objet.id);
+      if (!existant && !bibliotheque.categories.some(c => c.id === objet.categorieId)) {
+        throw new Error(`Catégorie inconnue : ${objet.categorieId}`);
+      }
+      // La catégorie d'un objet ne se change pas.
+      const objets = remplacerOuAjouter(bibliotheque.objets, objet, ['categorieId']);
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, objets } });
+    },
+    async rangerCategories(ids, modifieLe) {
+      const donnees = lire();
+      panne(donnees, 'rangerCategories');
+      const bibliotheque = bibliothequeDe(donnees);
+      const existantes = bibliotheque.categories.map(c => c.id).sort();
+      if (JSON.stringify([...ids].sort()) !== JSON.stringify(existantes)) {
+        throw new Error('La liste ne contient pas exactement les catégories existantes');
+      }
+      const categories = ids.map((id, ordre) => ({
+        ...bibliotheque.categories.find(c => c.id === id),
+        ordre,
+        modifieLe,
+      }));
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, categories } });
+    },
     async creerVoyage({ voyage, etiquettes, categories, objets }) {
       const donnees = lire();
       panne(donnees, 'creerVoyage');

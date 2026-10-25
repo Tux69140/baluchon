@@ -126,3 +126,104 @@ test('un localStorage qui échoue donne un filtre inactif, sans erreur', () => {
   assert.equal(stockage.lireFiltre('v-vercors'), false);
   assert.doesNotThrow(() => stockage.ecrireFiltre('v-vercors', true));
 });
+
+// Écritures de la bibliothèque (mêmes refus que la base : src-tauri/src/edition.rs).
+async function stockageInstalle() {
+  const stockage = creerStockageNavigateur();
+  await stockage.installerBibliotheque(structuredClone(contrat.bibliotheque), 'fr');
+  return stockage;
+}
+
+test('une catégorie enregistrée se relit, neuve puis modifiée, sans changer de rang', async () => {
+  const stockage = await stockageInstalle();
+  const neuve = {
+    id: 'cm-neuve',
+    nom: 'Plage',
+    icone: 'suitcase-rolling',
+    couleur: 'corail',
+    ordre: 2,
+    toujoursIncluse: false,
+    modifieLe: '2026-10-26T09:00:00.000Z',
+    etiquettes: ['et-froid', 'et-camping'],
+  };
+  await stockage.enregistrerCategorie(neuve);
+  assert.deepEqual((await stockage.lireBibliotheque()).categories[2], neuve);
+  const modifiee = { ...neuve, nom: 'Mer', ordre: 0, etiquettes: ['et-camping'] };
+  await stockage.enregistrerCategorie(modifiee);
+  const { categories } = await stockage.lireBibliotheque();
+  assert.equal(categories.length, 3);
+  assert.deepEqual(categories[2], { ...modifiee, ordre: 2 });
+});
+
+test('un objet enregistré se relit, neuf puis modifié, sa catégorie ne changeant pas', async () => {
+  const stockage = await stockageInstalle();
+  const neuf = { ...contrat.bibliotheque.objets[0], id: 'om-neuf', plafond: null, etiquettes: ['et-camping'] };
+  await stockage.enregistrerObjet(neuf);
+  assert.deepEqual(
+    (await stockage.lireBibliotheque()).objets.find(o => o.id === 'om-neuf'),
+    neuf,
+  );
+  const modifie = { ...neuf, nom: 'Gros pull', plafond: 4, categorieId: 'cm-papiers', etiquettes: [] };
+  await stockage.enregistrerObjet(modifie);
+  const { objets } = await stockage.lireBibliotheque();
+  assert.equal(objets.length, 3);
+  assert.deepEqual(
+    objets.find(o => o.id === 'om-neuf'),
+    { ...modifie, categorieId: neuf.categorieId },
+  );
+});
+
+test('une catégorie, un objet ou une étiquette inconnus sont refusés sans rien écrire', async () => {
+  const stockage = await stockageInstalle();
+  const objet = contrat.bibliotheque.objets[0];
+  await assert.rejects(stockage.enregistrerObjet({ ...objet, id: 'om-x', categorieId: 'cm-inconnue' }));
+  await assert.rejects(stockage.enregistrerObjet({ ...objet, nom: 'Changé', etiquettes: ['et-inconnue'] }));
+  await assert.rejects(
+    stockage.enregistrerCategorie({
+      ...contrat.bibliotheque.categories[1],
+      nom: 'Changée',
+      etiquettes: ['et-inconnue'],
+    }),
+  );
+  assert.deepEqual(await stockage.lireBibliotheque(), contrat.bibliotheque);
+});
+
+test('ranger suit l’ordre donné et refuse une liste incomplète, inconnue ou doublée', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.rangerCategories(['cm-papiers', 'cm-vetements'], '2026-10-26T09:00:00.000Z');
+  const { categories } = await stockage.lireBibliotheque();
+  assert.deepEqual(
+    categories.map(c => [c.id, c.ordre]),
+    [
+      ['cm-papiers', 0],
+      ['cm-vetements', 1],
+    ],
+  );
+  assert.equal(categories[1].modifieLe, '2026-10-26T09:00:00.000Z');
+  for (const ids of [['cm-papiers'], ['cm-papiers', 'cm-inconnue'], ['cm-papiers', 'cm-papiers']]) {
+    await assert.rejects(stockage.rangerCategories(ids, '2026-10-27T09:00:00.000Z'));
+  }
+  assert.deepEqual(
+    (await stockage.lireBibliotheque()).categories.map(c => c.id),
+    ['cm-papiers', 'cm-vetements'],
+  );
+});
+
+test('une panne simulée fait échouer chaque écriture de la bibliothèque sans rien écrire', async () => {
+  const stockage = await stockageInstalle();
+  const donnees = JSON.parse(localStorage.getItem('baluchon-essai'));
+  localStorage.setItem(
+    'baluchon-essai',
+    JSON.stringify({ ...donnees, pannes: ['enregistrerObjet', 'enregistrerCategorie', 'rangerCategories'] }),
+  );
+  await assert.rejects(
+    stockage.enregistrerObjet({ ...contrat.bibliotheque.objets[0], nom: 'Changé' }),
+    /Panne simulée/,
+  );
+  await assert.rejects(
+    stockage.enregistrerCategorie({ ...contrat.bibliotheque.categories[0], nom: 'Changée' }),
+    /Panne/,
+  );
+  await assert.rejects(stockage.rangerCategories(['cm-papiers', 'cm-vetements'], 'x'), /Panne/);
+  assert.deepEqual(await stockage.lireBibliotheque(), contrat.bibliotheque);
+});

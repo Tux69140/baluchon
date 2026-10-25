@@ -1,11 +1,12 @@
 mod base;
 mod bibliotheque;
+mod edition;
 #[cfg(test)]
 mod essais;
 mod voyages;
 
 use base::Base;
-use bibliotheque::Bibliotheque;
+use bibliotheque::{Bibliotheque, CategorieModele, ObjetModele};
 use std::fs;
 use tauri::{AppHandle, Manager, State};
 use voyages::{EtatObjet, Voyage, VoyageComplet};
@@ -34,6 +35,21 @@ fn installer_bibliotheque(base: State<'_, Base>, bibliotheque: Bibliotheque, lan
 #[tauri::command]
 fn lire_bibliotheque(base: State<'_, Base>) -> Result<Bibliotheque, String> {
     base.lire_bibliotheque()
+}
+
+#[tauri::command]
+fn enregistrer_categorie(base: State<'_, Base>, categorie: CategorieModele) -> Result<(), String> {
+    base.enregistrer_categorie(&categorie)
+}
+
+#[tauri::command]
+fn enregistrer_objet(base: State<'_, Base>, objet: ObjetModele) -> Result<(), String> {
+    base.enregistrer_objet(&objet)
+}
+
+#[tauri::command]
+fn ranger_categories(base: State<'_, Base>, ids: Vec<String>, modifie_le: String) -> Result<(), String> {
+    base.ranger_categories(&ids, &modifie_le)
 }
 
 #[tauri::command]
@@ -69,6 +85,9 @@ pub fn run() {
             bibliotheque_installee,
             installer_bibliotheque,
             lire_bibliotheque,
+            enregistrer_categorie,
+            enregistrer_objet,
+            ranger_categories,
             creer_voyage,
             lire_voyage,
             regler_dans_le_sac,
