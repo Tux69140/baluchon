@@ -123,15 +123,23 @@ Chaque catégorie et le voyage entier affichent leur progression ; la liste des 
 
 ### Ce qu'on livre
 
-La mini-bibliothèque reçoit des groupes d'étiquettes, et des catégories et objets liés à des étiquettes. L'assistant ajoute une étape par groupe, où l'on touche des puces. On revient en arrière à toute étape sans rien perdre. L'aperçu final montre la liste par catégorie avec ses quantités ; on peut y décocher ce qui ne convient pas avant de créer le voyage. Un aperçu vide explique pourquoi et propose de revenir aux étiquettes. Le voyage garde une copie de ses étiquettes.
+L'assistant est d'abord conçu **dans sa forme définitive** (Informations, étapes d'étiquettes, aperçu, puis « Refaire ce voyage » prérempli en phase 11) : ses maquettes au téléphone, à la tablette en portrait et en paysage et à l'ordinateur, en clair et en sombre, sont validées avant tout code (décision du chef de projet, 2026-10-24).
+
+La mini-bibliothèque reçoit trois groupes d'étiquettes : Activités (Randonnée, Camping, Plage), Climat (Chaud, Froid, Pluie) et Hébergement (Hôtel, Tente, Chez l'habitant). Elle reçoit aussi une catégorie Camping (lampe frontale, sac de couchage, réchaud), liée à Camping et Tente, et des objets liés à des étiquettes : maillot (Plage), doudoune et bonnet (Froid), cape de pluie (Pluie), crème solaire (Plage et Chaud). Les catégories existantes restent « toujours incluses ». Les données d'essai des appareils déjà installés sont effacées à l'installation de cette phase, après que le chef de projet a vu la liste de ce qui sera perdu.
+
+L'assistant ajoute une étape par groupe, où l'on touche des puces. Une rangée d'étapes, en haut, permet de revenir à une étape déjà vue, et de sauter à l'aperçu dès que les informations sont valides ; le retour système ramène à l'étape précédente. On revient en arrière à toute étape sans rien perdre. L'aperçu final montre la liste par catégorie avec ses quantités ; on peut y décocher un objet ou une catégorie entière avant de créer le voyage. Après un changement d'étiquettes, de dates ou de voyageurs, une fenêtre demande que faire des objets écartés. Un aperçu vide explique pourquoi et propose de revenir aux étiquettes. Le voyage garde une copie de ses étiquettes, affichées en puces dans l'en-tête de son écran.
 
 ### Critères d'acceptation
 
+- [ ] Les maquettes de l'assistant et de l'aperçu sont validées par le chef de projet avant tout code.
 - [ ] Un objet entre s'il est « toujours inclus » ou si au moins une de ses étiquettes est cochée, et seulement si sa catégorie entre aussi.
 - [ ] Un objet désigné par deux étiquettes cochées n'apparaît qu'une fois.
-- [ ] Un objet décoché dans l'aperçu est absent du voyage créé.
+- [ ] Un objet décoché dans l'aperçu, ou dont la catégorie est décochée, est absent du voyage créé.
 - [ ] Revenir de l'aperçu à l'étape Informations puis avancer à nouveau conserve tous les choix.
-- [ ] L'aperçu vide affiche son explication et un moyen de revenir aux étiquettes.
+- [ ] Après un changement d'étiquettes, de dates ou de voyageurs, la fenêtre nomme les objets écartés ; « Les garder écartés » et « Les remettre dans la liste » font chacun ce qu'ils disent ; sans changement, elle n'apparaît pas.
+- [ ] Le retour système ramène à l'étape précédente ; depuis Informations, il demande confirmation si quelque chose a été saisi.
+- [ ] L'aperçu vide affiche son explication et un moyen de revenir aux étiquettes ; « Créer le voyage » y est grisé.
+- [ ] Les étiquettes du voyage créé s'affichent dans l'en-tête de son écran et survivent à la fermeture de l'appli.
 
 ## Bloquée par
 
