@@ -65,13 +65,36 @@ export function validerObjet(saisie) {
   return erreurs;
 }
 
+// Une quantité (valeur ou plafond) ramenée entre 1 et 999 : au clavier comme par − / +.
+export const bornerQuantite = n => Math.min(BORNES_QUANTITE.max, Math.max(BORNES_QUANTITE.min, n));
+
 // Champ numérique au clavier : on ne garde que les chiffres, puis on ramène entre 1 et 999 ; un
 // champ vide reste vide (null) pour que la validation le refuse avec son message.
 export function lireNombre(texte) {
   const chiffres = String(texte ?? '').replace(/\D/g, '');
   if (!chiffres) return null;
-  return Math.min(BORNES_QUANTITE.max, Math.max(BORNES_QUANTITE.min, Number(chiffres)));
+  return bornerQuantite(Number(chiffres));
 }
+
+// La règle de quantité qu'une saisie enregistre : sans plafond avec « Fixe » ou l'interrupteur
+// éteint. La phrase et l'exemple de la fiche la lisent, preparerObjet l'écrit.
+export const regleDeSaisie = saisie => ({
+  regle: saisie.regle,
+  valeur: saisie.valeur,
+  plafond: saisie.plafondActif && plafondPossible(saisie) ? (saisie.plafond ?? null) : null,
+  parPersonne: saisie.parPersonne,
+});
+
+// Changer de règle : « Fixe » efface le plafond (spec de la phase 5). Rend une nouvelle saisie.
+export const changerRegle = (saisie, regle) =>
+  regle === 'fixe' ? { ...saisie, regle, plafondActif: false, plafond: null } : { ...saisie, regle };
+
+// Allumer le plafond propose le nombre déjà choisi (ou 1) ; l'éteindre l'efface. Rend une nouvelle saisie.
+export const activerPlafond = (saisie, actif) => ({
+  ...saisie,
+  plafondActif: actif,
+  plafond: actif ? (saisie.plafond ?? saisie.valeur ?? BORNES_QUANTITE.min) : null,
+});
 
 function refuser(erreurs, sujet) {
   throw Object.assign(new Error(`${sujet} refusé : ${Object.values(erreurs).join(', ')}`), { erreurs });
@@ -102,10 +125,7 @@ export function preparerObjet(saisie, { existant, categorieId, nouvelId, mainten
     // La catégorie d'un objet modèle ne change jamais.
     categorieId: existant?.categorieId ?? categorieId,
     nom: saisie.nom.trim(),
-    regle: saisie.regle,
-    valeur: saisie.valeur,
-    plafond: saisie.plafondActif && plafondPossible(saisie) ? saisie.plafond : null,
-    parPersonne: saisie.parPersonne,
+    ...regleDeSaisie(saisie),
     consommable: saisie.consommable,
     toujoursInclus: !saisie.selonEtiquettes,
     note: saisie.note ?? '',

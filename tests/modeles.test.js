@@ -4,10 +4,14 @@ import assert from 'node:assert/strict';
 import {
   BORNES_QUANTITE,
   PERIODE_EXEMPLE,
+  activerPlafond,
+  bornerQuantite,
+  changerRegle,
   deplacerCategorie,
   exempleQuantite,
   lireNombre,
   preparerCategorie,
+  regleDeSaisie,
   preparerObjet,
   saisieDeCategorie,
   saisieDObjet,
@@ -199,4 +203,48 @@ test('exempleQuantite : 4 jours, 3 nuits, 2 voyageurs', () => {
   const repas = { regle: 'par_jour', valeur: 2, plafond: null, parPersonne: true };
   assert.equal(exempleQuantite(repas), 16);
   assert.equal(exempleQuantite({ ...repas, plafond: 6 }), 12);
+});
+
+// Les règles de la fiche d'un objet vivent dans le modèle : l'écran (− / +, phrase de quantité,
+// exemple, « Fixe ») les appelle, et ce qu'il montre est ce qui sera enregistré.
+test('bornerQuantite : ramenée de 1 à 999', () => {
+  assert.equal(bornerQuantite(0), 1);
+  assert.equal(bornerQuantite(-3), 1);
+  assert.equal(bornerQuantite(1000), 999);
+  assert.equal(bornerQuantite(42), 42);
+});
+
+test('regleDeSaisie : la règle enregistrée, plafond seulement s’il est actif et possible', () => {
+  const jour = { ...pates, regle: 'par_jour', valeur: 2, plafondActif: true, plafond: 6 };
+  assert.deepEqual(regleDeSaisie(jour), { regle: 'par_jour', valeur: 2, plafond: 6, parPersonne: true });
+  assert.equal(regleDeSaisie({ ...jour, plafondActif: false }).plafond, null);
+  assert.equal(regleDeSaisie({ ...jour, regle: 'fixe' }).plafond, null);
+  assert.equal(regleDeSaisie({ ...jour, plafond: null }).plafond, null);
+  // preparerObjet écrit la même règle.
+  const ecrit = preparerObjet(jour, { ...contexte, categorieId: 'c1' });
+  assert.deepEqual(
+    { regle: ecrit.regle, valeur: ecrit.valeur, plafond: ecrit.plafond, parPersonne: ecrit.parPersonne },
+    regleDeSaisie(jour),
+  );
+});
+
+test('changerRegle : « Fixe » efface le plafond, les autres le gardent', () => {
+  const jour = { ...pates, regle: 'par_jour', valeur: 2, plafondActif: true, plafond: 6 };
+  const fixe = changerRegle(jour, 'fixe');
+  assert.equal(fixe.regle, 'fixe');
+  assert.equal(fixe.plafondActif, false);
+  assert.equal(fixe.plafond, null);
+  assert.equal(jour.plafond, 6, 'la saisie reçue n’est pas modifiée');
+  const nuit = changerRegle(jour, 'par_nuit');
+  assert.equal(nuit.regle, 'par_nuit');
+  assert.equal(nuit.plafond, 6);
+});
+
+test('activerPlafond : allumé, il propose le nombre choisi ; éteint, il s’efface', () => {
+  const jour = { ...pates, regle: 'par_jour', valeur: 2 };
+  assert.deepEqual([activerPlafond(jour, true).plafondActif, activerPlafond(jour, true).plafond], [true, 2]);
+  assert.equal(activerPlafond({ ...jour, plafond: 5 }, true).plafond, 5);
+  assert.equal(activerPlafond({ ...jour, valeur: null }, true).plafond, 1);
+  const eteint = activerPlafond({ ...jour, plafondActif: true, plafond: 5 }, false);
+  assert.deepEqual([eteint.plafondActif, eteint.plafond], [false, null]);
 });

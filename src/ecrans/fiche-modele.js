@@ -15,14 +15,13 @@
 // - data-bascule="cle" : un interrupteur ; data-pose="cle" data-valeur="v" : un choix posé (couleur) ;
 // - data-etiquette="id" : une étiquette pressée ou relâchée ;
 // - data-action="nom" : une action propre à la fiche (actions[nom](brouillon), qui peut attendre).
-import { BORNES_QUANTITE, lireNombre } from '../modele/modeles.js';
+import { bornerQuantite, lireNombre } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { demander, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { echapper } from './html.js';
 
 const ID_TITRE = 'fiche-modele-titre';
 const COMMANDES = '[data-pas], [data-bascule], [data-pose], [data-etiquette], [data-action], [data-enregistrer]';
-const borner = n => Math.min(BORNES_QUANTITE.max, Math.max(BORNES_QUANTITE.min, n));
 
 // Ce qui désigne une commande d'un dessin à l'autre : ses attributs data-*, et la valeur d'un bouton
 // radio (tous ceux d'un groupe ont la même clé).
@@ -209,7 +208,7 @@ export function ouvrirFicheModele({
     const { pas, sens, bascule, pose, valeur, etiquette, action } = commande.dataset;
     if ('enregistrer' in commande.dataset) return sauver();
     if (pas) {
-      brouillon[pas] = borner((brouillon[pas] ?? 0) + Number(sens));
+      brouillon[pas] = bornerQuantite((brouillon[pas] ?? 0) + Number(sens));
       changer(pas);
     } else if (bascule) {
       brouillon[bascule] = !brouillon[bascule];

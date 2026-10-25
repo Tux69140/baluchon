@@ -5,7 +5,15 @@
 // catégorie d'un objet ne se change pas. La mécanique est celle de toute fiche de modèle
 // (src/ecrans/fiche-modele.js).
 import { remplir } from '../i18n/traduction.js';
-import { PERIODE_EXEMPLE, exempleQuantite, saisieDObjet, validerObjet } from '../modele/modeles.js';
+import {
+  PERIODE_EXEMPLE,
+  activerPlafond,
+  changerRegle,
+  exempleQuantite,
+  regleDeSaisie,
+  saisieDObjet,
+  validerObjet,
+} from '../modele/modeles.js';
 import { ouvrirFicheModele } from './fiche-modele.js';
 import { champNom, compteur, interrupteur, inclusion, message, segments } from './fiche-modele-vues.js';
 import { decrireRegle, pluriel } from './format.js';
@@ -14,20 +22,12 @@ import { echapper } from './html.js';
 const ID_MESSAGE_QUANTITE = 'f-valeur-erreur';
 const LIBELLES_NOMBRE = { fixe: 'nombre', par_jour: 'chaqueJour', par_nuit: 'chaqueNuit' };
 
-// La règle telle qu'elle sera enregistrée : sans plafond avec « Fixe » ou l'interrupteur éteint.
-const regleDe = b => ({
-  regle: b.regle,
-  valeur: b.valeur,
-  plafond: b.plafondActif && b.regle !== 'fixe' ? b.plafond : null,
-  parPersonne: b.parPersonne,
-});
-
 // L'encadré sous la règle : la phrase de quantité (decrireRegle, la même que partout) et l'exemple
 // chiffré sur 4 jours, 3 nuits, 2 voyageurs ; sans nombre, ce qu'il reste à faire.
 function lecture(t, langue, brouillon) {
   if (brouillon.valeur === null)
     return `<b>${t('modele.objet.aIndiquer')}</b><span>${t('modele.objet.aIndiquerAide')}</span>`;
-  const regle = regleDe(brouillon);
+  const regle = regleDeSaisie(brouillon);
   const exemple = remplir(t('modele.objet.exemple'), {
     jours: pluriel(t, 'duree.jours', PERIODE_EXEMPLE.jours, langue),
     nuits: pluriel(t, 'duree.nuits', PERIODE_EXEMPLE.nuits, langue),
@@ -113,11 +113,11 @@ function vueCorps(t, langue, b, codes, { categorie, groupes }) {
         </div>`;
 }
 
-// Ce qu'un changement entraîne : « Fixe » efface le plafond ; l'interrupteur allumé propose le
-// nombre déjà choisi comme plafond, éteint il l'efface.
+// Ce qu'un changement entraîne, selon les règles du modèle : « Fixe » efface le plafond ;
+// l'interrupteur allumé propose le nombre déjà choisi, éteint il l'efface.
 function ajuster(b, cle) {
-  if (cle === 'regle' && b.regle === 'fixe') Object.assign(b, { plafondActif: false, plafond: null });
-  if (cle === 'plafondActif') b.plafond = b.plafondActif ? (b.plafond ?? b.valeur ?? 1) : null;
+  if (cle === 'regle') Object.assign(b, changerRegle(b, b.regle));
+  if (cle === 'plafondActif') Object.assign(b, activerPlafond(b, b.plafondActif));
 }
 
 // objet : celui à modifier, ou null pour un nouvel objet de categorie ; groupes : les étiquettes par
