@@ -19,8 +19,10 @@
 // nouveau voyage ? ». Un retour pendant la question ne ferme qu'elle (Review Focus 4) ; « Continuer la
 // saisie » garde tout (nom, dates, étiquettes, objets écartés) ; « Abandonner » mène à Mes voyages, et
 // le retour suivant quitte l'appli. Saisie effacée : fermeture directe. Échap, « × », « Annuler » et le
-// lien « Mes voyages » (téléphone) posent la même question, et la fenêtre fermée par le navigateur se
-// rouvre pour la poser ; le focus revient au bouton qui a ouvert la fenêtre. Captures de la question, au téléphone et en tablette, claire et sombre.
+// lien « Mes voyages » (téléphone) posent la même question ; le focus revient au bouton qui a ouvert la
+// fenêtre. Échap répété au clavier, sans autre geste : au 5e appui, le navigateur ferme la fenêtre de
+// lui-même (cancel non annulable) ; elle se rouvre, la question au-dessus d'elle, le focus rendu au
+// champ du nom après « Continuer la saisie ». Captures de la question, téléphone et tablette, 2 thèmes.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -78,12 +80,6 @@ const FERMETURES = [
   ['Échap', 'tablette-paysage', page => page.keyboard.press('Escape')],
   ['×', 'tablette-paysage', page => page.click('.bouton-fermer')],
   ['Annuler', 'tablette-paysage', page => page.click('[data-action="fermer"]')],
-  // Échap répété sans geste entre deux : le navigateur ferme la fenêtre de lui-même.
-  [
-    'le navigateur',
-    'tablette-paysage',
-    page => page.evaluate(() => document.querySelector('dialog.assistant').close()),
-  ],
   ['Mes voyages', 'telephone', page => page.click('.lien-retour')],
 ];
 const questionAbandon = q =>
@@ -228,6 +224,57 @@ try {
     const retour = await retourSysteme(page, serveur.url);
     juge.exige(retour === HORS, `fenêtre fermée par ${geste} : le retour mène à « ${retour} »`);
     juge.exige(erreurs.length === 0, `fenêtre fermée par ${geste} : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Échap répété au clavier : la question reste au-dessus de l'assistant, et elle répond.
+  {
+    const { contexte, page, erreurs } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.fill('#nom', 'Clavier');
+    // Témoin : le navigateur a bien envoyé un cancel non annulable à l'assistant.
+    await page.evaluate(() => {
+      window.nonAnnulables = 0;
+      document
+        .querySelector('dialog.assistant')
+        .addEventListener('cancel', e => (window.nonAnnulables += e.cancelable ? 0 : 1));
+    });
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Escape');
+      await calme(page);
+    }
+    const dessus = await page.evaluate(() => {
+      const q = document.querySelector('dialog[role="alertdialog"][open]');
+      const r = q?.getBoundingClientRect();
+      return {
+        nonAnnulables: window.nonAnnulables,
+        assistant: Boolean(document.querySelector('dialog.assistant[open]')),
+        question: Boolean(q),
+        dessus: Boolean(q?.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2))),
+      };
+    });
+    juge.exige(dessus.nonAnnulables > 0, `Échap répété : témoin, aucun cancel non annulable ${enClair(dessus)}`);
+    juge.exige(
+      dessus.assistant && dessus.question && dessus.dessus,
+      `Échap répété : la question n’est pas au-dessus ${enClair(dessus)}`,
+    );
+    await repondre(page, abandon.continuer);
+    const garde = await page.evaluate(() => ({
+      assistant: Boolean(document.querySelector('dialog.assistant[open]')),
+      nom: document.querySelector('#nom').value,
+      focus: document.activeElement?.id,
+    }));
+    juge.exige(
+      garde.assistant && garde.nom === 'Clavier' && garde.focus === 'nom',
+      `Échap répété, « Continuer la saisie » : ${enClair(garde)}`,
+    );
+    await page.click('.bouton-fermer');
+    juge.exige(questionAbandon(await attendreQuestion(page)), 'Échap répété, puis × : pas de question');
+    await repondre(page, abandon.abandonner);
+    await attendreEcran(page, 'voyages');
+    const fin = await retourSysteme(page, serveur.url);
+    juge.exige(fin === HORS, `Échap répété, « Abandonner » : le retour mène à « ${fin} »`);
+    juge.exige(erreurs.length === 0, `Échap répété : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }
 

@@ -1,6 +1,7 @@
 // Le lien « Mes voyages » en haut d'un écran de voyage ; partagé par l'écran d'un voyage et par
 // l'assistant de création. data-action : un repère pour retrouver le lien après un redessin (rotation),
-// et lui rendre le focus ; il ne déclenche rien, le lien reste un vrai lien.
+// et lui rendre le focus ; le lien reste un vrai lien, suivi par le routeur (src/main.js), sauf dans
+// l'assistant, qui le prend en charge pour demander d'abord s'il faut abandonner la saisie.
 import { iconeInterface } from './icones.js';
 
 export const lienRetour = t =>

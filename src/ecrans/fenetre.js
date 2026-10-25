@@ -153,16 +153,26 @@ export function ouvrirFenetre(
   });
   if (fermerSurVoile) glisserPourFermer(fenetre, fermer);
   // Échap : on ferme nous-mêmes, pour animer. Sans geste préalable de la personne, le navigateur
-  // ferme la fenêtre sans attendre (événement close) : on suit. Une fenêtre retirée de la page avec
-  // l'écran qu'elle couvrait (voyage créé) n'est pas une fermeture.
+  // ferme la fenêtre sans attendre (cancel non annulable, puis close) : on suit. Une fenêtre retirée
+  // de la page avec l'écran qu'elle couvrait (voyage créé) n'est pas une fermeture.
+  // Avec surGeste, ce cancel-là ne demande rien : la question s'ouvrirait sous la fenêtre, que le
+  // navigateur ferme puis que close rouvre par-dessus elle ; c'est close qui demande, une fois la
+  // fenêtre revenue. focusAvant : ce qui avait le focus, rendu à la réouverture (la question fermée
+  // le rend à son tour).
+  let focusAvant = null;
   fenetre.addEventListener('cancel', evenement => {
     evenement.preventDefault();
+    focusAvant = document.activeElement;
+    if (surGeste && !evenement.cancelable) return;
     geste();
   });
   fenetre.addEventListener('close', () => {
     if (!fenetre.isConnected || fermeture) return;
     if (!surGeste) return fermer();
+    // Rouverte telle qu'elle était : sans rejouer l'animation d'ouverture.
     fenetre.showModal();
+    for (const animation of fenetre.getAnimations({ subtree: true })) animation.finish();
+    if (fenetre.contains(focusAvant)) focusAvant.focus({ preventScroll: true });
     surGeste();
   });
   fenetre.showModal();

@@ -306,7 +306,9 @@ export const ecranNouveauVoyage = {
       if (etat.etape > 0) aller(etat.etape - 1);
       else if (saisieCommencee(infos, etat)) demanderFermeture();
       else {
-        // Plus rien à perdre (saisie effacée à l'instant) : la garde est consommée, l'assistant se ferme.
+        // Défensif, non exercé par les tests : une garde encore posée alors que plus rien n'est à
+        // perdre ne se voit que si son retrait attend dans la file de suivreGarde (saisie effacée
+        // pendant qu'une pose précédente s'achève). Elle est consommée, l'assistant se ferme.
         garde = null;
         fermer();
         return false;

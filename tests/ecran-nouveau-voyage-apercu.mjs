@@ -357,13 +357,13 @@ try {
     await versApercu(page, { etiquettes: ['Randonnée'] });
     const gourde = ligneObjet(page, GOURDE);
     await gourde.click();
-    // Lue sans attendre : hors de l'aperçu, Gourde n'est pas écartée à l'écran.
-    const ecartee = () =>
+    // La case de Gourde ('true' cochée, 'false' écartée), lue sans attendre : null hors de l'aperçu.
+    const caseGourde = () =>
       page.evaluate(
         nom =>
           [...document.querySelectorAll('[data-objet]')]
             .find(b => b.querySelector('.objet-nom').textContent === nom)
-            ?.getAttribute('aria-checked') === 'false',
+            ?.getAttribute('aria-checked') ?? null,
         GOURDE,
       );
     // Aller-retour vers Activités, puis l'aperçu ; touchée : Randonnée change d'état en passant.
@@ -374,24 +374,27 @@ try {
       await calme(page);
     };
     await allerRetour();
-    juge.exige(!(await question(page)) && (await ecartee()), 'écartés, sans changement : fenêtre ou Gourde recochée');
+    juge.exige(
+      !(await question(page)) && (await caseGourde()) === 'false',
+      'écartés, sans changement : fenêtre ou Gourde recochée',
+    );
     const nommee = [[GOURDE, ALIMENTATION]];
-    // [geste sur la fenêtre, Gourde encore écartée après lui]
+    // [geste sur la fenêtre, case de Gourde après lui]
     const reponses = [
-      ['retour système', page => retourDansLAssistant(page), true],
-      ['Échap', page => page.keyboard.press('Escape'), true],
-      [ecartes.garder, page => repondre(page, ecartes.garder), true],
-      [ecartes.remettre, page => repondre(page, ecartes.remettre), false],
+      ['retour système', page => retourDansLAssistant(page), 'false'],
+      ['Échap', page => page.keyboard.press('Escape'), 'false'],
+      [ecartes.garder, page => repondre(page, ecartes.garder), 'false'],
+      [ecartes.remettre, page => repondre(page, ecartes.remettre), 'true'],
     ];
-    for (const [geste, repondreAvec, resteEcartee] of reponses) {
+    for (const [geste, repondreAvec, attendue] of reponses) {
       await allerRetour({ randonnee: true });
       const q = await attendreQuestion(page);
       juge.exige(questionEcartes(q, nommee), `écartés, avant « ${geste} » : ${JSON.stringify(q)}`);
       await repondreAvec(page);
       await calme(page);
-      const apres = { question: await question(page), ...(await etapeAffichee(page)), ecartee: await ecartee() };
+      const apres = { question: await question(page), ...(await etapeAffichee(page)), gourde: await caseGourde() };
       juge.exige(
-        !apres.question && apres.etape === 'apercu' && apres.ecartee === resteEcartee,
+        !apres.question && apres.etape === 'apercu' && apres.gourde === attendue,
         `écartés, « ${geste} » : ${JSON.stringify(apres)}`,
       );
     }
