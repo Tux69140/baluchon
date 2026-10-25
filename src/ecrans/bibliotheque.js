@@ -8,6 +8,7 @@
 // est relue et ce qui vient de changer s'éclaire.
 // Ce fichier branche les gestes et le stockage ; le dessin est dans bibliotheque-vues.js.
 import { remplir } from '../i18n/traduction.js';
+import { groupesAvecEtiquettes } from '../modele/inclusion.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { deplacerCategorie, preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
@@ -37,18 +38,6 @@ function preparer(bibliotheque, langue) {
     etiquettes: new Map(bibliotheque.etiquettes.map(e => [e.id, e.nom])),
     nombreObjets: rangees.reduce((total, r) => total + r.objets.length, 0),
   };
-}
-
-// Les étiquettes par groupe, chacun dans son ordre, pour « Dans quels voyages ? » des fiches.
-function groupesDe(bibliotheque) {
-  const parOrdre = (a, b) => a.ordre - b.ordre;
-  return [...bibliotheque.groupes]
-    .sort(parOrdre)
-    .map(groupe => ({
-      groupe,
-      etiquettes: bibliotheque.etiquettes.filter(e => e.groupeId === groupe.id).sort(parOrdre),
-    }))
-    .filter(g => g.etiquettes.length);
 }
 
 // Les rangées dans l'ordre que le stockage vient de confirmer.
@@ -165,6 +154,8 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   // dit sa nouvelle place.
   function confirme(ids, id) {
     donnees = { ...donnees, rangees: reordonner(donnees.rangees, ids) };
+    // La copie lue suit le rang confirmé : les fiches en partent.
+    lue = { ...lue, categories: lue.categories.map(c => ({ ...c, ordre: ids.indexOf(c.id) })) };
     peindre({ glissement: true });
     const place = ids.indexOf(id);
     const { nom } = donnees.rangees[place].categorie;
@@ -247,7 +238,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   const commun = () => ({
     t,
     langue,
-    groupes: groupesDe(lue),
+    groupes: groupesAvecEtiquettes(lue),
     signal: fin.signal,
     dans: app,
     surFermeture: rendreFocus,
