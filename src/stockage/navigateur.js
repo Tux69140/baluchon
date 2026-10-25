@@ -1,7 +1,8 @@
 // Variante navigateur du stockage, pour les tests d’écran : même forme que le stockage Tauri, données
 // rangées dans le navigateur sous une seule clé. Un test y dépose son état de départ avant le
 // chargement de la page ; « pannes » y simule une erreur de lecture ou d’enregistrement, « lenteurs » une
-// écriture qui n'aboutit que lorsque le test appelle window.debloquerStockage().
+// écriture qui n'aboutit que lorsque le test appelle window.debloquerStockage(), « toucheRetour » la
+// touche retour d'Android (ecouterRetourNavigateur).
 import { lireFiltre, ecrireFiltre } from './preferences.js';
 
 const CLE = 'baluchon-essai';
@@ -94,4 +95,15 @@ export function creerStockageNavigateur() {
     lireFiltre,
     ecrireFiltre,
   });
+}
+
+// Un navigateur n'a pas de touche retour d'Android : rien à écouter. Un test d'écran qui la simule le
+// demande (« toucheRetour ») : window.toucheRetour() joue un appui, et une fermeture de l'appli
+// demandée se compte dans window.fermeturesDemandees au lieu de fermer la page.
+export function ecouterRetourNavigateur(gerer) {
+  if (!lire().toucheRetour) return;
+  window.fermeturesDemandees = 0;
+  window.toucheRetour = () => {
+    if (!gerer()) window.fermeturesDemandees += 1;
+  };
 }

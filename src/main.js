@@ -16,12 +16,13 @@ import './styles/assistant.css';
 import './styles/assistant-questions.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
-import { ouvrirStockage } from './stockage/index.js';
+import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';
 import { construireBibliotheque } from './modele/bibliotheque.js';
 import { nouvelId } from './modele/identifiant.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
 import { ecranVoyage } from './ecrans/voyage.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
+import { retourDansLAppli } from './ecrans/retour-systeme.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
 const LANGUE = 'fr';
@@ -117,6 +118,13 @@ async function demarrer() {
       construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: new Date().toISOString() }),
       LANGUE,
     );
+  // La touche retour d'Android remonte l'historique par la page elle-même (src/ecrans/retour-systeme.js) :
+  // tout ce qui suit le retour (niveaux, garde de l'assistant, routeur) reste fondé sur popstate.
+  ecouterRetourSysteme(() => {
+    if (!retourDansLAppli(history.state)) return false;
+    history.back();
+    return true;
+  });
   window.addEventListener('hashchange', afficher);
   // Tout lien vers l'accueil y revient en remontant l'historique ; il reste un vrai lien (clavier).
   // Un écran qui le prend en charge (l'assistant demande d'abord s'il faut abandonner la saisie) le
