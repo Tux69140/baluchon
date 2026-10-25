@@ -450,6 +450,8 @@
     "objet": {
       "nouveau": "Nouvel objet",
       "ajouter": "Ajouter l’objet",
+      "regle": "Règle de quantité",
+      "pourQui": "Pour qui",
       "dans": "Dans « {categorie} »",
       "quantite": "Quantité",
       "fixe": "Fixe",
@@ -834,5 +836,15 @@
         "mots": "outils bricolage"
       }
     }
+  },
+  "couleurs": {
+    "corail": "Corail",
+    "tournesol": "Tournesol",
+    "abricot": "Abricot",
+    "pomme": "Pomme",
+    "lagon": "Lagon",
+    "ciel": "Ciel",
+    "framboise": "Framboise",
+    "lilas": "Lilas"
   }
 }

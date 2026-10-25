@@ -1,4 +1,6 @@
-/* Pavé de catégorie (src/ecrans/icones.js) : 44 px, couleur de bagagerie, icône à l'encre marine. */
+/* Pavé de catégorie (src/ecrans/icones.js) : 44 px, couleur de bagagerie, icône à l'encre marine. Les
+   teintes du nuancier de la fiche d'une catégorie (src/styles/fiche-modele.css) prennent les mêmes
+   couleurs. */
 .pave {
   display: inline-flex;
   flex: none;
@@ -16,27 +18,35 @@
   height: 28px;
 }
 
-.pave[data-couleur='corail'] {
+.pave[data-couleur='corail'],
+.teinte[data-couleur='corail'] {
   background: var(--corail);
 }
-.pave[data-couleur='tournesol'] {
+.pave[data-couleur='tournesol'],
+.teinte[data-couleur='tournesol'] {
   background: var(--tournesol);
 }
-.pave[data-couleur='abricot'] {
+.pave[data-couleur='abricot'],
+.teinte[data-couleur='abricot'] {
   background: var(--abricot);
 }
-.pave[data-couleur='pomme'] {
+.pave[data-couleur='pomme'],
+.teinte[data-couleur='pomme'] {
   background: var(--pomme);
 }
-.pave[data-couleur='lagon'] {
+.pave[data-couleur='lagon'],
+.teinte[data-couleur='lagon'] {
   background: var(--lagon);
 }
-.pave[data-couleur='ciel'] {
+.pave[data-couleur='ciel'],
+.teinte[data-couleur='ciel'] {
   background: var(--ciel);
 }
-.pave[data-couleur='framboise'] {
+.pave[data-couleur='framboise'],
+.teinte[data-couleur='framboise'] {
   background: var(--framboise);
 }
-.pave[data-couleur='lilas'] {
+.pave[data-couleur='lilas'],
+.teinte[data-couleur='lilas'] {
   background: var(--lilas);
 }

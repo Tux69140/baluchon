@@ -3,15 +3,19 @@
 // objets modèles. Une colonne de cartes repliées à l'ouverture ; deux panneaux sur la tablette en
 // paysage et l'ordinateur, la catégorie choisie à gauche et ses objets à droite. « Ranger les
 // catégories » ouvre une liste compacte où ▲ et ▼ déplacent une catégorie d'une place.
-// Ce fichier branche les gestes et le stockage ; le dessin est dans bibliotheque-vues.js. Les fiches
-// (catégorie, objet, catalogue des pictos) arrivent avec la tâche suivante de la phase : leurs boutons
-// sont déjà dessinés, sans effet.
+// Le crayon d'une catégorie, la ligne d'un objet, « Nouvelle catégorie » et « Ajouter un objet »
+// ouvrent leur fiche (src/ecrans/fiche-categorie.js, fiche-objet.js) ; enregistrée, la bibliothèque
+// est relue et ce qui vient de changer s'éclaire.
+// Ce fichier branche les gestes et le stockage ; le dessin est dans bibliotheque-vues.js.
 import { remplir } from '../i18n/traduction.js';
-import { deplacerCategorie } from '../modele/modeles.js';
+import { nouvelId } from '../modele/identifiant.js';
+import { deplacerCategorie, preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
 import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
 import { poserGardeRetour } from './fenetre.js';
+import { ouvrirFicheCategorie } from './fiche-categorie.js';
+import { ouvrirFicheObjet } from './fiche-objet.js';
 import { ouvrirMenu } from './menu.js';
 
 // Déplacement d'une catégorie dans le rangement (maquette de la bibliothèque).
@@ -35,6 +39,18 @@ function preparer(bibliotheque, langue) {
   };
 }
 
+// Les étiquettes par groupe, chacun dans son ordre, pour « Dans quels voyages ? » des fiches.
+function groupesDe(bibliotheque) {
+  const parOrdre = (a, b) => a.ordre - b.ordre;
+  return [...bibliotheque.groupes]
+    .sort(parOrdre)
+    .map(groupe => ({
+      groupe,
+      etiquettes: bibliotheque.etiquettes.filter(e => e.groupeId === groupe.id).sort(parOrdre),
+    }))
+    .filter(g => g.etiquettes.length);
+}
+
 // Les rangées dans l'ordre que le stockage vient de confirmer.
 function reordonner(rangees, ids) {
   const parId = new Map(rangees.map(r => [r.categorie.id, r]));
@@ -45,12 +61,16 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   const { stockage, t, langue } = contexte;
   app.innerHTML = '<main class="ecran"></main>';
   const main = app.firstElementChild;
-  let donnees = preparer(bibliotheque, langue);
+  // La bibliothèque telle que le stockage la garde (les fiches en partent), et ce que l'écran en tire.
+  let lue = bibliotheque;
+  let donnees = preparer(lue, langue);
   const ui = {
     // Toutes repliées à l'ouverture : on voit d'un coup d'œil toute la bibliothèque.
     ouvertes: new Set(),
     choisie: donnees.rangees[0]?.categorie.id ?? null,
     ranger: false,
+    // Ce qui vient d'être enregistré, éclairé au prochain dessin seulement.
+    recent: null,
   };
   // La zone d'annonce du rangement : la même d'un dessin à l'autre (voir rangement() dans les vues).
   const annonce = document.createElement('p');
@@ -83,6 +103,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
     const { classe, html } = vueBibliotheque({ ...contexte, ...donnees, ...ui, deuxPanneaux: deuxPanneaux.matches });
+    ui.recent = null;
     const defilements = classe === main.className ? [...main.querySelectorAll('.panneau')].map(p => p.scrollTop) : [];
     main.className = classe;
     main.innerHTML = html;
@@ -157,7 +178,8 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     generation += 1;
     relecture = true;
     try {
-      donnees = preparer(await stockage.lireBibliotheque(), langue);
+      lue = await stockage.lireBibliotheque();
+      donnees = preparer(lue, langue);
     } catch (erreurDeLecture) {
       // Relecture impossible : l'écran garde l'ordre qu'il montre, le dernier confirmé.
       console.error(erreurDeLecture);
@@ -186,6 +208,97 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
       .catch(erreur => sienne === generation && echec(erreur))
       // Un échec qui échoue lui-même ne doit pas bloquer la file pour toujours.
       .catch(erreur => console.error(erreur));
+  }
+
+  // ---------- Fiches ----------
+  // Ce qui reprend le focus quand une fiche se ferme : la commande qui l'a ouverte, ou ce qu'elle
+  // vient d'enregistrer ; redessinée entre-temps, on la retrouve par son action et son id.
+  let aFocaliser = null;
+  function rendreFocus() {
+    if (!aFocaliser || parti()) return;
+    const { action, id } = aFocaliser;
+    (trouverCommande(action, id) ?? trouverCommande('accordeon', id) ?? trouverCommande('choisir', id))?.focus({
+      preventScroll: true,
+    });
+  }
+
+  // Après une écriture : la bibliothèque relue, redessinée, et recent (« cat-<id> » ou l'id d'un
+  // objet) éclairé et amené dans la vue. Une relecture impossible laisse l'écran tel qu'il était :
+  // l'écriture, elle, a réussi, la fiche se ferme.
+  async function relire(recent) {
+    try {
+      lue = await stockage.lireBibliotheque();
+    } catch (erreur) {
+      console.error(erreur);
+      return;
+    }
+    donnees = preparer(lue, langue);
+    // L'ordre voulu garde ses déplacements en attente, et reçoit en dernier une catégorie neuve.
+    const ids = donnees.rangees.map(r => r.categorie.id);
+    voulu = [...voulu.filter(id => ids.includes(id)), ...ids.filter(id => !voulu.includes(id))];
+    if (parti()) return;
+    ui.recent = recent;
+    peindre();
+    const cible = recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent);
+    main.querySelector(cible)?.scrollIntoView({ block: 'nearest' });
+  }
+  const commandeObjet = id => `[data-action="modifier-objet"][data-id="${CSS.escape(id)}"]`;
+
+  const commun = () => ({
+    t,
+    langue,
+    groupes: groupesDe(lue),
+    signal: fin.signal,
+    dans: app,
+    surFermeture: rendreFocus,
+  });
+
+  // Une catégorie neuve a son id dès l'ouverture de la fiche : un nouvel essai après une panne écrit
+  // la même, jamais une seconde (Review Focus 3).
+  function ouvrirCategorie(existante) {
+    const id = existante?.id ?? nouvelId();
+    aFocaliser = existante ? { action: 'modifier-categorie', id } : { action: 'nouvelle-categorie' };
+    ouvrirFicheCategorie({
+      ...commun(),
+      categorie: existante,
+      nombreObjets: donnees.rangees.find(r => r.categorie.id === id)?.objets.length ?? 0,
+      async enregistrer(saisie) {
+        const maintenant = new Date().toISOString();
+        const categorie = preparerCategorie(saisie, {
+          existante,
+          categories: lue.categories,
+          nouvelId: () => id,
+          maintenant,
+        });
+        await stockage.enregistrerCategorie(categorie);
+        // Neuve : dépliée (une colonne) et choisie (deux panneaux), pour qu'on y ajoute ses objets.
+        if (!existante) {
+          ui.ouvertes.add(id);
+          ui.choisie = id;
+          aFocaliser = { action: 'accordeon', id };
+        }
+        await relire(`cat-${id}`);
+      },
+    });
+  }
+
+  function ouvrirObjet(existant, categorieId) {
+    const id = existant?.id ?? nouvelId();
+    const categorie = lue.categories.find(c => c.id === (existant?.categorieId ?? categorieId));
+    if (!categorie) return;
+    aFocaliser = existant ? { action: 'modifier-objet', id } : { action: 'nouvel-objet', id: categorie.id };
+    ouvrirFicheObjet({
+      ...commun(),
+      objet: existant,
+      categorie,
+      async enregistrer(saisie) {
+        const maintenant = new Date().toISOString();
+        const objet = preparerObjet(saisie, { existant, categorieId: categorie.id, nouvelId: () => id, maintenant });
+        await stockage.enregistrerObjet(objet);
+        aFocaliser = { action: 'modifier-objet', id };
+        await relire(id);
+      },
+    });
   }
 
   // Quitter l'écran (menu, lien « Réglages ») pendant le rangement : on le termine d'abord, et son
@@ -217,6 +330,14 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     else if (action === 'terminer') terminer();
     else if (action === 'monter') deplacer(id, -1);
     else if (action === 'descendre') deplacer(id, 1);
+    else if (action === 'modifier-categorie') {
+      const categorie = lue.categories.find(c => c.id === id);
+      if (categorie) ouvrirCategorie(categorie);
+    } else if (action === 'nouvelle-categorie') ouvrirCategorie(null);
+    else if (action === 'modifier-objet') {
+      const objet = lue.objets.find(o => o.id === id);
+      if (objet) ouvrirObjet(objet);
+    } else if (action === 'nouvel-objet') ouvrirObjet(null, id);
   });
   deuxPanneaux.addEventListener(
     'change',

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import fr from '../src/i18n/fr.json' with { type: 'json' };
 import { CATALOGUE } from '../src/modele/catalogue.js';
+import { COULEURS } from '../src/modele/modeles.js';
 
 const lire = cle => cle.split('.').reduce((branche, morceau) => branche?.[morceau], fr);
 const estUnTexte = valeur =>
@@ -66,6 +67,8 @@ const CLES = [
   ...[
     'nouveau',
     'ajouter',
+    'regle',
+    'pourQui',
     'dans',
     'quantite',
     'fixe',
@@ -114,6 +117,18 @@ test('les valeurs reprennent la maquette, apostrophes typographiques', () => {
   assert.equal(lire('modele.objet.exemple'), 'Pour {jours}, {nuits} et {voyageurs} : {quantite}.');
   const tous = JSON.stringify(fr.modele) + JSON.stringify(fr.bibliotheque) + JSON.stringify(fr.catalogue);
   assert.equal(tous.includes("'"), false, 'apostrophe droite');
+});
+
+// Les huit couleurs d'une catégorie (maquette, données « COULEURS ») : leur nom est lu par le lecteur
+// d'écran dans le nuancier de la fiche.
+test('chaque couleur de catégorie a son nom, dans l’ordre de la maquette', () => {
+  assert.deepEqual(COULEURS, ['corail', 'tournesol', 'abricot', 'pomme', 'lagon', 'ciel', 'framboise', 'lilas']);
+  assert.deepEqual(
+    COULEURS.map(cle => lire(`couleurs.${cle}`)),
+    ['Corail', 'Tournesol', 'Abricot', 'Pomme', 'Lagon', 'Ciel', 'Framboise', 'Lilas'],
+  );
+  assert.equal(lire('modele.objet.regle'), 'Règle de quantité');
+  assert.equal(lire('modele.objet.pourQui'), 'Pour qui');
 });
 
 test('chaque picto du catalogue a son nom, ses mots-clés, son fichier et son importation', () => {

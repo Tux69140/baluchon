@@ -58,7 +58,8 @@ function glisserPourFermer(fenetre, fermer) {
     depart = null;
     delete fenetre.dataset.glisse;
     if (ecart > SEUIL_GLISSE) fermer();
-    else fenetre.style.translate = '';
+    // Restée ouverte (une fiche modifiée pose d'abord sa question), elle revient à sa place.
+    if (!('fermeture' in fenetre.dataset)) fenetre.style.translate = '';
   };
   entete.addEventListener('pointerup', lacher);
   entete.addEventListener('pointercancel', lacher);
@@ -121,16 +122,16 @@ function quitterNiveau(niveau) {
 }
 
 // surFermeture est appelé une seule fois, la fenêtre effacée : appuis répétés, Échap pendant
-// l'animation ou fermeture par le navigateur n'en font pas une seconde. fermerSurVoile : une fenêtre
-// sans saisie à perdre (fiche d'un objet) se ferme aussi d'un appui sur le voile ou d'un glissé de
-// son en-tête vers le bas. fermerAuRetour : la fenêtre est un niveau que le retour système ferme
-// (fiche, confirmation) ; pas Nouveau voyage, qui a son adresse. surGeste : une fenêtre qui a une
-// saisie à perdre (Nouveau voyage) ; « × », Échap ou le navigateur qui la ferme de lui-même appellent
-// surGeste au lieu de la fermer : l'écran demande d'abord, puis la ferme s'il le faut. Fermée par le
-// navigateur (Échap répété, sans geste entre deux), elle se rouvre le temps de la question. Rend
-// fermer(), pour qui doit fermer la fenêtre sans geste de la personne ; sa promesse se résout quand
-// la fenêtre est effacée et que son étape d'historique est partie (le menu l'attend avant de changer
-// d'écran : le retrait de l'étape, arrivé après, reculerait sous l'écran suivant).
+// l'animation ou fermeture par le navigateur n'en font pas une seconde. fermerSurVoile : la fenêtre se
+// ferme aussi d'un appui sur le voile ou d'un glissé de son en-tête vers le bas. fermerAuRetour : la
+// fenêtre est un niveau que le retour système ferme (fiche, confirmation) ; pas Nouveau voyage, qui a
+// son adresse. surGeste : une fenêtre qui a une saisie à perdre (Nouveau voyage, fiche de modèle) ;
+// « × », Échap, le voile, le glissé, le retour système ou le navigateur qui la ferme de lui-même
+// appellent surGeste au lieu de la fermer : l'écran demande d'abord, puis la ferme s'il le faut.
+// Fermée par le navigateur (Échap répété, sans geste entre deux), elle se rouvre le temps de la
+// question. Rend fermer(), pour qui doit fermer la fenêtre sans geste de la personne ; sa promesse se
+// résout quand la fenêtre est effacée et que son étape d'historique est partie (le menu l'attend avant
+// de changer d'écran : le retrait de l'étape, arrivé après, reculerait sous l'écran suivant).
 export function ouvrirFenetre(
   fenetre,
   { surFermeture, fermerSurVoile = false, fermerAuRetour = false, surGeste = null },
@@ -150,13 +151,13 @@ export function ouvrirFenetre(
     await etapePartie;
   }
 
-  // Le voile et le glissé n'existent que sur une fenêtre sans saisie à perdre : ils ferment toujours.
+  // Le voile et le glissé passent par la même question que « × » (spec de la phase 5, fiches de modèle).
   const geste = () => (surGeste && !fermeture ? surGeste() : fermer());
   fenetre.addEventListener('click', evenement => {
     if (evenement.target.closest('[data-fermer]')) geste();
-    else if (fermerSurVoile && surLeVoile(fenetre, evenement)) fermer();
+    else if (fermerSurVoile && surLeVoile(fenetre, evenement)) geste();
   });
-  if (fermerSurVoile) glisserPourFermer(fenetre, fermer);
+  if (fermerSurVoile) glisserPourFermer(fenetre, geste);
   // Échap : on ferme nous-mêmes, pour animer. Sans geste préalable de la personne, le navigateur
   // ferme la fenêtre sans attendre (cancel non annulable, puis close) : on suit. Une fenêtre retirée
   // de la page avec l'écran qu'elle couvrait (voyage créé) n'est pas une fermeture.
@@ -180,8 +181,19 @@ export function ouvrirFenetre(
     if (fenetre.contains(focusAvant)) focusAvant.focus({ preventScroll: true });
     surGeste();
   });
+  // Une fenêtre à saisie que le retour système atteint ne se ferme pas d'office : comme la garde du
+  // retour (poserGardeRetour), elle reste un niveau et surGeste demande ; la question qu'il ouvre se
+  // place au-dessus d'elle. Fermée par surGeste lui-même (rien à perdre), elle est déjà hors de la pile.
+  function auRetour() {
+    if (!surGeste) return fermer();
+    const rang = niveaux.length;
+    surGeste();
+    if (fermeture) return;
+    niveaux.splice(rang, 0, niveau);
+    poserEtapes();
+  }
   fenetre.showModal();
-  if (fermerAuRetour) niveau = ouvrirNiveau(fenetre, fermer);
+  if (fermerAuRetour) niveau = ouvrirNiveau(fenetre, auRetour);
   return fermer;
 }
 

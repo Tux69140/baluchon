@@ -27,12 +27,12 @@ function infosCategorie(vue, { categorie, objets }) {
 // La ligne d'un objet modèle : son nom, sa règle de quantité, « consommable », ses étiquettes, ⓘ s'il
 // a une note ; toute la ligne ouvre sa fiche.
 function ligneObjet(vue, objet) {
-  const { t } = vue;
+  const { t, recent } = vue;
   const consommable = objet.consommable ? `<span>${t('bibliotheque.consommable')}</span>` : '';
   const siennes = objet.toujoursInclus ? '' : puces(vue, objet.etiquettes);
   const note = objet.note ? `${iconeInterface('info')}<span class="lecteur">, ${t('voyage.avecNote')}</span>` : '';
   return `
-          <li class="objet objet-modele">
+          <li class="objet objet-modele"${recent === objet.id ? ' data-recent' : ''}>
             <button type="button" class="objet-corps" data-action="modifier-objet" data-id="${echapper(objet.id)}">
               <span class="objet-texte">
                 <span class="objet-nom">${echapper(objet.nom)}</span>
@@ -51,13 +51,17 @@ const lignes = (vue, rangee) => `
           </li>
         </ul>`;
 
+// Ce qui vient d'être enregistré s'éclaire un instant (src/styles/bibliotheque.css) : la carte ou le
+// choix d'une catégorie (recent = « cat-<id> », comme data-flip), la ligne d'un objet (son id).
+const eclaire = ({ recent }, categorie) => (recent === `cat-${categorie.id}` ? ' data-recent' : '');
+
 function carteCategorie(vue, rangee) {
   const { t, ouvertes } = vue;
   const { categorie } = rangee;
   const id = echapper(categorie.id);
   const ouverte = ouvertes.has(categorie.id);
   return `
-      <section class="categorie" data-categorie="${id}" data-flip="cat-${id}">
+      <section class="categorie" data-categorie="${id}" data-flip="cat-${id}"${eclaire(vue, categorie)}>
         <div class="categorie-entete">
           <h2 class="categorie-titre">
             <button type="button" class="categorie-tete" data-action="accordeon" data-id="${id}" aria-expanded="${ouverte}">
@@ -126,7 +130,7 @@ function choix(vue, rangee) {
   const { categorie } = rangee;
   const id = echapper(categorie.id);
   return `
-          <li data-flip="cat-${id}">
+          <li data-flip="cat-${id}"${eclaire(vue, categorie)}>
             <button type="button" class="choix" data-action="choisir" data-id="${id}" aria-current="${vue.choisie === categorie.id}">
               ${paveCategorie(categorie)}
               <span class="categorie-nom"><b>${echapper(categorie.nom)}</b>${infosCategorie(vue, rangee)}</span>
@@ -170,7 +174,7 @@ function vuePanneaux(vue) {
 
 // Le contenu de l'écran et sa disposition (la classe de <main>). vue : le contexte de l'appli, plus
 // rangees (chaque catégorie dans l'ordre, ses objets par nom), etiquettes (nom par identifiant),
-// nombreObjets, ouvertes, choisie, ranger, deuxPanneaux.
+// nombreObjets, ouvertes, choisie, ranger, deuxPanneaux, recent (ce qui vient d'être enregistré).
 export function vueBibliotheque(vue) {
   if (vue.deuxPanneaux) return { classe: 'panneaux', html: vuePanneaux(vue) };
   const { t, rangees, ranger } = vue;

@@ -66,6 +66,7 @@ export function creerStockageNavigateur() {
     },
     lireBibliotheque: async () => bibliothequeDe(lire()),
     async enregistrerCategorie(categorie) {
+      await lenteur(lire(), 'enregistrerCategorie');
       const donnees = lire();
       panne(donnees, 'enregistrerCategorie');
       const bibliotheque = bibliothequeDe(donnees);
@@ -75,6 +76,7 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, categories } });
     },
     async enregistrerObjet(objet) {
+      await lenteur(lire(), 'enregistrerObjet');
       const donnees = lire();
       panne(donnees, 'enregistrerObjet');
       const bibliotheque = bibliothequeDe(donnees);

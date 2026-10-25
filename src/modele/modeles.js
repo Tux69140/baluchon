@@ -3,6 +3,19 @@
 // docs/PRD.md, « Calcul des quantités » (src/modele/quantites.js, seul endroit du calcul).
 import { calculerQuantite } from './quantites.js';
 
+// Les huit couleurs d'une catégorie, dans l'ordre du nuancier (maquette de la phase 5) ; chacune a
+// son jeton dans src/styles/jetons.css et son nom dans fr.json (« couleurs »).
+export const COULEURS = Object.freeze([
+  'corail',
+  'tournesol',
+  'abricot',
+  'pomme',
+  'lagon',
+  'ciel',
+  'framboise',
+  'lilas',
+]);
+
 export const BORNES_QUANTITE = Object.freeze({ min: 1, max: 999 });
 // Période de l'exemple chiffré montré sous la règle d'un objet.
 export const PERIODE_EXEMPLE = Object.freeze({ jours: 4, nuits: 3, voyageurs: 2 });

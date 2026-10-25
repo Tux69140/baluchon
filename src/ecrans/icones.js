@@ -61,6 +61,6 @@ export const iconeInterface = nom => enveloppe(INTERFACE[nom]);
 
 // Le pavé coloré qui identifie une catégorie (docs/DESIGN.md, « Le pavé identifie ») : la couleur
 // vient du nom de la couleur (jetons.css), l'icône est à l'encre marine. Une icône inconnue laisse
-// le pavé vide plutôt que de casser l'écran.
-export const paveCategorie = ({ icone, couleur }) =>
-  `<span class="pave" data-couleur="${echapper(couleur)}" aria-hidden="true">${svgPicto(icone)}</span>`;
+// le pavé vide plutôt que de casser l'écran. grand : le pavé de 64 px de la fiche d'une catégorie.
+export const paveCategorie = ({ icone, couleur }, { grand = false } = {}) =>
+  `<span class="pave${grand ? ' pave-grand' : ''}" data-couleur="${echapper(couleur)}" aria-hidden="true">${svgPicto(icone)}</span>`;

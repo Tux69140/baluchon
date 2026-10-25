@@ -1,0 +1,453 @@
+/* Fiches de modèle de la Bibliothèque (src/ecrans/fiche-modele.js, fiche-categorie.js,
+   fiche-objet.js) et catalogue des pictos (src/ecrans/catalogue.js), repris de la maquette validée le
+   2026-10-25 (docs/maquettes/bibliotheque/maquette.css). La fenêtre, et son panneau du bas au
+   téléphone, sont ceux de fenetre.css et fiche.css ; les champs et leurs messages, ceux de
+   nouveau-voyage.css ; les couleurs du nuancier, celles de pave.css. */
+
+/* ---------- Fiches de modèle : formulaire, pied fixe ---------- */
+.fiche-modele {
+  --largeur-fenetre: 560px;
+  --hauteur-message: calc(var(--taille-libelle) * 1.5);
+}
+
+.fiche-modele .fiche-corps {
+  gap: var(--e-sm);
+}
+
+.fiche-modele .fiche-regle {
+  margin-bottom: var(--e-xs);
+}
+
+.fiche-modele .champ legend {
+  margin-bottom: var(--e-xs);
+}
+
+.fiche-modele .champ label small {
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+  font-weight: 400;
+}
+
+.fiche-modele textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-sm);
+  background: var(--carte);
+  color: var(--encre);
+  font: 400 var(--taille-objet) / 1.4 var(--police);
+  resize: vertical;
+}
+
+.fiche-modele input[aria-invalid='true'] {
+  border-color: var(--erreur);
+}
+
+.fiche-modele .fenetre-pied {
+  padding-top: var(--e-md);
+  padding-bottom: var(--e-md);
+  border-top: 1px solid var(--separation);
+}
+
+.fiche-modele .fenetre-pied[data-ombre] {
+  box-shadow: 0 -10px 18px -10px rgb(13 22 36 / 0.35);
+}
+
+/* Segments : de vrais boutons radio, côte à côte dans un même cadre. Le bouton, invisible, couvre
+   tout le segment : c'est lui qu'on touche, avec une cible de toute la taille du segment. */
+.segments {
+  display: flex;
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-md);
+  background: var(--carte);
+}
+
+.segment {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.segment + .segment {
+  border-left: 1.5px solid var(--contour);
+}
+
+.segment input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segment span {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 4px 10px;
+  color: var(--encre);
+  font: 600 var(--taille-libelle) / 1.2 var(--police);
+  text-align: center;
+  cursor: pointer;
+}
+
+.segment:first-child span {
+  border-radius: 10px 0 0 10px;
+}
+
+.segment:last-child span {
+  border-radius: 0 10px 10px 0;
+}
+
+.segment:hover span {
+  background: var(--releve);
+}
+
+.segment input:checked + span {
+  background: var(--encre);
+  color: var(--fond);
+}
+
+.segment:has(input:focus-visible) {
+  z-index: 1;
+  outline: 3px solid var(--encre);
+  outline-offset: 2px;
+}
+
+.fiche-modele .champ > .segments + .ligne-reglage,
+.fiche-modele .champ > .ligne-reglage + .segments {
+  margin-top: var(--e-xs);
+}
+
+.ligne-reglage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-md);
+  min-height: 60px;
+}
+
+.ligne-reglage > span:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--taille-objet);
+}
+
+.ligne-reglage small {
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.ligne-seule {
+  margin-bottom: var(--e-md);
+  padding: var(--e-xs) 0;
+  border-block: 1px solid var(--separation);
+}
+
+.compteur-saisie {
+  gap: var(--e-sm);
+}
+
+.compteur-saisie input {
+  width: 64px;
+  height: 52px;
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-sm);
+  background: var(--carte);
+  color: var(--encre);
+  font: 700 22px var(--police);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.lecture {
+  display: grid;
+  gap: var(--e-2xs);
+  margin: var(--e-sm) 0 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--releve);
+  font-size: var(--taille-libelle);
+}
+
+.lecture b {
+  font-weight: 600;
+  font-size: var(--taille-objet);
+}
+
+.lecture span {
+  color: var(--encre-douce);
+}
+
+/* Interrupteur : la piste se dessine sur 52 × 32, la cible fait 60 × 44. */
+.interrupteur {
+  position: relative;
+  flex: none;
+  width: 60px;
+  height: var(--cible);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.interrupteur::before {
+  content: '';
+  position: absolute;
+  inset: 6px 4px;
+  border: 2px solid var(--contour);
+  border-radius: var(--r-plein);
+  background: var(--releve);
+}
+
+.interrupteur::after {
+  content: '';
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--contour);
+}
+
+.interrupteur[aria-checked='true']::before {
+  border-color: var(--principal);
+  background: var(--principal);
+}
+
+.interrupteur[aria-checked='true']::after {
+  translate: 16px 0;
+  background: var(--sur-principal);
+}
+
+/* Picto et couleur. */
+.apparence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-sm) var(--e-md);
+}
+
+.pave-grand {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-lg);
+}
+
+.pave-grand svg {
+  width: 40px;
+  height: 40px;
+}
+
+.apparence-nom {
+  flex: 1;
+  min-width: 6ch;
+  font: 600 var(--taille-objet) var(--police);
+}
+
+.nuancier {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--e-sm);
+  margin-top: var(--e-md);
+}
+
+@media (min-width: 600px) {
+  .nuancier {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+.teinte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  color: var(--encre-categorie);
+  cursor: pointer;
+}
+
+.teinte svg {
+  width: 24px;
+  height: 24px;
+}
+
+.teinte[aria-checked='true'] {
+  box-shadow:
+    0 0 0 3px var(--carte),
+    0 0 0 6px var(--encre);
+}
+
+.teinte:focus-visible {
+  outline-offset: 8px;
+}
+
+.groupe-etiquettes h3 {
+  margin: var(--e-md) 0 0;
+  color: var(--encre-douce);
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.fiche-modele .puces-etiquettes {
+  margin-top: var(--e-sm);
+}
+
+/* ---------- Catalogue des pictos ---------- */
+.catalogue {
+  --largeur-fenetre: 640px;
+  height: min(760px, 100dvh - var(--zone-haut) - var(--zone-bas) - 2 * var(--marge-fenetre));
+}
+
+.catalogue-recherche {
+  flex: none;
+  padding: var(--e-sm) var(--retrait-fenetre) 0;
+}
+
+.champ-loupe {
+  position: relative;
+  display: block;
+}
+
+.champ-loupe .icone {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: var(--encre-douce);
+  translate: 0 -50%;
+}
+
+.champ-loupe input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px 0 42px;
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-sm);
+  background: var(--carte);
+  color: var(--encre);
+  font: 400 var(--taille-objet) var(--police);
+}
+
+.champ-loupe input::placeholder {
+  color: var(--encre-douce);
+}
+
+.catalogue-compte {
+  min-height: 1.5em;
+  margin: var(--e-xs) 0 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+.catalogue-corps {
+  flex: 1;
+  display: block;
+  padding-top: 0;
+}
+
+.theme h3 {
+  margin: var(--e-md) 0 var(--e-sm);
+  color: var(--encre-douce);
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.theme:first-child h3 {
+  margin-top: var(--e-xs);
+}
+
+.grille-pictos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: var(--e-sm);
+}
+
+.tuile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 92px;
+  padding: var(--e-sm) var(--e-xs);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-md);
+  background: var(--carte);
+  color: var(--encre);
+  font: 400 var(--taille-mention) / 1.25 var(--police);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tuile:hover {
+  background: var(--releve);
+}
+
+.tuile-picto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cible);
+  height: var(--cible);
+  border-radius: var(--r-md);
+  background: var(--releve);
+}
+
+.tuile-picto svg {
+  width: 28px;
+  height: 28px;
+}
+
+.tuile[aria-pressed='true'] {
+  border: 2px solid var(--encre);
+  background: var(--actif);
+  font-weight: 600;
+}
+
+.catalogue-vide {
+  margin: var(--e-lg) 0;
+  color: var(--encre-douce);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+@media (max-width: 599px), (max-height: 599px) {
+  .catalogue {
+    height: calc(88dvh - var(--zone-haut) - var(--zone-bas));
+  }
+}
+
+/* L'ombre du pied et la pastille de l'interrupteur glissent, sauf si l'appareil demande moins
+   d'animations. */
+@media (prefers-reduced-motion: no-preference) {
+  .fiche-modele .fenetre-pied {
+    transition: box-shadow 150ms ease-out;
+  }
+
+  .interrupteur::after {
+    transition: translate 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* Appareil couché (téléphone en paysage) : la hauteur manque, l'en-tête et le pied se resserrent
+   pour laisser au formulaire le plus de place possible. */
+@media (max-height: 599px) {
+  .fiche-modele .fenetre-entete,
+  .catalogue .fenetre-entete {
+    padding-top: var(--e-md);
+  }
+
+  .fiche-modele .fenetre-pied {
+    padding-top: var(--e-sm);
+    padding-bottom: var(--e-sm);
+  }
+}
