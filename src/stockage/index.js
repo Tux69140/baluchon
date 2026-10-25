@@ -14,7 +14,7 @@ export async function ouvrirStockage() {
 
 // La touche retour d'Android, seul passage de la page vers l'appareil hors des données. gerer() est
 // appelé à chaque appui : il rend true s'il a pris l'appui en charge (recul dans la page), false pour
-// fermer l'appli. Sur Android, par Tauri ; ailleurs (Debian, navigateur), il n'y a pas de touche.
+// quitter l'appli (mise en arrière-plan). Sur Android, par Tauri ; ailleurs (Debian, navigateur), il n'y a pas de touche.
 export async function ecouterRetourSysteme(gerer) {
   if (dansTauri()) {
     const { ecouterRetourTauri } = await import('./tauri.js');

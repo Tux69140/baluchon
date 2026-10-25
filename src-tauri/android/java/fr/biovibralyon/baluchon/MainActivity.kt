@@ -5,6 +5,8 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 
@@ -27,6 +29,22 @@ class MainActivity : TauriActivity() {
       window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
     }
     super.onCreate(savedInstanceState)
+  }
+
+  // À l'accueil, la touche retour met l'appli en arrière-plan, comme Android le fait depuis sa version 12,
+  // au lieu de la fermer (décision du chef de projet, 2026-10-25) : la page n'en a pas le moyen, l'activité
+  // le lui donne (window.BaluchonAndroid, lu par src/stockage/tauri.js). La page appelle depuis un fil
+  // à part : l'activité passe sur celui de l'interface.
+  override fun onWebViewCreate(webView: WebView) {
+    super.onWebViewCreate(webView)
+    webView.addJavascriptInterface(Passerelle(), "BaluchonAndroid")
+  }
+
+  inner class Passerelle {
+    @JavascriptInterface
+    fun mettreEnArrierePlan() {
+      runOnUiThread { moveTaskToBack(true) }
+    }
   }
 
   // Le manifeste garde l'activité ouverte quand le thème de l'appareil change (configChanges « uiMode ») :

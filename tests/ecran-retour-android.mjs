@@ -1,14 +1,14 @@
 // La touche retour d'Android passe par la page (essai sur la tablette du 2026-10-25, Ruling R8). Laissée
 // à la WebView, elle sautait les étapes que la garde de l'assistant repose sans geste de la personne,
 // et fermait l'appli au 2e appui. L'appli la prend donc en charge (src/stockage, ecouterRetourSysteme) :
-// elle recule d'une étape tant qu'il en reste une, et ne ferme l'appli qu'à l'accueil, rien d'ouvert.
-// Ici, la variante navigateur du stockage joue la touche (window.toucheRetour) et compte les fermetures
-// demandées (window.fermeturesDemandees) au lieu de fermer.
+// elle recule d'une étape tant qu'il en reste une, et ne quitte l'appli qu'à l'accueil, rien d'ouvert.
+// Ici, la variante navigateur du stockage joue la touche (window.toucheRetour) et compte les sorties de
+// l'appli demandées (window.sortiesDemandees) au lieu de la quitter.
 // - Assistant : Aperçu → Hébergement → Climat → Activités → Informations, puis « Abandonner ce nouveau
 //   voyage ? » ; la touche ne ferme que la question, la touche suivante la repose ; « Abandonner » mène
-//   à Mes voyages, d'où la touche demande la fermeture (témoin : aucune fermeture demandée avant).
+//   à Mes voyages, d'où la touche demande la sortie (témoin : aucune sortie demandée avant).
 // - Voyage ouvert depuis Mes voyages, fiche d'un objet ouverte : la touche ferme la fiche, puis ramène à
-//   Mes voyages, puis demande la fermeture.
+//   Mes voyages, puis demande la sortie.
 // - Double appui rapide (deux appuis avant que le premier recul n'ait abouti) sur Informations, avec
 //   une saisie : le second appui est absorbé ; la question d'abandon est posée, l'assistant et sa
 //   saisie restent (sans cela, le second recul menait à Mes voyages, saisie perdue, sans question).
@@ -46,7 +46,7 @@ async function toucheRetour(page) {
   await calme(page);
 }
 
-// Ce que l'on voit : l'écran, l'étape de l'assistant, la question ou la fiche ouvertes, et les fermetures
+// Ce que l'on voit : l'écran, l'étape de l'assistant, la question ou la fiche ouvertes, et les sorties
 // de l'appli demandées jusque-là. dansLAppli : la page n'a pas quitté l'appli.
 const etat = (page, url) =>
   page.evaluate(
@@ -56,7 +56,7 @@ const etat = (page, url) =>
       etape: document.querySelector('.formulaire-corps')?.dataset.etape ?? null,
       question: document.querySelector('dialog[role="alertdialog"][open] h2')?.textContent.trim() ?? null,
       fiche: Boolean(document.querySelector('dialog.fiche[open]')),
-      fermetures: window.fermeturesDemandees ?? null,
+      sorties: window.sortiesDemandees ?? null,
     }),
     url,
   );
@@ -109,7 +109,7 @@ async function essaiAssistant(format) {
   }
   const infos = await etat(page, serveur.url);
   juge.exige(
-    titres.join(',') === 'Hébergement,Climat,Activités,Informations' && !infos.question && infos.fermetures === 0,
+    titres.join(',') === 'Hébergement,Climat,Activités,Informations' && !infos.question && infos.sorties === 0,
     `${cas} : étapes ${titres} ${vu(infos)}`,
   );
 
@@ -119,7 +119,7 @@ async function essaiAssistant(format) {
   await toucheRetour(page);
   const fermee = await etat(page, serveur.url);
   juge.exige(
-    fermee.dansLAppli && !fermee.question && fermee.etape === 'infos' && fermee.fermetures === 0,
+    fermee.dansLAppli && !fermee.question && fermee.etape === 'infos' && fermee.sorties === 0,
     `${cas}, touche sur la question : ${vu(fermee)}`,
   );
   await toucheRetour(page);
@@ -130,11 +130,11 @@ async function essaiAssistant(format) {
   await repondre(page, abandon.abandonner);
   await attendreEcran(page, 'voyages');
   const accueil = await etat(page, serveur.url);
-  juge.exige(accueil.fermetures === 0, `${cas}, Mes voyages : fermeture demandée trop tôt ${vu(accueil)}`);
+  juge.exige(accueil.sorties === 0, `${cas}, Mes voyages : sortie demandée trop tôt ${vu(accueil)}`);
   await toucheRetour(page);
   const fin = await etat(page, serveur.url);
   juge.exige(
-    fin.dansLAppli && fin.ecran === 'voyages' && fin.fermetures === 1 && !(await question(page)),
+    fin.dansLAppli && fin.ecran === 'voyages' && fin.sorties === 1 && !(await question(page)),
     `${cas}, touche sur Mes voyages : ${vu(fin)}`,
   );
   juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
@@ -158,13 +158,13 @@ async function essaiDoubleAppui(format) {
   const apres = await etat(page, serveur.url);
   const nom = await page.evaluate(() => document.querySelector('#nom')?.value ?? null);
   juge.exige(
-    q?.titre === abandon.titre && apres.ecran === 'nouveau-voyage' && nom === 'Vercors' && apres.fermetures === 0,
+    q?.titre === abandon.titre && apres.ecran === 'nouveau-voyage' && nom === 'Vercors' && apres.sorties === 0,
     `${cas} : ${vu(q)} ${vu(apres)} nom ${vu(nom)}`,
   );
   await toucheRetour(page);
   const fermee = await etat(page, serveur.url);
   juge.exige(
-    fermee.ecran === 'nouveau-voyage' && !fermee.question && fermee.etape === 'infos' && fermee.fermetures === 0,
+    fermee.ecran === 'nouveau-voyage' && !fermee.question && fermee.etape === 'infos' && fermee.sorties === 0,
     `${cas}, touche sur la question : ${vu(fermee)}`,
   );
   juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
@@ -186,16 +186,13 @@ async function essaiVoyage(format) {
 
   await toucheRetour(page);
   const un = await etat(page, serveur.url);
-  juge.exige(un.ecran === 'voyage' && !un.fiche && un.fermetures === 0, `${cas}, 1er appui : ${vu(un)}`);
+  juge.exige(un.ecran === 'voyage' && !un.fiche && un.sorties === 0, `${cas}, 1er appui : ${vu(un)}`);
   await toucheRetour(page);
   const deux = await etat(page, serveur.url);
-  juge.exige(deux.ecran === 'voyages' && deux.fermetures === 0, `${cas}, 2e appui : ${vu(deux)}`);
+  juge.exige(deux.ecran === 'voyages' && deux.sorties === 0, `${cas}, 2e appui : ${vu(deux)}`);
   await toucheRetour(page);
   const trois = await etat(page, serveur.url);
-  juge.exige(
-    trois.dansLAppli && trois.ecran === 'voyages' && trois.fermetures === 1,
-    `${cas}, 3e appui : ${vu(trois)}`,
-  );
+  juge.exige(trois.dansLAppli && trois.ecran === 'voyages' && trois.sorties === 1, `${cas}, 3e appui : ${vu(trois)}`);
   juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
   await contexte.close();
 }

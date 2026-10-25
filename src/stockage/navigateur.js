@@ -98,12 +98,12 @@ export function creerStockageNavigateur() {
 }
 
 // Un navigateur n'a pas de touche retour d'Android : rien à écouter. Un test d'écran qui la simule le
-// demande (« toucheRetour ») : window.toucheRetour() joue un appui, et une fermeture de l'appli
-// demandée se compte dans window.fermeturesDemandees au lieu de fermer la page.
+// demande (« toucheRetour ») : window.toucheRetour() joue un appui, et une sortie de l'appli
+// demandée (mise en arrière-plan sous Android) se compte dans window.sortiesDemandees.
 export function ecouterRetourNavigateur(gerer) {
   if (!lire().toucheRetour) return;
-  window.fermeturesDemandees = 0;
+  window.sortiesDemandees = 0;
   window.toucheRetour = () => {
-    if (!gerer()) window.fermeturesDemandees += 1;
+    if (!gerer()) window.sortiesDemandees += 1;
   };
 }

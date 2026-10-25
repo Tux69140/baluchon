@@ -80,6 +80,18 @@ test('le vrai dépôt porte bien une activité qui suit le thème de l’apparei
   assert.match(source, /isAppearanceLightStatusBars/);
 });
 
+// À l'accueil, la touche retour met l'appli en arrière-plan au lieu de la fermer (décision du chef de
+// projet, 2026-10-25) : l'activité en donne le moyen à la page (window.BaluchonAndroid, lu par
+// src/stockage/tauri.js), sur le fil de l'interface.
+test('l’activité donne à la page le moyen de mettre l’appli en arrière-plan', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL(`../${NOTRE_JAVA}/${ACTIVITE}`, import.meta.url), 'utf8');
+  assert.match(source, /override fun onWebViewCreate\(webView: WebView\)/);
+  assert.match(source, /addJavascriptInterface\(Passerelle\(\), "BaluchonAndroid"\)/);
+  assert.match(source, /@JavascriptInterface\s+fun mettreEnArrierePlan\(\)/);
+  assert.match(source, /runOnUiThread \{ moveTaskToBack\(true\) \}/);
+});
+
 test('le projet Android impose à Jackson une version qui tourne sous Android 7, une seule fois', () =>
   avecProjet(SOURCES, async racine => {
     const { readFile } = await import('node:fs/promises');
