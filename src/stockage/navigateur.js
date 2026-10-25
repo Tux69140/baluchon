@@ -88,6 +88,7 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, objets } });
     },
     async rangerCategories(ids, modifieLe) {
+      await lenteur(lire(), 'rangerCategories');
       const donnees = lire();
       panne(donnees, 'rangerCategories');
       const bibliotheque = bibliothequeDe(donnees);

@@ -5,14 +5,18 @@
 // l'ancien.
 import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
-import { DUREE_ALERTE } from './voyage-vues.js';
 
-// app : la racine de l'appli ; une fenêtre modale ouverte (qui n'est pas en train de se fermer)
-// accueille le message, sinon il serait inerte derrière elle et ne serait pas lu. signal : la fin de
-// l'écran, qui retire le message et sa minuterie.
+// Le temps de lecture d'un message d'écriture refusée, en haut ou en bas de l'écran (écran d'un voyage,
+// assistant « Nouveau voyage », Bibliothèque).
+export const DUREE_ALERTE = 6000;
+
+// app : la racine de l'appli. La fenêtre modale du dessus (qui n'est pas en train de se fermer)
+// accueille le message, sinon il serait inerte derrière elle et ne serait pas lu ; elle peut être hors
+// de app (une question est posée dans document.body), d'où la recherche dans toute la page. signal :
+// la fin de l'écran, qui retire le message et sa minuterie.
 export function alerterEnHaut(app, texte, signal) {
-  app.querySelector('.alerte-haut')?.remove();
-  const hote = app.querySelector('dialog:modal:not([data-fermeture])') ?? app;
+  for (const ancienne of document.querySelectorAll('.alerte-haut')) ancienne.remove();
+  const hote = [...document.querySelectorAll('dialog:modal:not([data-fermeture])')].at(-1) ?? app;
   const alerte = document.createElement('div');
   alerte.className = 'message message-erreur alerte-haut';
   alerte.setAttribute('popover', 'manual');

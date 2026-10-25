@@ -38,10 +38,11 @@ import {
   vueGroupe,
   vuePied,
 } from './assistant-vues.js';
+import { DUREE_ALERTE } from './alerte.js';
 import { creerCalendrier } from './calendrier.js';
 import { demander, ouvrirFenetre, poserGardeRetour } from './fenetre.js';
 import { iconeInterface } from './icones.js';
-import { DUREE_ALERTE, vueAlerte } from './voyage-vues.js';
+import { vueAlerte } from './voyage-vues.js';
 import { ecranVoyages } from './voyages.js';
 
 // Les champs qui ont un message, dans l'ordre de l'écran : le premier en erreur reçoit le focus.

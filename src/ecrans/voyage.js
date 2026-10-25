@@ -11,6 +11,7 @@
 // passe par le même chemin que la case.
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
+import { DUREE_ALERTE } from './alerte.js';
 import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import {
@@ -21,7 +22,7 @@ import {
   choisirCategorie,
   etatInitial,
 } from './rangement.js';
-import { DUREE_ALERTE, vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
+import { vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
 
 // Une seconde sans appui avant tout déplacement, une seconde de tampon avant le repli (docs/PRD.md).
 const REPIT = 1000;

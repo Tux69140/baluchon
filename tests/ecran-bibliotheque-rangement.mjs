@@ -9,7 +9,9 @@
 // - touche retour ensuite : Réglages, puis l'accueil, puis sortie de l'appli ; le lien « Réglages »
 //   mène à Réglages, même pendant le rangement, sans laisser d'étape derrière lui ;
 // - Review Focus 4 : six appuis rapides sur ▲, l'ordre affiché égale l'ordre enregistré ; panne
-//   d'enregistrement : message en haut, ordre inchangé à l'écran et dans le stockage.
+//   d'enregistrement : message en haut, ordre inchangé à l'écran et dans le stockage ;
+// - écritures lentes (lenteurs) : trois ▲ rapides puis départ de l'écran (lien « Réglages », ou
+//   Menu → Mes voyages) avant la fin de la première écriture : les trois déplacements sont gardés.
 import { chromium } from 'playwright';
 import { calme, attendreQue } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -202,7 +204,63 @@ async function essaiAppuisRapidesEtPanne() {
   await fermer(casPanne, enPanne);
 }
 
+// Trois ▲ rapides, puis on quitte l'écran pendant que la première écriture attend ; on libère ensuite
+// chaque écriture, l'une après l'autre : le stockage garde les trois déplacements.
+async function essaiDepartPendantLEcriture() {
+  for (const depart of ['lien Réglages', 'Menu → Mes voyages']) {
+    const cas = `départ par ${depart} pendant l’écriture`;
+    const ouvert = await ouvrirBibliotheque('telephone', { donnees: { ...DONNEES, lenteurs: ['rangerCategories'] } });
+    const { page } = ouvert;
+    const camping = idDe(await lire(page), 'Camping');
+    await page.click('[data-action="ranger"]');
+    await calme(page);
+    await page.evaluate(id => {
+      for (let i = 0; i < 3; i++) document.querySelector(`[data-action="monter"][data-id="${id}"]`).click();
+    }, camping);
+    await attendreQue(page, () => typeof window.debloquerStockage === 'function');
+    if (depart === 'lien Réglages') {
+      await page.click('#app a.lien-retour');
+      await attendreEcran(page, 'reglages');
+    } else {
+      await page.click('[data-action="menu"]');
+      await attendreQue(page, () => document.querySelector('dialog.tiroir[open]') !== null);
+      await calme(page);
+      await page.click(`dialog.tiroir .tiroir-lien:text-is("${fr.voyages.titre}")`);
+      await attendreEcran(page, 'voyages');
+    }
+    // Chaque écriture libérée laisse la suivante attendre à son tour (window.debloquerStockage reposé).
+    for (let i = 0; i < 3; i++) {
+      const libere = await attendreQue(page, () => {
+        if (typeof window.debloquerStockage !== 'function') return false;
+        const debloquer = window.debloquerStockage;
+        window.debloquerStockage = null;
+        debloquer();
+        return true;
+      });
+      if (!libere) break;
+    }
+    const attendu = ['Vêtements', 'Camping', 'Toilette', 'Alimentation', 'Papiers'];
+    await attendreQue(
+      page,
+      noms => {
+        const stocke = JSON.parse(localStorage.getItem('baluchon-essai')).bibliotheque.categories;
+        return (
+          stocke
+            .toSorted((x, y) => x.ordre - y.ordre)
+            .map(c => c.nom)
+            .join('|') === noms
+        );
+      },
+      attendu.join('|'),
+    );
+    const stocke = await ordreStocke(page);
+    juge.exige(vu(stocke) === vu(attendu), `${cas} : stocké ${vu(stocke)}`);
+    await fermer(cas, ouvert);
+  }
+}
+
 try {
+  await essaiDepartPendantLEcriture();
   await essaiRangement();
   await essaiLienReglages();
   await essaiAppuisRapidesEtPanne();

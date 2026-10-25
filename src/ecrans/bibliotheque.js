@@ -178,7 +178,8 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     const sienne = generation;
     file = file
       .then(async () => {
-        if (sienne !== generation || parti()) return;
+        // L'écran quitté entre-temps n'arrête pas l'écriture : chaque appui reçu est enregistré.
+        if (sienne !== generation) return;
         await stockage.rangerCategories(ids, new Date().toISOString());
         if (sienne === generation && !parti()) confirme(ids, id);
       })
