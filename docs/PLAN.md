@@ -261,7 +261,7 @@ Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité p
 
 ### Ce qu'on livre
 
-On modifie les dates ou le nombre de voyageurs d'un voyage, et les quantités calculées se mettent à jour, sauf celles corrigées à la main. Ajouter une étiquette à un voyage ouvre un aperçu des objets de la bibliothèque qui entreraient alors ; on y décoche ce qu'on ne veut pas. Retirer une étiquette ne supprime aucun objet.
+On modifie les dates ou le nombre de voyageurs d'un voyage, et les quantités calculées se mettent à jour, avec un message demandant que faire pour celles corrigées à la main. Ajouter une étiquette à un voyage ouvre un aperçu des objets de la bibliothèque qui entreraient alors ; on y décoche ce qu'on ne veut pas. Retirer une étiquette ne supprime aucun objet par défaut mais demande à l'utilisateur quoi faire, retirer ou non les objets liés.
 
 ### Critères d'acceptation
 
