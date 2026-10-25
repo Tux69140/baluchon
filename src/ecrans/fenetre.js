@@ -40,6 +40,8 @@ function surLeVoile(fenetre, evenement) {
 // l'en-tête (« × ») reste un appui : la capture du pointeur lui volerait son clic.
 function glisserPourFermer(fenetre, fermer) {
   const entete = fenetre.querySelector('.fenetre-entete');
+  // Le menu (src/ecrans/menu.js) n'a pas d'en-tête de fenêtre : il vient de la gauche, il ne se glisse pas.
+  if (!entete) return;
   let depart = null;
   entete.addEventListener('pointerdown', evenement => {
     if (!evenement.isPrimary || evenement.button !== 0 || evenement.target.closest('button')) return;
@@ -126,7 +128,9 @@ function quitterNiveau(niveau) {
 // saisie à perdre (Nouveau voyage) ; « × », Échap ou le navigateur qui la ferme de lui-même appellent
 // surGeste au lieu de la fermer : l'écran demande d'abord, puis la ferme s'il le faut. Fermée par le
 // navigateur (Échap répété, sans geste entre deux), elle se rouvre le temps de la question. Rend
-// fermer(), pour qui doit fermer la fenêtre sans geste de la personne.
+// fermer(), pour qui doit fermer la fenêtre sans geste de la personne ; sa promesse se résout quand
+// la fenêtre est effacée et que son étape d'historique est partie (le menu l'attend avant de changer
+// d'écran : le retrait de l'étape, arrivé après, reculerait sous l'écran suivant).
 export function ouvrirFenetre(
   fenetre,
   { surFermeture, fermerSurVoile = false, fermerAuRetour = false, surGeste = null },
@@ -137,12 +141,13 @@ export function ouvrirFenetre(
     if (fermeture) return;
     fermeture = true;
     // Dès le geste, pas après l'animation : l'étape est partie avant que l'écran reprenne la main.
-    if (niveau) quitterNiveau(niveau);
+    const etapePartie = niveau ? quitterNiveau(niveau) : null;
     fenetre.dataset.fermeture = '';
     // Aucune animation si l'appareil en demande moins : la liste est vide, on ferme aussitôt.
     await Promise.allSettled(fenetre.getAnimations({ subtree: true }).map(a => a.finished));
     if (fenetre.open) fenetre.close();
     surFermeture();
+    await etapePartie;
   }
 
   // Le voile et le glissé n'existent que sur une fenêtre sans saisie à perdre : ils ferment toujours.

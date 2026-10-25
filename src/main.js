@@ -14,6 +14,7 @@ import './styles/fenetre.css';
 import './styles/fiche.css';
 import './styles/assistant.css';
 import './styles/assistant-questions.css';
+import './styles/menu.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';
@@ -22,6 +23,7 @@ import { nouvelId } from './modele/identifiant.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
 import { ecranVoyage } from './ecrans/voyage.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
+import { ecranReglages } from './ecrans/reglages.js';
 import { retourDansLAppli } from './ecrans/retour-systeme.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
@@ -38,6 +40,7 @@ const ECRANS = [
   { motif: /^#\/voyages$/, ecran: ecranVoyages },
   { motif: /^#\/voyage\/([\w%-]+)$/, ecran: ecranVoyage },
   { motif: /^#\/nouveau-voyage$/, ecran: ecranNouveauVoyage },
+  { motif: /^#\/reglages$/, ecran: ecranReglages },
 ];
 
 let stockage;
@@ -48,12 +51,16 @@ let dernierAffichage = 0;
 // étape y note sa profondeur (history.state) : l'écran ouvert au démarrage est à 0, chaque lien
 // suivi ajoute 1. Un lien vers Mes voyages remonte donc jusqu'à l'accueil au lieu d'empiler une
 // étape : sinon, depuis Mes voyages, le retour système rouvrirait l'écran quitté au lieu de fermer
-// l'appli. Seul l'accueil ouvre d'autres écrans : sous une étape de profondeur 1 ou plus, l'étape 0
-// est donc toujours l'accueil.
+// l'appli. L'accueil ouvre les autres écrans, et Réglages la Bibliothèque ; le menu passe toujours
+// par l'accueil (allerDepuisAccueil). L'étape 0 est donc l'accueil, sauf quand l'appli a démarré sur
+// un autre écran (ouvert par son adresse) : un retour à l'étape 0 y pose alors l'accueil (remonterPuis).
 let profondeur = -1;
 // Un retour par history.go ne s'achève qu'à l'affichage suivant : d'ici là, un nouvel appui sur le
 // lien remonterait trop loin et quitterait l'appli (double appui sur la tablette).
 let retourEnCours = false;
+// Ce que montre l'étape 0 une fois atteinte par un retour en cours : l'accueil, ou l'écran demandé
+// depuis le menu, ouvert une étape au-dessus de l'accueil.
+let destination = null;
 // Une fenêtre fermée rend le focus au bouton qui l'a ouverte, une fois l'accueil redessiné.
 let focusApresRetour = null;
 
@@ -68,15 +75,45 @@ function remplacerAdresse(adresse) {
   return afficher();
 }
 
+// À l'étape 0 : l'accueil y prend place s'il n'y est pas, sans étape de plus ; puis l'écran demandé
+// s'ouvre juste au-dessus, sans que l'accueil soit dessiné entre deux.
+function arriverA(adresse) {
+  if (adresse === ACCUEIL) return remplacerAdresse(ACCUEIL);
+  history.replaceState({ profondeur: 0 }, '', ACCUEIL);
+  history.pushState({ profondeur: 1 }, '', adresse);
+  return afficher();
+}
+
+// Remonter à l'étape 0, puis y montrer l'adresse (l'accueil, ou un écran posé au-dessus de lui).
+function remonterPuis(adresse) {
+  if (retourEnCours) return;
+  if (profondeur > 0) {
+    retourEnCours = true;
+    destination = adresse;
+    history.go(-profondeur);
+  } else arriverA(adresse);
+}
+
 // Un écran ouvert directement par son adresse (profondeur 0) n'a pas l'accueil derrière lui : l'accueil
 // prend alors sa place, sans étape de plus. focus : ce qui reçoit le focus une fois l'accueil dessiné.
 function revenirAccueil({ focus = null } = {}) {
   if (retourEnCours) return;
   focusApresRetour = focus;
+  remonterPuis(ACCUEIL);
+}
+
+// Depuis le menu : Nouveau voyage et Réglages s'ouvrent une étape au-dessus de l'accueil, où que l'on
+// soit ; le retour système y ramène donc ensuite, puis quitte l'appli.
+const allerDepuisAccueil = adresse => remonterPuis(adresse);
+
+// Le lien de retour d'un écran ouvert depuis un autre que l'accueil (la Bibliothèque, depuis Réglages) :
+// une étape en arrière ; ouvert directement par son adresse, l'écran d'avant prend sa place.
+function revenir(adresseParDefaut) {
+  if (retourEnCours) return;
   if (profondeur > 0) {
     retourEnCours = true;
-    history.go(-profondeur);
-  } else remplacerAdresse(ACCUEIL);
+    history.back();
+  } else remplacerAdresse(adresseParDefaut);
 }
 
 // avecRetour : hors de l'accueil, l'appli démarrée peut encore ramener à Mes voyages.
@@ -89,11 +126,24 @@ async function afficher() {
   const numero = ++dernierAffichage;
   retourEnCours = false;
   noterProfondeur();
+  const voulue = destination;
+  destination = null;
+  // Un écran autre que l'accueil s'ouvre toujours au-dessus de lui, même si l'étape 0 était déjà le sien.
+  if (voulue && profondeur === 0 && (voulue !== ACCUEIL || location.hash !== ACCUEIL)) return arriverA(voulue);
   const route = ECRANS.map(({ motif, ecran }) => ({ ecran, trouve: motif.exec(location.hash) })).find(r => r.trouve);
   if (!route) return remplacerAdresse(ACCUEIL);
   // Repère des tests d'écran : retiré pendant le chargement, posé une fois l'écran dessiné.
   delete app.dataset.ecran;
-  const contexte = { stockage, t, langue: LANGUE, parametre: route.trouve[1], remplacerAdresse, revenirAccueil };
+  const contexte = {
+    stockage,
+    t,
+    langue: LANGUE,
+    parametre: route.trouve[1],
+    remplacerAdresse,
+    revenirAccueil,
+    allerDepuisAccueil,
+    revenir,
+  };
   try {
     const donnees = await route.ecran.charger(contexte);
     if (numero !== dernierAffichage) return;
@@ -135,13 +185,16 @@ async function demarrer() {
     return true;
   }).catch(console.error);
   window.addEventListener('hashchange', afficher);
-  // Tout lien vers l'accueil y revient en remontant l'historique ; il reste un vrai lien (clavier).
-  // Un écran qui le prend en charge (l'assistant demande d'abord s'il faut abandonner la saisie) le
-  // marque par preventDefault.
+  // Tout lien vers l'accueil y revient en remontant l'historique, tout autre lien de retour recule
+  // d'une étape ; ils restent de vrais liens (clavier). Un écran qui le prend en charge (l'assistant
+  // demande d'abord s'il faut abandonner la saisie, le menu ferme son panneau) le marque par preventDefault.
   app.addEventListener('click', evenement => {
-    if (evenement.defaultPrevented || !evenement.target.closest(`a[href="${ACCUEIL}"]`)) return;
+    const lien = evenement.target.closest(`a[href="${ACCUEIL}"], a.lien-retour`);
+    if (evenement.defaultPrevented || !lien) return;
     evenement.preventDefault();
-    revenirAccueil();
+    const adresse = lien.getAttribute('href');
+    if (adresse === ACCUEIL) revenirAccueil();
+    else revenir(adresse);
   });
   await afficher();
 }

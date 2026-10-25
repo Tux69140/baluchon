@@ -4,6 +4,7 @@ import { echapper } from './html.js';
 import { detailsVoyage } from './format.js';
 import { iconeInterface } from './icones.js';
 import { jauge } from './jauge.js';
+import { barreHaut, ouvrirMenu } from './menu.js';
 import { lienRetour } from './retour.js';
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
@@ -76,10 +77,13 @@ export const ecranVoyages = {
   }),
   dessiner(app, { voyages, aujourdhui, progressions }, contexte) {
     app.innerHTML = `
-    <main class="ecran${voyages.length ? ' ecran-avec-flottant' : ''}">
+    <main class="ecran${voyages.length ? ' ecran-avec-flottant' : ''}">${barreHaut(contexte)}
       <h1>${contexte.t('voyages.titre')}</h1>
       ${voyages.length ? vueListe(voyages, aujourdhui, progressions, contexte) : vueVide(contexte.t)}
     </main>`;
+    app
+      .querySelector('[data-action="menu"]')
+      .addEventListener('click', () => ouvrirMenu(contexte, { courant: 'voyages' }));
   },
 };
 
