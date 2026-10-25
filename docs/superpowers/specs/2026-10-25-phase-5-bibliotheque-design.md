@@ -58,7 +58,7 @@ Décision du chef de projet : la phase 5 ne construit que ce que le plan lui don
 - **Où est le menu.** À l'accueil, dans Réglages et dans Bibliothèque seulement. L'écran du voyage et l'assistant, validés aux phases 3 et 4, ne changent pas. « Nouveau voyage » ouvert depuis le menu ouvre l'assistant comme depuis l'accueil ; le voyage créé s'ouvre, et le retour ramène à l'accueil, comme aujourd'hui.
 - **Noms en double.** Aucune règle nouvelle : deux catégories ou deux objets peuvent porter le même nom (le PRD n'en dit rien, et la phase 5 n'ajoute pas de règle produit).
 - **Scénario « Alimentation » du critère 1.** La bibliothèque de départ contient déjà « Alimentation » (toujours incluse, 2 objets) : l'essai modifie cette catégorie (liée à Camping au lieu de « toujours incluse ») et lui ajoute 3 objets, pour atteindre 5.
-- **Règles laissées au constructeur, avec ces bornes.** Le plafond reste possible avec la règle « fixe » (sans effet si la valeur est en dessous) ; repasser à « toujours inclus » efface les liens d'étiquettes de ce modèle ; la recherche du catalogue ignore les accents et les majuscules.
+- **Règles laissées au constructeur, avec ces bornes.** Le plafond n'est proposé qu'avec « par jour » et « par nuit » (maquette validée ; un objet passé à « fixe » perd son plafond) ; repasser à « toujours inclus » efface les liens d'étiquettes de ce modèle ; la recherche du catalogue ignore les accents et les majuscules.
 
 ## Contraintes
 
@@ -67,6 +67,21 @@ Décision du chef de projet : la phase 5 ne construit que ce que le plan lui don
 - Données : le schéma actuel contient déjà tout ce qu'il faut (`categorie_modele`, `objet_modele`, liens d'étiquettes) : aucune migration attendue. Il faut des écritures nouvelles (créer, modifier une catégorie ou un objet, régler l'ordre), dans le stockage Tauri (commandes Rust testées) comme dans le stockage navigateur des tests d'écran. Une modification d'un modèle ne touche aucune table du voyage.
 - Appareils : tablette SM-X210, ASUS (Android 7, 360 points de large), Xiaomi (Android 15), Debian.
 - Pas de dépendance nouvelle prévue (les pictos Phosphor sont déjà la bibliothèque retenue).
+
+## Maquettes validées (2026-10-25)
+
+`docs/maquettes/bibliotheque/` (servir la racine du dépôt : `python3 -m http.server 8644`, puis `/docs/maquettes/bibliotheque/?etat=…`), validée par le chef de projet le 2026-10-25 sans changement (« parfait »). Elle fait foi pour tout ce qui se voit. Choix qu'elle fixe en plus de ce document :
+
+- catégories repliées à l'ouverture de la Bibliothèque (une colonne) ; sous le nom, « N objets · Toujours incluse » ou le nombre d'objets suivi des étiquettes en petites puces ; un appui sur la carte la déplie, un crayon (44 px) ouvre sa fiche ; en deux panneaux, « Modifier » dans l'en-tête de la catégorie choisie ;
+- ligne d'objet : nom, phrase de quantité (« 2 par jour et par personne, au plus 6 par personne »), « consommable », étiquettes en petites puces, ⓘ si une note, chevron ; dernière ligne « Ajouter un objet » en vert ;
+- fiche d'objet : règle en trois segments (Fixe, Par jour, Par nuit), nombre avec − / + et saisie au clavier, plafond par un interrupteur puis sa ligne « Au plus », segments « Par personne » / « Partagé », encadré de lecture avec exemple chiffré (« Pour 4 jours, 3 nuits et 2 voyageurs : 16. »), interrupteur « Consommable », segments « Toujours inclus » / « Selon les étiquettes » et puces par groupe, note ; pied fixe « Annuler » + « Enregistrer » (« Ajouter l'objet », « Créer la catégorie » à la création), ombré tant qu'il reste à défiler ;
+- fiche de catégorie : nom, grand pavé avec le nom du picto et « Changer de picto », nuancier de 8 couleurs (4 × 2 au téléphone, 8 en ligne dès 600 px), inclusion ;
+- catalogue : fenêtre de hauteur fixe (rien ne saute pendant la recherche), champ de recherche, compte « 80 pictos » ou « 2 pictos pour « sol » », tuiles nommées rangées par thème, recherche au début des mots sans accents ni majuscules ; choisir un picto referme le catalogue ;
+- menu : panneau depuis la gauche, mascotte et « Baluchon » en tête, entrée de l'écran courant sur fond actif (Réglages pour la Bibliothèque) ;
+- Réglages : une liste en carte, ligne « Bibliothèque » avec son explication ;
+- rangement : carte « Ranger les catégories » avec « Terminé » en haut, ▲ grisé en tête et ▼ en fin, annonce de la nouvelle place pour la lecture d'écran ;
+- message de panne en haut de l'écran, par-dessus la fiche, qui reste ouverte avec sa saisie ;
+- ce qui vient d'être enregistré s'éclaire un instant en vert pâle.
 
 ## Suite des travaux
 
