@@ -96,7 +96,7 @@ export async function ouvrirBibliotheque(
   navigateur,
   url,
   format = 'telephone',
-  { theme = 'light', donnees = DONNEES } = {},
+  { theme = 'light', donnees = DONNEES, maintenant } = {},
 ) {
   const { taille, ecran, tactile } = TOUS_FORMATS[format];
   const ouvert = await ouvrir(navigateur, url, {
@@ -105,10 +105,17 @@ export async function ouvrirBibliotheque(
     tactile,
     theme,
     donnees,
+    maintenant,
     adresse: '#/voyages',
   });
   const { page } = ouvert;
   await attendreEcran(page, 'voyages');
+  await versBibliotheque(page);
+  return ouvert;
+}
+
+// Depuis l'accueil (ou Réglages) : Menu → Réglages → Bibliothèque.
+export async function versBibliotheque(page) {
   await page.click('[data-action="menu"]');
   await attendreQue(page, () => document.querySelector('dialog.tiroir[open]') !== null);
   await calme(page);
@@ -116,7 +123,6 @@ export async function ouvrirBibliotheque(
   await attendreEcran(page, 'reglages');
   await page.click('#app a.reglage[href="#/bibliotheque"]');
   await attendreEcran(page, 'bibliotheque');
-  return ouvert;
 }
 
 // Fin d'un essai : ni erreur dans la page, ni requête hors de l'appli.
