@@ -147,13 +147,14 @@ export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false, f
   return fermer;
 }
 
-// Avant un geste qui défait quelque chose (vider un objet du sac) : une fenêtre d'alerte avec
-// « Annuler » et le bouton de l'action. La promesse rend true si l'action est choisie, false pour
-// « Annuler » ou Échap, une fois la fenêtre effacée : l'écran derrière reprend alors la main.
-// Le focus va d'abord à « Annuler », le geste sans perte. signal (AbortSignal) : l'écran qui a posé
-// la question s'en va ; la fenêtre disparaît aussitôt et la réponse est non (sinon elle resterait
-// par-dessus l'écran suivant, posée dans document.body).
-export function confirmer({ t, titre, texte, action, signal }) {
+// Fenêtre d'alerte à boutons nommés (confirmation, question à plusieurs issues). boutons : dans
+// l'ordre d'affichage, { cle, libelle, principal } ; le focus va au premier, qui doit donc être le
+// geste sans perte. contenu : du HTML déjà échappé par l'appelant, posé entre le texte et les
+// boutons. La promesse rend la clé du bouton touché, ou null (Échap, retour système, écran parti),
+// une fois la fenêtre effacée : l'écran derrière reprend alors la main. signal (AbortSignal) :
+// l'écran qui a posé la question s'en va ; la fenêtre disparaît aussitôt et la réponse est null
+// (sinon elle resterait par-dessus l'écran suivant, posée dans document.body).
+export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueFenetre({
     t,
@@ -161,10 +162,13 @@ export function confirmer({ t, titre, texte, action, signal }) {
     titre: echapper(titre),
     croix: false,
     contenu: `
-      <p id="texte-confirmation">${echapper(texte)}</p>
-      <div class="fenetre-pied">
-        <button type="button" class="bouton bouton-secondaire" data-fermer autofocus>${t('fenetre.annuler')}</button>
-        <button type="button" class="bouton bouton-principal" data-fermer data-confirmer>${echapper(action)}</button>
+      <p id="texte-confirmation">${echapper(texte)}</p>${contenu}
+      <div class="fenetre-pied">${boutons
+        .map(
+          ({ cle, libelle, principal = false }, rang) => `
+        <button type="button" class="bouton ${principal ? 'bouton-principal' : 'bouton-secondaire'}" data-fermer data-cle="${echapper(cle)}"${rang === 0 ? ' autofocus' : ''}>${echapper(libelle)}</button>`,
+        )
+        .join('')}
       </div>`,
   });
   const fenetre = gabarit.content.firstElementChild;
@@ -173,14 +177,62 @@ export function confirmer({ t, titre, texte, action, signal }) {
   fenetre.setAttribute('aria-describedby', 'texte-confirmation');
   document.body.append(fenetre);
   return new Promise(resoudre => {
-    let choisie = false;
+    let choisie = null;
     const retirer = () => {
       fenetre.remove();
       resoudre(choisie);
     };
-    fenetre.querySelector('[data-confirmer]').addEventListener('click', () => (choisie = true));
+    fenetre.addEventListener('click', evenement => {
+      const bouton = evenement.target.closest('[data-cle]');
+      if (bouton) choisie = bouton.dataset.cle;
+    });
     ouvrirFenetre(fenetre, { surFermeture: retirer, fermerAuRetour: true });
     signal?.addEventListener('abort', retirer, { once: true });
     if (signal?.aborted) retirer();
   });
+}
+
+// Avant un geste qui défait quelque chose (vider un objet du sac) : « Annuler » puis le bouton de
+// l'action. La promesse rend true si l'action est choisie, false pour « Annuler » ou Échap. Le focus
+// va d'abord à « Annuler », le geste sans perte.
+export async function confirmer({ t, titre, texte, action, signal }) {
+  const cle = await demander({
+    t,
+    titre,
+    texte,
+    signal,
+    boutons: [
+      { cle: 'annuler', libelle: t('fenetre.annuler') },
+      { cle: 'action', libelle: action, principal: true },
+    ],
+  });
+  return cle === 'action';
+}
+
+// Garde du retour système, pour un écran qui doit le comprendre autrement (l'assistant : retour =
+// étape précédente). C'est un niveau comme une fenêtre, qui ne ferme rien : le retour appelle
+// surRetour() au lieu de quitter l'écran ; si surRetour rend true, la garde se repose aussitôt (le
+// retour suivant l'appelle encore) ; sinon elle est consommée et le retour suivant quitte l'écran.
+// Une fenêtre ouverte par-dessus reste le dernier niveau : le retour la ferme, sans appeler
+// surRetour. retirer() enlève l'étape sans quitter l'écran ; à appeler fenêtres fermées.
+export function poserGardeRetour({ surRetour }) {
+  let actif = true;
+  const garde = {
+    // Pas de fenêtre : la garde reste dans la pile tant que l'écran vit.
+    fenetre: { isConnected: true },
+    adresse: location.href,
+    fermer() {
+      if (!actif || !surRetour()) return;
+      niveaux.push(garde);
+      poserEtapes();
+    },
+  };
+  niveaux.push(garde);
+  if (!retraitsEnAttente) poserEtapes();
+  return {
+    retirer() {
+      actif = false;
+      if (niveaux.at(-1) === garde) quitterNiveau(garde);
+    },
+  };
 }

@@ -94,7 +94,7 @@ const AUTRES_FERMETURES = {
   'confirmation sur la fiche, « Vider » puis « × »': async page => {
     await ouvrirFiche(page, 'o-gou');
     await ouvrirConfirmation(page, 'dialog.fiche [data-fiche="vider"]');
-    await page.click('dialog[role="alertdialog"] [data-confirmer]');
+    await page.click('dialog[role="alertdialog"] .bouton-principal');
     await attendreQue(page, () => !document.querySelector('dialog[role="alertdialog"]'));
     await page.click('dialog.fiche .bouton-fermer');
   },
