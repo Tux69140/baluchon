@@ -41,6 +41,7 @@ import {
   repondre,
   retourDansLAssistant,
   rienNEntre,
+  verifierPiedQuestion,
   verifierQuestion,
 } from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -444,6 +445,13 @@ try {
       await page.mouse.move(0, 0);
       await page.screenshot({ path: join(CAPTURES, `assistant-ecartes-${format}-${NOMS_THEME[theme]}.png`) });
       await verifierQuestion(page, juge, `écartés, ${format}, ${NOMS_THEME[theme]}`);
+      // Les deux réponses sont longues : l'une sous l'autre au téléphone, côte à côte sur tablette.
+      await verifierPiedQuestion(
+        page,
+        juge,
+        `écartés, ${format}, ${NOMS_THEME[theme]}`,
+        format === 'telephone' ? 'empile' : 'cote',
+      );
       await contexte.close();
     }
 

@@ -211,7 +211,9 @@ export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
   document.body.append(fenetre);
   return new Promise(resoudre => {
     let choisie = null;
+    let arreterMesure = () => {};
     const retirer = () => {
+      arreterMesure();
       fenetre.remove();
       resoudre(choisie);
     };
@@ -220,9 +222,24 @@ export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
       if (bouton) choisie = bouton.dataset.cle;
     });
     ouvrirFenetre(fenetre, { surFermeture: retirer, fermerAuRetour: true });
+    arreterMesure = empilerSiTropLarges(fenetre.querySelector('.fenetre-pied'));
     signal?.addEventListener('abort', retirer, { once: true });
     if (signal?.aborted) retirer();
   });
+}
+
+// Les réponses d'une question restent côte à côte quand elles tiennent ; sinon chacune prend sa
+// ligne, sur toute la largeur (data-empile). Le pied est un flex qui passe à la ligne : on le lâche
+// à largeur naturelle, et si les boutons ne sont plus au même niveau on les empile (ni 2+1, ni
+// demi-largeur). Ne dépend que de la largeur : pas de boucle. Rend la fonction qui arrête l'observation.
+function empilerSiTropLarges(pied) {
+  const boutons = [...pied.children];
+  const observateur = new ResizeObserver(() => {
+    pied.removeAttribute('data-empile');
+    if (new Set(boutons.map(b => b.offsetTop)).size > 1) pied.setAttribute('data-empile', '');
+  });
+  observateur.observe(pied);
+  return () => observateur.disconnect();
 }
 
 // Avant un geste qui défait quelque chose (vider un objet du sac) : « Annuler » puis le bouton de

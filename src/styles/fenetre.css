@@ -91,6 +91,12 @@ html:has(.fenetre:modal) {
   padding: var(--e-lg) var(--retrait-fenetre);
 }
 
+/* Réponses trop larges pour tenir sur une ligne (src/ecrans/fenetre.js pose data-empile) : chacune sur
+   toute la largeur, dans l'ordre de lecture. */
+.fenetre-pied[data-empile] > * {
+  flex: 1 1 100%;
+}
+
 /* Fenêtre d'ordinateur très étroite (jusqu'à 360 px, la largeur minimale de l'appli de bureau) : la
    fenêtre prend toute la largeur moins 8 px de chaque côté, et son retrait se resserre juste assez
    pour qu'une colonne garde sept jours de 44 px et les marges du calendrier (326 px) : 344 px =

@@ -35,6 +35,7 @@ import {
   question,
   repondre,
   retourDansLAssistant,
+  verifierPiedQuestion,
   verifierQuestion,
 } from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -388,8 +389,29 @@ try {
       await page.mouse.move(0, 0);
       await page.screenshot({ path: join(CAPTURES, `assistant-abandon-${format}-${NOMS_THEME[theme]}.png`) });
       await verifierQuestion(page, juge, `abandon, ${format}, ${NOMS_THEME[theme]}`);
+      // Les deux réponses restent côte à côte quand elles tiennent (téléphone de 393 px comme tablette).
+      await verifierPiedQuestion(page, juge, `abandon, ${format}, ${NOMS_THEME[theme]}`, 'cote');
       await contexte.close();
     }
+
+  // Téléphone étroit (360 px, largeur minimale) : les deux réponses tiennent encore côte à côte (171 + 131 px
+  // pour 326 px de pied) ; leur empilement est couvert par les objets écartés.
+  {
+    const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+      taille: { width: 360, height: 780 },
+      theme: 'light',
+      maintenant: MAINTENANT,
+      donnees: DONNEES,
+      adresse: '#/voyages',
+    });
+    await attendreEcran(page, 'voyages');
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.fill('#nom', 'Week-end au Vercors');
+    await retourDansLAssistant(page);
+    await attendreQuestion(page);
+    await verifierPiedQuestion(page, juge, 'abandon, 360 px', 'cote');
+    await contexte.close();
+  }
 
   // Un appui sur le voile, à gauche de la fenêtre, ne la ferme pas : la saisie reste.
   {

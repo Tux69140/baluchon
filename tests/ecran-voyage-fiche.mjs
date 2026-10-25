@@ -39,6 +39,7 @@ import {
   verifierBarres,
   verifierCommandes,
 } from './outils/page.mjs';
+import { verifierPiedQuestion } from './outils/assistant.mjs';
 import { DONNEES } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
@@ -420,6 +421,8 @@ try {
       await attendreQue(page, () => document.querySelector('dialog[role="alertdialog"][open]') !== null);
       await calme(page);
       await capture(page, 'fiche-confirmation');
+      // « Vider » : « Annuler » et l'action tiennent côte à côte, comme avant.
+      await verifierPiedQuestion(page, juge, cas('confirmation'), 'cote');
       await page.keyboard.press('Escape');
       await attendreQue(page, () => !document.querySelector('dialog[role="alertdialog"]'));
       await verifierBarres(page, juge, cas('fiche'));

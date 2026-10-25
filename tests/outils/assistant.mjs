@@ -107,3 +107,28 @@ export async function verifierQuestion(page, juge, cas) {
   juge.exige(m.petits.length === 0, `${cas} : boutons de moins de 44 px : ${m.petits.join(', ')}`);
   juge.exige(!m.dehors && m.debordement <= 0, `${cas} : la question sort de l’écran ${JSON.stringify(m)}`);
 }
+
+// Les boutons de la question ouverte : « cote » = tous sur une ligne (même haut), « empile » = chacun sur
+// sa ligne, sur toute la largeur du pied de la fenêtre (ni 2+1, ni demi-largeur orpheline).
+export async function verifierPiedQuestion(page, juge, cas, attendu) {
+  const m = await page.evaluate(() => {
+    const pied = document.querySelector('dialog[role="alertdialog"][open] .fenetre-pied');
+    const style = getComputedStyle(pied);
+    const p = pied.getBoundingClientRect();
+    return {
+      largeurPied: p.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+      boutons: [...pied.querySelectorAll('button')].map(b => {
+        const r = b.getBoundingClientRect();
+        return { haut: Math.round(r.top), largeur: Math.round(r.width) };
+      }),
+    };
+  });
+  const hauts = new Set(m.boutons.map(b => b.haut));
+  const detail = JSON.stringify(m);
+  if (attendu === 'cote') juge.exige(hauts.size === 1, `${cas} : les boutons devraient tenir côte à côte ${detail}`);
+  else
+    juge.exige(
+      hauts.size === m.boutons.length && m.boutons.every(b => Math.abs(b.largeur - m.largeurPied) <= 1),
+      `${cas} : les boutons devraient être l'un sous l'autre, pleine largeur ${detail}`,
+    );
+}

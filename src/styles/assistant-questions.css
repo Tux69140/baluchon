@@ -35,11 +35,3 @@
   color: var(--encre-douce);
   font-size: var(--taille-libelle);
 }
-
-/* Au téléphone, les deux réponses l'une sous l'autre, sur toute la largeur, comme dans la maquette. Les
-   confirmations des autres écrans (vider un objet) gardent leurs boutons côte à côte. */
-@media (max-width: 519px) {
-  html:has(.assistant) .confirmation .fenetre-pied > * {
-    flex: 1 1 100%;
-  }
-}
