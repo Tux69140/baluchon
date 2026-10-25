@@ -10,6 +10,7 @@ import {
   activerPlafond,
   changerRegle,
   exempleQuantite,
+  plafondPossible,
   regleDeSaisie,
   saisieDObjet,
   validerObjet,
@@ -38,7 +39,7 @@ function lecture(t, langue, brouillon) {
 }
 
 function vuePlafond(t, b, erreurs) {
-  if (b.regle === 'fixe') return '';
+  if (!plafondPossible(b)) return '';
   const o = 'modele.objet';
   let precision = t(`${o}.plafondAucun`);
   if (b.plafondActif) precision = t(b.parPersonne ? `${o}.plafondAuPlusParPersonne` : `${o}.plafondAuPlus`);

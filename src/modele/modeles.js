@@ -53,7 +53,7 @@ export function validerCategorie({ nom, selonEtiquettes, etiquettes }) {
 
 // Le plafond n'a de sens qu'avec « par jour » et « par nuit » : avec « fixe » il est effacé, donc
 // jamais jugé.
-const plafondPossible = ({ regle }) => regle !== 'fixe';
+export const plafondPossible = ({ regle }) => regle !== 'fixe';
 
 export function validerObjet(saisie) {
   const erreurs = {};

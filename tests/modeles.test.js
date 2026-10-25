@@ -10,6 +10,7 @@ import {
   deplacerCategorie,
   exempleQuantite,
   lireNombre,
+  plafondPossible,
   preparerCategorie,
   regleDeSaisie,
   preparerObjet,
@@ -247,4 +248,10 @@ test('activerPlafond : allumé, il propose le nombre choisi ; éteint, il s’ef
   assert.equal(activerPlafond({ ...jour, valeur: null }, true).plafond, 1);
   const eteint = activerPlafond({ ...jour, plafondActif: true, plafond: 5 }, false);
   assert.deepEqual([eteint.plafondActif, eteint.plafond], [false, null]);
+});
+
+test('plafondPossible : seulement avec « par jour » et « par nuit »', () => {
+  assert.equal(plafondPossible({ regle: 'par_jour' }), true);
+  assert.equal(plafondPossible({ regle: 'par_nuit' }), true);
+  assert.equal(plafondPossible({ regle: 'fixe' }), false);
 });
