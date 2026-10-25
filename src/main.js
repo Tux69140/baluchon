@@ -12,6 +12,7 @@ import './styles/nouveau-voyage.css';
 import './styles/calendrier.css';
 import './styles/fenetre.css';
 import './styles/fiche.css';
+import './styles/assistant.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ouvrirStockage } from './stockage/index.js';

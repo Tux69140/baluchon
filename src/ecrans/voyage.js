@@ -20,12 +20,11 @@ import {
   choisirCategorie,
   etatInitial,
 } from './rangement.js';
-import { vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
+import { DUREE_ALERTE, vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
 
 // Une seconde sans appui avant tout déplacement, une seconde de tampon avant le repli (docs/PRD.md).
 const REPIT = 1000;
 const TAMPON = 1000;
-const DUREE_ALERTE = 6000;
 // Glissement des lignes qui changent de place (docs/DESIGN.md, journal du 2026-10-24).
 const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
 const moinsDAnimations = matchMedia('(prefers-reduced-motion: reduce)');

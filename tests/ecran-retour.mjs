@@ -16,6 +16,7 @@
 // retour système ferme la fenêtre ouverte depuis Mes voyages et ramène à Mes voyages.
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
+import { creerDepuisLAssistant } from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
 
@@ -54,7 +55,7 @@ async function retourSysteme(page, url) {
 const FERMETURES = {
   Échap: page => page.keyboard.press('Escape'),
   '×': page => page.click('.bouton-fermer'),
-  Annuler: page => page.click('[data-fermer].bouton-secondaire'),
+  Annuler: page => page.click('[data-action="fermer"]'),
 };
 
 async function depuisMesVoyages(navigateur, url, taille = FORMATS.telephone) {
@@ -128,7 +129,8 @@ try {
     await page.fill('#nom', 'Toussaint');
     await page.click('[data-jour="2026-10-24"]');
     await page.click('[data-jour="2026-10-27"]');
-    await suivre(page, 'button[type=submit]', 'voyage');
+    await creerDepuisLAssistant(page);
+    await attendreEcran(page, 'voyage');
     const temoin = await retourSysteme(page, serveur.url);
     juge.exige(temoin === 'voyages', `création : témoin, le retour mène à « ${temoin} »`);
     await page.goForward();

@@ -4,15 +4,16 @@
 //   modale nommée par son titre « Nouveau voyage », Mes voyages derrière ; un « × » nommé « Fermer » et
 //   « Annuler » ; pas de lien « Mes voyages » ; le focus est sur le titre, sans contour (ce n'est pas
 //   une commande), pas sur le nom (le clavier masquerait aussitôt le calendrier) ; au clavier, Tab et
-//   Maj+Tab n'atteignent jamais Mes voyages derrière — témoin : Tab passe bien par « × », « Annuler »
-//   et « Créer le voyage » ;
+//   Maj+Tab n'atteignent jamais Mes voyages derrière — témoin : Tab passe bien par « × », « Annuler »,
+//   « Voir l'aperçu » et « Suivant » (phase 4 : l'assistant commence par l'étape Informations) ;
 // - à l'ordinateur (souris) : le focus est sur le nom ;
 // - au téléphone : écran plein, titre de l'écran, lien « Mes voyages », ni « × » ni « Annuler » ;
-// - panne d'enregistrement dans la fenêtre en une colonne (800 × 1280) : le message s'affiche en
-//   entier dans le pied, sans rien faire bouger (fenêtre, « Annuler », « Créer le voyage ») ;
+// - panne d'enregistrement dans la fenêtre en une colonne (800 × 1280) : le bandeau d'alerte (phase 4)
+//   se voit en entier, sans rien faire bouger (fenêtre, « Précédent », « Créer le voyage ») ni cacher
+//   « Créer le voyage » ;
 // - ouverte par son adresse, au doigt : le titre a le focus, sans contour ;
 // - clavier ouvert sur la tablette en paysage (fenêtre réduite de 1280 × 800 à 1280 × 420) : la même
-//   fenêtre modale reste ouverte, toujours sur deux colonnes, « Créer le voyage » visible, le corps
+//   fenêtre modale reste ouverte, toujours sur deux colonnes, « Suivant » visible, le corps
 //   défile, la saisie est gardée ;
 // - ouverture animée (fondu et montée) ; aucune animation si l'appareil en demande moins.
 import { readFile } from 'node:fs/promises';
@@ -21,6 +22,7 @@ import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, RACINE, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
+import { attendreQue } from './outils/attente.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const MAINTENANT = new Date('2026-10-06T10:00:00');
@@ -48,8 +50,8 @@ const vue = page =>
       fermer: visible('dialog .bouton-fermer')
         ? document.querySelector('.bouton-fermer').getAttribute('aria-label')
         : null,
-      annuler: visible('[data-fermer].bouton-secondaire')
-        ? document.querySelector('[data-fermer].bouton-secondaire').textContent.trim()
+      annuler: visible('[data-action="fermer"]')
+        ? document.querySelector('[data-action="fermer"]').textContent.trim()
         : null,
       lienRetour: visible('.lien-retour'),
       focus: document.activeElement?.id || null,
@@ -105,7 +107,12 @@ try {
       const f = await focusActuel(page);
       juge.exige(f.dedans, `tablette : Maj+Tab n° ${i + 1} sort de la fenêtre, sur « ${f.quoi} »`);
     }
-    for (const attendu of [fr.fenetre.fermer, fr.fenetre.annuler, fr.nouveauVoyage.creer])
+    for (const attendu of [
+      fr.fenetre.fermer,
+      fr.fenetre.annuler,
+      fr.nouveauVoyage.voirApercu,
+      fr.nouveauVoyage.suivant,
+    ])
       juge.exige(vus.has(attendu), `tablette : témoin, Tab ne passe pas par « ${attendu} » (${[...vus]})`);
     juge.exige(erreurs.length === 0, `tablette : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
@@ -144,7 +151,7 @@ try {
     await contexte.close();
   }
 
-  // Panne d'enregistrement dans la fenêtre en une colonne : rien ne bouge.
+  // Panne d'enregistrement dans la fenêtre en une colonne : le bandeau, rien ne bouge.
   {
     const { contexte, page } = await ouvrir(navigateur, serveur.url, {
       taille: FORMATS['tablette-portrait'],
@@ -154,28 +161,37 @@ try {
       adresse: '#/nouveau-voyage',
     });
     await attendreEcran(page, 'nouveau-voyage');
+    await page.fill('#nom', 'Vercors');
+    await page.click('[data-jour="2026-10-10"]');
+    await page.click('[data-jour="2026-10-13"]');
+    await page.click('[data-action="apercu"]');
+    await calme(page);
     const places = () =>
       page.evaluate(() =>
-        ['dialog', '[data-fermer].bouton-secondaire', 'button[type=submit]'].map(s => {
+        ['dialog', '[data-action="precedent"]', '[data-action="creer"]'].map(s => {
           const r = document.querySelector(s)?.getBoundingClientRect() ?? {};
           return `${r.left},${r.top},${r.width},${r.height}`;
         }),
       );
     const avant = await places();
-    await page.fill('#nom', 'Vercors');
-    await page.click('[data-jour="2026-10-10"]');
-    await page.click('[data-jour="2026-10-13"]');
-    await page.click('button[type=submit]');
-    await page.waitForFunction(() => document.querySelector('#erreur-creation').textContent.trim() !== '');
+    await page.click('[data-action="creer"]');
+    await attendreQue(page, () => document.querySelector('.alerte'));
     await calme(page);
     const apres = await places();
     juge.exige(avant.join(' ') === apres.join(' '), `panne : la fenêtre a bougé ${avant} → ${apres}`);
     const message = await page.evaluate(() => {
-      const m = document.querySelector('#erreur-creation').getBoundingClientRect();
-      const pied = document.querySelector('.formulaire-pied')?.getBoundingClientRect();
-      return { dansLePied: Boolean(pied) && m.top >= pied.top && m.bottom <= pied.bottom, hauteur: m.height };
+      const m = document.querySelector('.alerte').getBoundingClientRect();
+      const creer = document.querySelector('[data-action="creer"]');
+      const c = creer.getBoundingClientRect();
+      return {
+        entier: m.top >= 0 && m.bottom <= innerHeight && m.left >= 0 && m.right <= innerWidth,
+        creerVisible: creer.contains(document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2)),
+      };
     });
-    juge.exige(message.dansLePied, `panne : le message n’est pas en entier dans le pied (${JSON.stringify(message)})`);
+    juge.exige(
+      message.entier && message.creerVisible,
+      `panne : bandeau coupé ou « Créer » caché (${JSON.stringify(message)})`,
+    );
     await contexte.close();
   }
 
@@ -207,20 +223,20 @@ try {
     const v = await vue(page);
     const m = await page.evaluate(() => {
       const boite = s => document.querySelector(s).getBoundingClientRect();
-      const creer = boite('button[type=submit]');
+      const creer = boite('[data-action="suivant"]');
       const corps = document.querySelector('.formulaire-corps');
       return {
         meme: document.querySelector('dialog')?.dataset.temoin === 'avant',
         deuxColonnes: boite('.calendrier').left >= boite('#nom').right,
         creerVisible: document
-          .querySelector('button[type=submit]')
+          .querySelector('[data-action="suivant"]')
           .contains(document.elementFromPoint(creer.left + creer.width / 2, creer.top + creer.height / 2)),
         corpsDefile: corps.scrollHeight > corps.clientHeight,
       };
     });
     juge.exige(v.modale && m.meme, `clavier ouvert : la fenêtre a basculé ou s’est refermée (${JSON.stringify(m)})`);
     juge.exige(m.deuxColonnes, 'clavier ouvert : la fenêtre est passée à une colonne');
-    juge.exige(m.creerVisible, 'clavier ouvert : « Créer le voyage » ne se voit plus');
+    juge.exige(m.creerVisible, 'clavier ouvert : « Suivant » ne se voit plus');
     juge.exige(m.corpsDefile, 'clavier ouvert : témoin, le corps de la fenêtre devrait défiler');
     juge.exige(
       v.nom === 'Vercors' && v.depart === '2026-10-10' && v.retour === '2026-10-13',

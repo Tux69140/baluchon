@@ -2,7 +2,7 @@
 // Le 6 octobre 2026 (horloge fixée), bibliothèque de départ installée par l'appli :
 // - parcours complet depuis Mes voyages (un voyage passé) par le bouton flottant : nom, destination,
 //   10 puis 13 octobre sur le calendrier (résumé « 4 jours, 3 nuits », jours 11 et 12 grisés),
-//   Créer → la liste du voyage : Repas 16, T-shirts 8, Pyjama 2, Dentifrice 1 ; elle survit au
+//   « Voir l'aperçu » puis « Créer le voyage » (phase 4) → la liste du voyage : Repas 16, T-shirts 8, Pyjama 2, Dentifrice 1 ; elle survit au
 //   rechargement ; le retour mène à Mes voyages, où le voyage figure dans « À venir » ; la
 //   bibliothèque n'est pas installée deux fois (mêmes catégories, mêmes identifiants) ;
 // - le résumé des dates dit la période en toutes lettres, comme la spec ;
@@ -10,20 +10,21 @@
 // - choix A : après le 15, un appui sur le 12 en fait le nouveau départ ; un appui après un voyage
 //   complet recommence ;
 // - au-delà d'un an après le départ, les jours sont inactifs ; le dernier jour permis est choisissable ;
-// - Créer sans rien (au téléphone) : messages en toutes lettres à leur place réservée, rien ne
+// - « Suivant » sans rien (au téléphone) : messages en toutes lettres à leur place réservée, rien ne
 //   bouge, focus sur le nom ; le nom et les dates sont dits invalides au lecteur d'écran ; le
 //   message du nom (et son « invalide ») s'efface une fois le nom saisi, celui des dates reste ;
 // - au clavier : flèches, Page suiv., Entrée et Espace ;
 // - voyageurs : 2 par défaut, bornés à 1 et 20 (Playwright tient un bouton aria-disabled pour
 //   inactif et l'attendrait : les appuis qui doivent être refusés sont forcés) ;
-// - double appui sur Créer : un seul voyage ; panne d'enregistrement : message, on reste sur le
-//   formulaire, la saisie est gardée, et le bouton Créer ne bouge pas ; la panne levée, un second
-//   appui crée le voyage (un seul).
+// - double appui sur Créer : un seul voyage ; panne d'enregistrement : bandeau d'alerte (phase 4), on
+//   reste sur l'aperçu, le bouton Créer ne bouge pas, la saisie est gardée (Informations) ; la panne
+//   levée, un second appui crée le voyage (un seul).
 // 3 formats × 2 thèmes : cibles de 44 px, pas de défilement de côté, rien sous les barres système.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { calme } from './outils/attente.mjs';
+import { attendreQue, calme } from './outils/attente.mjs';
+import { creerDepuisLAssistant } from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
@@ -115,8 +116,7 @@ async function remplirEtCreer(page, { nom, depart, retour, double = false, avant
   await page.click(jour(depart));
   await page.click(jour(retour));
   await avantCreer?.();
-  if (double) await page.dblclick('button[type=submit]');
-  else await page.click('button[type=submit]');
+  await creerDepuisLAssistant(page, { double });
 }
 
 const juge = creerJuge();
@@ -177,7 +177,7 @@ try {
       (await repere(page, '2026-10-14')) !== (await repere(page, '2026-10-15')),
       'parcours : témoin, le survol ne se voit pas',
     );
-    await page.click('button[type=submit]');
+    await creerDepuisLAssistant(page);
     await attendreEcran(page, 'voyage');
     const hash = await page.evaluate(() => location.hash);
     juge.exige(/^#\/voyage\/[0-9a-f-]{36}$/.test(hash), `parcours : adresse ${hash}`);
@@ -190,7 +190,7 @@ try {
     juge.exige((await objetsAffiches(page)).Repas === '16', 'parcours : le voyage ne survit pas au rechargement');
     const idsApres = await idsCategories();
     juge.exige(
-      idsAvant.split(',').length === 4 && idsApres === idsAvant,
+      idsAvant.split(',').length === fr.bibliothequeDeDepart.categories.length && idsApres === idsAvant,
       `parcours : bibliothèque réinstallée (${idsAvant} → ${idsApres})`,
     );
     await page.goBack();
@@ -247,7 +247,7 @@ try {
     await contexte.close();
   }
 
-  // Créer sans rien : messages à leur place réservée, rien ne bouge.
+  // « Suivant » sans rien : messages à leur place réservée, rien ne bouge.
   {
     const { contexte, page } = await nouveauFormulaire(navigateur, serveur.url);
     const positions = () =>
@@ -339,24 +339,32 @@ try {
     await contexte.close();
   }
 
-  // Panne d'enregistrement : message, on reste sur le formulaire.
+  // Panne d'enregistrement : bandeau d'alerte, on reste sur l'aperçu.
   {
     const { contexte, page } = await nouveauFormulaire(navigateur, serveur.url, {
       donnees: { pannes: ['creerVoyage'] },
     });
     const haut = () =>
-      page.evaluate(() => document.querySelector('button[type=submit]').getBoundingClientRect().top + window.scrollY);
-    const avant = await haut();
-    await remplirEtCreer(page, { nom: 'Vercors', depart: '2026-10-10', retour: '2026-10-13' });
-    await page.waitForFunction(() => document.querySelector('#erreur-creation').textContent.trim() !== '');
-    juge.exige(
-      (await page.textContent('#erreur-creation')).trim() === fr.nouveauVoyage.erreurs.enregistrement,
-      'panne : message absent ou inattendu',
-    );
+      page.evaluate(() => document.querySelector('[data-action="creer"]').getBoundingClientRect().top + window.scrollY);
+    let avant;
+    await remplirEtCreer(page, {
+      nom: 'Vercors',
+      depart: '2026-10-10',
+      retour: '2026-10-13',
+      avantCreer: async () => {
+        await page.click('[data-action="apercu"]');
+        await calme(page);
+        avant = await haut();
+      },
+    });
+    const alerte = await attendreQue(page, () => document.querySelector('.alerte')?.textContent.trim());
+    juge.exige(alerte === fr.nouveauVoyage.erreurs.enregistrement, `panne : alerte « ${alerte} »`);
     juge.exige((await page.evaluate(() => location.hash)) === '#/nouveau-voyage', 'panne : le formulaire a été quitté');
     await calme(page);
     const apres = await haut();
     juge.exige(avant === apres, `panne : le bouton Créer a bougé ${avant} → ${apres}`);
+    await page.click('.etape:first-child button');
+    await calme(page);
     const garde = { ...(await etat(page)), nom: await page.inputValue('#nom') };
     juge.exige(
       garde.nom === 'Vercors' && garde.depart === '2026-10-10' && garde.retour === '2026-10-13',
@@ -366,7 +374,7 @@ try {
     const { pannes, ...sansPanne } = await lireStockage(page);
     juge.exige(pannes?.length === 1, 'panne : témoin, la panne n’était pas posée');
     await ecrireStockage(page, sansPanne);
-    await page.click('button[type=submit]');
+    await creerDepuisLAssistant(page);
     await attendreEcran(page, 'voyage');
     const n = (await lireStockage(page)).voyages?.length;
     juge.exige(n === 1, `panne levée : ${n} voyage(s) créé(s)`);

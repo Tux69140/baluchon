@@ -2,12 +2,15 @@
 // modale). Le choix se fait d'après l'écran de l'appareil, pas d'après la fenêtre : plus petit côté
 // d'au moins 600 px (tablette, ordinateur) → fenêtre modale ; sinon (téléphone, même tourné) → écran plein.
 // - fenêtre modale : ouverte par-dessus Mes voyages, centrée entre les barres système (écarts gauche /
-//   droite et haut / bas égaux à 2 px près, au moins 24 px de marge), dont le bouton « Créer le voyage »
-//   se voit sans défiler, et la page derrière ne défile pas ;
+//   droite et haut / bas égaux à 2 px près, au moins 24 px de marge), dont le bouton « Suivant » (phase
+//   4 : l'assistant s'ouvre sur l'étape Informations) se voit sans défiler, et la page derrière ne
+//   défile pas ;
 //   - en paysage d'au moins 800 px de large (1280 × 800 avec et sans les barres de la tablette,
 //     1440 × 900) : deux colonnes égales, les champs et les voyageurs à gauche, les dates à droite, le
 //     calendrier de la largeur de sa colonne ; la fenêtre fait au plus 880 px de large et tout y tient
-//     sans défiler, dans un mois de cinq comme de six semaines ; Créer sans rien : rien ne bouge ;
+//     sans défiler, dans un mois de cinq comme de six semaines (sous les barres de la tablette, depuis
+//     la rangée d'étapes de la phase 4, six semaines défilent d'au plus une semaine) ; « Suivant » sans
+//     rien : rien ne bouge ;
 //     à 800 × 600, le seuil, deux colonnes de jours de 44 px, dont le corps défile ;
 //   - la hauteur ne compte pas (un clavier ouvert la divise par deux) : fenêtre d'ordinateur basse
 //     (1280 × 500), toujours deux colonnes, c'est le corps de la fenêtre qui défile ; à 1280 × 650 sous
@@ -16,8 +19,9 @@
 //     les voyageurs ont la même largeur, à 1 px près ;
 //   - fenêtre d'ordinateur très étroite (360 × 740) : une colonne, toute la largeur moins 8 px de marge ;
 // - écran plein : téléphones (393 × 873, 360 × 740), le nom, la destination, le calendrier, les
-//   voyageurs et « Créer le voyage » occupent toute la largeur utile ; téléphone tourné (873 × 393),
-//   deux colonnes égales qui occupent ensemble la largeur utile ;
+//   voyageurs et les boutons du pied occupent toute la largeur utile ; téléphone tourné (873 × 393),
+//   deux colonnes égales qui occupent ensemble la largeur utile, le pied collé au bas de l'écran et ses
+//   boutons calés à droite (phase 4 : le pied de l'assistant reste en bas) ;
 // - partout, chaque jour du calendrier est un cercle (largeur = hauteur) d'au moins 44 px qui tient
 //   dans sa case, sans chevaucher ses voisins, et la page ne défile pas de côté.
 // Captures, en clair et en sombre : 1280 × 800 (vide, messages d'erreur, dates choisies), 1440 × 900,
@@ -74,7 +78,7 @@ const mesurer = page =>
     };
     const fenetre = document.querySelector('dialog');
     const corps = document.querySelector('.formulaire-corps');
-    const creer = document.querySelector('button[type=submit]');
+    const creer = document.querySelector('[data-action="suivant"]');
     const c = creer.getBoundingClientRect();
     const ecran = document.querySelector('main.ecran:has(.formulaire)');
     const s = ecran && getComputedStyle(ecran);
@@ -106,8 +110,9 @@ const mesurer = page =>
       dates: boite('fieldset:has(.calendrier)'),
       calendrier: boite('.calendrier'),
       voyageurs: boite('fieldset:has(.compteur)'),
-      creer: c.toJSON(),
-      // « Créer le voyage » se voit : c'est bien lui qu'on touche en son milieu.
+      actions: boite('.formulaire-actions'),
+      pied: boite('.formulaire-pied'),
+      // « Suivant » se voit : c'est bien lui qu'on touche en son milieu.
       creerVisible: creer.contains(document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2)),
       semaines: document.querySelectorAll('.calendrier-grille tbody tr').length,
       joursFautifs,
@@ -129,7 +134,7 @@ function verifierFenetre(m, juge, cas, marge = MARGE) {
     Math.min(aGauche, aDroite, enHaut, enBas) >= marge - 0.5,
     `${cas} : marge de moins de ${marge} px (${[aGauche, aDroite, enHaut, enBas].map(Math.round)})`,
   );
-  juge.exige(m.creerVisible, `${cas} : « Créer le voyage » ne se voit pas sans défiler`);
+  juge.exige(m.creerVisible, `${cas} : « Suivant » ne se voit pas sans défiler`);
   juge.exige(m.defilementPage === 0, `${cas} : la page défile derrière la fenêtre (${m.defilementPage} px)`);
 }
 
@@ -164,8 +169,8 @@ function verifierUneColonne(m, juge, cas, marge) {
   juge.exige(m.calendrier.top >= m.destination.bottom, `${cas} : le calendrier n’est pas sous les champs`);
 }
 
-// Téléphone tourné : deux colonnes égales qui, ensemble, occupent la largeur utile ; « Créer le voyage »
-// sous les voyageurs, de la largeur de sa colonne.
+// Téléphone tourné : deux colonnes égales qui, ensemble, occupent la largeur utile ; le pied collé au
+// bas de l'écran, ses boutons calés à droite comme dans la fenêtre.
 function verifierEcranPleinDeuxColonnes(m, juge, cas) {
   juge.exige(!m.ouverte, `${cas} : une fenêtre modale s’est ouverte au téléphone`);
   verifierColonnes(m, juge, cas);
@@ -174,8 +179,12 @@ function verifierEcranPleinDeuxColonnes(m, juge, cas) {
     `${cas} : les colonnes n’occupent pas la largeur utile (${m.calendrier.right - m.nom.left} / ${m.contenu})`,
   );
   juge.exige(
-    ecart(m.creer.width, m.nom.width) <= 1 && ecart(m.creer.left, m.nom.left) <= 1 && m.creer.top > m.voyageurs.bottom,
-    `${cas} : « Créer le voyage » n’est pas sous les voyageurs, à leur largeur`,
+    ecart(m.actions.right, m.calendrier.right) <= 1,
+    `${cas} : les boutons du pied ne sont pas calés à droite (${m.actions.right} / ${m.calendrier.right})`,
+  );
+  juge.exige(
+    ecart(m.pied.bottom, m.fenetre.hauteur) <= 1,
+    `${cas} : le pied n’est pas collé au bas de l’écran (${m.pied.bottom} / ${m.fenetre.hauteur})`,
   );
 }
 
@@ -186,7 +195,7 @@ function verifierEcranPlein(m, juge, cas) {
     destination: m.destination,
     calendrier: m.calendrier,
     voyageurs: m.voyageurs,
-    creer: m.creer,
+    boutons: m.actions,
   };
   const etroits = Object.entries(blocs).filter(
     ([, b]) => ecart(b.width, m.contenu) > 1 || ecart(b.left, m.nom.left) > 1,
@@ -244,7 +253,7 @@ try {
       if (mode === 'deux' && !defile) {
         juge.exige(m.corpsDefile <= 0, `${cas}, octobre : le corps de la fenêtre défile de ${m.corpsDefile} px`);
         if (capture === 'paysage') await photo('vide');
-        // Créer sans rien : les messages prennent leur place réservée, rien ne bouge.
+        // « Suivant » sans rien : les messages prennent leur place réservée, rien ne bouge.
         const places = () =>
           page.evaluate(() =>
             ['dialog', '.calendrier', '.compteur', 'button[type=submit]', '#destination'].map(s => {
@@ -286,9 +295,11 @@ try {
           m.joursFautifs.length === 0,
           `${cas}, novembre, barres de la tablette : jours fautifs ${[...new Set(m.joursFautifs)].join(', ')}`,
         );
+        // Depuis la rangée d'étapes (phase 4), six semaines ne tiennent plus sous les barres de la
+        // tablette : les jours restent à 44 px et le corps défile, d'au plus une semaine.
         if (format === 'tablette-paysage')
           juge.exige(
-            m.corpsDefile <= 0,
+            m.corpsDefile <= 46,
             `${cas}, novembre, barres de la tablette : le corps de la fenêtre défile de ${m.corpsDefile} px`,
           );
       }

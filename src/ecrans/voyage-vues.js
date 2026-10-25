@@ -221,6 +221,9 @@ export const vueIntrouvable = t => `
       <p class="message message-erreur" role="alert">${t('voyage.introuvable')}</p>
     </main>`;
 
-// En bas, par-dessus la liste, sans rien pousser ; le message est un paragraphe pour être lu.
+// En bas, par-dessus la liste, sans rien pousser ; le message est un paragraphe pour être lu. Il
+// s'efface de lui-même au bout de DUREE_ALERTE (écran d'un voyage, assistant « Nouveau voyage »).
+export const DUREE_ALERTE = 6000;
+
 export const vueAlerte = texte => `
     <div class="message message-erreur alerte" role="alert">${iconeInterface('erreur')}<p>${texte}</p></div>`;
