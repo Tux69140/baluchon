@@ -75,6 +75,8 @@ const niveaux = [];
 // les retours dans l'ordre) : le prochain retour reçu est donc le nôtre, pas celui de la personne,
 // et un niveau ouvert entre-temps attend pour poser la sienne (l'historique reculerait sous elle).
 let retraitsEnAttente = 0;
+// Ceux qui attendent qu'une étape retirée soit partie, dans l'ordre des retraits.
+const attentesDeRetrait = [];
 
 // Une étape par niveau ouvert au-dessus de celle où l'on est.
 function poserEtapes() {
@@ -85,7 +87,8 @@ function poserEtapes() {
 window.addEventListener('popstate', () => {
   if (retraitsEnAttente) {
     retraitsEnAttente -= 1;
-    return poserEtapes();
+    poserEtapes();
+    return attentesDeRetrait.shift()?.();
   }
   for (const niveau of niveaux.splice(history.state?.niveau ?? 0).reverse())
     if (niveau.adresse === location.href && niveau.fenetre.isConnected) niveau.fermer();
@@ -101,12 +104,18 @@ function ouvrirNiveau(fenetre, fermer) {
 }
 
 // Un niveau encore dans la pile se ferme par un autre geste que le retour : son étape s'en va.
+// Rend une promesse résolue quand l'étape est partie (aussitôt s'il n'y en avait pas). Une garde
+// retirée sous une fenêtre (inerte) part à son tour dès que plus rien n'est au-dessus d'elle.
 function quitterNiveau(niveau) {
   const rang = niveaux.indexOf(niveau);
-  if (rang < 0) return;
+  if (rang < 0) return Promise.resolve();
   niveaux.splice(rang, 1);
   retraitsEnAttente += 1;
+  const partie = new Promise(resoudre => attentesDeRetrait.push(resoudre));
   history.back();
+  const dessous = niveaux.at(-1);
+  if (dessous?.inerte && rang === niveaux.length) dessous.inerte(quitterNiveau(dessous));
+  return partie;
 }
 
 // surFermeture est appelé une seule fois, la fenêtre effacée : appuis répétés, Échap pendant
@@ -214,25 +223,32 @@ export async function confirmer({ t, titre, texte, action, signal }) {
 // surRetour() au lieu de quitter l'écran ; si surRetour rend true, la garde se repose aussitôt (le
 // retour suivant l'appelle encore) ; sinon elle est consommée et le retour suivant quitte l'écran.
 // Une fenêtre ouverte par-dessus reste le dernier niveau : le retour la ferme, sans appeler
-// surRetour. retirer() enlève l'étape sans quitter l'écran ; à appeler fenêtres fermées.
+// surRetour. retirer() enlève l'étape sans quitter l'écran.
 export function poserGardeRetour({ surRetour }) {
   let actif = true;
   const garde = {
     // Pas de fenêtre : la garde reste dans la pile tant que l'écran vit.
     fenetre: { isConnected: true },
     adresse: location.href,
+    inerte: null,
     fermer() {
-      if (!actif || !surRetour()) return;
-      niveaux.push(garde);
+      if (!actif) return garde.inerte?.();
+      // Rang de la garde : ce que surRetour ouvre (une fenêtre) se place au-dessus d'elle, pas dessous.
+      const rang = niveaux.length;
+      if (!surRetour()) return;
+      niveaux.splice(rang, 0, garde);
       poserEtapes();
     },
   };
   niveaux.push(garde);
   if (!retraitsEnAttente) poserEtapes();
   return {
+    // Rend une promesse résolue quand l'étape de la garde est partie : un écran qui change ensuite
+    // l'adresse (replaceState) l'attend, sinon le retrait différé le ramènerait à l'ancienne adresse.
     retirer() {
       actif = false;
-      if (niveaux.at(-1) === garde) quitterNiveau(garde);
+      if (niveaux.at(-1) === garde || !niveaux.includes(garde)) return quitterNiveau(garde);
+      return new Promise(resoudre => (garde.inerte = resoudre));
     },
   };
 }

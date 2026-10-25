@@ -25,12 +25,12 @@ async function ouvrirEssai() {
     theme: 'light',
     adresse: '/tests/pages/fenetre.html#niveau-0',
   });
-  // Une étape d'avant, pour que « quitter la page » se voie : le retour mène alors à about:blank.
   return ouvert;
 }
-const retour = async page => {
-  await page.goBack();
-};
+// Le retour système ; depuis la page d'essai, premier document de l'onglet, il mène à about:blank.
+const retour = page => page.goBack();
+const adresseInchangee = page => page.url().endsWith('/tests/pages/fenetre.html#niveau-0');
+const fenetreOuverte = () => Boolean(document.querySelector('dialog[role="alertdialog"][open]'));
 
 try {
   // 1. Un bouton nommé.
@@ -127,8 +127,58 @@ try {
     await retour(page);
     juge.exige((await attendreTexte(page, 'choix', 'null')) === true, 'le retour ferme la fenêtre');
     juge.exige((await lire(page, 'compteur')) === '0', `surRetour non appelé : ${await lire(page, 'compteur')}`);
+    juge.exige(adresseInchangee(page), `adresse inchangée après la fermeture : ${page.url()}`);
     await retour(page);
     juge.exige((await attendreTexte(page, 'compteur', '1')) === true, 'le retour suivant atteint la garde');
+  }
+
+  // 6. surRetour ouvre une fenêtre et rend true : la fenêtre reste au-dessus de la garde.
+  {
+    const { page } = await ouvrirEssai();
+    await page.evaluate(() => {
+      window.surRetourRend = true;
+      window.surRetourOuvre = true;
+    });
+    await page.click('#poser');
+    await retour(page);
+    await attendreQue(page, fenetreOuverte);
+    juge.exige((await lire(page, 'compteur')) === '1', 'surRetour appelé une fois');
+    await retour(page);
+    juge.exige(
+      (await attendreTexte(page, 'choix', 'null')) === true,
+      'le retour ferme la fenêtre ouverte par surRetour',
+    );
+    juge.exige((await lire(page, 'compteur')) === '1', `surRetour non rappelé : ${await lire(page, 'compteur')}`);
+    juge.exige(adresseInchangee(page), `adresse inchangée : ${page.url()}`);
+    await page.evaluate(() => (window.surRetourOuvre = false));
+    await retour(page);
+    juge.exige((await attendreTexte(page, 'compteur', '2')) === true, 'le retour suivant rappelle surRetour');
+  }
+
+  // 7. retirer() attendable : l'adresse posée après l'attente reste, le retour suivant quitte la page.
+  {
+    const { page } = await ouvrirEssai();
+    await page.click('#poser');
+    await page.click('#retirer-puis-adresse');
+    await attendreTexte(page, 'retire', 'fait');
+    juge.exige(page.url().endsWith('/tests/pages/fenetre.html#voyage'), `adresse nouvelle gardée : ${page.url()}`);
+    await retour(page);
+    juge.exige(page.url() === 'about:blank', `le retour quitte la page : ${page.url()}`);
+  }
+
+  // 8. retirer() sous une fenêtre : la garde part une fois la fenêtre fermée, sans surRetour.
+  {
+    const { page } = await ouvrirEssai();
+    await page.click('#poser');
+    await page.click('#demander');
+    await attendreQue(page, fenetreOuverte);
+    // La fenêtre modale rend la page inerte : le bouton est actionné par le code, pas au doigt.
+    await page.evaluate(() => document.querySelector('#retirer-puis-adresse').click());
+    await page.keyboard.press('Escape');
+    await attendreTexte(page, 'retire', 'fait');
+    juge.exige(page.url().endsWith('/tests/pages/fenetre.html#voyage'), `adresse nouvelle gardée : ${page.url()}`);
+    await retour(page);
+    juge.exige(page.url() === 'about:blank', `aucune garde inerte ne reste : ${page.url()}`);
   }
 } finally {
   await navigateur.close();
