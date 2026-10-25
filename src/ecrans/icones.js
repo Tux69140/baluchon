@@ -5,6 +5,7 @@ import tShirt from '@phosphor-icons/core/duotone/t-shirt-duotone.svg?raw';
 import tooth from '@phosphor-icons/core/duotone/tooth-duotone.svg?raw';
 import forkKnife from '@phosphor-icons/core/duotone/fork-knife-duotone.svg?raw';
 import identificationCard from '@phosphor-icons/core/duotone/identification-card-duotone.svg?raw';
+import tent from '@phosphor-icons/core/duotone/tent-duotone.svg?raw';
 import caretLeft from '@phosphor-icons/core/bold/caret-left-bold.svg?raw';
 import caretRight from '@phosphor-icons/core/bold/caret-right-bold.svg?raw';
 import plus from '@phosphor-icons/core/bold/plus-bold.svg?raw';
@@ -16,9 +17,17 @@ import caretDown from '@phosphor-icons/core/bold/caret-down-bold.svg?raw';
 import funnel from '@phosphor-icons/core/bold/funnel-bold.svg?raw';
 import checkCircle from '@phosphor-icons/core/bold/check-circle-bold.svg?raw';
 import x from '@phosphor-icons/core/bold/x-bold.svg?raw';
+import listChecks from '@phosphor-icons/core/bold/list-checks-bold.svg?raw';
+import tag from '@phosphor-icons/core/bold/tag-bold.svg?raw';
 import { echapper } from './html.js';
 
-const CATEGORIES = { 't-shirt': tShirt, tooth, 'fork-knife': forkKnife, 'identification-card': identificationCard };
+const CATEGORIES = {
+  't-shirt': tShirt,
+  tooth,
+  'fork-knife': forkKnife,
+  'identification-card': identificationCard,
+  tent,
+};
 
 const INTERFACE = {
   retour: caretLeft,
@@ -33,6 +42,8 @@ const INTERFACE = {
   deplier: caretDown,
   filtre: funnel,
   boucle: checkCircle,
+  apercu: listChecks,
+  etiquette: tag,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.

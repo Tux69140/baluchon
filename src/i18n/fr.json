@@ -5,6 +5,7 @@
   "voyage": {
     "introuvableTitre": "Voyage introuvable",
     "introuvable": "Ce voyage est introuvable. Il a peut-être été supprimé.",
+    "etiquettes": "Étiquettes du voyage",
     "dansLeSac": "Dans le sac",
     "compte": "{faits} / {total}",
     "sacBoucle": "Sac bouclé !",
@@ -82,6 +83,48 @@
   },
   "nouveauVoyage": {
     "titre": "Nouveau voyage",
+    "etapes": "Étapes",
+    "etape": {
+      "informations": "Informations",
+      "apercu": "Aperçu"
+    },
+    "legende": "Étape {n} sur {total} · {nom}",
+    "precedent": "Précédent",
+    "suivant": "Suivant",
+    "voirApercu": "Voir l’aperçu",
+    "aideGroupe": "Touchez les étiquettes qui décrivent ce voyage. Aucune n’est obligatoire.",
+    "choisies": {
+      "one": "1 étiquette choisie",
+      "other": "{n} étiquettes choisies"
+    },
+    "aucuneChoisie": "Aucune étiquette choisie : ce groupe n’ajoute rien.",
+    "retenus": {
+      "one": "{n} objet retenu sur {total}",
+      "other": "{n} objets retenus sur {total}"
+    },
+    "aideApercu": "Décochez ce que vous n’emporterez pas. Rien n’est créé avant « Créer le voyage ».",
+    "vide": {
+      "titre": "Aucun objet ne correspond",
+      "texte": "Aucune catégorie de votre bibliothèque n’est « toujours incluse » ni liée aux étiquettes choisies. Choisissez d’autres étiquettes, ou liez des catégories à celles-ci dans la bibliothèque.",
+      "revenir": "Revenir aux étiquettes"
+    },
+    "toutEcarte": "Vous avez écarté tous les objets. Recochez ceux à emporter pour créer le voyage.",
+    "abandon": {
+      "titre": "Abandonner ce nouveau voyage ?",
+      "texte": "Le nom, les dates et les étiquettes choisies seront perdus.",
+      "continuer": "Continuer la saisie",
+      "abandonner": "Abandonner"
+    },
+    "ecartes": {
+      "titre": "Objets écartés",
+      "texte": "Avant de changer vos choix, vous aviez écarté ces objets. Que voulez-vous en faire ?",
+      "garder": "Les garder écartés",
+      "remettre": "Les remettre dans la liste"
+    },
+    "case": {
+      "objet": "{nom}, {quantite}",
+      "categorie": "{nom} : {retenus} sur {total} retenus"
+    },
     "nom": "Nom du voyage",
     "destination": "Destination (facultatif)",
     "dates": "Dates",
