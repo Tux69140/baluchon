@@ -153,7 +153,7 @@ L'assistant ajoute une étape par groupe, où l'on touche des puces. Une rangée
 
 ### Ce qu'on livre
 
-L'écran Bibliothèque liste les catégories modèles dans leur ordre, avec leurs objets. On crée ou modifie une catégorie : nom, icône choisie dans le catalogue d'environ 80 pictos avec recherche, une des 8 couleurs, « toujours incluse » ou des étiquettes. On crée ou modifie un objet : nom, règle de quantité, plafond, par personne ou partagé, consommable, toujours inclus ou étiquettes, note. Des flèches monter et descendre règlent l'ordre des catégories. Les voyages existants ne changent jamais.
+Un bouton menu (accueil, Réglages, Bibliothèque) ouvre Mes voyages, Nouveau voyage, Réglages ; l'écran Réglages mène à la Bibliothèque. L'écran Bibliothèque, de même allure que la liste d'un voyage, liste les catégories modèles dans leur ordre, avec leurs objets. On crée ou modifie une catégorie : nom, icône choisie dans le catalogue d'environ 80 pictos avec recherche, une des 8 couleurs, « toujours incluse » ou des étiquettes. On crée ou modifie un objet : nom, règle de quantité, plafond, par personne ou partagé, consommable, toujours inclus ou étiquettes, note. Des flèches monter et descendre, dans un mode « Ranger les catégories », règlent l'ordre des catégories. Conception détaillée : `docs/superpowers/specs/2026-10-25-phase-5-bibliotheque-design.md` ; rien n'y prépare les accès des phases suivantes. Les voyages existants ne changent jamais.
 
 ### Critères d'acceptation
 
@@ -328,7 +328,7 @@ L'écran Réglages permet de choisir le thème (appareil, clair, sombre), un ré
 
 ### Ce qu'on livre
 
-Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes d'étiquettes (Activités, Climat, Transport, Hébergement…), catégories et objets courants, quantités et notes. Elle a la même étendue que celle de BagPacker, mais sa rédaction est originale. Elle vit dans le fichier de traduction ; un contributeur peut traduire l'interface et la bibliothèque sans toucher au code. Au premier lancement, l'appli prend la langue de l'appareil si une traduction existe, sinon le français. La bibliothèque est installée une fois, puis appartient à l'utilisateur.
+Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes d'étiquettes (Activités, Climat, Transport, Hébergement…), catégories et objets courants, quantités et notes. Elle a la même étendue que celle de BagPacker, mais sa rédaction est originale. Elle vit dans le fichier de traduction ; un contributeur peut traduire l'interface et la bibliothèque sans toucher au code. Au premier lancement, l'appli prend la langue de l'appareil si une traduction existe, sinon le français. La bibliothèque est installée une fois, puis appartient à l'utilisateur. Le menu gagne une entrée « À propos » (décision du chef de projet, 2026-10-25).
 
 ### Critères d'acceptation
 

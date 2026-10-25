@@ -154,6 +154,8 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Note d'un objet : en lecture seule dans le voyage, modifiable seulement dans la bibliothèque.
 - Liste des voyages : en cours en premier, puis à venir (du plus proche au plus lointain), puis passés (du plus récent au plus ancien).
 - Tablette en paysage et ordinateur : deux panneaux (catégories à gauche, objets à droite) ; téléphone et tablette en portrait : une colonne.
+- Navigation (décisions du chef de projet, 2026-10-25) : un bouton menu, en haut de l'accueil, de Réglages et de la Bibliothèque, ouvre la liste Mes voyages, Nouveau voyage, Réglages ; ni barre de boutons en bas ni colonne sur le côté, qui ne tiennent pas sur un téléphone. La Bibliothèque, puis les Étiquettes, se rangent dans Réglages. « À propos » s'ajoute au menu en dernière phase.
+- Bibliothèque : même allure que la liste d'un voyage (cartes de catégories dépliables, objets par ordre alphabétique, deux panneaux en paysage) ; un appui sur une catégorie ou un objet ouvre sa fiche, qui sert à créer comme à modifier. L'ordre des catégories se règle dans un mode « Ranger les catégories », liste compacte avec ▲ ▼ sur chaque ligne.
 - Toute suppression : confirmation qui chiffre la conséquence, puis bandeau « Annuler » pendant 10 secondes. Supprimer dans la bibliothèque ne touche jamais les voyages existants.
 
 **Données**
