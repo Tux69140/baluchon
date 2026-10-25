@@ -178,6 +178,34 @@ mod tests {
     }
 
     #[test]
+    fn une_categorie_modifiee_garde_son_rang() {
+        let (_d, base) = base_installee();
+        let mut c = contrat().bibliotheque.categories[0].clone();
+        let rang = c.ordre;
+        // L'écran peut envoyer un rang périmé après un rangement : le rang stocké fait foi.
+        c.ordre = rang + 7;
+        c.nom = "Renommée".into();
+        base.enregistrer_categorie(&c).unwrap();
+        let relue = base.lire_bibliotheque().unwrap().categories;
+        assert_eq!(relue[0].nom, "Renommée");
+        assert_eq!(relue[0].ordre, rang);
+    }
+
+    #[test]
+    fn un_objet_modifie_garde_sa_categorie() {
+        let (_d, base) = base_installee();
+        let mut o = contrat().bibliotheque.objets[0].clone();
+        let categorie = o.categorie_id.clone();
+        o.categorie_id = contrat().bibliotheque.categories[1].id.clone();
+        assert_ne!(o.categorie_id, categorie);
+        o.nom = "Renommé".into();
+        base.enregistrer_objet(&o).unwrap();
+        let relu = &base.lire_bibliotheque().unwrap().objets[0];
+        assert_eq!(relu.nom, "Renommé");
+        assert_eq!(relu.categorie_id, categorie);
+    }
+
+    #[test]
     fn un_objet_d_une_categorie_inconnue_est_refuse_sans_rien_ecrire() {
         let (_d, base) = base_installee();
         let mut o = contrat().bibliotheque.objets[0].clone();
