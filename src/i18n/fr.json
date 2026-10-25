@@ -133,6 +133,59 @@
     "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
   },
   "bibliothequeDeDepart": {
+    "groupes": [
+      {
+        "nom": "Activités",
+        "etiquettes": [
+          {
+            "cle": "randonnee",
+            "nom": "Randonnée"
+          },
+          {
+            "cle": "camping",
+            "nom": "Camping"
+          },
+          {
+            "cle": "plage",
+            "nom": "Plage"
+          }
+        ]
+      },
+      {
+        "nom": "Climat",
+        "etiquettes": [
+          {
+            "cle": "chaud",
+            "nom": "Chaud"
+          },
+          {
+            "cle": "froid",
+            "nom": "Froid"
+          },
+          {
+            "cle": "pluie",
+            "nom": "Pluie"
+          }
+        ]
+      },
+      {
+        "nom": "Hébergement",
+        "etiquettes": [
+          {
+            "cle": "hotel",
+            "nom": "Hôtel"
+          },
+          {
+            "cle": "tente",
+            "nom": "Tente"
+          },
+          {
+            "cle": "chez-l-habitant",
+            "nom": "Chez l’habitant"
+          }
+        ]
+      }
+    ],
     "categories": [
       {
         "nom": "Vêtements",
@@ -158,6 +211,34 @@
             "valeur": 1,
             "plafond": 1,
             "parPersonne": true
+          },
+          {
+            "nom": "Maillot de bain",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": true,
+            "etiquettes": ["plage"]
+          },
+          {
+            "nom": "Doudoune",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": true,
+            "etiquettes": ["froid"]
+          },
+          {
+            "nom": "Bonnet",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": true,
+            "etiquettes": ["froid"]
+          },
+          {
+            "nom": "Cape de pluie",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": true,
+            "etiquettes": ["pluie"]
           }
         ]
       },
@@ -177,6 +258,13 @@
             "regle": "fixe",
             "valeur": 1,
             "parPersonne": false
+          },
+          {
+            "nom": "Crème solaire",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": false,
+            "etiquettes": ["plage", "chaud"]
           }
         ]
       },
@@ -219,6 +307,32 @@
             "valeur": 1,
             "parPersonne": false,
             "note": "Une multiprise de voyage dépanne dans les chambres à prise unique."
+          }
+        ]
+      },
+      {
+        "nom": "Camping",
+        "icone": "tent",
+        "couleur": "abricot",
+        "etiquettes": ["camping", "tente"],
+        "objets": [
+          {
+            "nom": "Lampe frontale",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": true
+          },
+          {
+            "nom": "Sac de couchage",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": true
+          },
+          {
+            "nom": "Réchaud",
+            "regle": "fixe",
+            "valeur": 1,
+            "parPersonne": false
           }
         ]
       }

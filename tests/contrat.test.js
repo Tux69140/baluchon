@@ -14,6 +14,8 @@ const bibliotheque = construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId,
 
 test('la bibliothèque construite a les champs attendus par la base', () => {
   assert.deepEqual(champs(bibliotheque), champs(contrat.bibliotheque));
+  for (const g of bibliotheque.groupes) assert.deepEqual(champs(g), champs(contrat.bibliotheque.groupes[0]));
+  for (const e of bibliotheque.etiquettes) assert.deepEqual(champs(e), champs(contrat.bibliotheque.etiquettes[0]));
   for (const c of bibliotheque.categories) assert.deepEqual(champs(c), champs(contrat.bibliotheque.categories[0]));
   for (const o of bibliotheque.objets) assert.deepEqual(champs(o), champs(contrat.bibliotheque.objets[0]));
 });
@@ -22,10 +24,13 @@ test('le voyage généré a les champs attendus par la base', () => {
   const contenu = genererVoyage(
     bibliotheque,
     { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 },
+    { choisies: new Set([bibliotheque.etiquettes[0].id]), ecartes: new Set() },
     { nouvelId, maintenant: 'x' },
   );
   assert.deepEqual(champs(contenu), champs(contrat.voyage));
   assert.deepEqual(champs(contenu.voyage), champs(contrat.voyage.voyage));
+  assert.equal(contenu.etiquettes.length, 1);
+  for (const e of contenu.etiquettes) assert.deepEqual(champs(e), champs(contrat.voyage.etiquettes[0]));
   for (const c of contenu.categories) assert.deepEqual(champs(c), champs(contrat.voyage.categories[0]));
   for (const o of contenu.objets) assert.deepEqual(champs(o), champs(contrat.voyage.objets[0]));
 });

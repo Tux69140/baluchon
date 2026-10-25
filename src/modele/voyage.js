@@ -1,8 +1,8 @@
 // Un voyage : validation des informations saisies, génération depuis la bibliothèque, ordre de sa
 // liste et classement des voyages (docs/PLAN.md, phase 2).
 import { estDate } from './dates.js';
-import { dateLimite, joursEtNuits } from './periode.js';
-import { calculerQuantite } from './quantites.js';
+import { genererApercu, groupesAvecEtiquettes } from './inclusion.js';
+import { dateLimite } from './periode.js';
 import { ordreDansLeSac } from './sac.js';
 
 export const VOYAGEURS = Object.freeze({ min: 1, max: 20, parDefaut: 2 });
@@ -26,14 +26,14 @@ const parOrdre = (a, b) => a.ordre - b.ordre;
 const parNom = (a, b) => a.nom.localeCompare(b.nom);
 
 // Le voyage est une copie indépendante de la bibliothèque : il ne garde du modèle que son
-// identifiant d'origine (modeleId). Phase 2 : seuls les « toujours inclus » entrent ; les étiquettes
-// arrivent en phase 4. « À acheter » reprend « consommable » dès maintenant (écran Courses, phase 9).
-export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
+// identifiant d'origine (modeleId). L'inclusion vient de l'aperçu (une seule définition) ; `ecartes`
+// porte les objets modèles que l'utilisateur a décochés dans l'aperçu. Les étiquettes choisies sont
+// copiées dans l'ordre des groupes. « À acheter » reprend « consommable » (écran Courses, phase 9).
+export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouvelId, maintenant }) {
   const erreurs = validerInformations(infos);
   if (Object.keys(erreurs).length)
     throw Object.assign(new Error(`Voyage refusé : ${Object.values(erreurs).join(', ')}`), { erreurs });
   const { depart, retour, voyageurs } = infos;
-  const periode = { ...joursEtNuits(depart, retour), voyageurs };
   const voyage = {
     id: nouvelId(),
     nom: infos.nom.trim(),
@@ -43,14 +43,21 @@ export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
     voyageurs,
     modifieLe: maintenant,
   };
+  const etiquettes = groupesAvecEtiquettes(bibliotheque)
+    .flatMap(({ etiquettes: siennes }) => siennes)
+    .filter(e => choisies.has(e.id))
+    .map(({ id, nom }, ordre) => ({
+      id: nouvelId(),
+      voyageId: voyage.id,
+      modeleId: id,
+      nom,
+      ordre,
+      modifieLe: maintenant,
+    }));
   const categories = [];
   const objets = [];
-  for (const modele of [...bibliotheque.categories].sort(parOrdre)) {
-    if (!modele.toujoursIncluse) continue;
-    const retenus = bibliotheque.objets
-      .filter(o => o.categorieId === modele.id && o.toujoursInclus)
-      .map(o => ({ o, quantite: calculerQuantite(o, periode) }))
-      .filter(({ quantite }) => quantite > 0);
+  for (const { categorie: modele, objets: lignes } of genererApercu(bibliotheque, infos, choisies)) {
+    const retenus = lignes.filter(({ objet }) => !ecartes.has(objet.id));
     if (!retenus.length) continue;
     const { nom, icone, couleur, ordre } = modele;
     const categorie = {
@@ -64,7 +71,7 @@ export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
       modifieLe: maintenant,
     };
     categories.push(categorie);
-    for (const { o, quantite } of retenus)
+    for (const { objet: o, quantite } of retenus)
       objets.push({
         id: nouvelId(),
         voyageId: voyage.id,
@@ -85,7 +92,7 @@ export function genererVoyage(bibliotheque, infos, { nouvelId, maintenant }) {
         modifieLe: maintenant,
       });
   }
-  return { voyage, categories, objets };
+  return { voyage, etiquettes, categories, objets };
 }
 
 // La liste d'un voyage à l'écran : catégories dans l'ordre de la bibliothèque, objets par nom,

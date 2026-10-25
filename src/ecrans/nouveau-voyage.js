@@ -170,7 +170,12 @@ export const ecranNouveauVoyage = {
       if (erreurs.voyageurs) return message('creation', erreurs.voyageurs);
       enregistrement = true;
       try {
-        const contenu = genererVoyage(bibliotheque, infos, { nouvelId, maintenant: new Date().toISOString() });
+        const contenu = genererVoyage(
+          bibliotheque,
+          infos,
+          { choisies: new Set(), ecartes: new Set() },
+          { nouvelId, maintenant: new Date().toISOString() },
+        );
         await stockage.creerVoyage(contenu);
         // Remplacer l'adresse : le retour depuis la liste du voyage mène à Mes voyages, pas au formulaire.
         remplacerAdresse(`#/voyage/${contenu.voyage.id}`);

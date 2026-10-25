@@ -14,14 +14,15 @@ function compteur() {
   let n = 0;
   return () => `id-${++n}`;
 }
-const categorie = (id, nom, ordre, toujoursIncluse = true) => ({
+const categorie = (id, nom, ordre, etiquettes = []) => ({
   id,
   nom,
   icone: 'package',
   couleur: 'ciel',
   ordre,
-  toujoursIncluse,
+  toujoursIncluse: etiquettes.length === 0,
   modifieLe: 'x',
+  etiquettes,
 });
 const objet = (id, categorieId, nom, regle, valeur, autres = {}) => ({
   id,
@@ -32,25 +33,38 @@ const objet = (id, categorieId, nom, regle, valeur, autres = {}) => ({
   plafond: null,
   parPersonne: false,
   consommable: false,
-  toujoursInclus: true,
+  toujoursInclus: !autres.etiquettes?.length,
   note: '',
   modifieLe: 'x',
+  etiquettes: [],
   ...autres,
 });
 // Catégories rangées dans le désordre : l'ordre de la bibliothèque doit être respecté.
 const bibliotheque = () => ({
+  groupes: [
+    { id: 'g-activites', nom: 'Activités', ordre: 0, modifieLe: 'x' },
+    { id: 'g-climat', nom: 'Climat', ordre: 1, modifieLe: 'x' },
+  ],
+  etiquettes: [
+    { id: 'e-ski', groupeId: 'g-activites', nom: 'Ski', ordre: 0, modifieLe: 'x' },
+    { id: 'e-camping', groupeId: 'g-activites', nom: 'Camping', ordre: 1, modifieLe: 'x' },
+    { id: 'e-pluie', groupeId: 'g-climat', nom: 'Pluie', ordre: 0, modifieLe: 'x' },
+  ],
   categories: [
     categorie('c-ali', 'Alimentation', 1),
     categorie('c-vet', 'Vêtements', 0),
     categorie('c-nuit', 'Nuit', 2),
-    categorie('c-ski', 'Ski', 3, false),
+    categorie('c-ski', 'Ski', 3, ['e-ski']),
+    categorie('c-camping', 'Camping', 4, ['e-camping']),
   ],
   objets: [
     objet('o-repas', 'c-ali', 'Repas', 'par_jour', 2, { parPersonne: true, consommable: true, note: 'Midi et soir.' }),
     objet('o-dentifrice', 'c-vet', 'Dentifrice', 'fixe', 1),
     objet('o-pyjama', 'c-nuit', 'Pyjama', 'par_nuit', 1, { plafond: 1, parPersonne: true }),
-    objet('o-parapluie', 'c-vet', 'Parapluie', 'fixe', 1, { toujoursInclus: false }),
+    objet('o-parapluie', 'c-vet', 'Parapluie', 'fixe', 1, { etiquettes: ['e-pluie'] }),
     objet('o-skis', 'c-ski', 'Skis', 'fixe', 1),
+    objet('o-lampe', 'c-camping', 'Lampe frontale', 'fixe', 1),
+    objet('o-rechaud', 'c-camping', 'Réchaud', 'fixe', 1),
   ],
 });
 const infos = (autres = {}) => ({
@@ -61,7 +75,9 @@ const infos = (autres = {}) => ({
   voyageurs: 2,
   ...autres,
 });
-const generer = (i = infos()) => genererVoyage(bibliotheque(), i, { nouvelId: compteur(), maintenant: MAINTENANT });
+const SANS = { choisies: new Set(), ecartes: new Set() };
+const generer = (i = infos(), choix = SANS) =>
+  genererVoyage(bibliotheque(), i, choix, { nouvelId: compteur(), maintenant: MAINTENANT });
 
 test('le nombre de voyageurs par défaut est 2', () => {
   assert.equal(VOYAGEURS.parDefaut, 2);
@@ -108,6 +124,61 @@ test('seuls les « toujours inclus » entrent, dans des catégories elles-mêmes
     objets.some(o => o.nom === 'Parapluie' || o.nom === 'Skis'),
     false,
   );
+});
+
+test('avec des étiquettes choisies, leurs catégories et objets entrent aussi', () => {
+  const { categories, objets } = generer(infos(), { choisies: new Set(['e-camping', 'e-pluie']), ecartes: new Set() });
+  assert.deepEqual(
+    categories.map(c => c.nom),
+    ['Vêtements', 'Alimentation', 'Nuit', 'Camping'],
+  );
+  assert.ok(objets.some(o => o.nom === 'Parapluie'));
+  assert.equal(
+    objets.some(o => o.nom === 'Skis'),
+    false,
+  );
+});
+
+test('un objet écarté n’entre pas ; une catégorie dont tout est écarté non plus', () => {
+  const choisies = new Set(['e-camping']);
+  const sans = generer(infos(), { choisies, ecartes: new Set(['o-rechaud']) });
+  assert.deepEqual(
+    sans.objets.filter(o => o.nom === 'Réchaud'),
+    [],
+  );
+  assert.ok(sans.objets.some(o => o.nom === 'Lampe frontale'));
+  const tout = generer(infos(), { choisies, ecartes: new Set(['o-lampe', 'o-rechaud']) });
+  assert.equal(
+    tout.categories.some(c => c.nom === 'Camping'),
+    false,
+  );
+});
+
+test('le voyage garde une copie des étiquettes choisies, dans l’ordre des groupes', () => {
+  const contenu = generer(infos(), { choisies: new Set(['e-pluie', 'e-camping']), ecartes: new Set() });
+  assert.deepEqual(
+    contenu.etiquettes.map(e => ({ ...e, id: undefined })),
+    [
+      {
+        id: undefined,
+        voyageId: contenu.voyage.id,
+        modeleId: 'e-camping',
+        nom: 'Camping',
+        ordre: 0,
+        modifieLe: MAINTENANT,
+      },
+      {
+        id: undefined,
+        voyageId: contenu.voyage.id,
+        modeleId: 'e-pluie',
+        nom: 'Pluie',
+        ordre: 1,
+        modifieLe: MAINTENANT,
+      },
+    ],
+  );
+  assert.equal(new Set(contenu.etiquettes.map(e => e.id)).size, 2);
+  assert.deepEqual(generer().etiquettes, []);
 });
 
 test('un objet à 0 est écarté, et une catégorie restée vide aussi', () => {
@@ -158,7 +229,7 @@ test('le voyage est une copie : champs copiés, modèle d’origine noté, marqu
 
 test('changer la bibliothèque après coup ne change pas le voyage', () => {
   const biblio = bibliotheque();
-  const contenu = genererVoyage(biblio, infos(), { nouvelId: compteur(), maintenant: MAINTENANT });
+  const contenu = genererVoyage(biblio, infos(), SANS, { nouvelId: compteur(), maintenant: MAINTENANT });
   biblio.objets[0].nom = 'Repas renommé';
   biblio.categories[0].nom = 'Autre nom';
   assert.ok(contenu.objets.some(o => o.nom === 'Repas'));
