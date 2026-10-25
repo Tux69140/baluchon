@@ -132,14 +132,14 @@ L'assistant ajoute une étape par groupe, où l'on touche des puces. Une rangée
 ### Critères d'acceptation
 
 - [x] Les maquettes de l'assistant et de l'aperçu sont validées par le chef de projet avant tout code (2026-10-25, `docs/maquettes/assistant/`).
-- [ ] Un objet entre s'il est « toujours inclus » ou si au moins une de ses étiquettes est cochée, et seulement si sa catégorie entre aussi.
-- [ ] Un objet désigné par deux étiquettes cochées n'apparaît qu'une fois.
-- [ ] Un objet décoché dans l'aperçu, ou dont la catégorie est décochée, est absent du voyage créé.
-- [ ] Revenir de l'aperçu à l'étape Informations puis avancer à nouveau conserve tous les choix.
-- [ ] Après un changement d'étiquettes, de dates ou de voyageurs, la fenêtre nomme les objets écartés ; « Les garder écartés » et « Les remettre dans la liste » font chacun ce qu'ils disent ; sans changement, elle n'apparaît pas.
-- [ ] Le retour système ramène à l'étape précédente ; depuis Informations, il demande confirmation si quelque chose a été saisi.
-- [ ] L'aperçu vide affiche son explication et un moyen de revenir aux étiquettes ; « Créer le voyage » y est grisé.
-- [ ] Les étiquettes du voyage créé s'affichent dans l'en-tête de son écran et survivent à la fermeture de l'appli.
+- [x] Un objet entre s'il est « toujours inclus » ou si au moins une de ses étiquettes est cochée, et seulement si sa catégorie entre aussi.
+- [x] Un objet désigné par deux étiquettes cochées n'apparaît qu'une fois.
+- [x] Un objet décoché dans l'aperçu, ou dont la catégorie est décochée, est absent du voyage créé.
+- [x] Revenir de l'aperçu à l'étape Informations puis avancer à nouveau conserve tous les choix.
+- [x] Après un changement d'étiquettes, de dates ou de voyageurs, la fenêtre nomme les objets écartés ; « Les garder écartés » et « Les remettre dans la liste » font chacun ce qu'ils disent ; sans changement, elle n'apparaît pas.
+- [x] Le retour système ramène à l'étape précédente ; depuis Informations, il demande confirmation si quelque chose a été saisi.
+- [x] L'aperçu vide affiche son explication et un moyen de revenir aux étiquettes ; « Créer le voyage » y est grisé.
+- [x] Les étiquettes du voyage créé s'affichent dans l'en-tête de son écran et survivent à la fermeture de l'appli.
 
 ## Bloquée par
 
