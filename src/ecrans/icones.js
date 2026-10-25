@@ -1,11 +1,6 @@
-// Les pictos Phosphor (MIT, docs/DESIGN.md « Iconography ») : Duotone dans les pavés de catégorie,
-// Bold dans l'interface. Seuls les fichiers importés ici sont embarqués dans l'appli. Le catalogue
-// complet des catégories (environ 80 pictos) arrive en phase 5.
-import tShirt from '@phosphor-icons/core/duotone/t-shirt-duotone.svg?raw';
-import tooth from '@phosphor-icons/core/duotone/tooth-duotone.svg?raw';
-import forkKnife from '@phosphor-icons/core/duotone/fork-knife-duotone.svg?raw';
-import identificationCard from '@phosphor-icons/core/duotone/identification-card-duotone.svg?raw';
-import tent from '@phosphor-icons/core/duotone/tent-duotone.svg?raw';
+// Les pictos Phosphor (MIT, docs/DESIGN.md « Iconography ») : Duotone dans les pavés de catégorie
+// (le catalogue de 80 pictos vit dans pictos.js), Bold dans l'interface. Seuls les fichiers importés
+// sont embarqués dans l'appli.
 import caretLeft from '@phosphor-icons/core/bold/caret-left-bold.svg?raw';
 import caretRight from '@phosphor-icons/core/bold/caret-right-bold.svg?raw';
 import plus from '@phosphor-icons/core/bold/plus-bold.svg?raw';
@@ -19,15 +14,18 @@ import checkCircle from '@phosphor-icons/core/bold/check-circle-bold.svg?raw';
 import x from '@phosphor-icons/core/bold/x-bold.svg?raw';
 import listChecks from '@phosphor-icons/core/bold/list-checks-bold.svg?raw';
 import tag from '@phosphor-icons/core/bold/tag-bold.svg?raw';
+import list from '@phosphor-icons/core/bold/list-bold.svg?raw';
+import pencilSimple from '@phosphor-icons/core/bold/pencil-simple-bold.svg?raw';
+import arrowsDownUp from '@phosphor-icons/core/bold/arrows-down-up-bold.svg?raw';
+import arrowUp from '@phosphor-icons/core/bold/arrow-up-bold.svg?raw';
+import arrowDown from '@phosphor-icons/core/bold/arrow-down-bold.svg?raw';
+import magnifyingGlass from '@phosphor-icons/core/bold/magnifying-glass-bold.svg?raw';
+import books from '@phosphor-icons/core/bold/books-bold.svg?raw';
+import gearSix from '@phosphor-icons/core/bold/gear-six-bold.svg?raw';
+import suitcaseRolling from '@phosphor-icons/core/bold/suitcase-rolling-bold.svg?raw';
+import plusCircle from '@phosphor-icons/core/bold/plus-circle-bold.svg?raw';
+import { svgPicto } from './pictos.js';
 import { echapper } from './html.js';
-
-const CATEGORIES = {
-  't-shirt': tShirt,
-  tooth,
-  'fork-knife': forkKnife,
-  'identification-card': identificationCard,
-  tent,
-};
 
 const INTERFACE = {
   retour: caretLeft,
@@ -44,6 +42,16 @@ const INTERFACE = {
   boucle: checkCircle,
   apercu: listChecks,
   etiquette: tag,
+  menu: list,
+  modifier: pencilSimple,
+  ranger: arrowsDownUp,
+  monter: arrowUp,
+  descendre: arrowDown,
+  chercher: magnifyingGlass,
+  bibliotheque: books,
+  reglages: gearSix,
+  voyages: suitcaseRolling,
+  nouveau: plusCircle,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.
@@ -55,4 +63,4 @@ export const iconeInterface = nom => enveloppe(INTERFACE[nom]);
 // vient du nom de la couleur (jetons.css), l'icône est à l'encre marine. Une icône inconnue laisse
 // le pavé vide plutôt que de casser l'écran.
 export const paveCategorie = ({ icone, couleur }) =>
-  `<span class="pave" data-couleur="${echapper(couleur)}" aria-hidden="true">${CATEGORIES[icone] ?? ''}</span>`;
+  `<span class="pave" data-couleur="${echapper(couleur)}" aria-hidden="true">${svgPicto(icone)}</span>`;

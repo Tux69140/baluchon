@@ -383,5 +383,456 @@
         ]
       }
     ]
+  },
+  "menu": {
+    "ouvrir": "Menu",
+    "fermer": "Fermer le menu",
+    "reglages": "Réglages"
+  },
+  "reglages": {
+    "titre": "Réglages",
+    "bibliotheque": "Bibliothèque",
+    "bibliothequeAide": "Les catégories et les objets proposés à chaque nouveau voyage"
+  },
+  "bibliotheque": {
+    "titre": "Bibliothèque",
+    "categories": {
+      "one": "{n} catégorie",
+      "other": "{n} catégories"
+    },
+    "objets": {
+      "one": "{n} objet",
+      "other": "{n} objets"
+    },
+    "toujoursIncluse": "Toujours incluse",
+    "ranger": "Ranger les catégories",
+    "termine": "Terminé",
+    "rangerAide": "Cet ordre est repris dans l’aperçu et dans les nouveaux voyages.",
+    "monter": "Monter {nom}",
+    "descendre": "Descendre {nom}",
+    "place": "{nom} : place {n} sur {total}",
+    "nouvelleCategorie": "Nouvelle catégorie",
+    "modifierCategorie": "Modifier la catégorie {nom}",
+    "modifier": "Modifier",
+    "ajouterObjet": "Ajouter un objet",
+    "consommable": "consommable",
+    "erreurEnregistrement": "La modification n’a pas pu être enregistrée. Votre saisie est gardée ; réessayez.",
+    "erreurOrdre": "Le nouvel ordre n’a pas pu être enregistré. Rien n’a changé ; réessayez."
+  },
+  "modele": {
+    "nom": "Nom",
+    "enregistrer": "Enregistrer",
+    "inclusion": "Dans quels voyages ?",
+    "toujoursIncluse": "Toujours incluse",
+    "toujoursInclus": "Toujours inclus",
+    "selonEtiquettes": "Selon les étiquettes",
+    "abandon": {
+      "titre": "Abandonner les modifications ?",
+      "continuer": "Continuer la saisie",
+      "abandonner": "Abandonner"
+    },
+    "categorie": {
+      "nouvelle": "Nouvelle catégorie",
+      "creer": "Créer la catégorie",
+      "apparence": "Picto et couleur",
+      "changerPicto": "Changer de picto",
+      "couleur": "Couleur",
+      "aideToujours": "Proposée dans chaque nouveau voyage.",
+      "aideEtiquettes": "Proposée si l’une de ces étiquettes est cochée : {etiquettes}.",
+      "choisirEtiquettes": "Choisissez les étiquettes qui la feront proposer.",
+      "abandonTexte": "Ce que vous avez changé dans « {nom} » ne sera pas enregistré.",
+      "abandonNouvelle": "La nouvelle catégorie ne sera pas créée.",
+      "erreurs": {
+        "nomManquant": "Donnez un nom à cette catégorie.",
+        "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours incluse »."
+      }
+    },
+    "objet": {
+      "nouveau": "Nouvel objet",
+      "ajouter": "Ajouter l’objet",
+      "dans": "Dans « {categorie} »",
+      "quantite": "Quantité",
+      "fixe": "Fixe",
+      "parJour": "Par jour",
+      "parNuit": "Par nuit",
+      "nombre": "Nombre",
+      "chaqueJour": "Chaque jour",
+      "chaqueNuit": "Chaque nuit",
+      "moins": "{libelle} : un de moins",
+      "plus": "{libelle} : un de plus",
+      "plafond": "Plafond",
+      "plafondAucun": "aucun",
+      "plafondAuPlus": "au plus",
+      "plafondAuPlusParPersonne": "au plus, par personne",
+      "auPlus": "Au plus",
+      "parPersonne": "Par personne",
+      "partage": "Partagé",
+      "exemple": "Pour {jours}, {nuits} et {voyageurs} : {quantite}.",
+      "aIndiquer": "Quantité à indiquer",
+      "aIndiquerAide": "Elle se calcule pour chaque voyage.",
+      "consommable": "Consommable",
+      "consommableAide": "à racheter avant chaque voyage",
+      "aideToujours": "Proposé dès que la catégorie « {categorie} » l’est.",
+      "aideEtiquettes": "Proposé si l’une de ces étiquettes est cochée : {etiquettes}.",
+      "choisirEtiquettes": "Choisissez les étiquettes qui le feront proposer.",
+      "note": "Note",
+      "noteAide": "facultative, lue pendant le voyage",
+      "abandonTexte": "Ce que vous avez changé dans « {nom} » ne sera pas enregistré.",
+      "abandonNouveau": "Le nouvel objet ne sera pas ajouté.",
+      "erreurs": {
+        "nomManquant": "Donnez un nom à cet objet.",
+        "valeurManquante": "Indiquez une quantité, de 1 à 999.",
+        "plafondManquant": "Indiquez un plafond, de 1 à 999, ou retirez-le.",
+        "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours inclus »."
+      }
+    }
+  },
+  "catalogue": {
+    "titre": "Choisir un picto",
+    "chercher": "Chercher un picto",
+    "indication": "Chercher : tente, soleil, repas…",
+    "compte": {
+      "one": "{n} picto",
+      "other": "{n} pictos"
+    },
+    "trouves": {
+      "one": "{n} picto pour « {mot} »",
+      "other": "{n} pictos pour « {mot} »"
+    },
+    "aucun": "Aucun picto ne correspond à « {mot} ». Essayez un autre mot : tente, soleil, repas…",
+    "themes": {
+      "transport": "Transport",
+      "bagages": "Bagages et papiers",
+      "vetements": "Vêtements",
+      "toilette": "Toilette et santé",
+      "alimentation": "Alimentation",
+      "pleinAir": "Plein air",
+      "meteo": "Météo",
+      "mer": "Mer et sport",
+      "electronique": "Électronique et loisirs",
+      "maison": "Maison et famille"
+    },
+    "pictos": {
+      "airplane": {
+        "nom": "Avion",
+        "mots": "avion vol aéroport"
+      },
+      "train": {
+        "nom": "Train",
+        "mots": "train gare"
+      },
+      "bus": {
+        "nom": "Car",
+        "mots": "bus car autocar"
+      },
+      "car-profile": {
+        "nom": "Voiture",
+        "mots": "voiture auto route"
+      },
+      "bicycle": {
+        "nom": "Vélo",
+        "mots": "vélo bicyclette"
+      },
+      "sailboat": {
+        "nom": "Bateau",
+        "mots": "bateau voile mer croisière"
+      },
+      "map-trifold": {
+        "nom": "Carte",
+        "mots": "carte plan itinéraire"
+      },
+      "compass": {
+        "nom": "Boussole",
+        "mots": "boussole orientation"
+      },
+      "globe-hemisphere-west": {
+        "nom": "Étranger",
+        "mots": "monde étranger international"
+      },
+      "suitcase-rolling": {
+        "nom": "Valise",
+        "mots": "valise bagage"
+      },
+      "backpack": {
+        "nom": "Sac à dos",
+        "mots": "sac dos"
+      },
+      "identification-card": {
+        "nom": "Papiers",
+        "mots": "papiers identité passeport carte"
+      },
+      "credit-card": {
+        "nom": "Carte bancaire",
+        "mots": "carte bancaire paiement"
+      },
+      "wallet": {
+        "nom": "Portefeuille",
+        "mots": "portefeuille argent"
+      },
+      "money": {
+        "nom": "Argent",
+        "mots": "argent billets espèces devises"
+      },
+      "ticket": {
+        "nom": "Billets",
+        "mots": "billet ticket réservation"
+      },
+      "key": {
+        "nom": "Clés",
+        "mots": "clés clé maison"
+      },
+      "lock": {
+        "nom": "Cadenas",
+        "mots": "cadenas antivol sécurité"
+      },
+      "t-shirt": {
+        "nom": "Vêtements",
+        "mots": "vêtements habits t-shirt"
+      },
+      "pants": {
+        "nom": "Pantalon",
+        "mots": "pantalon"
+      },
+      "hoodie": {
+        "nom": "Pull",
+        "mots": "pull sweat polaire"
+      },
+      "sneaker": {
+        "nom": "Chaussures",
+        "mots": "chaussures baskets"
+      },
+      "boot": {
+        "nom": "Bottes",
+        "mots": "bottes chaussures marche"
+      },
+      "sock": {
+        "nom": "Chaussettes",
+        "mots": "chaussettes"
+      },
+      "baseball-cap": {
+        "nom": "Casquette",
+        "mots": "casquette chapeau"
+      },
+      "sunglasses": {
+        "nom": "Lunettes de soleil",
+        "mots": "lunettes soleil"
+      },
+      "tooth": {
+        "nom": "Toilette",
+        "mots": "toilette dents hygiène"
+      },
+      "shower": {
+        "nom": "Douche",
+        "mots": "douche"
+      },
+      "hand-soap": {
+        "nom": "Savon",
+        "mots": "savon lavage"
+      },
+      "drop": {
+        "nom": "Eau",
+        "mots": "eau goutte"
+      },
+      "toilet-paper": {
+        "nom": "Papier toilette",
+        "mots": "papier toilette"
+      },
+      "scissors": {
+        "nom": "Ciseaux",
+        "mots": "ciseaux couture"
+      },
+      "pill": {
+        "nom": "Médicaments",
+        "mots": "médicaments pilule santé"
+      },
+      "first-aid-kit": {
+        "nom": "Trousse de secours",
+        "mots": "secours santé pharmacie trousse"
+      },
+      "bandaids": {
+        "nom": "Pansements",
+        "mots": "pansements blessure"
+      },
+      "fork-knife": {
+        "nom": "Repas",
+        "mots": "repas manger alimentation nourriture"
+      },
+      "coffee": {
+        "nom": "Café",
+        "mots": "café thé boisson petit-déjeuner"
+      },
+      "cooking-pot": {
+        "nom": "Popote",
+        "mots": "cuisine casserole popote"
+      },
+      "hamburger": {
+        "nom": "Pique-nique",
+        "mots": "pique-nique sandwich"
+      },
+      "bread": {
+        "nom": "Pain",
+        "mots": "pain boulangerie"
+      },
+      "orange": {
+        "nom": "Fruits",
+        "mots": "fruits orange"
+      },
+      "carrot": {
+        "nom": "Légumes",
+        "mots": "légumes carotte"
+      },
+      "wine": {
+        "nom": "Vin",
+        "mots": "vin apéritif boisson"
+      },
+      "basket": {
+        "nom": "Panier",
+        "mots": "panier courses marché"
+      },
+      "tent": {
+        "nom": "Camping",
+        "mots": "tente camping bivouac"
+      },
+      "campfire": {
+        "nom": "Feu de camp",
+        "mots": "feu camp bivouac"
+      },
+      "mountains": {
+        "nom": "Montagne",
+        "mots": "montagne randonnée sommet"
+      },
+      "person-simple-hike": {
+        "nom": "Randonnée",
+        "mots": "randonnée marche trek"
+      },
+      "tree-evergreen": {
+        "nom": "Forêt",
+        "mots": "forêt sapin arbre"
+      },
+      "leaf": {
+        "nom": "Nature",
+        "mots": "nature feuille"
+      },
+      "flashlight": {
+        "nom": "Lampe",
+        "mots": "lampe torche frontale"
+      },
+      "binoculars": {
+        "nom": "Jumelles",
+        "mots": "jumelles observation"
+      },
+      "knife": {
+        "nom": "Couteau",
+        "mots": "couteau canif"
+      },
+      "sun": {
+        "nom": "Soleil",
+        "mots": "soleil été chaud"
+      },
+      "umbrella": {
+        "nom": "Parapluie",
+        "mots": "parapluie pluie"
+      },
+      "cloud-rain": {
+        "nom": "Pluie",
+        "mots": "pluie nuage averse"
+      },
+      "snowflake": {
+        "nom": "Neige",
+        "mots": "neige froid hiver"
+      },
+      "wind": {
+        "nom": "Vent",
+        "mots": "vent"
+      },
+      "moon-stars": {
+        "nom": "Nuit",
+        "mots": "nuit dormir étoiles"
+      },
+      "waves": {
+        "nom": "Mer",
+        "mots": "mer plage vagues océan"
+      },
+      "person-simple-swim": {
+        "nom": "Baignade",
+        "mots": "baignade nage maillot piscine"
+      },
+      "lifebuoy": {
+        "nom": "Bouée",
+        "mots": "bouée sécurité"
+      },
+      "person-simple-ski": {
+        "nom": "Ski",
+        "mots": "ski hiver neige"
+      },
+      "soccer-ball": {
+        "nom": "Ballon",
+        "mots": "ballon foot sport jeux"
+      },
+      "tennis-ball": {
+        "nom": "Tennis",
+        "mots": "tennis raquette sport"
+      },
+      "battery-charging": {
+        "nom": "Électronique",
+        "mots": "électronique batterie charge"
+      },
+      "plug": {
+        "nom": "Prise",
+        "mots": "prise adaptateur chargeur"
+      },
+      "device-mobile": {
+        "nom": "Téléphone",
+        "mots": "téléphone portable mobile"
+      },
+      "laptop": {
+        "nom": "Ordinateur",
+        "mots": "ordinateur portable travail"
+      },
+      "camera": {
+        "nom": "Appareil photo",
+        "mots": "photo appareil caméra"
+      },
+      "headphones": {
+        "nom": "Casque audio",
+        "mots": "casque écouteurs musique"
+      },
+      "music-notes": {
+        "nom": "Musique",
+        "mots": "musique"
+      },
+      "book-open": {
+        "nom": "Lecture",
+        "mots": "livre lecture"
+      },
+      "cards": {
+        "nom": "Jeux",
+        "mots": "jeux cartes société"
+      },
+      "baby": {
+        "nom": "Bébé",
+        "mots": "bébé enfant"
+      },
+      "paw-print": {
+        "nom": "Animaux",
+        "mots": "animal chien chat"
+      },
+      "gift": {
+        "nom": "Cadeaux",
+        "mots": "cadeau"
+      },
+      "house": {
+        "nom": "Maison",
+        "mots": "maison logement"
+      },
+      "bed": {
+        "nom": "Couchage",
+        "mots": "lit dormir couchage"
+      },
+      "toolbox": {
+        "nom": "Outils",
+        "mots": "outils bricolage"
+      }
+    }
   }
 }
