@@ -1,7 +1,7 @@
 // Un voyage : validation des informations saisies, génération depuis la bibliothèque, ordre de sa
 // liste et classement des voyages (docs/PLAN.md, phase 2).
 import { estDate } from './dates.js';
-import { genererApercu, groupesAvecEtiquettes } from './inclusion.js';
+import { etiquettesChoisies, genererApercu } from './inclusion.js';
 import { dateLimite } from './periode.js';
 import { ordreDansLeSac } from './sac.js';
 
@@ -43,17 +43,14 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouv
     voyageurs,
     modifieLe: maintenant,
   };
-  const etiquettes = groupesAvecEtiquettes(bibliotheque)
-    .flatMap(({ etiquettes: siennes }) => siennes)
-    .filter(e => choisies.has(e.id))
-    .map(({ id, nom }, ordre) => ({
-      id: nouvelId(),
-      voyageId: voyage.id,
-      modeleId: id,
-      nom,
-      ordre,
-      modifieLe: maintenant,
-    }));
+  const etiquettes = etiquettesChoisies(bibliotheque, choisies).map(({ id, nom }, ordre) => ({
+    id: nouvelId(),
+    voyageId: voyage.id,
+    modeleId: id,
+    nom,
+    ordre,
+    modifieLe: maintenant,
+  }));
   const categories = [];
   const objets = [];
   for (const { categorie: modele, objets: lignes } of genererApercu(bibliotheque, infos, choisies)) {

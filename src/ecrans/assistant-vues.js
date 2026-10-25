@@ -4,7 +4,7 @@
 // le contenu de l'aperçu du modèle (genererApercu).
 import { remplir } from '../i18n/traduction.js';
 import { joursEtNuits } from '../modele/periode.js';
-import { etatCoche, etatEtape, raisonVide } from './assistant.js';
+import { etatCoche, etatEtape, idsDeLApercu, raisonVide } from './assistant.js';
 import { vueFenetre } from './fenetre.js';
 import { decrireRegle, detailsVoyage, formaterJourCourt, pluriel } from './format.js';
 import { echapper } from './html.js';
@@ -171,14 +171,14 @@ export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, reven
             <p id="raison-vide">${t('nouveauVoyage.vide.texte')}</p>
             <button type="button" class="bouton bouton-secondaire" data-aller="${revenir}">${iconeInterface('precedent')}${t('nouveauVoyage.vide.revenir')}</button>
           </section>`;
-  const { retenus } = etatCoche(
-    apercu.flatMap(({ objets }) => objets.map(({ objet }) => objet.id)),
-    ecartes,
-  );
-  const total = apercu.reduce((somme, { objets }) => somme + objets.length, 0);
-  const titre = remplir(pluriel(t, 'nouveauVoyage.retenus', retenus, langue), { total });
-  const rappel = [echapper(infos.nom), detailsVoyage(t, infos, langue)];
-  if (etiquettes.length) rappel.push(etiquettes.map(e => echapper(e.nom)).join(', '));
+  const ids = idsDeLApercu(apercu);
+  const { retenus } = etatCoche(ids, ecartes);
+  const titre = remplir(pluriel(t, 'nouveauVoyage.retenus', retenus, langue), { total: ids.length });
+  const rappel = remplir(t(etiquettes.length ? 'nouveauVoyage.rappelEtiquettes' : 'nouveauVoyage.rappel'), {
+    nom: echapper(infos.nom),
+    details: detailsVoyage(t, infos, langue),
+    etiquettes: etiquettes.map(e => echapper(e.nom)).join(t('nouveauVoyage.separateurEtiquettes')),
+  });
   const message =
     raison === 'toutEcarte'
       ? `
@@ -188,7 +188,7 @@ export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, reven
           <section class="apercu" aria-labelledby="titre-etape">
             <div class="apercu-tete">
               <h3 class="etape-titre" id="titre-etape" tabindex="-1">${titre}</h3>
-              <p class="apercu-rappel">${rappel.join(' · ')}</p>
+              <p class="apercu-rappel">${rappel}</p>
               <p class="etape-aide">${t('nouveauVoyage.aideApercu')}</p>
             </div>${message}
             <div class="apercu-categories">${apercu.map(c => vueCategorie(t, c, ecartes)).join('')}

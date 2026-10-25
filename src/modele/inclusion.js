@@ -20,6 +20,11 @@ export function groupesAvecEtiquettes({ groupes, etiquettes }) {
     .filter(({ etiquettes: siennes }) => siennes.length);
 }
 
+// Les étiquettes choisies, dans l'ordre des groupes puis de leurs étiquettes : celui du rappel de
+// l'aperçu et des étiquettes copiées dans le voyage.
+export const etiquettesChoisies = (bibliotheque, choisies) =>
+  groupesAvecEtiquettes(bibliotheque).flatMap(({ etiquettes }) => etiquettes.filter(e => choisies.has(e.id)));
+
 // Ce que le voyage contiendrait : catégories dans l'ordre de la bibliothèque, objets par nom, avec
 // leur quantité. Un objet n'entre que si sa catégorie entre ; un objet à 0 n'apparaît pas, ni une
 // catégorie restée vide. `infos` est supposée valide (l'assistant l'a vérifiée avant).

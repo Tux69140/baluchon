@@ -19,10 +19,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { calme } from './outils/attente.mjs';
+import { attendreQue, calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, RACINE, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
-import { attendreQue } from './outils/attente.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const MAINTENANT = new Date('2026-10-06T10:00:00');

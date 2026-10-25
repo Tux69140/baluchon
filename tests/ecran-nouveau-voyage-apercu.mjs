@@ -323,7 +323,12 @@ try {
         if (etat === 'apercu') for (const nom of ['Gourde', 'Bonnet']) await page.click(`[data-objet="${idDe(nom)}"]`);
         if (etat === 'tout-ecarte')
           for (const tete of await page.locator('[data-categorie][role=checkbox]').all()) await tete.click();
-        await page.evaluate(() => window.scrollTo(0, 0));
+        // Le haut de l'étape (titre, raison) en vue, et la souris du test loin des lignes (pas de survol).
+        await page.evaluate(() => {
+          window.scrollTo(0, 0);
+          document.querySelector('.etape-panneau').scrollTop = 0;
+        });
+        await page.mouse.move(0, 0);
         await calme(page);
         await page.screenshot({ path: join(CAPTURES, `assistant-${etat}-${format}-${NOMS_THEME[theme]}.png`) });
         await verifierCommandes(page, juge, `${cas}, ${etat}`);
@@ -340,5 +345,5 @@ try {
 }
 juge.conclure(
   'Aperçu de l’assistant',
-  'contenu calculé, cases, colonnes, création et étiquettes, double appui, panne, tout écarté, vide, 4 formats × 2 thèmes',
+  'contenu, cases, colonnes, création et étiquettes, double appui, panne, tout écarté, vide, 4 formats × 2 thèmes',
 );

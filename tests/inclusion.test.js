@@ -1,7 +1,7 @@
 // L'inclusion par étiquettes et l'aperçu (docs/PRD.md, « Inclusion »).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { estInclus, genererApercu, groupesAvecEtiquettes } from '../src/modele/inclusion.js';
+import { estInclus, etiquettesChoisies, genererApercu, groupesAvecEtiquettes } from '../src/modele/inclusion.js';
 
 const categorie = (id, nom, ordre, etiquettes = []) => ({
   id,
@@ -110,4 +110,13 @@ test('les groupes sont rangés par ordre, leurs étiquettes aussi, et un groupe 
       ['Climat', ['Chaud', 'Froid', 'Pluie']],
     ],
   );
+});
+
+test('les étiquettes choisies, dans l’ordre des groupes puis de leurs étiquettes', () => {
+  const choisies = new Set(['froid', 'plage', 'chaud', 'inconnue']);
+  assert.deepEqual(
+    etiquettesChoisies(bibliotheque(), choisies).map(e => e.nom),
+    ['Plage', 'Chaud', 'Froid'],
+  );
+  assert.deepEqual(etiquettesChoisies(bibliotheque(), new Set()), []);
 });

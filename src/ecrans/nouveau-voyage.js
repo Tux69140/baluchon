@@ -7,7 +7,7 @@
 // objets écartés) vit dans src/ecrans/assistant.js, le dessin dans src/ecrans/assistant-vues.js.
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
-import { genererApercu, groupesAvecEtiquettes } from '../modele/inclusion.js';
+import { etiquettesChoisies, genererApercu } from '../modele/inclusion.js';
 import { VOYAGEURS, genererVoyage, validerInformations } from '../modele/voyage.js';
 import {
   allerA,
@@ -17,6 +17,7 @@ import {
   creerAssistant,
   entrerDansApercu,
   etapesDe,
+  idsDeLApercu,
   raisonVide,
   signatureDe,
 } from './assistant.js';
@@ -45,8 +46,6 @@ const CHAMPS = ['nom', 'dates'];
 const COTE_MIN_FENETRE = 600;
 // La fenêtre fermée, le focus revient au bouton de Mes voyages qui l'ouvre.
 const OUVRE_LA_FENETRE = 'a[href="#/nouveau-voyage"]';
-
-const idsDe = apercu => apercu.flatMap(({ objets }) => objets.map(({ objet }) => objet.id));
 
 export const ecranNouveauVoyage = {
   nom: 'nouveau-voyage',
@@ -98,9 +97,6 @@ export const ecranNouveauVoyage = {
 
     const infosValides = () => !Object.keys(validerInformations(infos)).length;
     const apercuCourant = () => genererApercu(bibliotheque, infos, etat.choisies);
-    // Les étiquettes choisies, dans l'ordre des groupes : celui du rappel de l'aperçu et du voyage.
-    const etiquettesChoisies = () =>
-      groupesAvecEtiquettes(bibliotheque).flatMap(({ etiquettes }) => etiquettes.filter(e => etat.choisies.has(e.id)));
 
     // Le champ que décrit un message est dit invalide au lecteur d'écran tant que le message est là.
     const message = (id, code) => {
@@ -135,7 +131,10 @@ export const ecranNouveauVoyage = {
 
     function peindrePied() {
       const grise = etat.etape === derniere && raisonVide(apercuCourant(), etat.ecartes) !== null;
+      // Le bandeau d'une panne survit au repeint du pied : seuls son délai ou un nouvel essai l'ôtent.
+      const alerte = pied.querySelector('.alerte');
       pied.innerHTML = vuePied(t, { indice: etat.etape, derniere, enFenetre, grise });
+      if (alerte) pied.append(alerte);
       ombrerPied();
     }
 
@@ -144,7 +143,7 @@ export const ecranNouveauVoyage = {
         apercu: apercuCourant(),
         ecartes: etat.ecartes,
         infos,
-        etiquettes: etiquettesChoisies(),
+        etiquettes: etiquettesChoisies(bibliotheque, etat.choisies),
         // « Revenir aux étiquettes » : la première étape de groupe, ou Informations s'il n'y en a pas.
         revenir: derniere > 1 ? 1 : 0,
       });
@@ -217,7 +216,7 @@ export const ecranNouveauVoyage = {
       }
       etat = allerA(etat, indice);
       if (indice === derniere)
-        etat = entrerDansApercu(etat, signatureDe(infos, etat.choisies), idsDe(apercuCourant())).etat;
+        etat = entrerDansApercu(etat, signatureDe(infos, etat.choisies), idsDeLApercu(apercuCourant())).etat;
       peindreEtape();
     }
 
@@ -320,6 +319,11 @@ export const ecranNouveauVoyage = {
     for (const zone of [corps, panneau]) zone.addEventListener('scroll', ombrerPied);
     for (const evenement of ['scroll', 'resize'])
       window.addEventListener(evenement, ombrerPied, { signal: fin.signal });
+    // Ce qui reste à défiler change aussi sans défilement : mois de cinq ou six semaines, fenêtre qui
+    // rapetisse (barres système, clavier).
+    const tailles = new ResizeObserver(ombrerPied);
+    for (const zone of [corps, element('.calendrier')]) tailles.observe(zone);
+    fin.signal.addEventListener('abort', () => tailles.disconnect());
 
     rafraichirInfos();
     peindreEtape({ focus: false });

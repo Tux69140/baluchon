@@ -2,9 +2,10 @@
 // Le 6 octobre 2026 (horloge fixée), bibliothèque de départ installée par l'appli :
 // - parcours complet depuis Mes voyages (un voyage passé) par le bouton flottant : nom, destination,
 //   10 puis 13 octobre sur le calendrier (résumé « 4 jours, 3 nuits », jours 11 et 12 grisés),
-//   « Voir l'aperçu » puis « Créer le voyage » (phase 4) → la liste du voyage : Repas 16, T-shirts 8, Pyjama 2, Dentifrice 1 ; elle survit au
-//   rechargement ; le retour mène à Mes voyages, où le voyage figure dans « À venir » ; la
-//   bibliothèque n'est pas installée deux fois (mêmes catégories, mêmes identifiants) ;
+//   « Voir l'aperçu » puis « Créer le voyage » (phase 4) → la liste du voyage : Repas 16, T-shirts 8,
+//   Pyjama 2, Dentifrice 1 ; elle survit au rechargement ; le retour mène à Mes voyages, où le voyage
+//   figure dans « À venir » ; la bibliothèque n'est pas installée deux fois (mêmes catégories, mêmes
+//   identifiants) ;
 // - le résumé des dates dit la période en toutes lettres, comme la spec ;
 // - aller-retour dans la journée (deux appuis sur le 10) : pas de Pyjama ;
 // - choix A : après le 15, un appui sur le 12 en fait le nouveau départ ; un appui après un voyage

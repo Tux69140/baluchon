@@ -8,9 +8,9 @@
 //   - en paysage d'au moins 800 px de large (1280 × 800 avec et sans les barres de la tablette,
 //     1440 × 900) : deux colonnes égales, les champs et les voyageurs à gauche, les dates à droite, le
 //     calendrier de la largeur de sa colonne ; la fenêtre fait au plus 880 px de large et tout y tient
-//     sans défiler, dans un mois de cinq comme de six semaines (sous les barres de la tablette, depuis
-//     la rangée d'étapes de la phase 4, six semaines défilent d'au plus une semaine) ; « Suivant » sans
-//     rien : rien ne bouge ;
+//     sans défiler, dans un mois de cinq comme de six semaines, sauf à 1280 × 800 (rangée d'étapes de la
+//     phase 4, largeur de la phase 2) où six semaines défilent de la valeur mesurée, l'ombre du pied le
+//     signalant ; « Suivant » sans rien : rien ne bouge ;
 //     à 800 × 600, le seuil, deux colonnes de jours de 44 px, dont le corps défile ;
 //   - la hauteur ne compte pas (un clavier ouvert la divise par deux) : fenêtre d'ordinateur basse
 //     (1280 × 500), toujours deux colonnes, c'est le corps de la fenêtre qui défile ; à 1280 × 650 sous
@@ -38,6 +38,11 @@ const MAINTENANT = new Date('2026-10-06T10:00:00');
 const BARRES_TABLETTE = { haut: 40, bas: 48 };
 const MARGE = 24;
 const ORDINATEUR = { ecran: { width: 1920, height: 1080 }, tactile: false };
+// Depuis la rangée d'étapes (phase 4), la fenêtre garde la largeur de la phase 2 (décision du
+// contrôleur R5, 2026-10-25) : en paysage, six semaines défilent un peu. Valeurs mesurées (px) ; seuls
+// ces cas défilent, de leur valeur au plus, plus MARGE_MESURE (arrondis du rendu des polices).
+const DEFILEMENT_MESURE = { 'tablette-paysage': { novembre: 6, barres: 56 } };
+const MARGE_MESURE = 4;
 // mode : deux colonnes ou une dans la fenêtre modale, écran plein sur une ou deux colonnes ; ecran :
 // l'écran de l'appareil quand il diffère de la fenêtre ; defile : le corps de la fenêtre défile
 // (témoin) ; capture : le nom de la capture des dates.
@@ -102,6 +107,7 @@ const mesurer = page =>
       modale: Boolean(fenetre?.matches(':modal')),
       boiteFenetre: fenetre?.getBoundingClientRect().toJSON(),
       corpsDefile: corps ? corps.scrollHeight - corps.clientHeight : 0,
+      dessous: document.querySelector('.formulaire-pied').hasAttribute('data-dessous'),
       // Le contenu de l'écran plein du téléphone : sa largeur, marges intérieures ôtées.
       contenu: ecran && ecran.getBoundingClientRect().width - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight),
       nom: boite('#nom'),
@@ -136,6 +142,16 @@ function verifierFenetre(m, juge, cas, marge = MARGE) {
   );
   juge.exige(m.creerVisible, `${cas} : « Suivant » ne se voit pas sans défiler`);
   juge.exige(m.defilementPage === 0, `${cas} : la page défile derrière la fenêtre (${m.defilementPage} px)`);
+}
+
+// Le corps de la fenêtre défile d'au plus `tolere` px, et le pied porte son ombre (data-dessous)
+// si et seulement s'il reste à défiler.
+function verifierDefilement(m, juge, cas, tolere = 0) {
+  juge.exige(m.corpsDefile <= tolere, `${cas} : le corps de la fenêtre défile de ${m.corpsDefile} px (≤ ${tolere})`);
+  juge.exige(
+    m.dessous === m.corpsDefile > 1,
+    `${cas} : ombre du pied ${m.dessous} alors que le corps défile de ${m.corpsDefile} px`,
+  );
 }
 
 function verifierDeuxColonnes(m, juge, cas) {
@@ -249,9 +265,14 @@ try {
       );
       juge.exige(m.defilementCote <= 0, `${cas} : la page défile de côté (${m.defilementCote} px)`);
       verifier(m, juge, cas, marge);
-      if (defile) juge.exige(m.corpsDefile > 0, `${cas} : témoin, le corps de la fenêtre devrait défiler`);
+      const mesure = DEFILEMENT_MESURE[format];
+      const tolere = cle => (mesure?.[cle] ?? 0) + (mesure?.[cle] ? MARGE_MESURE : 0);
+      if (defile) {
+        juge.exige(m.corpsDefile > 0, `${cas} : témoin, le corps de la fenêtre devrait défiler`);
+        verifierDefilement(m, juge, cas, Infinity);
+      }
       if (mode === 'deux' && !defile) {
-        juge.exige(m.corpsDefile <= 0, `${cas}, octobre : le corps de la fenêtre défile de ${m.corpsDefile} px`);
+        verifierDefilement(m, juge, `${cas}, octobre`);
         if (capture === 'paysage') await photo('vide');
         // « Suivant » sans rien : les messages prennent leur place réservée, rien ne bouge.
         const places = () =>
@@ -286,8 +307,7 @@ try {
         m = await mesurer(page);
         juge.exige(m.semaines === 6, `${cas} : témoin, novembre compte ${m.semaines} semaines`);
         verifierDeuxColonnes(m, juge, `${cas}, novembre`);
-        if (!defile)
-          juge.exige(m.corpsDefile <= 0, `${cas}, novembre : le corps de la fenêtre défile de ${m.corpsDefile} px`);
+        if (!defile) verifierDefilement(m, juge, `${cas}, novembre`, tolere('novembre'));
         await poserBarres(page);
         m = await mesurer(page);
         verifierDeuxColonnes(m, juge, `${cas}, novembre, barres de la tablette`);
@@ -295,13 +315,8 @@ try {
           m.joursFautifs.length === 0,
           `${cas}, novembre, barres de la tablette : jours fautifs ${[...new Set(m.joursFautifs)].join(', ')}`,
         );
-        // Depuis la rangée d'étapes (phase 4), six semaines ne tiennent plus sous les barres de la
-        // tablette : les jours restent à 44 px et le corps défile, d'au plus une semaine.
         if (format === 'tablette-paysage')
-          juge.exige(
-            m.corpsDefile <= 46,
-            `${cas}, novembre, barres de la tablette : le corps de la fenêtre défile de ${m.corpsDefile} px`,
-          );
+          verifierDefilement(m, juge, `${cas}, novembre, barres de la tablette`, tolere('barres'));
       }
       juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
       await contexte.close();

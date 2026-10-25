@@ -103,6 +103,9 @@
       "other": "{n} objets retenus sur {total}"
     },
     "aideApercu": "Décochez ce que vous n’emporterez pas. Rien n’est créé avant « Créer le voyage ».",
+    "rappel": "{nom} · {details}",
+    "rappelEtiquettes": "{nom} · {details} · {etiquettes}",
+    "separateurEtiquettes": ", ",
     "vide": {
       "titre": "Aucun objet ne correspond",
       "texte": "Aucune catégorie de votre bibliothèque n’est « toujours incluse » ni liée aux étiquettes choisies. Choisissez d’autres étiquettes, ou liez des catégories à celles-ci dans la bibliothèque.",

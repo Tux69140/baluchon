@@ -157,14 +157,24 @@ try {
       v.etape === 'infos' && v.focus === 'nom',
       `Suivant sans informations : étape ${v.etape}, focus ${v.focus}`,
     );
-    v = await aller(page, '.etape:nth-child(3) button', { force: true });
-    juge.exige(v.etape === 'infos', `une étape fermée touchée mène à « ${v.etape} »`);
 
     await remplirInformations(page);
     r = await rangee(page);
     juge.exige(
       r[4].etat === 'ouverte' && r[4].fermee === null,
       `informations valides : aperçu ${JSON.stringify(r[4])}`,
+    );
+    // Informations valides : seule la garde de l'étape fermée retient l'appui sur Climat (le témoin
+    // positif, la rangée qui mène à l'aperçu, vient plus bas).
+    v = await aller(page, '.etape:nth-child(3) button', { force: true });
+    const sansMessage = await page.evaluate(
+      () =>
+        !document.querySelector('#erreur-nom').textContent.trim() &&
+        !document.querySelector('#erreur-dates').textContent.trim(),
+    );
+    juge.exige(
+      v.etape === 'infos' && v.titre === null && sansMessage,
+      `Climat, fermée, touchée : étape « ${v.etape} », titre « ${v.titre} », sans message ${sansMessage}`,
     );
     const ordre = await voyageursAvantDates(page);
     juge.exige(ordre.document && ordre.aGauche, `paysage : voyageurs après les dates ${JSON.stringify(ordre)}`);
@@ -292,6 +302,7 @@ try {
           await page.click('[data-etiquette]:nth-child(2)');
         }
         await page.evaluate(() => window.scrollTo(0, 0));
+        await page.mouse.move(0, 0);
         await calme(page);
         await page.screenshot({ path: join(CAPTURES, `assistant-${etape}-${format}-${NOMS_THEME[theme]}.png`) });
         await verifierCommandes(page, juge, `${cas}, ${etape}`);
@@ -312,5 +323,5 @@ try {
 }
 juge.conclure(
   'Étapes de l’assistant',
-  'rangée, Suivant et Précédent, puces, hauteur gardée, légende et pied au téléphone, sans groupe, 4 formats × 2 thèmes',
+  'rangée, Suivant, Précédent, puces, hauteur gardée, légende et pied au téléphone, sans groupe, 4 formats × 2 thèmes',
 );

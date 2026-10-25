@@ -129,18 +129,18 @@
    La hauteur ne compte pas : un clavier ouvert prend la moitié de l'écran de la tablette en paysage,
    et la disposition ne doit pas basculer pendant la saisie ; c'est alors le corps de la fenêtre qui
    défile, le pied restant visible.
-   Dans la fenêtre, la largeur d'une colonne suit la hauteur de l'écran, pour que six semaines de
-   cercles tiennent sans défiler : un jour est large d'un septième de la colonne, marges du calendrier
-   ôtées (18 px), et une semaine a 2 px de plus ; d'où colonne = 7/6 × (hauteur des six semaines) +
-   4 px. Les six semaines ont ce que laissent les barres système et tout le reste de la fenêtre
-   (marges, en-tête, rangée d'étapes, titre et résumé des dates, mois, jours de la semaine, message,
-   pied : 498 px, mesurés). Au plus 392 px (fenêtre de 880 px) ; au moins sept jours de 44 px, quitte
-   à défiler (tablette en paysage sous ses barres système, depuis la rangée d'étapes de la phase 4). */
+   Dans la fenêtre, la largeur d'une colonne suit la hauteur de l'écran : un jour est large d'un
+   septième de la colonne, marges du calendrier ôtées (18 px), et une semaine a 2 px de plus ; d'où
+   colonne = 7/6 × (hauteur des six semaines) + 4 px. Les six semaines ont ce que laissent les barres
+   système et le reste de la fenêtre de la phase 2 (418 px, mesurés). Au plus 392 px (fenêtre de
+   880 px) ; au moins sept jours de 44 px. La rangée d'étapes de la phase 4 s'y ajoute sans changer la
+   largeur (décision du contrôleur, 2026-10-25, d'après la maquette validée) : en paysage, l'étape
+   Informations défile alors un peu, et l'ombre du pied le signale. */
 @media (orientation: landscape) and (min-width: 800px) {
   .fenetre:has(> .formulaire) {
     --colonne: clamp(
       7 * var(--cible) + 18px,
-      7 / 6 * (100dvh - var(--zone-haut) - var(--zone-bas) - 498px) + 4px,
+      7 / 6 * (100dvh - var(--zone-haut) - var(--zone-bas) - 418px) + 4px,
       392px
     );
     --largeur-fenetre: calc(2 * var(--colonne) + 3 * var(--e-xl));
