@@ -9,6 +9,10 @@
 //   à Mes voyages, d'où la touche demande la fermeture (témoin : aucune fermeture demandée avant).
 // - Voyage ouvert depuis Mes voyages, fiche d'un objet ouverte : la touche ferme la fiche, puis ramène à
 //   Mes voyages, puis demande la fermeture.
+// - Double appui rapide (deux appuis avant que le premier recul n'ait abouti) sur Informations, avec
+//   une saisie : le second appui est absorbé ; la question d'abandon est posée, l'assistant et sa
+//   saisie restent (sans cela, le second recul menait à Mes voyages, saisie perdue, sans question).
+//   Témoin : l'appui suivant ferme la question, et elle seule.
 // Téléphone et tablette en paysage (fenêtre de l'assistant).
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -137,6 +141,36 @@ async function essaiAssistant(format) {
   await contexte.close();
 }
 
+// Deux appuis dans la même tâche (avant le premier popstate), sur Informations, un nom saisi.
+async function essaiDoubleAppui(format) {
+  const cas = `double appui, ${format}`;
+  const ouvert = await ouvrirAvecTouche(cas, format, DONNEES_ASSISTANT, MAINTENANT);
+  if (!ouvert) return;
+  const { contexte, page, erreurs } = ouvert;
+  await page.click('.bouton-flottant');
+  await attendreEcran(page, 'nouveau-voyage');
+  await page.fill('#nom', 'Vercors');
+  await page.evaluate(() => {
+    window.toucheRetour();
+    window.toucheRetour();
+  });
+  const q = await attendreQuestion(page);
+  const apres = await etat(page, serveur.url);
+  const nom = await page.evaluate(() => document.querySelector('#nom')?.value ?? null);
+  juge.exige(
+    q?.titre === abandon.titre && apres.ecran === 'nouveau-voyage' && nom === 'Vercors' && apres.fermetures === 0,
+    `${cas} : ${vu(q)} ${vu(apres)} nom ${vu(nom)}`,
+  );
+  await toucheRetour(page);
+  const fermee = await etat(page, serveur.url);
+  juge.exige(
+    fermee.ecran === 'nouveau-voyage' && !fermee.question && fermee.etape === 'infos' && fermee.fermetures === 0,
+    `${cas}, touche sur la question : ${vu(fermee)}`,
+  );
+  juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
+  await contexte.close();
+}
+
 // Un voyage ouvert depuis Mes voyages, la fiche d'un objet ouverte.
 async function essaiVoyage(format) {
   const cas = `voyage, ${format}`;
@@ -169,6 +203,7 @@ async function essaiVoyage(format) {
 try {
   for (const format of ['telephone', 'tablette-paysage']) {
     await essaiAssistant(format);
+    await essaiDoubleAppui(format);
     await essaiVoyage(format);
   }
 } finally {
@@ -177,5 +212,5 @@ try {
 }
 juge.conclure(
   'Touche retour d’Android',
-  'l’assistant recule d’une étape, la question d’abandon se ferme seule, la fiche puis le voyage se ferment, l’appli ne se ferme qu’à l’accueil',
+  'l’assistant recule d’une étape, la question d’abandon se ferme seule, la fiche puis le voyage se ferment, double appui absorbé, l’appli ne se ferme qu’à l’accueil',
 );

@@ -20,11 +20,16 @@ export function creerStockageTauri() {
 }
 
 // Un gestionnaire inscrit, Tauri ne recule ni ne ferme plus de lui-même à l'appui sur la touche retour
-// (@tauri-apps/api/app, depuis 2.9) : gerer() décide, et l'appli se ferme quand il rend false
-// (permission core:app:allow-exit, src-tauri/capabilities/default.json). Sur l'ordinateur, la touche
-// n'existe pas et Tauri refuse l'inscription : sans conséquence.
+// (@tauri-apps/api/app, depuis 2.9) : gerer() décide, et l'appli se ferme quand il rend false.
+// Sur l'ordinateur (Debian), la touche n'existe pas : Tauri refuse l'inscription, c'est attendu. Sur
+// Android, un refus rendrait la touche à la WebView (étapes sautées) : on le signale. La plateforme se
+// lit dans l'identité du moteur de pages (« Android »), sans greffon de plus.
 export function ecouterRetourTauri(gerer) {
   return onBackButtonPress(() => {
+    // exit ne peut pas être refusé : la capacité de l'appli l'autorise (core:app:allow-exit,
+    // src-tauri/capabilities/default.json). Un appui à l'accueil ferme donc toujours l'appli.
     if (!gerer()) exit().catch(console.error);
-  }).catch(() => {});
+  }).catch(erreur => {
+    if (/Android/i.test(navigator.userAgent)) console.warn('Touche retour non prise en charge :', erreur);
+  });
 }

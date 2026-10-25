@@ -120,11 +120,20 @@ async function demarrer() {
     );
   // La touche retour d'Android remonte l'historique par la page elle-même (src/ecrans/retour-systeme.js) :
   // tout ce qui suit le retour (niveaux, garde de l'assistant, routeur) reste fondé sur popstate.
+  // history.back() n'aboutit qu'au popstate suivant : d'ici là, history.state est l'ancien, et un second
+  // appui reculerait encore (sur Informations, il menait à Mes voyages sans demander s'il fallait
+  // abandonner la saisie). Les appuis reçus pendant un recul sont donc absorbés. Ce popstate-ci est
+  // écouté après celui des fenêtres (src/ecrans/fenetre.js, inscrit à son chargement) : l'état est
+  // alors celui de l'étape atteinte, garde et question reposées.
+  let reculEnCours = false;
+  window.addEventListener('popstate', () => (reculEnCours = false));
   ecouterRetourSysteme(() => {
+    if (reculEnCours) return true;
     if (!retourDansLAppli(history.state)) return false;
+    reculEnCours = true;
     history.back();
     return true;
-  });
+  }).catch(console.error);
   window.addEventListener('hashchange', afficher);
   // Tout lien vers l'accueil y revient en remontant l'historique ; il reste un vrai lien (clavier).
   // Un écran qui le prend en charge (l'assistant demande d'abord s'il faut abandonner la saisie) le
