@@ -70,8 +70,9 @@ export function remettre(etat, ids) {
   return { ...etat, ecartes };
 }
 
-// Les identifiants des objets modèles d'un aperçu (genererApercu), catégorie par catégorie.
-export const idsDeLApercu = apercu => apercu.flatMap(({ objets }) => objets.map(({ objet }) => objet.id));
+// Les identifiants des objets modèles d'une catégorie de l'aperçu (genererApercu), puis de tout l'aperçu.
+export const idsDeCategorie = ({ objets }) => objets.map(({ objet }) => objet.id);
+export const idsDeLApercu = apercu => apercu.flatMap(idsDeCategorie);
 
 export function raisonVide(apercu, ecartes) {
   const ids = idsDeLApercu(apercu);

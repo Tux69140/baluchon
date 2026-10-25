@@ -4,7 +4,7 @@
 import { joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
 
-const parOrdre = (a, b) => a.ordre - b.ordre;
+export const parOrdre = (a, b) => a.ordre - b.ordre;
 
 // Entre s'il est « toujours inclus », ou si au moins une de ses étiquettes est choisie.
 export function estInclus({ toujours, etiquettes }, choisies) {

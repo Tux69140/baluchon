@@ -4,7 +4,7 @@
 // le contenu de l'aperçu du modèle (genererApercu).
 import { remplir } from '../i18n/traduction.js';
 import { joursEtNuits } from '../modele/periode.js';
-import { etatCoche, etatEtape, idsDeLApercu, raisonVide } from './assistant.js';
+import { etatCoche, etatEtape, idsDeCategorie, idsDeLApercu, raisonVide } from './assistant.js';
 import { vueFenetre } from './fenetre.js';
 import { decrireRegle, detailsVoyage, formaterJourCourt, pluriel } from './format.js';
 import { echapper } from './html.js';
@@ -132,11 +132,9 @@ const boite = coche =>
 
 // Une carte par catégorie : sa tête est la case de toute la catégorie, chaque ligne celle d'un objet.
 // Un objet écarté reste à sa place, barré et atténué, pour être recoché d'un appui.
-function vueCategorie(t, { categorie, objets }, ecartes) {
-  const { retenus, coche } = etatCoche(
-    objets.map(({ objet }) => objet.id),
-    ecartes,
-  );
+function vueCategorie(t, ligneDeCategorie, ecartes) {
+  const { categorie, objets } = ligneDeCategorie;
+  const { retenus, coche } = etatCoche(idsDeCategorie(ligneDeCategorie), ecartes);
   const lignes = objets.map(({ objet, quantite }) => {
     const sienne = ecartes.has(objet.id) ? 'vide' : 'plein';
     const nom = remplir(t('nouveauVoyage.case.objet'), { nom: echapper(objet.nom), quantite });

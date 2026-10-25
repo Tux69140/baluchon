@@ -1,7 +1,7 @@
 // Un voyage : validation des informations saisies, génération depuis la bibliothèque, ordre de sa
 // liste et classement des voyages (docs/PLAN.md, phase 2).
 import { estDate } from './dates.js';
-import { etiquettesChoisies, genererApercu } from './inclusion.js';
+import { etiquettesChoisies, genererApercu, parOrdre } from './inclusion.js';
 import { dateLimite } from './periode.js';
 import { ordreDansLeSac } from './sac.js';
 
@@ -22,7 +22,6 @@ export function validerInformations({ nom, depart, retour, voyageurs }) {
   return erreurs;
 }
 
-const parOrdre = (a, b) => a.ordre - b.ordre;
 const parNom = (a, b) => a.nom.localeCompare(b.nom);
 
 // Le voyage est une copie indépendante de la bibliothèque : il ne garde du modèle que son

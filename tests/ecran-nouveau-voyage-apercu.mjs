@@ -11,6 +11,8 @@
 // - double appui sur « Créer le voyage » : un seul voyage ;
 // - panne d'enregistrement (téléphone, fenêtre) : bandeau d'alerte en bas, on reste sur l'aperçu, rien
 //   ne bouge, « Créer le voyage » reste visible ; la panne levée, un second appui crée un seul voyage ;
+// - « × » touché pendant l'enregistrement (écriture ralentie) : aucune question d'abandon, on arrive sur le
+//   voyage créé ;
 // - tout écarté : la raison est écrite (#raison-vide), « Créer le voyage » grisé et sans effet ;
 //   témoin : une catégorie recochée le rend actif ;
 // - bibliothèque dont rien n'entre : mascotte et message (.apercu-vide), « Créer » grisé, et « Revenir
@@ -228,6 +230,11 @@ try {
       stockage.voyages.length === 1 && voyage.nom === NOM && etiquettes.join(',') === CHOISIES.join(','),
       `voyage créé : ${stockage.voyages.length} voyage(s), « ${voyage.nom} », étiquettes ${etiquettes}`,
     );
+    // Les étiquettes survivent à la fermeture de l'appli : après rechargement, le voyage les affiche.
+    await page.reload();
+    await attendreEcran(page, 'voyage');
+    const puces = await page.$$eval('ul.etiquettes-voyage li', l => l.map(x => x.textContent.trim()));
+    juge.exige(puces.join(',') === CHOISIES.join(','), `après rechargement : puces ${puces}`);
     juge.exige(erreurs.length === 0, `création : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }
@@ -299,6 +306,28 @@ try {
     await attendreEcran(page, 'voyage');
     const n = (await lireStockage(page)).voyages?.length;
     juge.exige(n === 1, `panne levée, ${format} : ${n} voyage(s) créé(s)`);
+    await contexte.close();
+  }
+
+  // Écriture lente : « × » touché pendant l'enregistrement ne pose pas la question d'abandon.
+  {
+    const { contexte, page } = await ouvrirAssistant(navigateur, serveur.url, {
+      taille: FORMATS['tablette-portrait'],
+      donnees: { lenteurs: ['creerVoyage'] },
+    });
+    await versApercu(page, { etiquettes: CHOISIES });
+    await page.click('[data-action="creer"]');
+    await attendreQue(page, () => typeof window.debloquerStockage === 'function');
+    await page.click('dialog[open] [data-fermer]');
+    await calme(page);
+    const pendant = await question(page);
+    juge.exige(pendant === null, `fermeture pendant l’enregistrement : question « ${pendant?.titre} »`);
+    await page.evaluate(() => window.debloquerStockage());
+    await attendreEcran(page, 'voyage');
+    juge.exige(
+      (await question(page)) === null && (await lireStockage(page)).voyages?.length === 1,
+      'fermeture pendant l’enregistrement : le voyage créé n’est pas ouvert seul',
+    );
     await contexte.close();
   }
 

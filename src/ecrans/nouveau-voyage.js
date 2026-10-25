@@ -19,6 +19,7 @@ import {
   creerAssistant,
   entrerDansApercu,
   etapesDe,
+  idsDeCategorie,
   idsDeLApercu,
   raisonVide,
   remettre,
@@ -283,9 +284,10 @@ export const ecranNouveauVoyage = {
 
     // « × », Échap, « Annuler », le lien « Mes voyages » ou le retour système depuis Informations :
     // avec une saisie, « Abandonner ce nouveau voyage ? » d'abord. La question s'ouvre sans attendre :
-    // appelée par la garde du retour, elle se pose au-dessus d'elle.
+    // appelée par la garde du retour, elle se pose au-dessus d'elle. Pendant l'enregistrement, rien :
+    // le voyage est déjà en train d'être créé, l'abandonner n'aurait plus de sens.
     async function demanderFermeture() {
-      if (questionOuverte) return;
+      if (questionOuverte || enregistrement) return;
       if (!saisieCommencee(infos, etat)) return fermer();
       const reponse = await poser({
         titre: t('nouveauVoyage.abandon.titre'),
@@ -422,11 +424,7 @@ export const ecranNouveauVoyage = {
         etat = basculerObjet(etat, objet);
         repeindreApercu(`[data-objet="${CSS.escape(objet)}"]`);
       } else if (categorie) {
-        const { objets } = apercuCourant().find(c => c.categorie.id === categorie);
-        etat = basculerCategorie(
-          etat,
-          objets.map(l => l.objet.id),
-        );
+        etat = basculerCategorie(etat, idsDeCategorie(apercuCourant().find(c => c.categorie.id === categorie)));
         repeindreApercu(`[data-categorie="${CSS.escape(categorie)}"]`);
       } else if (action === 'precedent') aller(etat.etape - 1);
       else if (action === 'apercu') aller(derniere);
@@ -450,8 +448,8 @@ export const ecranNouveauVoyage = {
     rafraichirInfos();
     peindreEtape({ focus: false });
 
-    // « Annuler », « × » et Échap ferment la fenêtre comme le lien « Mes voyages ». À l'ouverture, le
-    // focus va au nom à la souris ; au doigt, au titre.
+    // « Annuler », « × » et Échap posent d'abord la question quand quelque chose est saisi, comme le lien
+    // « Mes voyages ». À l'ouverture, le focus va au nom à la souris ; au doigt, au titre.
     if (!enFenetre) return;
     fermer = ouvrirFenetre(racine, { surFermeture: quitter, surGeste: demanderFermeture });
     focaliserInformations();

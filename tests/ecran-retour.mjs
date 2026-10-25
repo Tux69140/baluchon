@@ -9,7 +9,7 @@
 // Témoins : depuis un voyage ou le formulaire ouverts depuis Mes voyages, et depuis un voyage tout
 // juste créé, le retour ramène bien à Mes voyages.
 // Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : sans saisie, la fermer par Échap, « × »
-// ou « Annuler » mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes voyages » ; un
+// ou « Annuler » (fermeture directe, focus rendu au bouton « Nouveau voyage ») mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes voyages » ; un
 // appui sur le voile ne la ferme pas (un geste accidentel perdrait la saisie) ; trois appuis immédiats
 // sur « × » ne remontent pas plus loin que l'accueil ; ouverte directement par son adresse, elle se
 // ferme sur Mes voyages, et le retour quitte l'appli. Témoin : le retour système ferme la fenêtre ouverte
@@ -191,6 +191,19 @@ try {
     const temoin = await retourSysteme(page, serveur.url);
     const fenetre = await page.evaluate(() => Boolean(document.querySelector('dialog')));
     juge.exige(temoin === 'voyages' && !fenetre, `fenêtre : témoin, le retour mène à « ${temoin} » (${fenetre})`);
+    await contexte.close();
+  }
+  // Sans saisie, « Annuler » ferme tout de suite : pas de question, le focus revient au bouton « Nouveau voyage ».
+  {
+    const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.click('[data-action="fermer"]');
+    await attendreEcran(page, 'voyages');
+    const direct = await page.evaluate(() => ({
+      fenetre: Boolean(document.querySelector('dialog')),
+      focus: document.activeElement?.classList.contains('bouton-flottant'),
+    }));
+    juge.exige(!direct.fenetre && direct.focus, `« Annuler » sans saisie : ${JSON.stringify(direct)}`);
     await contexte.close();
   }
   // Avec une saisie, chaque geste pose la question : « Continuer la saisie » garde tout, « Abandonner »
