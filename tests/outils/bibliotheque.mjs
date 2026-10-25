@@ -2,12 +2,13 @@
 // Menu → Réglages → Bibliothèque, lire ce qu'il montre, l'ordre gardé par le stockage.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { remplir } from '../../src/i18n/traduction.js';
 import { attendreQue, calme } from './attente.mjs';
 import { FORMATS, RACINE, attendreEcran, lireStockage, ouvrir } from './page.mjs';
 
 export const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
-export const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
 export const compter = (cle, n) => remplir(fr.bibliotheque[cle][n === 1 ? 'one' : 'other'], { n });
+export { remplir };
 export const vu = e => JSON.stringify(e);
 // La bibliothèque de départ, dans son ordre.
 export const DEPART = ['Vêtements', 'Toilette', 'Alimentation', 'Papiers', 'Camping'];

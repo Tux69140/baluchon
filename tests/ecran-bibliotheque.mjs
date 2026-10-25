@@ -18,6 +18,7 @@ import { demarrerServeur } from './outils/serveur.mjs';
 import { construireBibliotheque } from '../src/modele/bibliotheque.js';
 import {
   DONNEES,
+  DEPART,
   TOUS_FORMATS,
   commande,
   compter,
@@ -31,7 +32,6 @@ import {
 } from './outils/bibliotheque.mjs';
 import { CAPTURES, NOMS_THEME, creerJuge, verifierBarres, verifierCommandes } from './outils/page.mjs';
 
-const DEPART = ['Vêtements', 'Toilette', 'Alimentation', 'Papiers', 'Camping'];
 const LARGES = new Set(['tablette-paysage', 'ordinateur']);
 
 // Une catégorie, son étiquette et son objet aux noms piégés (Review Focus 1), ajoutés à la

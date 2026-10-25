@@ -82,7 +82,8 @@ async function nouveauVoyage(page, nom, { camping }) {
     await page.click('[data-action="suivant"]');
     if (camping)
       for (const puce of await page.locator('.puce-etiquette').all())
-        if ((await puce.textContent()).trim() === 'Camping') await puce.click();
+        if ((await puce.textContent()).trim() === 'Camping' && (await puce.getAttribute('aria-pressed')) !== 'true')
+          await puce.click();
   }
   await calme(page);
   const apercu = await lireApercu(page);
