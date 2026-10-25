@@ -1,0 +1,45 @@
+/* Les questions posées par-dessus l'assistant « Nouveau voyage » (src/ecrans/nouveau-voyage.js) :
+   « Abandonner ce nouveau voyage ? » et « Objets écartés », d'après la maquette validée le 2026-10-25
+   (docs/maquettes/assistant/maquette.css). Ce sont des fenêtres de demander() (src/ecrans/fenetre.js),
+   posées dans document.body : elles se reconnaissent à leur contenu, ou à l'assistant ouvert dessous. */
+
+/* Objets écartés : un peu plus large qu'une confirmation, un nom et sa catégorie tiennent sur une ligne. */
+.confirmation:has(.liste-ecartes) {
+  --largeur-fenetre: 480px;
+}
+
+/* La liste défile d'elle-même si elle est longue : les deux réponses restent en vue. */
+.liste-ecartes {
+  max-height: 40vh;
+  margin: var(--e-md) var(--retrait-fenetre) 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--separation);
+  border-radius: var(--r-md);
+  list-style: none;
+}
+
+.liste-ecartes li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-md);
+  padding: 10px 14px;
+}
+
+.liste-ecartes li + li {
+  border-top: 1px solid var(--separation);
+}
+
+.liste-ecartes span {
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+/* Au téléphone, les deux réponses l'une sous l'autre, sur toute la largeur, comme dans la maquette. Les
+   confirmations des autres écrans (vider un objet) gardent leurs boutons côte à côte. */
+@media (max-width: 519px) {
+  html:has(.assistant) .confirmation .fenetre-pied > * {
+    flex: 1 1 100%;
+  }
+}

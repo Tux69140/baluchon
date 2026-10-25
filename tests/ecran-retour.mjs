@@ -8,17 +8,38 @@
 // - trois appuis immédiats sur le lien ne remontent pas plus loin que l'accueil.
 // Témoins : depuis un voyage ou le formulaire ouverts depuis Mes voyages, et depuis un voyage tout
 // juste créé, le retour ramène bien à Mes voyages.
-// Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : la fermer par Échap, « × » ou « Annuler »
-// mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes voyages » ; un appui sur le
-// voile ne la ferme pas (un geste accidentel perdrait la saisie) ; le focus revient au bouton qui l'a
-// ouverte ; trois appuis immédiats sur « × » ne remontent pas plus loin que l'accueil ; ouverte
-// directement par son adresse, elle se ferme sur Mes voyages, et le retour quitte l'appli. Témoin : le
-// retour système ferme la fenêtre ouverte depuis Mes voyages et ramène à Mes voyages.
+// Nouveau voyage en fenêtre modale (tablette, 2026-10-07) : sans saisie, la fermer par Échap, « × »
+// ou « Annuler » mène à Mes voyages, d'où le retour quitte l'appli, comme le lien « Mes voyages » ; un
+// appui sur le voile ne la ferme pas (un geste accidentel perdrait la saisie) ; trois appuis immédiats
+// sur « × » ne remontent pas plus loin que l'accueil ; ouverte directement par son adresse, elle se
+// ferme sur Mes voyages, et le retour quitte l'appli. Témoin : le retour système ferme la fenêtre ouverte
+// depuis Mes voyages et ramène à Mes voyages.
+// Phase 4 (docs/PRD.md, « Écrans et gestes », puce « Assistant ») : le retour système ramène à l'étape
+// précédente, de l'aperçu jusqu'à Informations ; là, avec une saisie, il demande « Abandonner ce
+// nouveau voyage ? ». Un retour pendant la question ne ferme qu'elle (Review Focus 4) ; « Continuer la
+// saisie » garde tout (nom, dates, étiquettes, objets écartés) ; « Abandonner » mène à Mes voyages, et
+// le retour suivant quitte l'appli. Saisie effacée : fermeture directe. Échap, « × », « Annuler » et le
+// lien « Mes voyages » (téléphone) posent la même question, et la fenêtre fermée par le navigateur se
+// rouvre pour la poser ; le focus revient au bouton qui a ouvert la fenêtre. Captures de la question, au téléphone et en tablette, claire et sombre.
+import { mkdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
-import { creerDepuisLAssistant } from './outils/assistant.mjs';
+import {
+  attendreQuestion,
+  creerDepuisLAssistant,
+  etapeAffichee,
+  ligneObjet,
+  question,
+  repondre,
+  retourDansLAssistant,
+  verifierQuestion,
+} from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
-import { FORMATS, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
+import { CAPTURES, FORMATS, NOMS_THEME, RACINE, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
+
+const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
+const { abandon } = fr.nouveauVoyage;
 
 const HORS = 'hors de l’appli';
 const MAINTENANT = new Date('2026-10-06T10:00:00');
@@ -51,12 +72,34 @@ async function retourSysteme(page, url) {
   return ecranAffiche(page, url);
 }
 
-// Les trois façons de fermer la fenêtre de Nouveau voyage (le retour système est le témoin).
-const FERMETURES = {
-  Échap: page => page.keyboard.press('Escape'),
-  '×': page => page.click('.bouton-fermer'),
-  Annuler: page => page.click('[data-action="fermer"]'),
-};
+// Les façons de fermer l'assistant : trois dans la fenêtre de la tablette, le lien au téléphone (le
+// retour système est le témoin).
+const FERMETURES = [
+  ['Échap', 'tablette-paysage', page => page.keyboard.press('Escape')],
+  ['×', 'tablette-paysage', page => page.click('.bouton-fermer')],
+  ['Annuler', 'tablette-paysage', page => page.click('[data-action="fermer"]')],
+  // Échap répété sans geste entre deux : le navigateur ferme la fenêtre de lui-même.
+  [
+    'le navigateur',
+    'tablette-paysage',
+    page => page.evaluate(() => document.querySelector('dialog.assistant').close()),
+  ],
+  ['Mes voyages', 'telephone', page => page.click('.lien-retour')],
+];
+const questionAbandon = q =>
+  q?.titre === abandon.titre &&
+  JSON.stringify(q.boutons) ===
+    JSON.stringify([
+      { texte: abandon.continuer, principal: false },
+      { texte: abandon.abandonner, principal: true },
+    ]);
+const lireSaisie = page =>
+  page.evaluate(() => ({
+    adresse: location.hash,
+    nom: document.querySelector('#nom')?.value,
+    fenetre: Boolean(document.querySelector('dialog.assistant[open]')),
+    dates: document.querySelector('#resume-dates')?.textContent,
+  }));
 
 async function depuisMesVoyages(navigateur, url, taille = FORMATS.telephone) {
   const ouvert = await ouvrir(navigateur, url, {
@@ -75,6 +118,8 @@ async function suivre(page, selecteur, ecran) {
   await page.click(selecteur);
   await attendreEcran(page, ecran);
 }
+
+const enClair = valeur => JSON.stringify(valeur);
 
 const juge = creerJuge();
 const serveur = await demarrerServeur();
@@ -152,23 +197,139 @@ try {
     juge.exige(temoin === 'voyages' && !fenetre, `fenêtre : témoin, le retour mène à « ${temoin} » (${fenetre})`);
     await contexte.close();
   }
-  for (const [geste, fermer] of Object.entries(FERMETURES)) {
-    const { contexte, page, erreurs } = await depuisMesVoyages(navigateur, serveur.url, FORMATS['tablette-paysage']);
+  // Avec une saisie, chaque geste pose la question : « Continuer la saisie » garde tout, « Abandonner »
+  // ferme.
+  for (const [geste, format, fermer] of FERMETURES) {
+    const { contexte, page, erreurs } = await depuisMesVoyages(navigateur, serveur.url, FORMATS[format]);
     await suivre(page, '.bouton-flottant', 'nouveau-voyage');
     await page.fill('#nom', 'Abandonné');
     await fermer(page);
+    juge.exige(
+      questionAbandon(await attendreQuestion(page)),
+      `${geste} avec saisie : ${enClair(await question(page))}`,
+    );
+    await repondre(page, abandon.continuer);
+    const garde = await lireSaisie(page);
+    juge.exige(
+      garde.adresse === '#/nouveau-voyage' && garde.nom === 'Abandonné' && garde.fenetre === (format !== 'telephone'),
+      `${geste}, « Continuer la saisie » : ${enClair(garde)}`,
+    );
+    await fermer(page);
+    juge.exige(questionAbandon(await attendreQuestion(page)), `${geste}, seconde fois : pas de question`);
+    await repondre(page, abandon.abandonner);
     await attendreEcran(page, 'voyages');
     const apres = await page.evaluate(() => ({
       fenetre: Boolean(document.querySelector('dialog')),
       focus: document.activeElement?.classList.contains('bouton-flottant'),
     }));
     juge.exige(!apres.fenetre, `fenêtre fermée par ${geste} : elle est restée`);
-    juge.exige(apres.focus, `fenêtre fermée par ${geste} : le focus ne revient pas au bouton flottant`);
-    const vu = await retourSysteme(page, serveur.url);
-    juge.exige(vu === HORS, `fenêtre fermée par ${geste} : le retour mène à « ${vu} »`);
+    if (format !== 'telephone')
+      juge.exige(apres.focus, `fenêtre fermée par ${geste} : le focus ne revient pas au bouton flottant`);
+    const retour = await retourSysteme(page, serveur.url);
+    juge.exige(retour === HORS, `fenêtre fermée par ${geste} : le retour mène à « ${retour} »`);
     juge.exige(erreurs.length === 0, `fenêtre fermée par ${geste} : erreurs dans la page : ${erreurs.join(' | ')}`);
     await contexte.close();
   }
+
+  // Le retour système, étape par étape jusqu'à Informations, puis la question d'abandon.
+  for (const format of ['telephone', 'tablette-paysage']) {
+    const cas = `retour, ${format}`;
+    const { contexte, page, erreurs } = await depuisMesVoyages(navigateur, serveur.url, FORMATS[format]);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.fill('#nom', 'Vercors');
+    await page.click('[data-jour="2026-10-10"]');
+    await page.click('[data-jour="2026-10-13"]');
+    await page.click('[data-action="suivant"]');
+    await page.click('.puce-etiquette:has-text("Randonnée")');
+    await page.click('.etape:last-child button');
+    await ligneObjet(page, 'Gourde').click();
+    const avant = await lireSaisie(page);
+    const titres = [];
+    for (let i = 0; i < 4; i++) {
+      await retourDansLAssistant(page);
+      const { etape, titre } = await etapeAffichee(page);
+      titres.push(etape === 'infos' ? 'Informations' : titre);
+    }
+    juge.exige(
+      titres.join(',') === 'Hébergement,Climat,Activités,Informations' && !(await question(page)),
+      `${cas} : étapes ${titres}`,
+    );
+    await retourDansLAssistant(page);
+    juge.exige(questionAbandon(await question(page)), `${cas}, Informations : ${enClair(await question(page))}`);
+    // Review Focus 4 : le retour ferme la question, et elle seule.
+    await retourDansLAssistant(page);
+    const apres = await lireSaisie(page);
+    juge.exige(
+      !(await question(page)) && (await etapeAffichee(page)).etape === 'infos' && enClair(apres) === enClair(avant),
+      `${cas}, retour sur la question : ${enClair(await question(page))} ${enClair(apres)}`,
+    );
+    await retourDansLAssistant(page);
+    juge.exige(questionAbandon(await question(page)), `${cas} : la question ne revient pas`);
+    await repondre(page, abandon.continuer);
+    juge.exige(
+      enClair(await lireSaisie(page)) === enClair(avant),
+      `${cas}, « Continuer la saisie » : ${enClair(await lireSaisie(page))}`,
+    );
+    await page.click('.etape:last-child button');
+    await calme(page);
+    const rappel = await page.$eval('.apercu-rappel', p => p.textContent);
+    juge.exige(
+      !(await question(page)) &&
+        rappel.includes('Randonnée') &&
+        (await ligneObjet(page, 'Gourde').getAttribute('aria-checked')) === 'false',
+      `${cas}, l’aperçu gardé : rappel « ${rappel} », question ${enClair(await question(page))}`,
+    );
+    await page.click('.etape:first-child button');
+    await calme(page);
+    await retourDansLAssistant(page);
+    juge.exige(questionAbandon(await question(page)), `${cas} : pas de question la dernière fois`);
+    await repondre(page, abandon.abandonner);
+    await attendreEcran(page, 'voyages');
+    const fin = await retourSysteme(page, serveur.url);
+    juge.exige(fin === HORS, `${cas}, « Abandonner » : le retour mène à « ${fin} »`);
+    juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Saisie effacée : rien à perdre, le retour ferme sans question.
+  {
+    const { contexte, page } = await depuisMesVoyages(navigateur, serveur.url);
+    await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+    await page.fill('#nom', 'Effacé');
+    await page.fill('#nom', '');
+    await calme(page);
+    const vuApres = await retourSysteme(page, serveur.url);
+    juge.exige(vuApres === 'voyages', `saisie effacée : le retour mène à « ${vuApres} »`);
+    const fin = await retourSysteme(page, serveur.url);
+    juge.exige(fin === HORS, `saisie effacée : le retour suivant mène à « ${fin} »`);
+    await contexte.close();
+  }
+
+  // La question d'abandon : téléphone et tablette, claire et sombre.
+  await mkdir(CAPTURES, { recursive: true });
+  for (const theme of ['light', 'dark'])
+    for (const format of ['telephone', 'tablette-paysage']) {
+      const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+        taille: FORMATS[format],
+        theme,
+        maintenant: MAINTENANT,
+        donnees: DONNEES,
+        adresse: '#/voyages',
+      });
+      await attendreEcran(page, 'voyages');
+      await suivre(page, '.bouton-flottant', 'nouveau-voyage');
+      await page.fill('#nom', 'Week-end au Vercors');
+      await page.fill('#destination', 'Vercors');
+      await page.click('[data-mois="1"]');
+      await page.click('[data-jour="2026-11-13"]');
+      await page.click('[data-jour="2026-11-15"]');
+      await retourDansLAssistant(page);
+      await attendreQuestion(page);
+      await page.mouse.move(0, 0);
+      await page.screenshot({ path: join(CAPTURES, `assistant-abandon-${format}-${NOMS_THEME[theme]}.png`) });
+      await verifierQuestion(page, juge, `abandon, ${format}, ${NOMS_THEME[theme]}`);
+      await contexte.close();
+    }
 
   // Un appui sur le voile, à gauche de la fenêtre, ne la ferme pas : la saisie reste.
   {
@@ -241,5 +402,5 @@ try {
 }
 juge.conclure(
   'Retour système',
-  'voyage, formulaire, fenêtre (3 fermetures, voile sans effet), création, adresse directe, appuis répétés, témoins',
+  'voyage, formulaire, fenêtre, création, adresse directe, appuis répétés, assistant (étapes, abandon confirmé), témoins',
 );

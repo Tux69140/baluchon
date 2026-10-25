@@ -122,9 +122,15 @@ function quitterNiveau(niveau) {
 // l'animation ou fermeture par le navigateur n'en font pas une seconde. fermerSurVoile : une fenêtre
 // sans saisie à perdre (fiche d'un objet) se ferme aussi d'un appui sur le voile ou d'un glissé de
 // son en-tête vers le bas. fermerAuRetour : la fenêtre est un niveau que le retour système ferme
-// (fiche, confirmation) ; pas Nouveau voyage, qui a son adresse. Rend fermer(), pour qui doit fermer
-// la fenêtre sans geste de la personne.
-export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false, fermerAuRetour = false }) {
+// (fiche, confirmation) ; pas Nouveau voyage, qui a son adresse. surGeste : une fenêtre qui a une
+// saisie à perdre (Nouveau voyage) ; « × », Échap ou le navigateur qui la ferme de lui-même appellent
+// surGeste au lieu de la fermer : l'écran demande d'abord, puis la ferme s'il le faut. Fermée par le
+// navigateur (Échap répété, sans geste entre deux), elle se rouvre le temps de la question. Rend
+// fermer(), pour qui doit fermer la fenêtre sans geste de la personne.
+export function ouvrirFenetre(
+  fenetre,
+  { surFermeture, fermerSurVoile = false, fermerAuRetour = false, surGeste = null },
+) {
   let fermeture = false;
   let niveau = null;
   async function fermer() {
@@ -139,8 +145,11 @@ export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false, f
     surFermeture();
   }
 
+  // Le voile et le glissé n'existent que sur une fenêtre sans saisie à perdre : ils ferment toujours.
+  const geste = () => (surGeste && !fermeture ? surGeste() : fermer());
   fenetre.addEventListener('click', evenement => {
-    if (evenement.target.closest('[data-fermer]') || (fermerSurVoile && surLeVoile(fenetre, evenement))) fermer();
+    if (evenement.target.closest('[data-fermer]')) geste();
+    else if (fermerSurVoile && surLeVoile(fenetre, evenement)) fermer();
   });
   if (fermerSurVoile) glisserPourFermer(fenetre, fermer);
   // Échap : on ferme nous-mêmes, pour animer. Sans geste préalable de la personne, le navigateur
@@ -148,9 +157,14 @@ export function ouvrirFenetre(fenetre, { surFermeture, fermerSurVoile = false, f
   // l'écran qu'elle couvrait (voyage créé) n'est pas une fermeture.
   fenetre.addEventListener('cancel', evenement => {
     evenement.preventDefault();
-    fermer();
+    geste();
   });
-  fenetre.addEventListener('close', () => fenetre.isConnected && fermer());
+  fenetre.addEventListener('close', () => {
+    if (!fenetre.isConnected || fermeture) return;
+    if (!surGeste) return fermer();
+    fenetre.showModal();
+    surGeste();
+  });
   fenetre.showModal();
   if (fermerAuRetour) niveau = ouvrirNiveau(fenetre, fermer);
   return fermer;

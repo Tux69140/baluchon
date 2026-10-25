@@ -15,14 +15,17 @@
 // - au téléphone : « Étape 1 sur 5 · Informations », puis « Étape 2 sur 5 · Activités » ; le pied est
 //   collé au bas de l'écran ; il porte une ombre (data-dessous) tant qu'il reste à défiler dessous ;
 // - bibliothèque sans groupe (ancienne mini-bibliothèque) : rangée Informations · Aperçu, et l'aperçu
-//   montre les objets « toujours inclus ».
+//   montre les objets « toujours inclus » ;
+// - le retour système ramène à l'étape précédente dans l'ordre (Aperçu → Hébergement → Climat →
+//   Activités → Informations), même atteinte d'un saut par la rangée : titre au focus, fenêtre de même
+//   hauteur, adresse inchangée, aucune question posée (l'abandon : tests/ecran-retour.mjs).
 // 4 formats × 2 thèmes, aux étapes Informations et Activités : cibles de 44 px, pas de défilement de
 // côté, rien sous les barres système ; captures assistant-<étape>-<format>-<thème>.png.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
-import { avecBibliotheque, sansGroupe } from './outils/assistant.mjs';
+import { avecBibliotheque, question, retourDansLAssistant, sansGroupe } from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
@@ -235,6 +238,36 @@ try {
     await contexte.close();
   }
 
+  // Le retour système, de l'aperçu (atteint d'un saut) à Informations, une étape à la fois.
+  {
+    const { contexte, page, erreurs } = await ouvrirAssistant(navigateur, serveur.url);
+    await remplirInformations(page);
+    const hauteur = (await vue(page)).hauteur;
+    await aller(page, '.etape:last-child button');
+    const vus = [];
+    for (let i = 0; i < 4; i++) {
+      await retourDansLAssistant(page);
+      const v = await vue(page);
+      const courante = (await rangee(page)).findIndex(e => e.courante === 'step');
+      const adresse = await page.evaluate(() => location.hash);
+      vus.push({
+        titre: v.etape === 'infos' ? 'Informations' : v.titre,
+        courante,
+        focus: v.etape === 'infos' || v.focus === 'titre-etape',
+        hauteur: Math.abs(v.hauteur - hauteur) <= 1,
+        reste: adresse === '#/nouveau-voyage' && !(await question(page)),
+      });
+    }
+    juge.exige(
+      JSON.stringify(vus.map(e => e.titre)) ===
+        JSON.stringify(['Hébergement', 'Climat', 'Activités', 'Informations']) &&
+        vus.every((e, i) => e.courante === 3 - i && e.focus && e.hauteur && e.reste),
+      `retour système, étape par étape : ${JSON.stringify(vus)}`,
+    );
+    juge.exige(erreurs.length === 0, `retour système : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
   // Au téléphone : légende, pied collé en bas et son ombre, voyageurs au-dessus des dates.
   {
     const { contexte, page, erreurs } = await ouvrirAssistant(navigateur, serveur.url, { taille: FORMATS.telephone });
@@ -323,5 +356,5 @@ try {
 }
 juge.conclure(
   'Étapes de l’assistant',
-  'rangée, Suivant, Précédent, puces, hauteur gardée, légende et pied au téléphone, sans groupe, 4 formats × 2 thèmes',
+  'rangée, Suivant, Précédent, retour système, puces, hauteur gardée, légende et pied au téléphone, sans groupe, 4 formats × 2 thèmes',
 );

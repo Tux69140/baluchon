@@ -196,6 +196,17 @@ export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, reven
           </section>`;
 }
 
+// Les objets écartés que nomme la fenêtre à l'entrée dans l'aperçu (src/ecrans/nouveau-voyage.js) :
+// chacun avec sa catégorie, noms échappés (ils viennent de la bibliothèque).
+export const vueEcartes = objets => `
+      <ul class="liste-ecartes">${objets
+        .map(
+          ({ nom, categorie }) => `
+        <li><b>${echapper(nom)}</b><span>${echapper(categorie)}</span></li>`,
+        )
+        .join('')}
+      </ul>`;
+
 // « Précédent » à gauche (« Annuler » à la première étape, dans la fenêtre), l'action à droite :
 // « Voir l'aperçu » et « Suivant », « Voir l'aperçu » seul juste avant l'aperçu, puis « Créer le
 // voyage », grisé quand rien n'est retenu. Au téléphone, « Précédent » n'est plus qu'une flèche.

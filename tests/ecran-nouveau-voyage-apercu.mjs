@@ -15,14 +15,32 @@
 //   témoin : une catégorie recochée le rend actif ;
 // - bibliothèque dont rien n'entre : mascotte et message (.apercu-vide), « Créer » grisé, et « Revenir
 //   aux étiquettes » mène à Activités.
+// - objets écartés (Gourde, nom et catégorie piégés) : aller-retour Aperçu → Activités → Aperçu sans
+//   changement, aucune fenêtre, Gourde reste écartée ; Randonnée retirée (ou remise), la fenêtre nomme
+//   Gourde et sa catégorie, échappées ; retour système (Review Focus 4 : elle seule se ferme, on reste
+//   sur l'aperçu), Échap et « Les garder écartés » la gardent écartée ; « Les remettre dans la liste »
+//   la recoche.
 // 4 formats × 2 thèmes (aperçu, tout écarté, vide) : cibles de 44 px, pas de défilement de côté, rien
-// sous les barres système ; captures assistant-<état>-<format>-<thème>.png.
+// sous les barres système ; captures assistant-<état>-<format>-<thème>.png, et celles de la fenêtre des
+// objets écartés (téléphone, tablette).
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { nouvelId } from '../src/modele/identifiant.js';
 import { genererApercu } from '../src/modele/inclusion.js';
 import { attendreQue, calme } from './outils/attente.mjs';
-import { avecBibliotheque, rienNEntre } from './outils/assistant.mjs';
+import {
+  attendreQuestion,
+  avecBibliotheque,
+  etapeAffichee,
+  ligneObjet,
+  question,
+  repondre,
+  retourDansLAssistant,
+  rienNEntre,
+  verifierQuestion,
+} from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
@@ -41,6 +59,30 @@ import { NOM } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const nv = fr.nouveauVoyage;
+const { ecartes } = nv;
+// Gourde (toujours incluse) et sa catégorie, sous des noms qui seraient pris pour du HTML.
+const GOURDE = 'Gourde <i>&"';
+const ALIMENTATION = 'Alimentation <b>&';
+const PIEGEE = construireBibliotheque(
+  {
+    ...fr.bibliothequeDeDepart,
+    categories: fr.bibliothequeDeDepart.categories.map(c =>
+      c.nom !== 'Alimentation'
+        ? c
+        : { ...c, nom: ALIMENTATION, objets: c.objets.map(o => (o.nom === 'Gourde' ? { ...o, nom: GOURDE } : o)) },
+    ),
+  },
+  { nouvelId, maintenant: 'x' },
+);
+const questionEcartes = (q, liste) =>
+  q?.titre === ecartes.titre &&
+  q.balises === 0 &&
+  JSON.stringify(q.liste) === JSON.stringify(liste) &&
+  JSON.stringify(q.boutons) ===
+    JSON.stringify([
+      { texte: ecartes.remettre, principal: false },
+      { texte: ecartes.garder, principal: true },
+    ]);
 const MAINTENANT = new Date('2026-10-06T10:00:00');
 const INFOS = { depart: '2026-11-13', retour: '2026-11-15', voyageurs: 2 };
 const CHOISIES = ['Randonnée', 'Camping', 'Froid', 'Tente'];
@@ -307,6 +349,72 @@ try {
     await contexte.close();
   }
 
+  // Objets écartés : la fenêtre ne vient qu'après un changement, et chaque réponse fait ce qu'elle dit.
+  {
+    const { contexte, page, erreurs } = await ouvrirAssistant(navigateur, serveur.url, {
+      donnees: avecBibliotheque(PIEGEE),
+    });
+    await versApercu(page, { etiquettes: ['Randonnée'] });
+    const gourde = ligneObjet(page, GOURDE);
+    await gourde.click();
+    // Lue sans attendre : hors de l'aperçu, Gourde n'est pas écartée à l'écran.
+    const ecartee = () =>
+      page.evaluate(
+        nom =>
+          [...document.querySelectorAll('[data-objet]')]
+            .find(b => b.querySelector('.objet-nom').textContent === nom)
+            ?.getAttribute('aria-checked') === 'false',
+        GOURDE,
+      );
+    // Aller-retour vers Activités, puis l'aperçu ; touchée : Randonnée change d'état en passant.
+    const allerRetour = async ({ randonnee = false } = {}) => {
+      await page.click('.etape:nth-child(2) button');
+      if (randonnee) await page.click('.puce-etiquette:has-text("Randonnée")');
+      await page.click('.etape:last-child button');
+      await calme(page);
+    };
+    await allerRetour();
+    juge.exige(!(await question(page)) && (await ecartee()), 'écartés, sans changement : fenêtre ou Gourde recochée');
+    const nommee = [[GOURDE, ALIMENTATION]];
+    // [geste sur la fenêtre, Gourde encore écartée après lui]
+    const reponses = [
+      ['retour système', page => retourDansLAssistant(page), true],
+      ['Échap', page => page.keyboard.press('Escape'), true],
+      [ecartes.garder, page => repondre(page, ecartes.garder), true],
+      [ecartes.remettre, page => repondre(page, ecartes.remettre), false],
+    ];
+    for (const [geste, repondreAvec, resteEcartee] of reponses) {
+      await allerRetour({ randonnee: true });
+      const q = await attendreQuestion(page);
+      juge.exige(questionEcartes(q, nommee), `écartés, avant « ${geste} » : ${JSON.stringify(q)}`);
+      await repondreAvec(page);
+      await calme(page);
+      const apres = { question: await question(page), ...(await etapeAffichee(page)), ecartee: await ecartee() };
+      juge.exige(
+        !apres.question && apres.etape === 'apercu' && apres.ecartee === resteEcartee,
+        `écartés, « ${geste} » : ${JSON.stringify(apres)}`,
+      );
+    }
+    juge.exige(erreurs.length === 0, `écartés : erreurs dans la page : ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // La fenêtre des objets écartés (Gourde et Bonnet, Camping retiré) : téléphone et tablette, 2 thèmes.
+  for (const theme of ['light', 'dark'])
+    for (const format of ['telephone', 'tablette-paysage']) {
+      const { contexte, page } = await ouvrirAssistant(navigateur, serveur.url, { taille: FORMATS[format], theme });
+      await versApercu(page, { nom: 'Week-end au Vercors', etiquettes: CHOISIES });
+      for (const nom of ['Gourde', 'Bonnet']) await ligneObjet(page, nom).click();
+      await page.click('.etape:nth-child(2) button');
+      await page.click('.puce-etiquette:has-text("Camping")');
+      await page.click('.etape:last-child button');
+      await attendreQuestion(page);
+      await page.mouse.move(0, 0);
+      await page.screenshot({ path: join(CAPTURES, `assistant-ecartes-${format}-${NOMS_THEME[theme]}.png`) });
+      await verifierQuestion(page, juge, `écartés, ${format}, ${NOMS_THEME[theme]}`);
+      await contexte.close();
+    }
+
   // 4 formats × 2 thèmes : l'aperçu (Gourde et Bonnet écartés), tout écarté, et vide.
   for (const theme of ['light', 'dark']) {
     for (const [format, { taille, ecran, tactile }] of Object.entries(TOUS_FORMATS)) {
@@ -345,5 +453,5 @@ try {
 }
 juge.conclure(
   'Aperçu de l’assistant',
-  'contenu, cases, colonnes, création et étiquettes, double appui, panne, tout écarté, vide, 4 formats × 2 thèmes',
+  'contenu, cases, colonnes, création et étiquettes, double appui, panne, tout écarté, vide, objets écartés, 4 formats × 2 thèmes',
 );

@@ -13,6 +13,7 @@ import './styles/calendrier.css';
 import './styles/fenetre.css';
 import './styles/fiche.css';
 import './styles/assistant.css';
+import './styles/assistant-questions.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ouvrirStockage } from './stockage/index.js';
@@ -118,8 +119,10 @@ async function demarrer() {
     );
   window.addEventListener('hashchange', afficher);
   // Tout lien vers l'accueil y revient en remontant l'historique ; il reste un vrai lien (clavier).
+  // Un écran qui le prend en charge (l'assistant demande d'abord s'il faut abandonner la saisie) le
+  // marque par preventDefault.
   app.addEventListener('click', evenement => {
-    if (!evenement.target.closest(`a[href="${ACCUEIL}"]`)) return;
+    if (evenement.defaultPrevented || !evenement.target.closest(`a[href="${ACCUEIL}"]`)) return;
     evenement.preventDefault();
     revenirAccueil();
   });

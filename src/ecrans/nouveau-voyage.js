@@ -3,8 +3,10 @@
 // avant « Créer le voyage », qui copie la bibliothèque dans le voyage et ouvre sa liste (docs/PRD.md,
 // « Écrans et gestes » ; maquette validée le 2026-10-25, docs/maquettes/assistant/).
 // Sur tablette et ordinateur, l'assistant s'ouvre en fenêtre modale par-dessus Mes voyages ; au
-// téléphone, il occupe tout l'écran (décision du chef de projet, 2026-10-07). L'état (étapes, choix,
-// objets écartés) vit dans src/ecrans/assistant.js, le dessin dans src/ecrans/assistant-vues.js.
+// téléphone, il occupe tout l'écran (décision du chef de projet, 2026-10-07). Le retour système ramène
+// à l'étape précédente ; fermer l'assistant avec une saisie demande d'abord s'il faut l'abandonner.
+// L'état (étapes, choix, objets écartés) vit dans src/ecrans/assistant.js, le dessin dans
+// src/ecrans/assistant-vues.js.
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { etiquettesChoisies, genererApercu } from '../modele/inclusion.js';
@@ -19,6 +21,8 @@ import {
   etapesDe,
   idsDeLApercu,
   raisonVide,
+  remettre,
+  saisieCommencee,
   signatureDe,
 } from './assistant.js';
 import {
@@ -28,12 +32,13 @@ import {
   texteChoisies,
   vueApercu,
   vueAssistant,
+  vueEcartes,
   vueEtapes,
   vueGroupe,
   vuePied,
 } from './assistant-vues.js';
 import { creerCalendrier } from './calendrier.js';
-import { ouvrirFenetre } from './fenetre.js';
+import { demander, ouvrirFenetre, poserGardeRetour } from './fenetre.js';
 import { iconeInterface } from './icones.js';
 import { DUREE_ALERTE, vueAlerte } from './voyage-vues.js';
 import { ecranVoyages } from './voyages.js';
@@ -69,8 +74,13 @@ export const ecranNouveauVoyage = {
     let essaye = false;
     let enregistrement = false;
     let minuterieAlerte = null;
-    // Fermer la fenêtre (« Annuler ») ; rien au téléphone, où le lien « Mes voyages » en tient lieu.
-    let fermer = () => {};
+    // Une question est posée par-dessus (abandon, objets écartés) : un second geste n'en pose pas d'autre.
+    let questionOuverte = false;
+    // La garde du retour système (suivreGarde, plus bas), et la file de ses poses et retraits ; fini :
+    // l'assistant se ferme, ou le voyage est créé, plus de garde.
+    let garde = null;
+    let gardeSuivie = Promise.resolve();
+    let fini = false;
     const enFenetre = Math.min(screen.width, screen.height) >= COTE_MIN_FENETRE;
     if (enFenetre) {
       ecranVoyages.dessiner(app, accueil, contexte);
@@ -117,6 +127,7 @@ export const ecranNouveauVoyage = {
       element('[data-voyageurs="-1"]').setAttribute('aria-disabled', infos.voyageurs <= VOYAGEURS.min);
       element('[data-voyageurs="1"]').setAttribute('aria-disabled', infos.voyageurs >= VOYAGEURS.max);
       peindreRangee();
+      suivreGarde();
       if (!essaye) return;
       const erreurs = validerInformations(infos);
       for (const champ of CHAMPS) message(champ, erreurs[champ]);
@@ -215,9 +226,109 @@ export const ecranNouveauVoyage = {
         return focaliserErreur();
       }
       etat = allerA(etat, indice);
+      suivreGarde();
+      let aReconfirmer = [];
       if (indice === derniere)
-        etat = entrerDansApercu(etat, signatureDe(infos, etat.choisies), idsDeLApercu(apercuCourant())).etat;
+        ({ etat, aReconfirmer } = entrerDansApercu(
+          etat,
+          signatureDe(infos, etat.choisies),
+          idsDeLApercu(apercuCourant()),
+        ));
       peindreEtape();
+      if (aReconfirmer.length) demanderEcartes(aReconfirmer);
+    }
+
+    // Une question par-dessus l'assistant ; elle disparaît avec l'écran.
+    async function poser(question) {
+      questionOuverte = true;
+      const reponse = await demander({ t, signal: fin.signal, ...question });
+      questionOuverte = false;
+      return reponse;
+    }
+
+    // Les objets écartés encore dans l'aperçu, après un changement de choix (docs/PRD.md, « Retour à
+    // l'aperçu ») : les garder écartés est l'action principale, c'est la décision déjà prise ; Échap et
+    // le retour système les gardent aussi.
+    async function demanderEcartes(ids) {
+      const nommes = new Set(ids);
+      const objets = apercuCourant().flatMap(({ categorie, objets: lignes }) =>
+        lignes
+          .filter(({ objet }) => nommes.has(objet.id))
+          .map(({ objet }) => ({ nom: objet.nom, categorie: categorie.nom })),
+      );
+      const reponse = await poser({
+        titre: t('nouveauVoyage.ecartes.titre'),
+        texte: t('nouveauVoyage.ecartes.texte'),
+        contenu: vueEcartes(objets),
+        boutons: [
+          { cle: 'remettre', libelle: t('nouveauVoyage.ecartes.remettre') },
+          { cle: 'garder', libelle: t('nouveauVoyage.ecartes.garder'), principal: true },
+        ],
+      });
+      if (reponse !== 'remettre') return;
+      etat = remettre(etat, ids);
+      repeindreApercu('#titre-etape');
+    }
+
+    // Fermer pour de bon : la garde part d'abord (son étape d'historique ne survit pas à l'écran), puis
+    // Mes voyages revient ; dans la fenêtre, le focus retourne au bouton qui l'a ouverte.
+    async function quitter() {
+      if (fini) return;
+      fini = true;
+      await suivreGarde();
+      revenirAccueil(enFenetre ? { focus: OUVRE_LA_FENETRE } : {});
+    }
+    // Au téléphone, rien à effacer : on quitte. Dans la fenêtre, fermer() l'efface d'abord (plus bas).
+    let fermer = quitter;
+
+    // « × », Échap, « Annuler », le lien « Mes voyages » ou le retour système depuis Informations :
+    // avec une saisie, « Abandonner ce nouveau voyage ? » d'abord. La question s'ouvre sans attendre :
+    // appelée par la garde du retour, elle se pose au-dessus d'elle.
+    async function demanderFermeture() {
+      if (questionOuverte) return;
+      if (!saisieCommencee(infos, etat)) return fermer();
+      const reponse = await poser({
+        titre: t('nouveauVoyage.abandon.titre'),
+        texte: t('nouveauVoyage.abandon.texte'),
+        boutons: [
+          { cle: 'continuer', libelle: t('nouveauVoyage.abandon.continuer') },
+          { cle: 'abandonner', libelle: t('nouveauVoyage.abandon.abandonner'), principal: true },
+        ],
+      });
+      if (reponse === 'abandonner') fermer();
+    }
+
+    // Le retour système (docs/PRD.md, « Assistant ») : l'étape précédente ; depuis Informations, la
+    // question d'abandon. Rend true tant que la garde doit rester. Pendant l'enregistrement du voyage,
+    // il ne fait rien : l'écran s'en va de lui-même.
+    function surRetour() {
+      if (enregistrement) return true;
+      if (etat.etape > 0) aller(etat.etape - 1);
+      else if (saisieCommencee(infos, etat)) demanderFermeture();
+      else {
+        // Plus rien à perdre (saisie effacée à l'instant) : la garde est consommée, l'assistant se ferme.
+        garde = null;
+        fermer();
+        return false;
+      }
+      return true;
+    }
+
+    // La garde détourne le retour système tant qu'il y a quelque chose à perdre : une étape au-delà
+    // d'Informations ou une saisie commencée ; sans elle, le retour ferme l'assistant comme en phase 2.
+    // Poser et retirer la garde touchent l'historique : chaque changement attend la fin du précédent,
+    // et aucun retrait n'a lieu sous une question ouverte (rien ne change pendant qu'elle est posée).
+    function suivreGarde() {
+      gardeSuivie = gardeSuivie.then(async () => {
+        const voulue = !fini && (etat.etape > 0 || saisieCommencee(infos, etat));
+        if (voulue && !garde) garde = poserGardeRetour({ surRetour });
+        else if (!voulue && garde) {
+          const partante = garde;
+          garde = null;
+          await partante.retirer();
+        }
+      });
+      return gardeSuivie;
     }
 
     function retirerAlerte() {
@@ -247,7 +358,10 @@ export const ecranNouveauVoyage = {
           { nouvelId, maintenant: new Date().toISOString() },
         );
         await stockage.creerVoyage(contenu);
-        // Remplacer l'adresse : le retour depuis la liste du voyage mène à Mes voyages, pas à l'assistant.
+        // La garde part avant l'adresse : son retrait différé ramènerait sinon à l'assistant. Puis
+        // remplacer l'adresse : le retour depuis la liste du voyage mène à Mes voyages, pas à l'assistant.
+        fini = true;
+        await suivreGarde();
         remplacerAdresse(`#/voyage/${contenu.voyage.id}`);
       } catch (erreur) {
         console.error(erreur);
@@ -263,6 +377,7 @@ export const ecranNouveauVoyage = {
       puce.querySelector('.puce-signe').innerHTML = signePuce(choisie);
       const n = etapes[etat.etape].etiquettes.filter(e => etat.choisies.has(e.id)).length;
       element('.etape-compte').textContent = texteChoisies(t, n, langue);
+      suivreGarde();
     }
 
     creerCalendrier(element('.calendrier'), {
@@ -313,7 +428,12 @@ export const ecranNouveauVoyage = {
         repeindreApercu(`[data-categorie="${CSS.escape(categorie)}"]`);
       } else if (action === 'precedent') aller(etat.etape - 1);
       else if (action === 'apercu') aller(derniere);
-      else if (action === 'fermer') fermer();
+      else if (action === 'fermer') demanderFermeture();
+      else if (action === 'retour') {
+        // Le lien « Mes voyages » du téléphone : l'écran le prend en charge (src/main.js).
+        evenement.preventDefault();
+        demanderFermeture();
+      }
     });
 
     for (const zone of [corps, panneau]) zone.addEventListener('scroll', ombrerPied);
@@ -328,10 +448,10 @@ export const ecranNouveauVoyage = {
     rafraichirInfos();
     peindreEtape({ focus: false });
 
-    // « Annuler » et « × » ferment la fenêtre comme le lien « Mes voyages ». À l'ouverture, le focus va
-    // au nom à la souris ; au doigt, au titre.
+    // « Annuler », « × » et Échap ferment la fenêtre comme le lien « Mes voyages ». À l'ouverture, le
+    // focus va au nom à la souris ; au doigt, au titre.
     if (!enFenetre) return;
-    fermer = ouvrirFenetre(racine, { surFermeture: () => revenirAccueil({ focus: OUVRE_LA_FENETRE }) });
+    fermer = ouvrirFenetre(racine, { surFermeture: quitter, surGeste: demanderFermeture });
     focaliserInformations();
     ombrerPied();
   },
