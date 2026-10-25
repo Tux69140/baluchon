@@ -6,10 +6,11 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: [&str; 3] = [
+const MIGRATIONS: [&str; 4] = [
     include_str!("../migrations/001_initial.sql"),
     include_str!("../migrations/002_bibliotheque_et_voyages.sql"),
     include_str!("../migrations/003_dans_le_sac_en_pieces.sql"),
+    include_str!("../migrations/004_etiquettes.sql"),
 ];
 
 pub struct Base(Mutex<Connection>);
@@ -176,11 +177,51 @@ mod tests {
                 .unwrap();
         }
         let base = Base::ouvrir(&chemin).unwrap();
-        assert_eq!(version(&base), 3);
+        assert_eq!(version(&base), MIGRATIONS.len() as i64);
         let voyage = base.lire_voyage("v1").unwrap().unwrap();
         assert_eq!(voyage.voyage.nom, "Vercors");
         assert_eq!(voyage.categories.len(), 1);
         let pieces: Vec<_> = voyage.objets.iter().map(|o| (o.id.as_str(), o.dans_le_sac)).collect();
         assert_eq!(pieces, vec![("o1", 16), ("o2", 0)]);
+    }
+
+    #[test]
+    fn la_migration_004_garde_bibliotheque_et_voyages() {
+        let dossier = Dossier::nouveau();
+        let chemin = dossier.chemin.join("phase3.sqlite3");
+        {
+            let connexion = Connection::open(&chemin).unwrap();
+            connexion.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            for (indice, sql) in MIGRATIONS[0..3].iter().enumerate() {
+                connexion.execute_batch(sql).unwrap();
+                connexion
+                    .execute("INSERT INTO schema_migrations (version) VALUES (?1)", [indice as i64 + 1])
+                    .unwrap();
+            }
+            connexion
+                .execute_batch(
+                    "INSERT INTO categorie_modele (id, nom, icone, couleur, ordre, toujours_incluse, modifie_le)
+                       VALUES ('cm1', 'Repas', 'i', 'c', 0, 1, 'x');
+                     INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
+                       consommable, toujours_inclus, note, modifie_le)
+                       VALUES ('om1', 'cm1', 'Thé', 'fixe', 2, NULL, 0, 1, 1, '', 'x');
+                     INSERT INTO meta (cle, valeur) VALUES ('bibliotheque_installee', '1');
+                     INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
+                       VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 2, 'x');",
+                )
+                .unwrap();
+        }
+        let base = Base::ouvrir(&chemin).unwrap();
+        assert_eq!(version(&base), 4);
+        let bibliotheque = base.lire_bibliotheque().unwrap();
+        assert_eq!(bibliotheque.categories.len(), 1);
+        assert_eq!(bibliotheque.objets.len(), 1);
+        assert!(bibliotheque.categories[0].etiquettes.is_empty());
+        assert!(bibliotheque.objets[0].etiquettes.is_empty());
+        assert!(bibliotheque.groupes.is_empty());
+        assert!(bibliotheque.etiquettes.is_empty());
+        let voyage = base.lire_voyage("v1").unwrap().unwrap();
+        assert_eq!(voyage.voyage.nom, "Vercors");
+        assert!(voyage.etiquettes.is_empty());
     }
 }

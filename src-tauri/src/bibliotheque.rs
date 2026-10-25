@@ -14,6 +14,8 @@ pub struct CategorieModele {
     pub ordre: i64,
     pub toujours_incluse: bool,
     pub modifie_le: String,
+    // Ids des étiquettes liées ; vide = « toujours incluse » côté assistant.
+    pub etiquettes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -30,10 +32,32 @@ pub struct ObjetModele {
     pub toujours_inclus: bool,
     pub note: String,
     pub modifie_le: String,
+    pub etiquettes: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupeEtiquettes {
+    pub id: String,
+    pub nom: String,
+    pub ordre: i64,
+    pub modifie_le: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Etiquette {
+    pub id: String,
+    pub groupe_id: String,
+    pub nom: String,
+    pub ordre: i64,
+    pub modifie_le: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Bibliotheque {
+    pub groupes: Vec<GroupeEtiquettes>,
+    pub etiquettes: Vec<Etiquette>,
     pub categories: Vec<CategorieModele>,
     pub objets: Vec<ObjetModele>,
 }
@@ -56,6 +80,7 @@ fn categorie_depuis(r: &Row<'_>) -> rusqlite::Result<CategorieModele> {
         ordre: r.get(4)?,
         toujours_incluse: r.get(5)?,
         modifie_le: r.get(6)?,
+        etiquettes: vec![],
     })
 }
 
@@ -72,7 +97,26 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetModele> {
         toujours_inclus: r.get(8)?,
         note: r.get(9)?,
         modifie_le: r.get(10)?,
+        etiquettes: vec![],
     })
+}
+
+fn groupe_depuis(r: &Row<'_>) -> rusqlite::Result<GroupeEtiquettes> {
+    Ok(GroupeEtiquettes { id: r.get(0)?, nom: r.get(1)?, ordre: r.get(2)?, modifie_le: r.get(3)? })
+}
+
+fn etiquette_depuis(r: &Row<'_>) -> rusqlite::Result<Etiquette> {
+    Ok(Etiquette { id: r.get(0)?, groupe_id: r.get(1)?, nom: r.get(2)?, ordre: r.get(3)?, modifie_le: r.get(4)? })
+}
+
+// Les liens d'une table (modèle, étiquette) dans l'ordre d'écriture, regroupés par modèle.
+fn liens(connexion: &Connection, table: &str, colonne: &str) -> Result<Vec<(String, String)>, String> {
+    lire_lignes(
+        connexion,
+        &format!("SELECT {colonne}, etiquette_id FROM {table} ORDER BY rowid"),
+        [],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )
 }
 
 impl Base {
@@ -89,6 +133,20 @@ impl Base {
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
         if est_installee(&tx)? {
             return Ok(false);
+        }
+        for g in &bibliotheque.groupes {
+            tx.execute(
+                "INSERT INTO groupe_etiquettes (id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4)",
+                params![g.id, g.nom, g.ordre, g.modifie_le],
+            )
+            .map_err(en_texte)?;
+        }
+        for e in &bibliotheque.etiquettes {
+            tx.execute(
+                "INSERT INTO etiquette (id, groupe_id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![e.id, e.groupe_id, e.nom, e.ordre, e.modifie_le],
+            )
+            .map_err(en_texte)?;
         }
         for c in &bibliotheque.categories {
             tx.execute(
@@ -119,6 +177,25 @@ impl Base {
             )
             .map_err(en_texte)?;
         }
+        // Les liens viennent après les modèles et les étiquettes qu'ils relient.
+        for c in &bibliotheque.categories {
+            for etiquette in &c.etiquettes {
+                tx.execute(
+                    "INSERT INTO categorie_modele_etiquette (categorie_id, etiquette_id) VALUES (?1, ?2)",
+                    params![c.id, etiquette],
+                )
+                .map_err(en_texte)?;
+            }
+        }
+        for o in &bibliotheque.objets {
+            for etiquette in &o.etiquettes {
+                tx.execute(
+                    "INSERT INTO objet_modele_etiquette (objet_id, etiquette_id) VALUES (?1, ?2)",
+                    params![o.id, etiquette],
+                )
+                .map_err(en_texte)?;
+            }
+        }
         tx.execute(
             "INSERT INTO meta (cle, valeur) VALUES (?1, '1'), ('langue_bibliotheque', ?2)",
             params![INSTALLEE, langue],
@@ -130,14 +207,26 @@ impl Base {
 
     pub fn lire_bibliotheque(&self) -> Result<Bibliotheque, String> {
         let connexion = self.connexion()?;
-        let categories = lire_lignes(
+        let groupes = lire_lignes(
+            &connexion,
+            "SELECT id, nom, ordre, modifie_le FROM groupe_etiquettes ORDER BY ordre, rowid",
+            [],
+            groupe_depuis,
+        )?;
+        let etiquettes = lire_lignes(
+            &connexion,
+            "SELECT id, groupe_id, nom, ordre, modifie_le FROM etiquette ORDER BY ordre, rowid",
+            [],
+            etiquette_depuis,
+        )?;
+        let mut categories = lire_lignes(
             &connexion,
             "SELECT id, nom, icone, couleur, ordre, toujours_incluse, modifie_le
              FROM categorie_modele ORDER BY ordre, rowid",
             [],
             categorie_depuis,
         )?;
-        let objets = lire_lignes(
+        let mut objets = lire_lignes(
             &connexion,
             "SELECT o.id, o.categorie_id, o.nom, o.regle, o.valeur, o.plafond, o.par_personne,
                     o.consommable, o.toujours_inclus, o.note, o.modifie_le
@@ -146,7 +235,17 @@ impl Base {
             [],
             objet_depuis,
         )?;
-        Ok(Bibliotheque { categories, objets })
+        for (categorie, etiquette) in liens(&connexion, "categorie_modele_etiquette", "categorie_id")? {
+            if let Some(c) = categories.iter_mut().find(|c| c.id == categorie) {
+                c.etiquettes.push(etiquette);
+            }
+        }
+        for (objet, etiquette) in liens(&connexion, "objet_modele_etiquette", "objet_id")? {
+            if let Some(o) = objets.iter_mut().find(|o| o.id == objet) {
+                o.etiquettes.push(etiquette);
+            }
+        }
+        Ok(Bibliotheque { groupes, etiquettes, categories, objets })
     }
 }
 
@@ -195,5 +294,30 @@ mod tests {
         assert!(base.installer_bibliotheque(&bibliotheque, "fr").is_err());
         assert!(!base.bibliotheque_installee().unwrap());
         assert_eq!(base.lire_bibliotheque().unwrap().categories, vec![]);
+    }
+
+    #[test]
+    fn une_etiquette_inconnue_refuse_l_installation_sans_rien_ecrire() {
+        let (_dossier, base) = base_jetable();
+        let mut bibliotheque = contrat().bibliotheque;
+        bibliotheque.objets[0].etiquettes = vec!["etiquette-inconnue".into()];
+        assert!(base.installer_bibliotheque(&bibliotheque, "fr").is_err());
+        assert!(!base.bibliotheque_installee().unwrap());
+        let connexion = base.connexion().unwrap();
+        for table in ["groupe_etiquettes", "etiquette", "categorie_modele_etiquette", "objet_modele_etiquette"] {
+            let lignes: i64 = connexion
+                .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(lignes, 0, "{table} devrait être vide");
+        }
+    }
+
+    #[test]
+    fn les_liens_d_etiquettes_gardent_leur_ordre_d_ecriture() {
+        let (_dossier, base) = base_jetable();
+        let mut bibliotheque = contrat().bibliotheque;
+        bibliotheque.objets[0].etiquettes = vec!["et-froid".into(), "et-camping".into()];
+        base.installer_bibliotheque(&bibliotheque, "fr").unwrap();
+        assert_eq!(base.lire_bibliotheque().unwrap().objets[0].etiquettes, vec!["et-froid", "et-camping"]);
     }
 }

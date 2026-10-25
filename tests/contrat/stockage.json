@@ -1,5 +1,35 @@
 {
   "bibliotheque": {
+    "groupes": [
+      {
+        "id": "ge-activites",
+        "nom": "Activités",
+        "ordre": 0,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      },
+      {
+        "id": "ge-climat",
+        "nom": "Climat",
+        "ordre": 1,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ],
+    "etiquettes": [
+      {
+        "id": "et-camping",
+        "groupeId": "ge-activites",
+        "nom": "Camping",
+        "ordre": 0,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      },
+      {
+        "id": "et-froid",
+        "groupeId": "ge-climat",
+        "nom": "Froid",
+        "ordre": 0,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ],
     "categories": [
       {
         "id": "cm-vetements",
@@ -8,7 +38,8 @@
         "couleur": "ciel",
         "ordre": 0,
         "toujoursIncluse": true,
-        "modifieLe": "2026-10-06T08:00:00.000Z"
+        "modifieLe": "2026-10-06T08:00:00.000Z",
+        "etiquettes": []
       },
       {
         "id": "cm-papiers",
@@ -16,8 +47,9 @@
         "icone": "identification-card",
         "couleur": "tournesol",
         "ordre": 1,
-        "toujoursIncluse": true,
-        "modifieLe": "2026-10-06T08:00:00.000Z"
+        "toujoursIncluse": false,
+        "modifieLe": "2026-10-06T08:00:00.000Z",
+        "etiquettes": ["et-camping"]
       }
     ],
     "objets": [
@@ -30,9 +62,10 @@
         "plafond": 5,
         "parPersonne": true,
         "consommable": false,
-        "toujoursInclus": true,
+        "toujoursInclus": false,
         "note": "",
-        "modifieLe": "2026-10-06T08:00:00.000Z"
+        "modifieLe": "2026-10-06T08:00:00.000Z",
+        "etiquettes": ["et-froid"]
       },
       {
         "id": "om-chargeur",
@@ -45,7 +78,8 @@
         "consommable": false,
         "toujoursInclus": true,
         "note": "Un pour deux suffit.",
-        "modifieLe": "2026-10-06T08:00:00.000Z"
+        "modifieLe": "2026-10-06T08:00:00.000Z",
+        "etiquettes": []
       }
     ]
   },
@@ -59,6 +93,16 @@
       "voyageurs": 2,
       "modifieLe": "2026-10-06T08:00:00.000Z"
     },
+    "etiquettes": [
+      {
+        "id": "ev-camping",
+        "voyageId": "v-vercors",
+        "modeleId": "et-camping",
+        "nom": "Camping",
+        "ordre": 0,
+        "modifieLe": "2026-10-06T08:00:00.000Z"
+      }
+    ],
     "categories": [
       {
         "id": "cv-vetements",

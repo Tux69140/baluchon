@@ -34,13 +34,14 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque, meta: { bibliothequeInstallee: true, langueBibliotheque: langue } });
       return true;
     },
-    lireBibliotheque: async () => lire().bibliotheque ?? { categories: [], objets: [] },
-    async creerVoyage({ voyage, categories, objets }) {
+    lireBibliotheque: async () => lire().bibliotheque ?? { groupes: [], etiquettes: [], categories: [], objets: [] },
+    async creerVoyage({ voyage, etiquettes, categories, objets }) {
       const donnees = lire();
       panne(donnees, 'creerVoyage');
       ecrire({
         ...donnees,
         voyages: [...(donnees.voyages ?? []), voyage],
+        etiquettesDuVoyage: [...(donnees.etiquettesDuVoyage ?? []), ...etiquettes],
         categoriesDuVoyage: [...(donnees.categoriesDuVoyage ?? []), ...categories],
         objetsDuVoyage: [...(donnees.objetsDuVoyage ?? []), ...objets],
       });
@@ -52,6 +53,8 @@ export function creerStockageNavigateur() {
       if (!voyage) return null;
       return {
         voyage,
+        // Un voyage enregistré avant les étiquettes n'a pas la clé : liste vide.
+        etiquettes: (donnees.etiquettesDuVoyage ?? []).filter(e => e.voyageId === id),
         categories: (donnees.categoriesDuVoyage ?? []).filter(c => c.voyageId === id),
         objets: (donnees.objetsDuVoyage ?? []).filter(o => o.voyageId === id),
       };

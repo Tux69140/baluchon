@@ -20,7 +20,10 @@ test('la bibliothèque s’installe une seule fois et se relit à l’identique'
   assert.equal(await stockage.bibliothequeInstallee(), false);
   assert.equal(await stockage.installerBibliotheque(contrat.bibliotheque, 'fr'), true);
   assert.equal(await stockage.bibliothequeInstallee(), true);
-  assert.equal(await stockage.installerBibliotheque({ categories: [], objets: [] }, 'en'), false);
+  assert.equal(
+    await stockage.installerBibliotheque({ groupes: [], etiquettes: [], categories: [], objets: [] }, 'en'),
+    false,
+  );
   assert.deepEqual(await stockage.lireBibliotheque(), contrat.bibliotheque);
 });
 
@@ -38,9 +41,24 @@ test('les voyages déposés par un test (forme de la phase 1) restent lisibles',
   assert.deepEqual(await stockage.listerVoyages(), [contrat.voyage.voyage]);
   assert.deepEqual(await stockage.lireVoyage('v-vercors'), {
     voyage: contrat.voyage.voyage,
+    etiquettes: [],
     categories: [],
     objets: [],
   });
+});
+
+test('un voyage garde ses étiquettes, et un ancien voyage sans la clé en a une liste vide', async () => {
+  const stockage = creerStockageNavigateur();
+  const deux = [
+    ...contrat.voyage.etiquettes,
+    { ...contrat.voyage.etiquettes[0], id: 'ev-froid', nom: 'Froid', ordre: 1 },
+  ];
+  await stockage.creerVoyage({ ...contrat.voyage, etiquettes: deux });
+  assert.deepEqual((await stockage.lireVoyage('v-vercors')).etiquettes, deux);
+  const donnees = JSON.parse(localStorage.getItem('baluchon-essai'));
+  delete donnees.etiquettesDuVoyage;
+  localStorage.setItem('baluchon-essai', JSON.stringify(donnees));
+  assert.deepEqual((await stockage.lireVoyage('v-vercors')).etiquettes, []);
 });
 
 test('une panne simulée fait échouer la création sans rien écrire', async () => {

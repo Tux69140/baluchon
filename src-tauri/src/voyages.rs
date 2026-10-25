@@ -17,6 +17,18 @@ pub struct Voyage {
     pub modifie_le: String,
 }
 
+// Copie d'une étiquette de la bibliothèque, propre au voyage ; modele_id garde l'origine sans lien contraint.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EtiquetteDuVoyage {
+    pub id: String,
+    pub voyage_id: String,
+    pub modele_id: Option<String>,
+    pub nom: String,
+    pub ordre: i64,
+    pub modifie_le: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CategorieDuVoyage {
@@ -64,11 +76,13 @@ pub struct EtatObjet {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VoyageComplet {
     pub voyage: Voyage,
+    pub etiquettes: Vec<EtiquetteDuVoyage>,
     pub categories: Vec<CategorieDuVoyage>,
     pub objets: Vec<ObjetDuVoyage>,
 }
 
 const COLONNES_VOYAGE: &str = "id, nom, destination, depart, retour, voyageurs, modifie_le";
+const COLONNES_ETIQUETTE: &str = "id, voyage_id, modele_id, nom, ordre, modifie_le";
 const COLONNES_CATEGORIE: &str = "id, voyage_id, modele_id, nom, icone, couleur, ordre, modifie_le";
 const COLONNES_OBJET: &str = "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
     consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achete, note, modifie_le";
@@ -82,6 +96,17 @@ fn voyage_depuis(r: &Row<'_>) -> rusqlite::Result<Voyage> {
         retour: r.get(4)?,
         voyageurs: r.get(5)?,
         modifie_le: r.get(6)?,
+    })
+}
+
+fn etiquette_depuis(r: &Row<'_>) -> rusqlite::Result<EtiquetteDuVoyage> {
+    Ok(EtiquetteDuVoyage {
+        id: r.get(0)?,
+        voyage_id: r.get(1)?,
+        modele_id: r.get(2)?,
+        nom: r.get(3)?,
+        ordre: r.get(4)?,
+        modifie_le: r.get(5)?,
     })
 }
 
@@ -135,6 +160,13 @@ impl Base {
             params![v.id, v.nom, v.destination, v.depart, v.retour, v.voyageurs, v.modifie_le],
         )
         .map_err(en_texte)?;
+        for e in &contenu.etiquettes {
+            tx.execute(
+                &format!("INSERT INTO etiquette_du_voyage ({COLONNES_ETIQUETTE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"),
+                params![e.id, e.voyage_id, e.modele_id, e.nom, e.ordre, e.modifie_le],
+            )
+            .map_err(en_texte)?;
+        }
         for c in &contenu.categories {
             tx.execute(
                 &format!("INSERT INTO categorie_du_voyage ({COLONNES_CATEGORIE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"),
@@ -207,6 +239,12 @@ impl Base {
             .optional()
             .map_err(en_texte)?;
         let Some(voyage) = voyage else { return Ok(None) };
+        let etiquettes = lire_lignes(
+            &connexion,
+            &format!("SELECT {COLONNES_ETIQUETTE} FROM etiquette_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
+            [id],
+            etiquette_depuis,
+        )?;
         let categories = lire_lignes(
             &connexion,
             &format!("SELECT {COLONNES_CATEGORIE} FROM categorie_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
@@ -219,7 +257,7 @@ impl Base {
             [id],
             objet_depuis,
         )?;
-        Ok(Some(VoyageComplet { voyage, categories, objets }))
+        Ok(Some(VoyageComplet { voyage, etiquettes, categories, objets }))
     }
 }
 
@@ -241,6 +279,21 @@ mod tests {
         base.creer_voyage(&contenu).unwrap();
         assert_eq!(base.lire_voyage("v-vercors").unwrap(), Some(contenu.clone()));
         assert_eq!(base.lister_voyages().unwrap(), vec![contenu.voyage]);
+    }
+
+    #[test]
+    fn les_etiquettes_du_voyage_sont_relues_dans_l_ordre() {
+        let (_dossier, base) = base_jetable();
+        let mut contenu = contrat().voyage;
+        let mut seconde = contenu.etiquettes[0].clone();
+        seconde.id = "ev-froid".into();
+        seconde.modele_id = None;
+        seconde.nom = "Froid".into();
+        seconde.ordre = 1;
+        contenu.etiquettes.push(seconde);
+        base.creer_voyage(&contenu).unwrap();
+        let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
+        assert_eq!(relu.etiquettes, contenu.etiquettes);
     }
 
     #[test]
