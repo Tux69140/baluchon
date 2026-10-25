@@ -47,8 +47,14 @@ const objet = (id, categorieId, nom, quantite, dansLeSac, extra = {}) => ({
   ...extra,
 });
 
+// Les étiquettes du voyage v1, rangées dans le désordre ; la dernière a un nom piégé (HTML, esperluette,
+// guillemets) qui doit s'afficher tel quel. Le voyage v2 n'en a aucune.
+export const ETIQUETTES = ['Randonnée', 'Camping', 'Froid', 'Tente', '<b>Pluie & "vent"</b>'];
+const etiquette = (nom, ordre) => ({ id: `e-${ordre}`, voyageId: 'v1', modeleId: null, nom, ordre });
+
 export const DONNEES = {
   voyages: [voyage('v1', NOM), voyage('v2', 'Autre'), voyage('v3', 'B'.repeat(120)), voyage('v4', 'Sans objet')],
+  etiquettesDuVoyage: [4, 2, 0, 3, 1].map(i => etiquette(ETIQUETTES[i], i)),
   categoriesDuVoyage: [
     categorie('c-ali', 'v1', 'Alimentation', 'fork-knife', 'pomme', 3),
     categorie('c-vet', 'v1', 'Vêtements', 't-shirt', 'ciel', 1),

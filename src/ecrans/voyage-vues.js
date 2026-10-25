@@ -45,14 +45,25 @@ function vueOutils(t, langue, etat) {
       </div>${masques ? `\n      <p class="masques">${pluriel(t, 'voyage.masques', masques, langue)}</p>` : ''}`;
 }
 
-function vueEntete({ t, langue }, voyage) {
+// Les étiquettes choisies à la création, pour mémoire : des puces sans geste, rien si le voyage n'en a pas.
+function vueEtiquettes(t, etiquettes) {
+  if (!etiquettes.length) return '';
+  const puces = [...etiquettes]
+    .sort((a, b) => a.ordre - b.ordre)
+    .map(e => `<li>${iconeInterface('etiquette')}${echapper(e.nom)}</li>`)
+    .join('');
+  return `
+        <ul class="etiquettes-voyage" aria-label="${t('voyage.etiquettes')}">${puces}</ul>`;
+}
+
+function vueEntete({ t, langue }, voyage, etiquettes) {
   const destination = voyage.destination ? `<p>${echapper(voyage.destination)}</p>` : '';
   return `
       ${lienRetour(t)}
       <h1>${echapper(voyage.nom)}</h1>
       <div class="voyage-entete">
         ${destination}
-        <p class="voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</p>
+        <p class="voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</p>${vueEtiquettes(t, etiquettes)}
       </div>`;
 }
 
@@ -187,7 +198,7 @@ export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, deuxP
   // Le nombre de voyageurs suit le contexte jusqu'aux lignes, qui en ont besoin pour « partagé ».
   const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs };
   const { t, langue } = contexte;
-  const entete = vueEntete(contexte, contenu.voyage);
+  const entete = vueEntete(contexte, contenu.voyage, contenu.etiquettes);
   if (!contenu.objets.length) return { classe: 'ecran', html: entete + vueVide(t) };
   const debut = `${entete}${vueProgression(t, contenu.objets, { sacBoucle: etat.sacBoucle, pose: poses.bandeau })}${vueOutils(t, langue, etat)}`;
   if (deuxPanneaux) return { classe: 'panneaux', html: vuePanneaux(contexte, { liste, etat, poses }, debut) };

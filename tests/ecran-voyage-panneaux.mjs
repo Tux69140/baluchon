@@ -33,7 +33,7 @@ import {
   verifierBarres,
   verifierCommandes,
 } from './outils/page.mjs';
-import { DONNEES, avecPieces } from './outils/voyage-essai.mjs';
+import { DONNEES, ETIQUETTES, avecPieces } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
@@ -108,6 +108,9 @@ const lire = page =>
       tampon: Boolean(document.querySelector('.detail-tete .tampon')),
       info: document.querySelector('.panneau-droit .ligne-info')?.textContent.trim() ?? null,
       categories: document.querySelectorAll('.categorie').length,
+      // Les puces d'étiquette sont dans le panneau de gauche, sous les dates.
+      puces: [...document.querySelectorAll('.panneau-gauche ul.etiquettes-voyage li')].map(li => li.textContent.trim()),
+      pucesInteractives: document.querySelectorAll('.etiquettes-voyage :is(a, button, input, [tabindex])').length,
     };
   });
 
@@ -148,6 +151,10 @@ try {
         `${cas} : panneau de gauche ${m.ordreGauche}`,
       );
       juge.exige(m.choix === 'c-pap,c-vet,c-toi,c-ali', `${cas} : choix ${m.choix}`);
+      juge.exige(
+        JSON.stringify(m.puces) === JSON.stringify(ETIQUETTES) && m.pucesInteractives === 0,
+        `${cas} : étiquettes ${JSON.stringify(m.puces)}, ${m.pucesInteractives} élément(s) interactif(s)`,
+      );
       juge.exige(
         m.courant === 'c-vet' && m.fondActif && !m.fondAutre && m.bord === '2px' && m.fleches === 'visible,hidden',
         `${cas} : choisie ${m.courant}, fond actif ${m.fondActif}/${m.fondAutre}, bord ${m.bord}, flèches ${m.fleches}`,

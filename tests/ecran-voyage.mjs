@@ -33,7 +33,7 @@ import {
   verifierBarres,
   verifierCommandes,
 } from './outils/page.mjs';
-import { DONNEES, NOM } from './outils/voyage-essai.mjs';
+import { DONNEES, ETIQUETTES, NOM } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
@@ -139,6 +139,20 @@ const lire = page =>
           ],
         ]),
       ),
+      // Les puces d'étiquette : leur liste nommée, leur texte, leur picto, et rien d'interactif dedans.
+      puces: {
+        liste: document.querySelector('ul.etiquettes-voyage')?.getAttribute('aria-label') ?? null,
+        noms: [...document.querySelectorAll('.etiquettes-voyage li')].map(li => li.textContent.trim()),
+        pictos: [...document.querySelectorAll('.etiquettes-voyage li')].every(li => li.querySelector('svg')),
+        interactifs: document.querySelectorAll('.etiquettes-voyage :is(a, button, input, [tabindex])').length,
+        balisesInjectees: document.querySelectorAll('.etiquettes-voyage b').length,
+        sousLesDates:
+          document
+            .querySelector('.voyage-details')
+            ?.compareDocumentPosition(document.querySelector('.etiquettes-voyage')) ===
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        taille: getComputedStyle(document.querySelector('.etiquettes-voyage li')).fontSize,
+      },
       picto: [...document.querySelectorAll('.pave')].every(p => p.querySelector('svg')),
     }),
     fr.voyage.partage,
@@ -174,6 +188,16 @@ try {
         `${cas} : en-tête « ${m.entete} »`,
       );
       juge.exige(m.retour === '#/voyages', `${cas} : retour ${m.retour}`);
+      juge.exige(
+        m.puces.liste === fr.voyage.etiquettes &&
+          JSON.stringify(m.puces.noms) === JSON.stringify(ETIQUETTES) &&
+          m.puces.pictos &&
+          m.puces.interactifs === 0 &&
+          m.puces.balisesInjectees === 0 &&
+          m.puces.sousLesDates &&
+          m.puces.taille === '13px',
+        `${cas} : étiquettes ${JSON.stringify(m.puces)}`,
+      );
       juge.exige(
         m.progression === `${fr.voyage.dansLeSac} ${remplir(fr.voyage.compte, { faits: 6, total: 14 })}` && !m.boucle,
         `${cas} : progression « ${m.progression} »${m.boucle ? ', bouclée' : ''}`,
@@ -231,6 +255,12 @@ try {
       await vide.page.screenshot({ path: join(CAPTURES, `voyage-vide-${format}-${NOMS_THEME[theme]}.png`) });
       await verifierBarres(vide.page, juge, `${cas}, voyage sans objet`);
       await vide.contexte.close();
+
+      // Un voyage sans étiquette n'affiche pas de liste vide.
+      const sans = await ouvrir(navigateur, serveur.url, { taille, theme, donnees: DONNEES, adresse: '#/voyage/v2' });
+      const nombre = await sans.page.evaluate(() => document.querySelectorAll('.etiquettes-voyage').length);
+      juge.exige(nombre === 0, `${cas} : voyage sans étiquette, ${nombre} liste(s)`);
+      await sans.contexte.close();
     }
   }
 
