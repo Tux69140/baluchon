@@ -131,7 +131,7 @@ L'assistant ajoute une étape par groupe, où l'on touche des puces. Une rangée
 
 ### Critères d'acceptation
 
-- [ ] Les maquettes de l'assistant et de l'aperçu sont validées par le chef de projet avant tout code.
+- [x] Les maquettes de l'assistant et de l'aperçu sont validées par le chef de projet avant tout code (2026-10-25, `docs/maquettes/assistant/`).
 - [ ] Un objet entre s'il est « toujours inclus » ou si au moins une de ses étiquettes est cochée, et seulement si sa catégorie entre aussi.
 - [ ] Un objet désigné par deux étiquettes cochées n'apparaît qu'une fois.
 - [ ] Un objet décoché dans l'aperçu, ou dont la catégorie est décochée, est absent du voyage créé.
