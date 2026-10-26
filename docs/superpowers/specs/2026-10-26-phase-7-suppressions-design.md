@@ -72,10 +72,23 @@ Déjà décidé par le plan et le PRD, rappelé ici : on supprime une catégorie
 - Appareils : tablette SM-X210, ASUS (Android 7, 360 points de large), Xiaomi (Android 15), Debian.
 - Pas de dépendance nouvelle.
 
+## Maquettes validées (2026-10-26)
+
+`docs/maquettes/suppressions/` (servir la racine du dépôt : `python3 -m http.server 8646 --bind 127.0.0.1`, puis `/docs/maquettes/suppressions/?etat=…`), validée par le chef de projet le 2026-10-26 sans changement (« oui »). Elle fait foi pour tout ce qui se voit. Choix qu'elle fixe en plus de ce document :
+
+- « Supprimer la catégorie » / « Supprimer l'objet » en rouge sous un trait, au bas des fiches de la bibliothèque, comme pour les étiquettes ;
+- confirmation : la phrase chiffrée met le nombre en gras (« Ses **3 objets** seront supprimés aussi. », « **1 objet** perdra cette étiquette ; il garde ses autres étiquettes. », « **2 objets et 1 catégorie** perdront cette étiquette ; ils gardent leurs autres étiquettes. », « **1 catégorie** perdra une de ses étiquettes ; elle garde les autres. ») ;
+- fenêtre de refus (520 px, panneau du bas au téléphone) : titre « Impossible de supprimer « Plage » pour l'instant », × ; texte « Sans elle (Sans ses étiquettes), ces éléments ne seraient plus jamais proposés. Touchez-les un par un : donnez-leur une autre étiquette ou « Toujours inclus », ou supprimez-les. » (au singulier s'il n'y en a qu'un) ; « N à régler » ; une liste encadrée de lignes de 64 px (pavé de la catégorie, nom, « Catégorie · 3 objets » ou « Objet · dans « Vêtements » », chevron), catégories d'abord ; pied « Fermer », ombré tant qu'il reste à défiler ; la fiche ouverte depuis une ligne se pose par-dessus, et un élément réglé quitte la liste (annoncé à la lecture d'écran) ;
+- liste vide : titre « Supprimer l'étiquette « Plage » ? », message vert avec coche « Plus rien ne bloque : vous pouvez supprimer « Plage ». », la phrase chiffrée, pied « Garder » / « Supprimer » (rouge) ;
+- bandeau « Annuler » : fond à l'encre, texte au fond (inversé en sombre), corbeille, texte (« Objet « Parasol » supprimé », « Catégorie « Camping » et 3 objets supprimés », « Étiquette « Plage » supprimée », « Groupe « Climat » et 3 étiquettes supprimés »), bouton « Annuler » avec la flèche de retour, au vert départ de l'autre thème ; 56 px de haut, 440 px au plus (toute la largeur au téléphone) ; en bas à droite, juste au-dessus du bouton flottant s'il y en a un ; en haut, centré, quand une fenêtre est ouverte, rangé dans la fenêtre du dessus pour que « Annuler » reste touchable ; entrée en glissé court (rien si l'appareil demande moins d'animations) ; aucun décompte affiché ;
+- place réservée : le bas de chaque écran (et de chaque panneau en paysage) garde la hauteur du bandeau, pour qu'il ne cache jamais une dernière ligne ;
+- « Annuler » éclaire l'élément revenu, comme un élément neuf ;
+- espaces insécables dans les guillemets et devant « : ; ? ! » des textes de la phase 7 (« Plage » ne se coupe plus en fin de ligne).
+
 ## Suite des travaux
 
 1. Inscrire les décisions dans `docs/PRD.md` (US-8 retirée et passée en hors périmètre ; « Écrans et gestes » : aucun orphelin, refus qui mène aux fiches, bandeau qui suit) et préciser la phase 7 dans `docs/PLAN.md`. Fait le 2026-10-26.
-2. Maquettes (skill impeccable) : boutons « Supprimer » des fiches de catégorie et d'objet, confirmations chiffrées (objet, catégorie, étiquette, groupe), fenêtre de refus et son passage à la confirmation, fiche ouverte depuis la liste, bandeau « Annuler » sur chaque écran (dont « Nouveau voyage »), au téléphone de 360 points comme sur les grands formats.
+2. Maquettes (skill impeccable) : boutons « Supprimer » des fiches de catégorie et d'objet, confirmations chiffrées (objet, catégorie, étiquette, groupe), fenêtre de refus et son passage à la confirmation, fiche ouverte depuis la liste, bandeau « Annuler » sur chaque écran (dont « Nouveau voyage »), au téléphone de 360 points comme sur les grands formats. Faites et validées le 2026-10-26 (voir ci-dessus).
 3. Après validation des maquettes : plan d'implémentation (superpowers:writing-plans), construction sur une branche `phase-7`, essais sur les appareils, validation par le chef de projet.
 
 ## Laissé au constructeur
