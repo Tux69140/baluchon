@@ -15,7 +15,7 @@
 // - data-bascule="cle" : un interrupteur ; data-pose="cle" data-valeur="v" : un choix posé (couleur) ;
 // - data-etiquette="id" : une étiquette pressée ou relâchée ;
 // - data-action="nom" : une action propre à la fiche (actions[nom](brouillon), qui peut attendre).
-import { bornerQuantite, lireNombre } from '../modele/modeles.js';
+import { bornerQuantite, curseurApresLecture, lireNombre } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { demander, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { echapper } from './html.js';
@@ -188,8 +188,14 @@ export function ouvrirFicheModele({
     if (texte) brouillon[texte] = target.value;
     else if (nombre) {
       brouillon[nombre] = lireNombre(target.value);
-      // Ce qui est affiché est ce qui sera enregistré : « 12a » devient 12, « 0 » devient 1.
-      target.value = brouillon[nombre] ?? '';
+      // Ce qui est affiché est ce qui sera enregistré : « 12a » devient 12, « 0 » devient 1. Réécrire
+      // renvoie le curseur en fin de champ : seulement si le texte change, et le curseur est replacé.
+      const affiche = String(brouillon[nombre] ?? '');
+      if (target.value !== affiche) {
+        const curseur = curseurApresLecture(target.value, target.selectionStart);
+        target.value = affiche;
+        target.setSelectionRange(curseur, curseur);
+      }
       ajuster(brouillon, nombre);
     } else return;
     rafraichir();

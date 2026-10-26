@@ -7,6 +7,7 @@ import {
   activerPlafond,
   bornerQuantite,
   changerRegle,
+  curseurApresLecture,
   deplacerCategorie,
   exempleQuantite,
   lireNombre,
@@ -125,6 +126,18 @@ test('lireNombre : chiffres seuls, borné, vide refusé', () => {
   assert.equal(lireNombre(''), null);
   assert.equal(lireNombre('abc'), null);
   assert.equal(lireNombre('7'), 7);
+});
+
+// Le champ affiche lireNombre(texte) ; le curseur garde sa distance à la fin, en chiffres gardés.
+test('curseurApresLecture : juste après la frappe, décalé de ce qui est retiré avant lui', () => {
+  assert.equal(curseurApresLecture('1a2', 2), 1);
+  assert.equal(curseurApresLecture('12a', 3), 2);
+  assert.equal(curseurApresLecture('a12', 1), 0);
+  assert.equal(curseurApresLecture('152', 2), 2);
+  assert.equal(curseurApresLecture('012', 1), 0);
+  assert.equal(curseurApresLecture('0', 1), 1);
+  assert.equal(curseurApresLecture('9999', 3), 2);
+  assert.equal(curseurApresLecture('', 0), 0);
 });
 
 test('preparerObjet : nom nettoyé, plafond, étiquettes, identité', () => {

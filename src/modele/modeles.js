@@ -68,12 +68,23 @@ export function validerObjet(saisie) {
 // Une quantité (valeur ou plafond) ramenée entre 1 et 999 : au clavier comme par − / +.
 export const bornerQuantite = n => Math.min(BORNES_QUANTITE.max, Math.max(BORNES_QUANTITE.min, n));
 
+// Ce que lireNombre garde d'une saisie : les chiffres seuls.
+const chiffres = texte => String(texte ?? '').replace(/\D/g, '');
+
 // Champ numérique au clavier : on ne garde que les chiffres, puis on ramène entre 1 et 999 ; un
 // champ vide reste vide (null) pour que la validation le refuse avec son message.
 export function lireNombre(texte) {
-  const chiffres = String(texte ?? '').replace(/\D/g, '');
-  if (!chiffres) return null;
-  return bornerQuantite(Number(chiffres));
+  const gardes = chiffres(texte);
+  if (!gardes) return null;
+  return bornerQuantite(Number(gardes));
+}
+
+// Où remettre le curseur quand le champ réécrit la saisie texte en lireNombre(texte) : à la même
+// distance de la fin, comptée en chiffres gardés. Il reste juste après la frappe, décalé de ce qui
+// est retiré avant lui ; ramené dans le champ si la valeur a été bornée.
+export function curseurApresLecture(texte, curseur) {
+  const affiche = String(lireNombre(texte) ?? '');
+  return Math.max(0, affiche.length - chiffres(String(texte).slice(curseur)).length);
 }
 
 // La règle de quantité qu'une saisie enregistre : sans plafond avec « Fixe » ou l'interrupteur

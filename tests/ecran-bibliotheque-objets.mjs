@@ -6,11 +6,14 @@
 // - Review Focus 5 : valeur vidée puis « Enregistrer » → « Indiquez une quantité, de 1 à 999. » à sa
 //   place, rien ne bouge au-dessus, rien d'écrit ; « 0 » → 1 ; « 1000 » → 999 ; « 12a » → 12 ; − / +
 //   ne sortent pas de 1 à 999 ;
+// - curseur : « 1|2 » + 5 → « 15|2 » (rien de réécrit) ; « 1|2 » + a → « 1|2 » (le « a » retiré) ;
+//   « 1| » effacé → champ vide ;
 // - nouvel objet dans Alimentation : « Ajouter l’objet » sans nom → « Donnez un nom à cet objet. » et
 //   focus sur le nom ; « Pâtes », par jour → rangé entre Gourde et Repas, éclairé, enregistré ;
 // - Review Focus 1 : un objet nommé <i>Pâtes</i> & "riz" reste du texte dans sa ligne et le titre de
 //   sa fiche.
 import { chromium } from 'playwright';
+import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   fermerEssai,
@@ -53,6 +56,17 @@ const places = page =>
       Math.round(d.querySelector(s)?.getBoundingClientRect().top ?? -1),
     );
   }, FICHE);
+
+// Une touche frappée dans la quantité, le curseur posé à « place » dans « texte » : rend le texte et
+// la place du curseur après la frappe (« | » marque le curseur dans les messages).
+async function frapper(page, texte, place, touche) {
+  const champ = page.locator(`${FICHE} input[data-nombre="valeur"]`);
+  await champ.fill(texte);
+  await champ.evaluate((c, p) => c.setSelectionRange(p, p), place);
+  await page.keyboard.press(touche);
+  await calme(page);
+  return champ.evaluate(c => `${c.value.slice(0, c.selectionStart)}|${c.value.slice(c.selectionStart)}`);
+}
 
 async function essaiRepas() {
   const cas = 'fiche de Repas';
@@ -117,6 +131,16 @@ async function essaiRepas() {
     await saisir(page, 'input[data-nombre="valeur"]', tape);
     const fiche = await lireFiche(page);
     juge.exige(fiche?.valeur === lu && fiche.erreurs.length === 0, `${cas} : « ${tape} » → ${vu(fiche?.valeur)}`);
+  }
+  // Le curseur reste où l'on tape : rien de réécrit si la valeur est déjà la bonne, sinon juste après
+  // la frappe, décalé de ce qui est retiré avant lui.
+  for (const [texte, place, touche, attendu] of [
+    ['12', 1, '5', '15|2'],
+    ['12', 1, 'a', '1|2'],
+    ['1', 1, 'Backspace', '|'],
+  ]) {
+    const lu = await frapper(page, texte, place, touche);
+    juge.exige(lu === attendu, `${cas} : « ${texte.slice(0, place)}|${texte.slice(place)} » + ${touche} → « ${lu} »`);
   }
   await saisir(page, 'input[data-nombre="valeur"]', '999');
   await toucher(page, '[data-pas="valeur"][data-sens="1"]', { force: true });
@@ -209,4 +233,4 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Fiches d’objet', 'Repas, plafond, Fixe, valeurs bornées, nouvel objet, nom piégé');
+juge.conclure('Fiches d’objet', 'Repas, plafond, Fixe, valeurs bornées, curseur, nouvel objet, nom piégé');
