@@ -42,8 +42,9 @@ const vueMenu = (t, courant) => `
 // fiche). Une entrée ferme d'abord le menu et attend que son étape d'historique soit partie (sinon ce
 // retrait reculerait sous l'écran suivant), puis : Mes voyages remonte à l'accueil ; Nouveau voyage et
 // Réglages passent par l'accueil, pour que le retour système y ramène ensuite ; l'écran déjà ouvert
-// ne fait que fermer le menu.
-export function ouvrirMenu({ t, revenirAccueil, allerDepuisAccueil }, { courant }) {
+// ne fait que fermer le menu. Un retour survenu pendant la fermeture (touche d'Android, ou retour du
+// navigateur) abandonne le choix : seul le retour compte, l'appli ne repart pas là où il l'a ôtée.
+export function ouvrirMenu({ t, revenirAccueil, allerDepuisAccueil, appuisRetour }, { courant }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueMenu(t, courant);
   const tiroir = gabarit.content.firstElementChild;
@@ -64,8 +65,13 @@ export function ouvrirMenu({ t, revenirAccueil, allerDepuisAccueil }, { courant 
     if (choisie) return;
     choisie = true;
     const adresse = lien.getAttribute('href');
+    // L'étape du menu partie, on attend la même adresse et la même profondeur qu'à son ouverture ; la
+    // touche d'Android à l'accueil, elle, ne change rien à l'historique : on compte ses appuis.
+    const avant = { href: location.href, profondeur: history.state?.profondeur, appuis: appuisRetour() };
     await fermer();
-    if (adresse === location.hash) return;
+    const retour =
+      location.href !== avant.href || history.state?.profondeur !== avant.profondeur || appuisRetour() !== avant.appuis;
+    if (retour || adresse === location.hash) return;
     if (adresse === '#/voyages') revenirAccueil();
     else allerDepuisAccueil(adresse);
   });

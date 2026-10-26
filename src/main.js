@@ -67,6 +67,10 @@ let retourEnCours = false;
 let destination = null;
 // Une fenêtre fermée rend le focus au bouton qui l'a ouverte, une fois l'accueil redessiné.
 let focusApresRetour = null;
+// Appuis sur la touche retour d'Android depuis le démarrage, même ceux qui ne touchent pas à
+// l'historique (à l'accueil, l'appli passe en arrière-plan) : le menu y voit qu'un retour est survenu
+// pendant sa fermeture (src/ecrans/menu.js).
+let appuisRetour = 0;
 
 function noterProfondeur() {
   if (typeof history.state?.profondeur !== 'number') history.replaceState({ profondeur: profondeur + 1 }, '');
@@ -147,6 +151,7 @@ async function afficher() {
     revenirAccueil,
     allerDepuisAccueil,
     revenir,
+    appuisRetour: () => appuisRetour,
   };
   try {
     const donnees = await route.ecran.charger(contexte);
@@ -182,6 +187,7 @@ async function demarrer() {
   let reculEnCours = false;
   window.addEventListener('popstate', () => (reculEnCours = false));
   ecouterRetourSysteme(() => {
+    appuisRetour += 1;
     if (reculEnCours) return true;
     if (!retourDansLAppli(history.state)) return false;
     reculEnCours = true;

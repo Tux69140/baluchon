@@ -11,6 +11,10 @@
 //   Menu → Mes voyages, lui, dessine l'accueil) ; « Créer le voyage » ouvre le voyage, et la touche
 //   retour ramène à l'accueil (pas à Réglages), puis quitte l'appli. Même chose depuis l'accueil, et
 //   depuis Réglages ouvert directement par son adresse.
+// - Retour pendant la fermeture du menu (entrée touchée, étape du menu partie, panneau qui glisse
+//   encore) : le choix est abandonné, seul le retour compte. Depuis Réglages, Nouveau voyage puis la
+//   touche retour, ou le retour du navigateur : l'accueil, sans l'assistant. Depuis l'accueil,
+//   Réglages puis la touche retour : l'appli passe en arrière-plan, l'accueil reste, sans Réglages.
 // Téléphones 360 × 640 et 640 × 360, téléphone, tablette (portrait, paysage) et ordinateur, en clair
 // et en sombre : cibles de 44 px, rien sous les barres système, largeur du menu ; captures menu-… et
 // reglages-… dans captures-travail/.
@@ -294,6 +298,50 @@ async function essaiMesVoyages(format) {
   await finirSurAccueil(cas, ouvert);
 }
 
+// Un retour pendant la fermeture du menu : geste 'touche' (Android) ou 'navigateur' (history.back).
+// Il part une fois l'étape du menu retirée, le panneau encore en train de glisser (témoin).
+async function essaiRetourPendantFermeture(format, { depart, entree, geste }) {
+  const cas = `retour (${geste}) pendant la fermeture, ${entree} depuis ${depart}, ${format}`;
+  const ouvert = await ouvrirAvecTouche(cas, format);
+  const { page, contexte, erreurs } = ouvert;
+  if (depart === 'Réglages') {
+    await ouvrirMenu(page);
+    await toucherEntree(page, fr.menu.reglages);
+    await attendreEcran(page, 'reglages');
+  }
+  await ouvrirMenu(page);
+  await suivreEcrans(page);
+  const enFermeture = await page.evaluate(
+    async ({ libelle, geste }) => {
+      const lien = [...document.querySelectorAll('dialog.tiroir .tiroir-lien')].find(
+        a => a.textContent.trim() === libelle,
+      );
+      const etapePartie = new Promise(r => window.addEventListener('popstate', r, { once: true }));
+      lien.click();
+      await etapePartie;
+      const glisse = 'fermeture' in (document.querySelector('dialog.tiroir[open]')?.dataset ?? {});
+      if (geste === 'touche') window.toucheRetour();
+      else history.back();
+      return glisse;
+    },
+    { libelle: entree, geste },
+  );
+  juge.exige(enFermeture, `${cas} : le retour n’est pas parti pendant la fermeture`);
+  await attendreQue(page, () => !document.querySelector('dialog.tiroir'));
+  await calme(page);
+  const apres = { ...(await etat(page)), vus: await page.evaluate(() => window.ecransVus) };
+  const depuisAccueil = depart === 'l’accueil';
+  const abandonne =
+    apres.ecran === 'voyages' &&
+    apres.adresse === '#/voyages' &&
+    apres.sorties === (depuisAccueil ? 1 : 0) &&
+    vu(apres.vus) === vu(depuisAccueil ? [] : ['voyages']);
+  juge.exige(abandonne, `${cas} : ${vu(apres)}`);
+  if (abandonne && !depuisAccueil) return finirSurAccueil(cas, ouvert);
+  juge.exige(erreurs.length === 0, `${cas} : erreurs dans la page : ${erreurs.join(' | ')}`);
+  await contexte.close();
+}
+
 // Chaque format, chaque thème : le menu ouvert et Réglages passent les vérifications de tout écran.
 async function essaiFormat(format, theme) {
   const cas = `${format}, ${NOMS_THEME[theme]}`;
@@ -331,6 +379,9 @@ try {
     await essaiReglages(format);
     await essaiMesVoyages(format);
     for (const depart of ['l’accueil', 'Réglages', 'Réglages direct']) await essaiNouveau(format, depart);
+    for (const geste of ['touche', 'navigateur'])
+      await essaiRetourPendantFermeture(format, { depart: 'Réglages', entree: fr.voyages.nouveau, geste });
+    await essaiRetourPendantFermeture(format, { depart: 'l’accueil', entree: fr.menu.reglages, geste: 'touche' });
   }
   for (const theme of ['light', 'dark'])
     for (const format of Object.keys(TOUS_FORMATS)) await essaiFormat(format, theme);
@@ -340,5 +391,5 @@ try {
 }
 juge.conclure(
   'Menu et Réglages',
-  'menu fermé par ×, voile, Échap et retour ; Réglages ; Nouveau voyage par l’accueil ; 6 formats × 2 thèmes',
+  'menu fermé par ×, voile, Échap et retour ; Réglages ; Nouveau voyage par l’accueil ; retour pendant la fermeture ; 6 formats × 2 thèmes',
 );
