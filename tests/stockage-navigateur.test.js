@@ -348,3 +348,98 @@ test('une panne simulée fait échouer chaque écriture des étiquettes sans rie
   assert.equal(groupes.length, 1);
   assert.equal(etiquettes.length, 1);
 });
+
+// Suppressions de la bibliothèque et rétablissement (mêmes cas que src-tauri/src/suppressions.rs).
+const extraitVide = { groupes: [], etiquettes: [], categories: [], objets: [] };
+const biblio = contrat.bibliotheque;
+
+test('supprimer une catégorie supprime ses objets ; les autres gardent leur rang', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.supprimerCategorie('cm-vetements');
+  const apres = await stockage.lireBibliotheque();
+  assert.deepEqual(apres.categories, [biblio.categories[1]]);
+  assert.deepEqual(apres.objets, [biblio.objets[1]]);
+  assert.deepEqual(apres.etiquettes, biblio.etiquettes);
+});
+
+test('supprimer un objet ne touche que lui', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.supprimerObjet('om-tshirts');
+  const apres = await stockage.lireBibliotheque();
+  assert.deepEqual(apres.objets, [biblio.objets[1]]);
+  assert.deepEqual(apres.categories, biblio.categories);
+});
+
+test('supprimer une catégorie ou un objet inconnu est refusé sans rien changer', async () => {
+  const stockage = await stockageInstalle();
+  await assert.rejects(stockage.supprimerCategorie('cm-inconnue'));
+  await assert.rejects(stockage.supprimerObjet('om-inconnu'));
+  assert.deepEqual(await stockage.lireBibliotheque(), biblio);
+});
+
+test('rétablir une catégorie et ses objets rend la bibliothèque identique', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.supprimerCategorie('cm-vetements');
+  await stockage.retablirBibliotheque({
+    ...extraitVide,
+    categories: [biblio.categories[0]],
+    objets: [biblio.objets[0]],
+  });
+  assert.deepEqual(await stockage.lireBibliotheque(), biblio);
+});
+
+test('rétablir une étiquette rend ses liens dans leur ordre', async () => {
+  const stockage = await stockageInstalle();
+  const lie = { ...biblio.objets[0], etiquettes: ['et-camping', 'et-froid'] };
+  await stockage.enregistrerObjet(lie);
+  const avant = await stockage.lireBibliotheque();
+  await stockage.supprimerEtiquette('et-camping');
+  assert.deepEqual((await stockage.lireBibliotheque()).objets[0].etiquettes, ['et-froid']);
+  await stockage.retablirBibliotheque({
+    ...extraitVide,
+    etiquettes: [avant.etiquettes[0]],
+    objets: [avant.objets[0]],
+    categories: [avant.categories[1]],
+  });
+  // Deux groupes peuvent partager le rang 0 : leur ordre dans la liste plate dépend de l'écriture
+  // (comme dans la base), l'écran les range par groupe. On compare donc par id.
+  const parId = b => ({ ...b, etiquettes: [...b.etiquettes].sort((x, y) => x.id.localeCompare(y.id)) });
+  assert.deepEqual(parId(await stockage.lireBibliotheque()), parId(avant));
+});
+
+test('rétablir un groupe rend ses étiquettes et leurs liens', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.supprimerGroupe('ge-climat');
+  await stockage.retablirBibliotheque({
+    ...extraitVide,
+    groupes: [biblio.groupes[1]],
+    etiquettes: [biblio.etiquettes[1]],
+    objets: [biblio.objets[0]],
+  });
+  assert.deepEqual(await stockage.lireBibliotheque(), biblio);
+});
+
+test('rétablir refuse un lien vers une étiquette absente ou un objet sans catégorie, sans rien écrire', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.supprimerCategorie('cm-papiers');
+  const avant = await stockage.lireBibliotheque();
+  const categorie = { ...biblio.categories[1], etiquettes: ['et-absente'] };
+  await assert.rejects(stockage.retablirBibliotheque({ ...extraitVide, categories: [categorie] }));
+  await assert.rejects(stockage.retablirBibliotheque({ ...extraitVide, objets: [biblio.objets[1]] }));
+  assert.deepEqual(await stockage.lireBibliotheque(), avant);
+});
+
+test('une panne simulée de supprimerCategorie ne change rien, ni celles de supprimerObjet et retablirBibliotheque', async () => {
+  const stockage = await stockageInstalle();
+  const donnees = JSON.parse(localStorage.getItem('baluchon-essai'));
+  const pannes = ['supprimerCategorie', 'supprimerObjet', 'retablirBibliotheque'];
+  localStorage.setItem('baluchon-essai', JSON.stringify({ ...donnees, pannes }));
+  await assert.rejects(stockage.supprimerCategorie('cm-vetements'), /Panne/);
+  await assert.rejects(stockage.supprimerObjet('om-tshirts'), /Panne/);
+  await assert.rejects(stockage.retablirBibliotheque(extraitVide), /Panne/);
+  assert.deepEqual(await stockage.lireBibliotheque(), biblio);
+  // Témoin : sans la panne, la catégorie part bien.
+  localStorage.setItem('baluchon-essai', JSON.stringify({ ...donnees, pannes: [] }));
+  await stockage.supprimerCategorie('cm-vetements');
+  assert.equal((await stockage.lireBibliotheque()).categories.length, 1);
+});

@@ -186,6 +186,54 @@ export function creerStockageNavigateur() {
       const groupes = bibliotheque.groupes.filter(g => g.id !== id);
       ecrire({ ...donnees, bibliotheque: { ...sansEtiquettes(bibliotheque, parties), groupes } });
     },
+    async supprimerCategorie(id) {
+      const donnees = await ecritureDe('supprimerCategorie');
+      const bibliotheque = bibliothequeDe(donnees);
+      if (!trouver(bibliotheque.categories, id)) throw new Error(`Catégorie inconnue : ${id}`);
+      // Comme la base : les objets de la catégorie partent avec elle.
+      const categories = bibliotheque.categories.filter(c => c.id !== id);
+      const objets = bibliotheque.objets.filter(o => o.categorieId !== id);
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, categories, objets } });
+    },
+    async supprimerObjet(id) {
+      const donnees = await ecritureDe('supprimerObjet');
+      const bibliotheque = bibliothequeDe(donnees);
+      if (!trouver(bibliotheque.objets, id)) throw new Error(`Objet inconnu : ${id}`);
+      const objets = bibliotheque.objets.filter(o => o.id !== id);
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, objets } });
+    },
+    // Réécrit l'extrait tel qu'il était (src-tauri/src/suppressions.rs) : parents d'abord, un lien vers une
+    // étiquette absente ou un objet d'une catégorie absente fait tout refuser.
+    async retablirBibliotheque(extrait) {
+      const donnees = await ecritureDe('retablirBibliotheque');
+      let { groupes, etiquettes, categories, objets } = bibliothequeDe(donnees);
+      for (const groupe of extrait.groupes) groupes = remplacerOuAjouter(groupes, groupe, ['ordre']);
+      for (const etiquette of extrait.etiquettes) {
+        if (!trouver(groupes, etiquette.groupeId)) throw new Error(`Groupe inconnu : ${etiquette.groupeId}`);
+        etiquettes = remplacerOuAjouter(etiquettes, etiquette, ['groupeId', 'ordre']);
+      }
+      const connues = { ...bibliothequeDe(donnees), groupes, etiquettes };
+      for (const categorie of extrait.categories) {
+        verifierEtiquettes(connues, categorie.etiquettes);
+        categories = remplacerOuAjouter(categories, categorie, ['ordre']);
+      }
+      for (const objet of extrait.objets) {
+        verifierEtiquettes(connues, objet.etiquettes);
+        if (!trouver(categories, objet.categorieId) && !trouver(objets, objet.id)) {
+          throw new Error(`Catégorie inconnue : ${objet.categorieId}`);
+        }
+        objets = remplacerOuAjouter(objets, objet, ['categorieId']);
+      }
+      // La base relit les catégories par rang et les objets par rang de catégorie, puis par création.
+      const rangDe = id => trouver(categories, id).ordre;
+      const bibliotheque = {
+        groupes: trierParOrdre(groupes),
+        etiquettes: trierParOrdre(etiquettes),
+        categories: trierParOrdre(categories),
+        objets: [...objets].sort((a, b) => rangDe(a.categorieId) - rangDe(b.categorieId)),
+      };
+      ecrire({ ...donnees, bibliotheque });
+    },
     async creerVoyage({ voyage, etiquettes, categories, objets }) {
       const donnees = lire();
       panne(donnees, 'creerVoyage');

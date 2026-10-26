@@ -4,7 +4,86 @@
 use crate::base::{en_texte, Base};
 use crate::bibliotheque::{CategorieModele, ObjetModele};
 use crate::etiquettes::verifier_liste_exacte;
-use rusqlite::params;
+use rusqlite::{params, Transaction};
+
+// Le corps de `enregistrer_categorie` dans la transaction donnée : `retablir_bibliotheque` réécrit ainsi
+// tout un extrait en une seule transaction.
+pub(crate) fn ecrire_categorie(
+    tx: &Transaction,
+    categorie: &CategorieModele,
+) -> Result<(), String> {
+    tx.execute(
+        "INSERT INTO categorie_modele (id, nom, icone, couleur, ordre, toujours_incluse, modifie_le)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, icone = excluded.icone,
+           couleur = excluded.couleur, toujours_incluse = excluded.toujours_incluse,
+           modifie_le = excluded.modifie_le",
+        params![
+            categorie.id,
+            categorie.nom,
+            categorie.icone,
+            categorie.couleur,
+            categorie.ordre,
+            categorie.toujours_incluse,
+            categorie.modifie_le
+        ],
+    )
+    .map_err(en_texte)?;
+    tx.execute(
+        "DELETE FROM categorie_modele_etiquette WHERE categorie_id = ?1",
+        [&categorie.id],
+    )
+    .map_err(en_texte)?;
+    for etiquette in &categorie.etiquettes {
+        tx.execute(
+            "INSERT INTO categorie_modele_etiquette (categorie_id, etiquette_id) VALUES (?1, ?2)",
+            params![categorie.id, etiquette],
+        )
+        .map_err(en_texte)?;
+    }
+    Ok(())
+}
+
+// Le corps de `enregistrer_objet` dans la transaction donnée : `retablir_bibliotheque` réécrit ainsi
+// tout un extrait en une seule transaction.
+pub(crate) fn ecrire_objet(tx: &Transaction, objet: &ObjetModele) -> Result<(), String> {
+    tx.execute(
+        "INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
+           consommable, toujours_inclus, note, modifie_le)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+         ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, regle = excluded.regle,
+           valeur = excluded.valeur, plafond = excluded.plafond, par_personne = excluded.par_personne,
+           consommable = excluded.consommable, toujours_inclus = excluded.toujours_inclus,
+           note = excluded.note, modifie_le = excluded.modifie_le",
+        params![
+            objet.id,
+            objet.categorie_id,
+            objet.nom,
+            objet.regle,
+            objet.valeur,
+            objet.plafond,
+            objet.par_personne,
+            objet.consommable,
+            objet.toujours_inclus,
+            objet.note,
+            objet.modifie_le
+        ],
+    )
+    .map_err(en_texte)?;
+    tx.execute(
+        "DELETE FROM objet_modele_etiquette WHERE objet_id = ?1",
+        [&objet.id],
+    )
+    .map_err(en_texte)?;
+    for etiquette in &objet.etiquettes {
+        tx.execute(
+            "INSERT INTO objet_modele_etiquette (objet_id, etiquette_id) VALUES (?1, ?2)",
+            params![objet.id, etiquette],
+        )
+        .map_err(en_texte)?;
+    }
+    Ok(())
+}
 
 impl Base {
     // Crée la catégorie ou remplace ses champs et ses liens d'étiquettes (effacés puis réécrits dans
@@ -13,35 +92,7 @@ impl Base {
     pub fn enregistrer_categorie(&self, categorie: &CategorieModele) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        tx.execute(
-            "INSERT INTO categorie_modele (id, nom, icone, couleur, ordre, toujours_incluse, modifie_le)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-             ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, icone = excluded.icone,
-               couleur = excluded.couleur, toujours_incluse = excluded.toujours_incluse,
-               modifie_le = excluded.modifie_le",
-            params![
-                categorie.id,
-                categorie.nom,
-                categorie.icone,
-                categorie.couleur,
-                categorie.ordre,
-                categorie.toujours_incluse,
-                categorie.modifie_le
-            ],
-        )
-        .map_err(en_texte)?;
-        tx.execute(
-            "DELETE FROM categorie_modele_etiquette WHERE categorie_id = ?1",
-            [&categorie.id],
-        )
-        .map_err(en_texte)?;
-        for etiquette in &categorie.etiquettes {
-            tx.execute(
-                "INSERT INTO categorie_modele_etiquette (categorie_id, etiquette_id) VALUES (?1, ?2)",
-                params![categorie.id, etiquette],
-            )
-            .map_err(en_texte)?;
-        }
+        ecrire_categorie(&tx, categorie)?;
         tx.commit().map_err(en_texte)
     }
 
@@ -50,41 +101,7 @@ impl Base {
     pub fn enregistrer_objet(&self, objet: &ObjetModele) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        tx.execute(
-            "INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
-               consommable, toujours_inclus, note, modifie_le)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
-             ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, regle = excluded.regle,
-               valeur = excluded.valeur, plafond = excluded.plafond, par_personne = excluded.par_personne,
-               consommable = excluded.consommable, toujours_inclus = excluded.toujours_inclus,
-               note = excluded.note, modifie_le = excluded.modifie_le",
-            params![
-                objet.id,
-                objet.categorie_id,
-                objet.nom,
-                objet.regle,
-                objet.valeur,
-                objet.plafond,
-                objet.par_personne,
-                objet.consommable,
-                objet.toujours_inclus,
-                objet.note,
-                objet.modifie_le
-            ],
-        )
-        .map_err(en_texte)?;
-        tx.execute(
-            "DELETE FROM objet_modele_etiquette WHERE objet_id = ?1",
-            [&objet.id],
-        )
-        .map_err(en_texte)?;
-        for etiquette in &objet.etiquettes {
-            tx.execute(
-                "INSERT INTO objet_modele_etiquette (objet_id, etiquette_id) VALUES (?1, ?2)",
-                params![objet.id, etiquette],
-            )
-            .map_err(en_texte)?;
-        }
+        ecrire_objet(&tx, objet)?;
         tx.commit().map_err(en_texte)
     }
 

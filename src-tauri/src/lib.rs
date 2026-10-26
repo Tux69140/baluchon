@@ -4,6 +4,7 @@ mod edition;
 #[cfg(test)]
 mod essais;
 mod etiquettes;
+mod suppressions;
 mod voyages;
 
 use base::Base;
@@ -101,6 +102,21 @@ fn supprimer_groupe(base: State<'_, Base>, id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn supprimer_categorie(base: State<'_, Base>, id: String) -> Result<(), String> {
+    base.supprimer_categorie(&id)
+}
+
+#[tauri::command]
+fn supprimer_objet(base: State<'_, Base>, id: String) -> Result<(), String> {
+    base.supprimer_objet(&id)
+}
+
+#[tauri::command]
+fn retablir_bibliotheque(base: State<'_, Base>, extrait: Bibliotheque) -> Result<(), String> {
+    base.retablir_bibliotheque(&extrait)
+}
+
+#[tauri::command]
 fn creer_voyage(base: State<'_, Base>, contenu: VoyageComplet) -> Result<(), String> {
     base.creer_voyage(&contenu)
 }
@@ -147,6 +163,9 @@ pub fn run() {
             ranger_etiquettes,
             supprimer_etiquette,
             supprimer_groupe,
+            supprimer_categorie,
+            supprimer_objet,
+            retablir_bibliotheque,
             creer_voyage,
             lire_voyage,
             regler_dans_le_sac,

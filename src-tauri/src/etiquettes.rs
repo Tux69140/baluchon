@@ -31,7 +31,7 @@ fn ids_de(tx: &Transaction, requete: &str, parametres: &[&str]) -> Result<Vec<St
 }
 
 // Un id inconnu est refusé : l'écran ne doit pas croire avoir supprimé ce qui n'existe plus.
-fn supprimer_ligne(base: &Base, table: &str, id: &str) -> Result<(), String> {
+pub(crate) fn supprimer_ligne(base: &Base, table: &str, id: &str) -> Result<(), String> {
     let connexion = base.connexion()?;
     let tx = connexion.unchecked_transaction().map_err(en_texte)?;
     // Les liens (et, pour un groupe, ses étiquettes) partent par ON DELETE CASCADE ; les modèles
@@ -45,18 +45,43 @@ fn supprimer_ligne(base: &Base, table: &str, id: &str) -> Result<(), String> {
     tx.commit().map_err(en_texte)
 }
 
+// Le corps de `enregistrer_groupe` dans la transaction donnée : `retablir_bibliotheque` réécrit ainsi
+// tout un extrait en une seule transaction.
+pub(crate) fn ecrire_groupe(tx: &Transaction, groupe: &GroupeEtiquettes) -> Result<(), String> {
+    tx.execute(
+        "INSERT INTO groupe_etiquettes (id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4)
+         ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, modifie_le = excluded.modifie_le",
+        params![groupe.id, groupe.nom, groupe.ordre, groupe.modifie_le],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
+// Le corps de `enregistrer_etiquette` dans la transaction donnée : `retablir_bibliotheque` réécrit ainsi
+// tout un extrait en une seule transaction.
+pub(crate) fn ecrire_etiquette(tx: &Transaction, etiquette: &Etiquette) -> Result<(), String> {
+    tx.execute(
+        "INSERT INTO etiquette (id, groupe_id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, modifie_le = excluded.modifie_le",
+        params![
+            etiquette.id,
+            etiquette.groupe_id,
+            etiquette.nom,
+            etiquette.ordre,
+            etiquette.modifie_le
+        ],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
 impl Base {
     // Crée le groupe ou change son nom. Son rang ne change qu'à la création : seul `ranger_groupes`
     // déplace un groupe existant, pour qu'une fiche ouverte longtemps ne défasse pas un rangement.
     pub fn enregistrer_groupe(&self, groupe: &GroupeEtiquettes) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        tx.execute(
-            "INSERT INTO groupe_etiquettes (id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4)
-             ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, modifie_le = excluded.modifie_le",
-            params![groupe.id, groupe.nom, groupe.ordre, groupe.modifie_le],
-        )
-        .map_err(en_texte)?;
+        ecrire_groupe(&tx, groupe)?;
         tx.commit().map_err(en_texte)
     }
 
@@ -65,18 +90,7 @@ impl Base {
     pub fn enregistrer_etiquette(&self, etiquette: &Etiquette) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        tx.execute(
-            "INSERT INTO etiquette (id, groupe_id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, modifie_le = excluded.modifie_le",
-            params![
-                etiquette.id,
-                etiquette.groupe_id,
-                etiquette.nom,
-                etiquette.ordre,
-                etiquette.modifie_le
-            ],
-        )
-        .map_err(en_texte)?;
+        ecrire_etiquette(&tx, etiquette)?;
         tx.commit().map_err(en_texte)
     }
 
