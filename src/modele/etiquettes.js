@@ -3,7 +3,7 @@
 // (« Ete » ≠ « Été »). Les étiquettes se comparent entre elles tous groupes confondus, les groupes
 // entre eux ; une étiquette peut porter le nom d'un groupe. Un élément renommé ne se compare pas à
 // lui-même. Le rangement des listes est `deplacerDansListe` (modeles.js).
-import { refuser } from './modeles.js';
+import { rangSuivant, refuser } from './modeles.js';
 
 const nomVide = nom => !String(nom ?? '').trim();
 // La forme comparée : nettoyée et en minuscules selon la langue de l'appli.
@@ -36,9 +36,6 @@ export function validerEtiquette({ nom }, { bibliotheque, existante, groupeId, l
   const sienne = existante?.groupeId ?? groupeId;
   return { nom: trouve.etiquette.groupeId === sienne ? 'nomPrisIci' : 'nomPris' };
 }
-
-// Neuf : tout à la fin de sa liste ; un existant garde sa place.
-const rangSuivant = liste => (liste.length ? Math.max(...liste.map(x => x.ordre)) + 1 : 0);
 
 export function preparerGroupe(saisie, { existant, groupes, nouvelId, maintenant, langue }) {
   const erreurs = validerGroupe(saisie, { groupes, existant, langue });

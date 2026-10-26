@@ -105,3 +105,16 @@ test('preparerGroupe : en fin de liste, 0 si aucune', () => {
     e => e.erreurs.nom === 'nomPris',
   );
 });
+
+test('une étiquette existante renommée comme celle d’un autre groupe : nomPris', () => {
+  const existante = bibliotheque.etiquettes[1];
+  assert.deepEqual(ici('pluie', { existante, groupeId: 'g-act' }), { nom: 'nomPris' });
+});
+
+test('le rang neuf se calcule sur le plus grand rang, même avec un trou', () => {
+  const trous = [
+    { ...groupes[0], ordre: 0 },
+    { ...groupes[1], ordre: 5 },
+  ];
+  assert.equal(preparerGroupe({ nom: 'Santé' }, { groupes: trous, ...contexte }).ordre, 6);
+});

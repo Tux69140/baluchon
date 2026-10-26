@@ -107,6 +107,10 @@ export const activerPlafond = (saisie, actif) => ({
   plafond: actif ? (saisie.plafond ?? saisie.valeur ?? BORNES_QUANTITE.min) : null,
 });
 
+// Rang d'un élément neuf : à la fin de sa liste (plus grand rang + 1, 0 si la liste est vide), même
+// avec des trous. Un élément existant garde sa place. Seule définition, pour les trois listes.
+export const rangSuivant = liste => (liste.length ? Math.max(...liste.map(x => x.ordre)) + 1 : 0);
+
 export function refuser(erreurs, sujet) {
   throw Object.assign(new Error(`${sujet} refusé : ${Object.values(erreurs).join(', ')}`), { erreurs });
 }
@@ -115,13 +119,12 @@ export function preparerCategorie(saisie, { existante, categories, nouvelId, mai
   const erreurs = validerCategorie(saisie);
   if (Object.keys(erreurs).length) refuser(erreurs, 'Catégorie');
   // Neuve : tout à la fin de la liste ; une catégorie existante garde sa place.
-  const suivant = categories.length ? Math.max(...categories.map(c => c.ordre)) + 1 : 0;
   return {
     id: existante?.id ?? nouvelId(),
     nom: saisie.nom.trim(),
     icone: saisie.icone,
     couleur: saisie.couleur,
-    ordre: existante?.ordre ?? suivant,
+    ordre: existante?.ordre ?? rangSuivant(categories),
     toujoursIncluse: !saisie.selonEtiquettes,
     modifieLe: maintenant,
     etiquettes: saisie.selonEtiquettes ? [...saisie.etiquettes] : [],
