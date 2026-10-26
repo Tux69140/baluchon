@@ -3,6 +3,7 @@
 // ne change pas. Un voyage est une copie indépendante : rien ici ne le touche.
 use crate::base::{en_texte, Base};
 use crate::bibliotheque::{CategorieModele, ObjetModele};
+use crate::etiquettes::verifier_liste_exacte;
 use rusqlite::params;
 
 impl Base {
@@ -92,19 +93,14 @@ impl Base {
     pub fn ranger_categories(&self, ids: &[String], modifie_le: &str) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        let mut existantes: Vec<String> = tx
+        let existantes: Vec<String> = tx
             .prepare("SELECT id FROM categorie_modele")
             .map_err(en_texte)?
             .query_map([], |r| r.get(0))
             .map_err(en_texte)?
             .collect::<Result<_, _>>()
             .map_err(en_texte)?;
-        let mut demandees = ids.to_vec();
-        existantes.sort();
-        demandees.sort();
-        if existantes != demandees {
-            return Err("La liste ne contient pas exactement les catégories existantes".into());
-        }
+        verifier_liste_exacte(existantes, ids, "les catégories existantes")?;
         for (rang, id) in ids.iter().enumerate() {
             tx.execute(
                 "UPDATE categorie_modele SET ordre = ?1, modifie_le = ?2 WHERE id = ?3",

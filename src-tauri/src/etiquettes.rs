@@ -7,7 +7,7 @@ use rusqlite::{params, Transaction};
 
 // `ids` doit être exactement l'ensemble `existants` (sans doublon) : sinon deux éléments pourraient se
 // retrouver au même rang, ou un élément d'une autre liste être déplacé.
-fn verifier_liste_exacte(
+pub(crate) fn verifier_liste_exacte(
     mut existants: Vec<String>,
     ids: &[String],
     quoi: &str,
