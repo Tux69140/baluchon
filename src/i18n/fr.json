@@ -459,7 +459,76 @@
       "other": "Ses étiquettes {etiquettes} seront supprimées aussi, et son étape disparaîtra de « Nouveau voyage ». Les voyages déjà créés ne changent pas."
     },
     "groupeVide": "Les voyages déjà créés ne changent pas.",
-    "erreur": "La suppression n’a pas pu être enregistrée. Rien n’a changé ; réessayez."
+    "erreur": "La suppression n’a pas pu être enregistrée. Rien n’a changé ; réessayez.",
+    "voyages": "Les voyages déjà créés ne changent pas.",
+    "objetTitre": "Supprimer l’objet « {nom} » ?",
+    "objetTexte": "Il ne sera plus proposé dans « Nouveau voyage ».",
+    "categorieTitre": "Supprimer la catégorie « {nom} » ?",
+    "categorieObjets": {
+      "one": "Son {compte} sera supprimé aussi.",
+      "other": "Ses {compte} seront supprimés aussi."
+    },
+    "categorieTexte": "Elle ne sera plus proposée dans « Nouveau voyage ».",
+    "etiquetteSuite": "Elle ne sera plus proposée dans « Nouveau voyage ».",
+    "groupeEtiquettes": {
+      "one": "Son étiquette {etiquettes} sera supprimée aussi, et son étape disparaîtra de « Nouveau voyage ».",
+      "other": "Ses étiquettes {etiquettes} seront supprimées aussi, et son étape disparaîtra de « Nouveau voyage »."
+    },
+    "objets": {
+      "one": "{n} objet",
+      "other": "{n} objets"
+    },
+    "categories": {
+      "one": "{n} catégorie",
+      "other": "{n} catégories"
+    },
+    "perteEtiquette": {
+      "objet": "{compte} perdra cette étiquette ; il garde ses autres étiquettes.",
+      "categorie": "{compte} perdra cette étiquette ; elle garde ses autres étiquettes.",
+      "plusieurs": "{compte} perdront cette étiquette ; ils gardent leurs autres étiquettes."
+    },
+    "perteGroupe": {
+      "objet": "{compte} perdra une de ses étiquettes ; il garde les autres.",
+      "categorie": "{compte} perdra une de ses étiquettes ; elle garde les autres.",
+      "plusieurs": "{compte} perdront une de leurs étiquettes ; ils gardent les autres."
+    }
+  },
+  "refus": {
+    "titre": "Impossible de supprimer « {nom} » pour l’instant",
+    "etiquette": {
+      "one": "Sans elle, cet élément ne serait plus jamais proposé. Touchez-le : donnez-lui une autre étiquette ou « Toujours inclus », ou supprimez-le.",
+      "other": "Sans elle, ces éléments ne seraient plus jamais proposés. Touchez-les un par un : donnez-leur une autre étiquette ou « Toujours inclus », ou supprimez-les."
+    },
+    "groupe": {
+      "one": "Sans ses étiquettes, cet élément ne serait plus jamais proposé. Touchez-le : donnez-lui une autre étiquette ou « Toujours inclus », ou supprimez-le.",
+      "other": "Sans ses étiquettes, ces éléments ne seraient plus jamais proposés. Touchez-les un par un : donnez-leur une autre étiquette ou « Toujours inclus », ou supprimez-les."
+    },
+    "reste": "{n} à régler",
+    "categorie": {
+      "one": "Catégorie · {n} objet",
+      "other": "Catégorie · {n} objets"
+    },
+    "objet": "Objet · dans « {categorie} »",
+    "libre": "Plus rien ne bloque : vous pouvez supprimer « {nom} ».",
+    "regle": "{noms} : réglé. Il en reste {n}.",
+    "toutRegle": "Tout est réglé.",
+    "fermer": "Fermer"
+  },
+  "annulation": {
+    "objet": "Objet « {nom} » supprimé",
+    "categorie": {
+      "one": "Catégorie « {nom} » et {n} objet supprimés",
+      "other": "Catégorie « {nom} » et {n} objets supprimés"
+    },
+    "categorieVide": "Catégorie « {nom} » supprimée",
+    "etiquette": "Étiquette « {nom} » supprimée",
+    "groupe": {
+      "one": "Groupe « {nom} » et {n} étiquette supprimés",
+      "other": "Groupe « {nom} » et {n} étiquettes supprimés"
+    },
+    "groupeVide": "Groupe « {nom} » supprimé",
+    "annuler": "Annuler",
+    "erreur": "L’annulation n’a pas pu être enregistrée. Réessayez avant la fin du bandeau."
   },
   "modele": {
     "nom": "Nom",
@@ -487,7 +556,8 @@
       "erreurs": {
         "nomManquant": "Donnez un nom à cette catégorie.",
         "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours incluse »."
-      }
+      },
+      "supprimer": "Supprimer la catégorie"
     },
     "objet": {
       "nouveau": "Nouvel objet",
@@ -528,7 +598,8 @@
         "valeurManquante": "Indiquez une quantité, de 1 à 999.",
         "plafondManquant": "Indiquez un plafond, de 1 à 999, ou retirez-le.",
         "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours inclus »."
-      }
+      },
+      "supprimer": "Supprimer l’objet"
     },
     "groupe": {
       "nouveau": "Nouveau groupe",
