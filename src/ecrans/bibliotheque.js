@@ -14,14 +14,11 @@ import { preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
 import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
-import { poserGardeRetour } from './fenetre.js';
 import { ouvrirFicheCategorie } from './fiche-categorie.js';
 import { ouvrirFicheObjet } from './fiche-objet.js';
 import { creerFileOrdre } from './file-ordre.js';
-import { ouvrirMenu } from './menu.js';
+import { GLISSEMENT, creerModeRangement, suivreFin } from './mode-rangement.js';
 
-// Déplacement d'une catégorie dans le rangement (maquette de la bibliothèque).
-const GLISSEMENT = { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' };
 const deuxPanneaux = matchMedia(DEUX_PANNEAUX);
 
 // Ce que l'écran dessine, tiré de la bibliothèque lue : les catégories par rang, les objets de chacune
@@ -41,10 +38,11 @@ function preparer(bibliotheque, langue) {
   };
 }
 
-// Les rangées dans l'ordre que le stockage vient de confirmer.
+// Les rangées dans l'ordre que le stockage vient de confirmer (une catégorie partie entre-temps n'y est
+// plus).
 function reordonner(rangees, ids) {
   const parId = new Map(rangees.map(r => [r.categorie.id, r]));
-  return ids.map(id => parId.get(id));
+  return ids.map(id => parId.get(id)).filter(Boolean);
 }
 
 function ouvrirBibliotheque(app, bibliotheque, contexte) {
@@ -62,16 +60,19 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     // Ce qui vient d'être enregistré, éclairé au prochain dessin seulement.
     recent: null,
   };
-  // La zone d'annonce du rangement : la même d'un dessin à l'autre (voir rangement() dans les vues).
-  const annonce = document.createElement('p');
-  annonce.className = 'lecteur';
-  annonce.setAttribute('aria-live', 'polite');
-  // La garde du retour système pendant le rangement : le retour vaut « Terminé ». La poser et la
-  // retirer touchent l'historique : chaque changement attend la fin du précédent.
-  let garde = null;
-  let gardeSuivie = Promise.resolve();
   // La fin de l'écran, quel que soit le chemin : plus rien ne touche la page.
-  const fin = new AbortController();
+  const fin = suivreFin(app, main);
+  const { parti } = fin;
+  // « Ranger les catégories », la touche retour qui le termine, le lien de retour et le menu.
+  const mode = creerModeRangement({
+    main,
+    ui,
+    peindre,
+    premier: '.rangement-liste .bouton-icone:not([aria-disabled])',
+    parti,
+    contexte,
+  });
+  const { annonce } = mode;
   let choisieDessinee = ui.choisie;
 
   const trouverCommande = (action, id) =>
@@ -105,47 +106,6 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     glisser(main, avant, GLISSEMENT);
   }
 
-  // Vrai si l'écran est parti ; le constat suffit à tout arrêter.
-  function parti() {
-    if (!fin.signal.aborted && !main.isConnected) fin.abort();
-    return fin.signal.aborted;
-  }
-
-  function surRetour() {
-    // Consommée par ce retour : il n'y a plus rien à retirer.
-    garde = null;
-    terminer();
-    return false;
-  }
-
-  function suivreGarde() {
-    gardeSuivie = gardeSuivie.then(async () => {
-      if (ui.ranger && !garde && !parti()) garde = poserGardeRetour({ surRetour });
-      else if (!ui.ranger && garde) {
-        const partante = garde;
-        garde = null;
-        await partante.retirer();
-      }
-    });
-    return gardeSuivie;
-  }
-
-  function commencer() {
-    ui.ranger = true;
-    annonce.textContent = '';
-    peindre();
-    main.querySelector('.rangement-liste .bouton-icone:not([aria-disabled])')?.focus();
-    suivreGarde();
-  }
-
-  function terminer() {
-    ui.ranger = false;
-    annonce.textContent = '';
-    peindre();
-    trouverCommande('ranger')?.focus();
-    return suivreGarde();
-  }
-
   // L'ordre confirmé par le stockage s'affiche ; la catégorie déplacée glisse à sa place et l'annonce
   // dit sa nouvelle place.
   function confirme(_cle, ids, id) {
@@ -154,8 +114,14 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     lue = { ...lue, categories: lue.categories.map(c => ({ ...c, ordre: ids.indexOf(c.id) })) };
     peindre({ glissement: true, enVue: `[data-flip="cat-${CSS.escape(id)}"]` });
     const place = ids.indexOf(id);
-    const { nom } = donnees.rangees[place].categorie;
-    annonce.textContent = remplir(t('bibliotheque.place'), { nom, n: place + 1, total: ids.length });
+    // Partie entre l'appui et la confirmation : rien à annoncer.
+    const deplacee = donnees.rangees.find(r => r.categorie.id === id);
+    if (deplacee)
+      annonce.textContent = remplir(t('bibliotheque.place'), {
+        nom: deplacee.categorie.nom,
+        n: place + 1,
+        total: ids.length,
+      });
   }
 
   // L'écriture refusée : on revient à ce que le stockage garde réellement, et on le dit.
@@ -271,34 +237,17 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     });
   }
 
-  // Quitter l'écran (menu, lien « Réglages ») pendant le rangement : on le termine d'abord, et son
-  // étape d'historique part avant que l'écran suivant ne s'ouvre.
-  async function sortirDuRangement() {
-    if (ui.ranger) await terminer();
-    else await gardeSuivie;
-  }
-
-  main.addEventListener('click', async evenement => {
+  main.addEventListener('click', evenement => {
     const commande = evenement.target.closest('[data-action]');
-    if (!commande || commande.getAttribute('aria-disabled') === 'true') return;
+    if (!commande || commande.getAttribute('aria-disabled') === 'true' || mode.gerer(evenement, commande)) return;
     const { action, id } = commande.dataset;
-    if (action === 'retour') {
-      // Le lien reste un vrai lien (clavier) ; on le suit nous-mêmes, une fois le rangement terminé.
-      evenement.preventDefault();
-      await sortirDuRangement();
-      if (!parti()) contexte.revenir(commande.getAttribute('href'));
-    } else if (action === 'menu') {
-      await sortirDuRangement();
-      if (!parti()) ouvrirMenu(contexte, { courant: 'reglages' });
-    } else if (action === 'accordeon') {
+    if (action === 'accordeon') {
       if (!ui.ouvertes.delete(id)) ui.ouvertes.add(id);
       peindre();
     } else if (action === 'choisir') {
       ui.choisie = id;
       peindre();
-    } else if (action === 'ranger') commencer();
-    else if (action === 'terminer') terminer();
-    else if (action === 'monter') ordre.deplacer('categories', id, -1);
+    } else if (action === 'monter') ordre.deplacer('categories', id, -1);
     else if (action === 'descendre') ordre.deplacer('categories', id, 1);
     else if (action === 'modifier-categorie') {
       const categorie = lue.categories.find(c => c.id === id);
@@ -316,8 +265,6 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     },
     { signal: fin.signal },
   );
-  const observateur = new MutationObserver(() => parti() && observateur.disconnect());
-  observateur.observe(app, { childList: true });
   peindre();
 }
 
