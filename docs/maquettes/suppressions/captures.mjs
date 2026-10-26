@@ -48,7 +48,14 @@ const controler = () => {
   if (bandeau) {
     const b = bandeau.getBoundingClientRect();
     const touche = r => r.width && !(r.right <= b.left || r.left >= b.right || r.bottom <= b.top || r.top >= b.bottom);
-    const cibles = racines.length ? racines.at(-1).querySelectorAll('button, a, input') : document.querySelectorAll('.bouton-flottant');
+    // Sans fenêtre : tout ce qui est fixé en bas (bouton flottant, boutons collés de l'assistant).
+    const fixes = [...document.body.querySelectorAll('*')].filter(el => {
+      const p = getComputedStyle(el).position;
+      return (p === 'fixed' || p === 'sticky') && !el.closest('.bandeau-annuler, .maquette-menu');
+    });
+    const cibles = racines.length
+      ? racines.at(-1).querySelectorAll('button, a, input')
+      : fixes.flatMap(el => (el.matches('button, a') ? [el] : [...el.querySelectorAll('button, a')]));
     for (const el of cibles) if (!el.closest('.bandeau-annuler') && touche(el.getBoundingClientRect())) fautes.push(`bandeau sur : ${(el.textContent || el.getAttribute('aria-label')).trim().slice(0, 30)}`);
     if (b.bottom > innerHeight || b.top < 0) fautes.push('bandeau hors de l’écran');
   }

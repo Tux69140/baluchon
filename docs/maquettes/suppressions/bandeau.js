@@ -18,6 +18,22 @@ let courant = null;
 let minuteur = null;
 let fin = 0;
 
+// Le haut de ce qui est fixé au bas de l’écran (à 48 px du bord au plus) (bouton flottant, boutons collés en bas de l'assistant
+// au téléphone), ou null : le bandeau se pose au-dessus, pour ne jamais rien cacher de touchable.
+export function hautDuBasFixe() {
+  let haut = null;
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el === courant || courant?.contains(el) || el.closest('.maquette-menu')) continue;
+    const { position } = getComputedStyle(el);
+    if (position !== 'fixed' && position !== 'sticky') continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom < innerHeight - 48 || r.height > innerHeight / 2) continue;
+    if (!el.querySelector('button, a') && !el.matches('button, a')) continue;
+    haut = Math.min(haut ?? Infinity, r.top);
+  }
+  return haut;
+}
+
 // Une fenêtre ouverte rend tout le reste de la page intouchable : le bandeau se range alors dans la
 // fenêtre du dessus (il s'affiche toujours au-dessus de tout, mais « Annuler » répond au doigt), et
 // revient dans la page quand elle se ferme.
@@ -30,9 +46,8 @@ function placer() {
     if (!courant.matches(':popover-open')) courant.showPopover();
   }
   courant.dataset.place = fenetre ? 'haut' : 'bas';
-  const flottant = document.querySelector('.bouton-flottant');
-  const r = flottant && !fenetre ? flottant.getBoundingClientRect() : null;
-  courant.style.setProperty('--au-dessus', r?.height ? `${innerHeight - r.top + 8}px` : '');
+  const haut = fenetre ? null : hautDuBasFixe();
+  courant.style.setProperty('--au-dessus', haut === null ? '' : `${innerHeight - haut + 8}px`);
 }
 
 new MutationObserver(placer).observe(document.body, { subtree: true, childList: true, attributeFilter: ['open'] });
