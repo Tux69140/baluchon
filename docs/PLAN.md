@@ -175,7 +175,7 @@ Un bouton menu (accueil, Réglages, Bibliothèque) ouvre Mes voyages, Nouveau vo
 
 ### Ce qu'on livre
 
-L'écran Étiquettes permet de créer, renommer, réordonner et supprimer les groupes d'étiquettes et leurs étiquettes. L'assistant suit ces changements : un nouveau groupe devient une nouvelle étape.
+L'écran Étiquettes permet de créer, renommer, réordonner et supprimer les groupes d'étiquettes et leurs étiquettes. L'assistant suit ces changements : un nouveau groupe devient une nouvelle étape ; quand les étapes ne tiennent plus dans la largeur, leur rangée défile, et un trait gris prolongé jusqu'au bord montre que des étapes sont cachées. Les noms sont uniques (étiquettes entre elles, groupes entre eux). Une suppression demande ici une simple confirmation ; le chiffrage et « Annuler » viennent en phase 7. Les maquettes sont validées avant tout code. Conception détaillée : `docs/superpowers/specs/2026-10-26-phase-6-etiquettes-design.md`. Les voyages existants ne changent jamais.
 
 ### Critères d'acceptation
 
