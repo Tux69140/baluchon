@@ -57,6 +57,36 @@ try {
     juge.exige(erreurs.length === 0, `erreurs de page : ${erreurs.join(' ; ')}`);
   }
 
+  // 1 bis. Première image : les boutons trop larges sont déjà empilés avant l'image suivante (sinon un
+  // à-coup, visible quand l'appareil demande moins d'animations). Témoin : la fenêtre finit bien empilée
+  // à 360 px, et sans la mesure immédiate le relevé de la première image donne false.
+  {
+    const { page } = await ouvrirEssai();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const relever = () =>
+      page.evaluate(
+        () =>
+          new Promise(fini => {
+            document.addEventListener(
+              'click',
+              () =>
+                requestAnimationFrame(() =>
+                  fini(document.querySelector('dialog[role="alertdialog"] .fenetre-pied')?.hasAttribute('data-empile')),
+                ),
+              { capture: true, once: true },
+            );
+            document.querySelector('#demander').click();
+          }),
+      );
+    const premiere = await relever();
+    await attendreQue(page, () => Boolean(document.querySelector('dialog[role="alertdialog"][open]')));
+    const finale = await page.evaluate(() =>
+      document.querySelector('dialog[role="alertdialog"] .fenetre-pied').hasAttribute('data-empile'),
+    );
+    juge.exige(finale, 'témoin : à 360 px les trois boutons doivent finir empilés');
+    juge.exige(premiere === true, `première image : boutons pas encore empilés (${premiere})`);
+  }
+
   // 2. Échap, puis retour système.
   {
     const { page } = await ouvrirEssai();

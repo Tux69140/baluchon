@@ -258,16 +258,20 @@ export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
 // demi-largeur). Ne dépend que de la largeur : pas de boucle. Le calcul attend l'image suivante :
 // lâcher puis empiler les boutons change la hauteur du pied dans l'image de la notification, ce que
 // le navigateur signale en « ResizeObserver loop completed with undelivered notifications ». Rend la
-// fonction qui arrête l'observation.
+// fonction qui arrête l'observation. La première mesure se fait tout de suite (hors de l'observateur,
+// donc sans boucle) : sans elle, la première image s'afficherait boutons côte à côte, un à-coup visible
+// quand l'appareil demande moins d'animations.
 function empilerSiTropLarges(pied) {
   const boutons = [...pied.children];
   let image = 0;
+  const mesurer = () => {
+    pied.removeAttribute('data-empile');
+    if (new Set(boutons.map(b => b.offsetTop)).size > 1) pied.setAttribute('data-empile', '');
+  };
+  mesurer();
   const observateur = new ResizeObserver(() => {
     cancelAnimationFrame(image);
-    image = requestAnimationFrame(() => {
-      pied.removeAttribute('data-empile');
-      if (new Set(boutons.map(b => b.offsetTop)).size > 1) pied.setAttribute('data-empile', '');
-    });
+    image = requestAnimationFrame(mesurer);
   });
   observateur.observe(pied);
   return () => {
