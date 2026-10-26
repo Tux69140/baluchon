@@ -15,6 +15,8 @@
 //   « Annuler » pendant un rétablissement lent : un seul rétablissement (Review Focus 2 et 3) ;
 // - noms « Sacs <&"> » affichés tels quels (Review Focus 1) ; la seule catégorie supprimée puis
 //   rétablie revient d'une bibliothèque vide, choisie, dépliée et éclairée (Review Focus 4).
+// - l'entrée de 200 ms se joue une fois, en bas où il se pose, jamais rejouée ; aucune si l'appareil
+//   demande moins d'animations.
 // L'aspect et la place, à tous les formats, sont dans tests/ecran-annulation-place.mjs.
 import { chromium } from 'playwright';
 import { construireBibliotheque } from '../src/modele/bibliotheque.js';
@@ -397,7 +399,47 @@ async function essaiPiege(format) {
   await fermer(cas, ouvert);
 }
 
+// 8. L'entrée de 200 ms : jouée jusqu'au bout une seule fois, là où le bandeau se pose (en bas, la
+// fiche fermée), jamais rejouée quand une fenêtre s'ouvre ou se ferme ; aucune si l'appareil demande
+// moins d'animations.
+async function essaiEntree(mouvement) {
+  const cas = `entrée du bandeau (${mouvement})`;
+  const ouvert = await ouvrirBibliotheque('telephone-etroit');
+  const { page } = ouvert;
+  await page.emulateMedia({ reducedMotion: mouvement });
+  await page.evaluate(() => {
+    window.entrees = { commencees: [], finies: [] };
+    const noter = liste => e => {
+      if (e.target.matches('.bandeau-annuler')) window.entrees[liste].push(e.target.dataset.place);
+    };
+    document.addEventListener('animationstart', noter('commencees'), true);
+    document.addEventListener('animationend', noter('finies'), true);
+  });
+  const entrees = () => page.evaluate(() => structuredClone(window.entrees));
+  await supprimerObjet(page, 'Toilette', 'Crème solaire');
+  if (mouvement === 'no-preference') await attendreQue(page, () => window.entrees.finies.length > 0);
+  const posee = await entrees();
+  await ouvrirFicheObjet(page, 'Toilette', 'Brosse à dents');
+  const ouverte = await page.evaluate(() => document.querySelector('.bandeau-annuler').getAnimations().length);
+  await toucher(page, '.bouton-fermer');
+  await attendreFermee(page);
+  const fermee = await page.evaluate(() => document.querySelector('.bandeau-annuler').getAnimations().length);
+  const fin = await entrees();
+  const finies = mouvement === 'reduce' ? [] : ['bas'];
+  juge.exige(
+    vu(posee.finies) === vu(finies) &&
+      (mouvement === 'reduce' ? posee.commencees.length === 0 : posee.commencees.at(-1) === 'bas') &&
+      fin.commencees.length === posee.commencees.length &&
+      vu(fin.finies) === vu(posee.finies) &&
+      ouverte === 0 &&
+      fermee === 0,
+    `${cas} : ${vu({ posee, fin, ouverte, fermee })}`,
+  );
+  await fermer(cas, ouvert);
+}
+
 try {
+  for (const mouvement of ['no-preference', 'reduce']) await essaiEntree(mouvement);
   for (const format of FORMATS) {
     await essaiObjet(format);
     await essaiCategorie(format);

@@ -23,11 +23,16 @@ const juge = creerJuge();
 const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
 
-// L'aspect du bandeau, et ce qu'il couvre ; puis la capture de l'écran. seulement : ce qui ne doit
-// pas être couvert, si ce n'est pas tout l'écran (voir couvert()).
-async function juger(page, cas, ecran, { seulement = null, nomCapture } = {}) {
+// L'aspect du bandeau, sa place, et ce qu'il couvre ; puis la capture de l'écran. hote : la page, ou
+// la fenêtre qui doit l'accueillir (en haut) ; seulement : ce qui ne doit pas être couvert, si ce
+// n'est pas tout l'écran (voir couvert()).
+async function juger(page, cas, ecran, { hote = 'page', seulement = null, nomCapture } = {}) {
   const b = await lireBandeau(page);
   if (!b) return juge.exige(false, `${cas} : pas de bandeau sur ${ecran}`);
+  juge.exige(
+    b.hote === hote && b.place === (hote === 'page' ? 'bas' : 'haut'),
+    `${cas} : sur ${ecran}, bandeau ${vu({ hote: b.hote, place: b.place })}, attendu dans ${hote}`,
+  );
   juge.exige(
     b.role === 'status' &&
       b.cadre.height >= 55.5 &&
@@ -58,7 +63,7 @@ async function essai(format, theme) {
   await juger(page, cas, 'la Bibliothèque', { nomCapture: capture('bibliotheque') });
   await page.evaluate(() => window.scrollTo(0, 0));
   await ouvrirFicheObjet(page, 'Toilette', 'Brosse à dents');
-  await juger(page, cas, 'une fiche', { nomCapture: capture('fiche') });
+  await juger(page, cas, 'une fiche', { hote: 'fiche', nomCapture: capture('fiche') });
   await toucher(page, '.bouton-fermer');
   await attendreFermee(page);
 
@@ -81,7 +86,11 @@ async function essai(format, theme) {
   await page.click('dialog.tiroir a.tiroir-lien[href="#/nouveau-voyage"]');
   await attendreEcran(page, 'nouveau-voyage');
   const enFenetre = await page.evaluate(() => document.querySelector('dialog:modal .assistant-pied') !== null);
+  // Sur la tablette et l'ordinateur, « Nouveau voyage » est une fenêtre : le bandeau doit y être.
+  if (!format.startsWith('telephone'))
+    juge.exige(enFenetre, `${cas} : « Nouveau voyage » ne s'est pas ouvert en fenêtre`);
   await juger(page, cas, '« Nouveau voyage »', {
+    hote: enFenetre ? 'fenetre' : 'page',
     seulement: enFenetre ? null : '.assistant-pied a, .assistant-pied button',
     nomCapture: capture('nouveau-voyage'),
   });

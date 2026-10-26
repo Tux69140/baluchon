@@ -52,16 +52,15 @@ function hautDuBasFixe() {
 }
 
 // Range le bandeau dans la fenêtre du dessus, ou dans la page, et le pose au-dessus du bas fixé. Le
-// déplacer le retire de la couche du dessus : on l'y remet, sans rejouer son entrée.
+// déplacer le retire de la couche du dessus : on l'y remet. Son entrée (data-entree) court jusqu'à ce
+// qu'elle s'achève une fois : montré pendant que la fiche de l'élément supprimé se ferme, il passe
+// aussitôt dans la page, et c'est là qu'elle se joue ; ensuite, aucun déplacement ne la rejoue.
 function placer() {
   if (!courant) return;
   const { el } = courant;
   const fenetre = [...document.querySelectorAll(FENETRE)].at(-1);
   const parent = fenetre ?? document.body;
-  if (el.parentElement !== parent) {
-    delete el.dataset.entree;
-    parent.append(el);
-  }
+  if (el.parentElement !== parent) parent.append(el);
   if (!el.matches(':popover-open')) el.showPopover();
   el.dataset.place = fenetre ? 'haut' : 'bas';
   const haut = fenetre ? null : hautDuBasFixe();
@@ -99,6 +98,7 @@ export function montrerAnnulation({ t, app, texte, annuler }) {
     ${iconeInterface('supprimer')}
     <p>${echapper(texte)}</p>
     <button type="button" class="bandeau-action">${iconeInterface('annuler')}${echapper(t('annulation.annuler'))}</button>`;
+  // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.
   el.addEventListener('animationend', () => delete el.dataset.entree, { once: true });
   const bandeau = { el, fin: new AbortController(), minuterie: setTimeout(retirerAnnulation, DUREE) };
   courant = bandeau;
