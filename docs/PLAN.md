@@ -179,9 +179,9 @@ L'écran Étiquettes permet de créer, renommer, réordonner et supprimer les gr
 
 ### Critères d'acceptation
 
-- [ ] Un groupe créé apparaît comme une étape de l'assistant, avec ses étiquettes en puces.
-- [ ] Renommer une étiquette met à jour la bibliothèque, mais pas les voyages existants.
-- [ ] Un groupe sans étiquette ne crée pas d'étape vide dans l'assistant.
+- [x] Un groupe créé apparaît comme une étape de l'assistant, avec ses étiquettes en puces.
+- [x] Renommer une étiquette met à jour la bibliothèque, mais pas les voyages existants.
+- [x] Un groupe sans étiquette ne crée pas d'étape vide dans l'assistant.
 
 ## Bloquée par
 
