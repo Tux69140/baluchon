@@ -170,6 +170,12 @@
   scrollbar-width: none;
 }
 
+/* La liste rogne tout ce qui dépasse de ses bords : l'anneau de focus global (3 px + 2 px de décalage)
+   passe donc à l'intérieur du bouton, sinon l'étape collée au bord perd un côté de son anneau. */
+.etapes[data-defile] .etape button:focus-visible {
+  outline-offset: -3px;
+}
+
 .etapes[data-defile] .etapes-liste::-webkit-scrollbar {
   display: none;
 }

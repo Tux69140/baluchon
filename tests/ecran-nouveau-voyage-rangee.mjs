@@ -13,7 +13,7 @@
 // - le nom « <b>&"x » s'écrit tel quel, dans la rangée, la légende et le titre de l'étape ;
 // - bibliothèque de départ (3 groupes) : la rangée de la phase 4, sans défilement ni trait au bord ;
 // - les traits passent au gris des contours quand la rangée défile ;
-// 5 formats × 2 thèmes, au milieu de la rangée : cibles de 44 px, pas de défilement de côté, rien sous
+// 6 formats × 2 thèmes, au milieu de la rangée : cibles de 44 px, pas de défilement de côté, rien sous
 // les barres système ; captures assistant-rangee-<étape>-<format>-<thème>.png.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -91,6 +91,59 @@ async function attendreRangee(page) {
     return window.__rangee.length === 3 && new Set(window.__rangee).size === 1;
   });
   await calme(page);
+}
+
+// L'anneau de focus (épaisseur + décalage) de l'étape qui a le focus au clavier doit tenir dans la boîte
+// visible de la liste : la liste défile de côté, donc elle rogne tout ce qui dépasse. `decalage` force un
+// autre décalage, pour le témoin qui prouve que la mesure voit un anneau rogné.
+const anneauVisible = (page, { bord, decalage }) =>
+  page.evaluate(
+    ({ bord, decalage }) => {
+      const liste = document.querySelector('.etapes-liste');
+      const l = liste.getBoundingClientRect();
+      const boutons = [...liste.querySelectorAll('.etape button')];
+      const cible =
+        bord === 'debut'
+          ? boutons.find(b => b.getBoundingClientRect().left >= l.left - 1)
+          : boutons.at(Math.floor(boutons.length / 2));
+      cible.style.outlineOffset = decalage ?? '';
+      cible.focus({ focusVisible: true });
+      const style = getComputedStyle(cible);
+      const marge = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+      const b = cible.getBoundingClientRect();
+      const resultat = {
+        focusVisible: cible.matches(':focus-visible'),
+        marge,
+        rogne: [
+          l.left - (b.left - marge),
+          b.right + marge - l.right,
+          l.top - (b.top - marge),
+          b.bottom + marge - l.bottom,
+        ].map(x => Math.max(0, Math.round(x * 10) / 10)),
+      };
+      cible.style.outlineOffset = '';
+      return resultat;
+    },
+    { bord, decalage },
+  );
+
+async function verifierAnneau(page, juge, cas) {
+  await page.keyboard.press('Shift');
+  const defile = await page.evaluate(() => document.querySelector('nav.etapes').hasAttribute('data-defile'));
+  juge.exige(defile, `${cas} : la rangée ne défile pas, l'essai de l'anneau ne mesure rien`);
+  for (const bord of ['debut', 'milieu']) {
+    const r = await anneauVisible(page, { bord });
+    juge.exige(
+      r.focusVisible && r.rogne.every(x => x === 0),
+      `${cas} : anneau de focus rogné (${bord}) : ${JSON.stringify(r)} (haut/bas/côtés en px)`,
+    );
+  }
+  // Témoin : avec le décalage d'origine (2 px), l'anneau de 5 px dépasse bien de la liste.
+  const temoin = await anneauVisible(page, { bord: 'debut', decalage: '2px' });
+  juge.exige(
+    temoin.rogne.some(x => x > 0),
+    `${cas} : témoin de l'anneau, la mesure ne voit pas l'anneau d'origine rogné : ${JSON.stringify(temoin)}`,
+  );
 }
 
 async function toucher(page, selecteur) {
@@ -211,6 +264,7 @@ try {
     await attendreRangee(page);
     const rendu = await relever(page);
     juger(juge, 'téléphone rendu, 5e étape', rendu, { avant: true, apres: true });
+    await verifierAnneau(page, juge, 'téléphone');
     juge.exige(
       Math.abs(tourne.part - rendu.part) > 10,
       `téléphone tourné : la part d’une étape n’a pas changé (${tourne.part} puis ${rendu.part})`,
@@ -278,7 +332,7 @@ try {
     await contexte.close();
   }
 
-  // 5 formats × 2 thèmes, au milieu de la rangée (5e étape) ; au téléphone, le début et la fin aussi.
+  // 6 formats × 2 thèmes, au milieu de la rangée (5e étape) ; au téléphone, le début et la fin aussi.
   for (const theme of ['light', 'dark']) {
     for (const format of Object.keys(FORMATS)) {
       const cas = `${format}, ${NOMS_THEME[theme]}`;
@@ -318,5 +372,5 @@ try {
 }
 juge.conclure(
   'Rangée d’étapes qui défile',
-  `${ETAPES} étapes : traits au bord, étape au milieu, 44 px, téléphone tourné, fenêtre, défilement doux ou instantané, bibliothèque de départ, 5 formats × 2 thèmes`,
+  `${ETAPES} étapes : traits au bord, étape au milieu, 44 px, téléphone tourné, fenêtre, défilement doux ou instantané, bibliothèque de départ, anneau de focus, 6 formats × 2 thèmes`,
 );
