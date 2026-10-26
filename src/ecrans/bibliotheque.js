@@ -10,13 +10,14 @@
 import { remplir } from '../i18n/traduction.js';
 import { groupesAvecEtiquettes } from '../modele/inclusion.js';
 import { nouvelId } from '../modele/identifiant.js';
-import { deplacerDansListe, preparerCategorie, preparerObjet } from '../modele/modeles.js';
+import { preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
 import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
 import { poserGardeRetour } from './fenetre.js';
 import { ouvrirFicheCategorie } from './fiche-categorie.js';
 import { ouvrirFicheObjet } from './fiche-objet.js';
+import { creerFileOrdre } from './file-ordre.js';
 import { ouvrirMenu } from './menu.js';
 
 // Déplacement d'une catégorie dans le rangement (maquette de la bibliothèque).
@@ -65,14 +66,6 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   const annonce = document.createElement('p');
   annonce.className = 'lecteur';
   annonce.setAttribute('aria-live', 'polite');
-  // L'ordre voulu, en avance sur l'ordre affiché tant que des écritures attendent : chaque appui part
-  // de lui, pour que des appuis rapides s'additionnent. Les écritures passent une à une, dans l'ordre
-  // des appuis ; l'écran ne montre que l'ordre que le stockage a confirmé. Après un échec, les
-  // écritures d'avant (génération dépassée) sont abandonnées et les appuis attendent la relecture.
-  let voulu = donnees.rangees.map(r => r.categorie.id);
-  let file = Promise.resolve();
-  let generation = 0;
-  let relecture = false;
   // La garde du retour système pendant le rangement : le retour vaut « Terminé ». La poser et la
   // retirer touchent l'historique : chaque changement attend la fin du précédent.
   let garde = null;
@@ -155,7 +148,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
 
   // L'ordre confirmé par le stockage s'affiche ; la catégorie déplacée glisse à sa place et l'annonce
   // dit sa nouvelle place.
-  function confirme(ids, id) {
+  function confirme(_cle, ids, id) {
     donnees = { ...donnees, rangees: reordonner(donnees.rangees, ids) };
     // La copie lue suit le rang confirmé : les fiches en partent.
     lue = { ...lue, categories: lue.categories.map(c => ({ ...c, ordre: ids.indexOf(c.id) })) };
@@ -166,42 +159,29 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   }
 
   // L'écriture refusée : on revient à ce que le stockage garde réellement, et on le dit.
-  async function echec(erreur) {
-    console.error(erreur);
-    generation += 1;
-    relecture = true;
+  async function echec() {
     try {
       lue = await stockage.lireBibliotheque();
       donnees = preparer(lue, langue);
     } catch (erreurDeLecture) {
       // Relecture impossible : l'écran garde l'ordre qu'il montre, le dernier confirmé.
       console.error(erreurDeLecture);
-    } finally {
-      relecture = false;
     }
-    voulu = donnees.rangees.map(r => r.categorie.id);
+    ordre.definir('categories', idsAffiches());
     if (parti()) return;
     peindre();
     alerterEnHaut(app, t('bibliotheque.erreurOrdre'), fin.signal);
   }
 
-  function deplacer(id, sens) {
-    if (relecture) return;
-    const ids = deplacerDansListe(voulu, id, sens);
-    if (ids.every((x, i) => x === voulu[i])) return;
-    voulu = ids;
-    const sienne = generation;
-    file = file
-      .then(async () => {
-        // L'écran quitté entre-temps n'arrête pas l'écriture : chaque appui reçu est enregistré.
-        if (sienne !== generation) return;
-        await stockage.rangerCategories(ids, new Date().toISOString());
-        if (sienne === generation && !parti()) confirme(ids, id);
-      })
-      .catch(erreur => sienne === generation && echec(erreur))
-      // Un échec qui échoue lui-même ne doit pas bloquer la file pour toujours.
-      .catch(erreur => console.error(erreur));
-  }
+  // Les déplacements ▲ ▼ (src/ecrans/file-ordre.js) : une seule liste ici, les catégories.
+  const idsAffiches = () => donnees.rangees.map(r => r.categorie.id);
+  const ordre = creerFileOrdre({
+    ecrire: (_cle, ids) => stockage.rangerCategories(ids, new Date().toISOString()),
+    confirme,
+    echec,
+    parti,
+  });
+  ordre.definir('categories', idsAffiches());
 
   // ---------- Fiches ----------
   // Ce qui reprend le focus quand une fiche se ferme : la commande qui l'a ouverte, ou ce qu'elle
@@ -227,8 +207,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     }
     donnees = preparer(lue, langue);
     // L'ordre voulu garde ses déplacements en attente, et reçoit en dernier une catégorie neuve.
-    const ids = donnees.rangees.map(r => r.categorie.id);
-    voulu = [...voulu.filter(id => ids.includes(id)), ...ids.filter(id => !voulu.includes(id))];
+    ordre.definir('categories', idsAffiches());
     if (parti()) return;
     ui.recent = recent;
     peindre({ enVue: recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent) });
@@ -319,8 +298,8 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
       peindre();
     } else if (action === 'ranger') commencer();
     else if (action === 'terminer') terminer();
-    else if (action === 'monter') deplacer(id, -1);
-    else if (action === 'descendre') deplacer(id, 1);
+    else if (action === 'monter') ordre.deplacer('categories', id, -1);
+    else if (action === 'descendre') ordre.deplacer('categories', id, 1);
     else if (action === 'modifier-categorie') {
       const categorie = lue.categories.find(c => c.id === id);
       if (categorie) ouvrirCategorie(categorie);
