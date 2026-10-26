@@ -107,7 +107,7 @@ export const activerPlafond = (saisie, actif) => ({
   plafond: actif ? (saisie.plafond ?? saisie.valeur ?? BORNES_QUANTITE.min) : null,
 });
 
-function refuser(erreurs, sujet) {
+export function refuser(erreurs, sujet) {
   throw Object.assign(new Error(`${sujet} refusé : ${Object.values(erreurs).join(', ')}`), { erreurs });
 }
 
@@ -145,9 +145,10 @@ export function preparerObjet(saisie, { existant, categorieId, nouvelId, mainten
   };
 }
 
+// Rangement des catégories, des groupes et des étiquettes : même échange pour les trois listes.
 // Échange avec le voisin (sens −1 ou 1) ; aux bords, une copie identique. Ne modifie pas la liste
 // reçue : l'écran compare l'ancien et le nouvel ordre.
-export function deplacerCategorie(ids, id, sens) {
+export function deplacerDansListe(ids, id, sens) {
   const copie = [...ids];
   const de = copie.indexOf(id);
   const vers = de + sens;

@@ -8,7 +8,7 @@ import {
   bornerQuantite,
   changerRegle,
   curseurApresLecture,
-  deplacerCategorie,
+  deplacerDansListe,
   exempleQuantite,
   lireNombre,
   plafondPossible,
@@ -203,13 +203,13 @@ test('preparerCategorie : neuve en dernier, existante inchangée de place', () =
   );
 });
 
-test('deplacerCategorie : échange avec le voisin, inchangé aux bords', () => {
-  assert.deepEqual(deplacerCategorie(['a', 'b', 'c'], 'c', -1), ['a', 'c', 'b']);
-  assert.deepEqual(deplacerCategorie(['a', 'b', 'c'], 'a', 1), ['b', 'a', 'c']);
-  assert.deepEqual(deplacerCategorie(['a', 'b', 'c'], 'a', -1), ['a', 'b', 'c']);
-  assert.deepEqual(deplacerCategorie(['a', 'b', 'c'], 'c', 1), ['a', 'b', 'c']);
+test('deplacerDansListe : échange avec le voisin, inchangé aux bords', () => {
+  assert.deepEqual(deplacerDansListe(['a', 'b', 'c'], 'c', -1), ['a', 'c', 'b']);
+  assert.deepEqual(deplacerDansListe(['a', 'b', 'c'], 'a', 1), ['b', 'a', 'c']);
+  assert.deepEqual(deplacerDansListe(['a', 'b', 'c'], 'a', -1), ['a', 'b', 'c']);
+  assert.deepEqual(deplacerDansListe(['a', 'b', 'c'], 'c', 1), ['a', 'b', 'c']);
   const ids = ['a', 'b'];
-  deplacerCategorie(ids, 'a', 1);
+  deplacerDansListe(ids, 'a', 1);
   assert.deepEqual(ids, ['a', 'b']);
 });
 

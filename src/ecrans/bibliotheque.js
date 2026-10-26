@@ -10,7 +10,7 @@
 import { remplir } from '../i18n/traduction.js';
 import { groupesAvecEtiquettes } from '../modele/inclusion.js';
 import { nouvelId } from '../modele/identifiant.js';
-import { deplacerCategorie, preparerCategorie, preparerObjet } from '../modele/modeles.js';
+import { deplacerDansListe, preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
 import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
@@ -187,7 +187,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
 
   function deplacer(id, sens) {
     if (relecture) return;
-    const ids = deplacerCategorie(voulu, id, sens);
+    const ids = deplacerDansListe(voulu, id, sens);
     if (ids.every((x, i) => x === voulu[i])) return;
     voulu = ids;
     const sienne = generation;
