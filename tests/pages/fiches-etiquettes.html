@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>essai</title>
+  </head>
+  <body>
+    <!-- Page d'essai de src/ecrans/fiche-etiquette.js (tests/ecran-etiquettes-fiches.mjs) : pas un écran
+         de l'appli, l'écran Étiquettes n'existant pas encore. -->
+    <main id="app" data-ecran="essai">
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="nouvelle-etiquette" data-id="g-cli">
+        nouvelle étiquette
+      </button>
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="etiquette" data-id="e-plage">plage</button>
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="etiquette" data-id="e-bizarre">
+        étiquette bizarre
+      </button>
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="nouveau-groupe">nouveau groupe</button>
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="groupe" data-id="g-cli">climat</button>
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="groupe" data-id="g-vide">vide</button>
+      <button class="bouton bouton-secondaire" type="button" data-ouvrir="groupe" data-id="g-bizarre">
+        groupe bizarre
+      </button>
+      <output id="enregistrements">[]</output>
+      <output id="suppressions">0</output>
+      <output id="fermetures">0</output>
+    </main>
+    <!-- Hors de #app : la case n'est pas une commande de l'appli (les cibles de 44 px n'y sont pas jugées). -->
+    <label><input id="panne" type="checkbox" /> panne</label>
+    <div class="zone-systeme" data-zone="haut" aria-hidden="true"></div>
+    <div class="zone-systeme" data-zone="bas" aria-hidden="true"></div>
+    <div class="zone-systeme" data-zone="gauche" aria-hidden="true"></div>
+    <div class="zone-systeme" data-zone="droite" aria-hidden="true"></div>
+    <script type="module" src="./fiches-etiquettes.js"></script>
+  </body>
+</html>

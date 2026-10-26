@@ -17,10 +17,12 @@ export const message = (id, texte) =>
 // Un champ décrit par un message est dit invalide au lecteur d'écran tant que le message est là.
 const invalide = texte => (texte ? ' aria-invalid="true"' : '');
 
-export const champNom = (t, valeur, erreur) => `
+// idAide : une aide écrite sous le champ, qui le décrit aussi ; entree : Entrée dans le champ vaut
+// « Enregistrer » (data-entree, lu par src/ecrans/fiche-modele.js), pour une fiche au nom seul.
+export const champNom = (t, valeur, erreur, { idAide = '', entree = false } = {}) => `
         <div class="champ">
           <label for="f-nom">${t('modele.nom')}</label>
-          <input id="f-nom" data-texte="nom" value="${echapper(valeur)}" autocomplete="off" maxlength="60" aria-describedby="f-nom-erreur"${invalide(erreur)} />
+          <input id="f-nom" data-texte="nom"${entree ? ' data-entree' : ''} value="${echapper(valeur)}" autocomplete="off" maxlength="60" aria-describedby="f-nom-erreur${idAide ? ` ${idAide}` : ''}"${invalide(erreur)} />
           ${message('f-nom-erreur', erreur)}
         </div>`;
 

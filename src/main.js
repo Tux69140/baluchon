@@ -18,6 +18,7 @@ import './styles/assistant-questions.css';
 import './styles/menu.css';
 import './styles/bibliotheque.css';
 import './styles/fiche-modele.css';
+import './styles/etiquettes.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';

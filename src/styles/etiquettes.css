@@ -1,0 +1,34 @@
+/* Écran Étiquettes et ses fiches (src/ecrans/fiche-etiquette.js), repris de la maquette validée de la
+   phase 6 (docs/maquettes/etiquettes/maquette.css). La fiche elle-même est une fiche de modèle
+   (fiche-modele.css) ; le bouton rouge de la question, .bouton-danger, est dans socle.css. */
+
+/* ---------- Fiches d'un groupe ou d'une étiquette : un nom, et « Supprimer » ---------- */
+.fiche-nom {
+  --largeur-fenetre: 480px;
+}
+
+.fiche-nom .aide {
+  margin-top: 0;
+}
+
+/* « Supprimer » à l'écart du nom, sous un trait : on ne le touche pas en voulant enregistrer. */
+.zone-suppression {
+  margin-top: var(--e-lg);
+  padding-top: var(--e-md);
+  border-top: 1px solid var(--separation);
+}
+
+.bouton-supprimer {
+  border-color: var(--contour);
+  background: var(--carte);
+  color: var(--erreur);
+}
+
+.bouton-supprimer:hover {
+  background: var(--fond-erreur);
+}
+
+.bouton-supprimer .icone svg {
+  width: 20px;
+  height: 20px;
+}

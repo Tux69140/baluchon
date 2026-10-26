@@ -75,6 +75,22 @@ a.bouton {
   text-decoration: none;
 }
 
+/* L'action d'une suppression, dans sa question : en rouge, pour qu'on ne la prenne pas pour une
+   confirmation verte (maquette de la phase 6, docs/maquettes/etiquettes/). */
+.bouton-danger {
+  background: var(--erreur);
+  color: var(--sur-principal);
+}
+
+.bouton-danger:hover {
+  background: color-mix(in oklab, var(--erreur) 85%, var(--encre));
+}
+
+.bouton-danger .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Focus visible sur toute commande, au clavier : à l'encre, il se détache à plus de 3:1 de la carte,
    du fond et du gris de la période, en clair comme en sombre (le bleu ciel restait sous 2,5:1). */
 :focus-visible {

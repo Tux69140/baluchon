@@ -14,14 +14,17 @@
 // - data-choix="cle" : un bouton radio ('true' et 'false' deviennent des booléens) ;
 // - data-bascule="cle" : un interrupteur ; data-pose="cle" data-valeur="v" : un choix posé (couleur) ;
 // - data-etiquette="id" : une étiquette pressée ou relâchée ;
-// - data-action="nom" : une action propre à la fiche (actions[nom](brouillon), qui peut attendre).
+// - data-action="nom" : une action propre à la fiche (actions[nom](brouillon), qui peut attendre) ;
+// - data-entree : sur un champ, Entrée vaut « Enregistrer » (fiche au nom seul) ;
+// - data-supprimer : le bouton qui appelle supprimer() (fiche d'un élément existant).
 import { bornerQuantite, curseurApresLecture, lireNombre } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { demander, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { echapper } from './html.js';
 
 const ID_TITRE = 'fiche-modele-titre';
-const COMMANDES = '[data-pas], [data-bascule], [data-pose], [data-etiquette], [data-action], [data-enregistrer]';
+const COMMANDES =
+  '[data-pas], [data-bascule], [data-pose], [data-etiquette], [data-action], [data-enregistrer], [data-supprimer]';
 
 // Ce qui désigne une commande d'un dessin à l'autre : ses attributs data-*, et la valeur d'un bouton
 // radio (tous ceux d'un groupe ont la même clé).
@@ -34,7 +37,7 @@ function selecteurDe(element) {
   return attributs.join('');
 }
 
-function vueFiche({ t, titre, bouton }) {
+function vueFiche({ t, titre, bouton, classe }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueFenetre({
     t,
@@ -48,7 +51,7 @@ function vueFiche({ t, titre, bouton }) {
       </div>`,
   });
   const fenetre = gabarit.content.firstElementChild;
-  fenetre.classList.add('fiche', 'fiche-modele');
+  fenetre.classList.add('fiche', 'fiche-modele', ...(classe ? [classe] : []));
   return fenetre;
 }
 
@@ -60,16 +63,23 @@ function vueFiche({ t, titre, bouton }) {
 // une promesse ; tant qu'elle court, « Enregistrer » est inactif ; refusée, la fiche reste ouverte
 // avec sa saisie et le message de panne s'affiche en haut ; tenue, la fiche se ferme. surFermeture :
 // la fiche effacée (enregistrée ou non). signal : l'écran s'en va, la fiche disparaît avec lui.
+// classe : posée sur la fenêtre, pour une fiche d'une autre largeur. supprimer() : appelé par le
+// bouton [data-supprimer] du corps ; la fiche pose sa question et fait écrire l'écran, puis rend true
+// (la fiche se ferme, sans question d'abandon) ou false (elle reste avec sa saisie) ; une erreur levée
+// la laisse ouverte et le message de panne s'affiche en haut. Tant qu'il court, « Enregistrer » et
+// « Supprimer » sont inactifs.
 export function ouvrirFicheModele({
   t,
   titre,
   sousTitre = '',
   bouton,
+  classe = '',
   saisie,
   valider,
   dessiner,
   texteAbandon,
   enregistrer,
+  supprimer = null,
   ajuster = () => {},
   actions = {},
   surFermeture = () => {},
@@ -78,12 +88,13 @@ export function ouvrirFicheModele({
 }) {
   const brouillon = structuredClone(saisie);
   const depart = JSON.stringify(brouillon);
-  const fenetre = vueFiche({ t, titre, bouton });
+  const fenetre = vueFiche({ t, titre, bouton, classe });
   const corps = fenetre.querySelector('.fiche-corps');
   const pied = fenetre.querySelector('.fenetre-pied');
   const boutonEnregistrer = pied.querySelector('[data-enregistrer]');
   const gabarit = document.createElement('template');
   let essaye = false;
+  // Une écriture en cours (enregistrement ou suppression) : aucun autre geste ne compte.
   let enregistrement = false;
   let questionOuverte = false;
   let fermer = () => {};
@@ -162,6 +173,26 @@ export function ouvrirFicheModele({
     fermer();
   }
 
+  // « Supprimer » : rien d'autre ne compte tant que la question et l'écriture courent. Les deux
+  // boutons sont relus à chaque fois : le corps a pu être redessiné.
+  async function effacerElement() {
+    if (enregistrement || !supprimer) return;
+    enregistrement = true;
+    const inactifs = () => [boutonEnregistrer, corps.querySelector('[data-supprimer]')].filter(Boolean);
+    for (const b of inactifs()) b.setAttribute('aria-disabled', 'true');
+    let fait = false;
+    try {
+      fait = await supprimer();
+    } catch (erreur) {
+      console.error(erreur);
+      if (!signal.aborted && fenetre.isConnected) alerterEnHaut(dans, t('suppression.erreur'), signal);
+    }
+    // Supprimé : la fiche se ferme sans demander, sa saisie n'a plus d'objet.
+    if (fait) return fermer();
+    enregistrement = false;
+    for (const b of inactifs()) b.removeAttribute('aria-disabled');
+  }
+
   // Tout geste de fermeture passe ici. La question s'ouvre sans attendre : appelée par le retour
   // système, elle se pose au-dessus de la fiche (src/ecrans/fenetre.js). Pendant l'écriture, rien.
   function demanderFermeture() {
@@ -213,6 +244,7 @@ export function ouvrirFicheModele({
     if (!commande || commande.getAttribute('aria-disabled') === 'true') return;
     const { pas, sens, bascule, pose, valeur, etiquette, action } = commande.dataset;
     if ('enregistrer' in commande.dataset) return sauver();
+    if ('supprimer' in commande.dataset) return effacerElement();
     if (pas) {
       brouillon[pas] = bornerQuantite((brouillon[pas] ?? 0) + Number(sens));
       changer(pas);
@@ -231,6 +263,13 @@ export function ouvrirFicheModele({
       await actions[action](brouillon);
       if (fenetre.isConnected) changer(action);
     }
+  });
+
+  // Entrée dans un champ data-entree : « Enregistrer » (pas pendant la composition d'un caractère).
+  fenetre.addEventListener('keydown', evenement => {
+    if (evenement.key !== 'Enter' || evenement.isComposing || !('entree' in evenement.target.dataset)) return;
+    evenement.preventDefault();
+    sauver();
   });
 
   corps.addEventListener('scroll', ombrer);

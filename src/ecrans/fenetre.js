@@ -197,13 +197,20 @@ export function ouvrirFenetre(
   return fermer;
 }
 
+const classeBouton = (principal, danger) => {
+  if (danger) return 'bouton-danger';
+  return principal ? 'bouton-principal' : 'bouton-secondaire';
+};
+
 // Fenêtre d'alerte à boutons nommés (confirmation, question à plusieurs issues). boutons : dans
-// l'ordre d'affichage, { cle, libelle, principal } ; le focus va au premier, qui doit donc être le
-// geste sans perte. contenu : du HTML déjà échappé par l'appelant, posé entre le texte et les
-// boutons. La promesse rend la clé du bouton touché, ou null (Échap, retour système, écran parti),
-// une fois la fenêtre effacée : l'écran derrière reprend alors la main. signal (AbortSignal) :
-// l'écran qui a posé la question s'en va ; la fenêtre disparaît aussitôt et la réponse est null
-// (sinon elle resterait par-dessus l'écran suivant, posée dans document.body).
+// l'ordre d'affichage, { cle, libelle, principal, danger } ; le focus va au premier, qui doit donc
+// être le geste sans perte. danger : une suppression, en rouge et précédée de la corbeille, pour
+// qu'on ne la prenne pas pour une confirmation verte (maquette de la phase 6). contenu : du HTML
+// déjà échappé par l'appelant, posé entre le texte et les boutons. La promesse rend la clé du bouton
+// touché, ou null (Échap, retour système, écran parti), une fois la fenêtre effacée : l'écran
+// derrière reprend alors la main. signal (AbortSignal) : l'écran qui a posé la question s'en va ; la
+// fenêtre disparaît aussitôt et la réponse est null (sinon elle resterait par-dessus l'écran
+// suivant, posée dans document.body).
 export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueFenetre({
@@ -215,8 +222,8 @@ export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
       <p id="texte-confirmation">${echapper(texte)}</p>${contenu}
       <div class="fenetre-pied">${boutons
         .map(
-          ({ cle, libelle, principal = false }, rang) => `
-        <button type="button" class="bouton ${principal ? 'bouton-principal' : 'bouton-secondaire'}" data-fermer data-cle="${echapper(cle)}"${rang === 0 ? ' autofocus' : ''}>${echapper(libelle)}</button>`,
+          ({ cle, libelle, principal = false, danger = false }, rang) => `
+        <button type="button" class="bouton ${classeBouton(principal, danger)}" data-fermer data-cle="${echapper(cle)}"${rang === 0 ? ' autofocus' : ''}>${danger ? iconeInterface('supprimer') : ''}${echapper(libelle)}</button>`,
         )
         .join('')}
       </div>`,
