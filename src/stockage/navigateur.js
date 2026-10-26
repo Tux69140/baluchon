@@ -60,7 +60,7 @@ async function ecritureDe(operation) {
 }
 
 // La base relit par rang puis par ordre de création ; le tri est stable, comme ORDER BY ordre, rowid.
-const parOrdre = liste => [...liste].sort((a, b) => a.ordre - b.ordre);
+const trierParOrdre = liste => [...liste].sort((a, b) => a.ordre - b.ordre);
 
 const trouver = (liste, id) => liste.find(x => x.id === id);
 
@@ -99,9 +99,7 @@ export function creerStockageNavigateur() {
     },
     lireBibliotheque: async () => bibliothequeDe(lire()),
     async enregistrerCategorie(categorie) {
-      await lenteur(lire(), 'enregistrerCategorie');
-      const donnees = lire();
-      panne(donnees, 'enregistrerCategorie');
+      const donnees = await ecritureDe('enregistrerCategorie');
       const bibliotheque = bibliothequeDe(donnees);
       verifierEtiquettes(bibliotheque, categorie.etiquettes);
       // Le rang ne change qu'à la création : seul rangerCategories déplace une catégorie existante.
@@ -109,9 +107,7 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, categories } });
     },
     async enregistrerObjet(objet) {
-      await lenteur(lire(), 'enregistrerObjet');
-      const donnees = lire();
-      panne(donnees, 'enregistrerObjet');
+      const donnees = await ecritureDe('enregistrerObjet');
       const bibliotheque = bibliothequeDe(donnees);
       verifierEtiquettes(bibliotheque, objet.etiquettes);
       const existant = bibliotheque.objets.find(o => o.id === objet.id);
@@ -123,14 +119,9 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, objets } });
     },
     async rangerCategories(ids, modifieLe) {
-      await lenteur(lire(), 'rangerCategories');
-      const donnees = lire();
-      panne(donnees, 'rangerCategories');
+      const donnees = await ecritureDe('rangerCategories');
       const bibliotheque = bibliothequeDe(donnees);
-      const existantes = bibliotheque.categories.map(c => c.id).sort();
-      if (JSON.stringify([...ids].sort()) !== JSON.stringify(existantes)) {
-        throw new Error('La liste ne contient pas exactement les catégories existantes');
-      }
+      verifierListeExacte(bibliotheque.categories, ids, 'les catégories existantes');
       const categories = ids.map((id, ordre) => ({
         ...bibliotheque.categories.find(c => c.id === id),
         ordre,
@@ -143,7 +134,7 @@ export function creerStockageNavigateur() {
       const donnees = await ecritureDe('enregistrerGroupe');
       const bibliotheque = bibliothequeDe(donnees);
       // Le rang ne change qu'à la création : seul rangerGroupes déplace un groupe existant.
-      const groupes = parOrdre(remplacerOuAjouter(bibliotheque.groupes, groupe, ['ordre']));
+      const groupes = trierParOrdre(remplacerOuAjouter(bibliotheque.groupes, groupe, ['ordre']));
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, groupes } });
     },
     async enregistrerEtiquette(etiquette) {
@@ -156,7 +147,7 @@ export function creerStockageNavigateur() {
         throw new Error(`Groupe inconnu : ${etiquette.groupeId}`);
       }
       // Une étiquette reste dans son groupe et à son rang.
-      const etiquettes = parOrdre(remplacerOuAjouter(bibliotheque.etiquettes, etiquette, ['groupeId', 'ordre']));
+      const etiquettes = trierParOrdre(remplacerOuAjouter(bibliotheque.etiquettes, etiquette, ['groupeId', 'ordre']));
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, etiquettes } });
     },
     async rangerGroupes(ids, modifieLe) {
@@ -176,7 +167,7 @@ export function creerStockageNavigateur() {
         'les étiquettes de ce groupe',
       );
       const rangees = new Map(ids.map((id, ordre) => [id, ordre]));
-      const etiquettes = parOrdre(
+      const etiquettes = trierParOrdre(
         bibliotheque.etiquettes.map(e => (rangees.has(e.id) ? { ...e, ordre: rangees.get(e.id), modifieLe } : e)),
       );
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, etiquettes } });
