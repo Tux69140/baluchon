@@ -1,7 +1,8 @@
 /* Écran Nouveau voyage (src/ecrans/nouveau-voyage.js), étape Informations : le même formulaire, en
    écran plein au téléphone, en fenêtre modale (fenetre.css) sur tablette et ordinateur. Dans une
    colonne, chaque bloc (champs, voyageurs, calendrier) a la même largeur : celle de la colonne. Le
-   reste de l'assistant (rangée d'étapes, étiquettes, aperçu, pied) : src/styles/assistant.css. */
+   reste de l'assistant (rangée d'étapes, étiquettes, pied) : src/styles/assistant.css ; l'aperçu :
+   src/styles/assistant-apercu.css. */
 .formulaire {
   /* Place réservée d'un message sous un champ : il apparaît sans rien faire bouger. */
   --hauteur-message: calc(var(--taille-libelle) * 1.5);
