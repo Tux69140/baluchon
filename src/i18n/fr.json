@@ -392,7 +392,9 @@
   "reglages": {
     "titre": "Réglages",
     "bibliotheque": "Bibliothèque",
-    "bibliothequeAide": "Les catégories et les objets proposés à chaque nouveau voyage"
+    "bibliothequeAide": "Les catégories et les objets proposés à chaque nouveau voyage",
+    "etiquettes": "Étiquettes",
+    "etiquettesAide": "Les questions posées par « Nouveau voyage » pour bâtir la liste"
   },
   "bibliotheque": {
     "titre": "Bibliothèque",
@@ -418,6 +420,46 @@
     "consommable": "consommable",
     "erreurEnregistrement": "La modification n’a pas pu être enregistrée. Votre saisie est gardée ; réessayez.",
     "erreurOrdre": "Le nouvel ordre n’a pas pu être enregistré. Rien n’a changé ; réessayez."
+  },
+  "etiquettes": {
+    "titre": "Étiquettes",
+    "groupes": {
+      "one": "{n} groupe",
+      "other": "{n} groupes"
+    },
+    "etiquettes": {
+      "one": "{n} étiquette",
+      "other": "{n} étiquettes"
+    },
+    "aide": "Chaque groupe est une étape de « Nouveau voyage », et ses étiquettes les réponses à toucher. Touchez une étiquette pour la renommer ou la supprimer.",
+    "ranger": "Ranger",
+    "rangerAide": "Cet ordre est celui des étapes de « Nouveau voyage », et des étiquettes dans chaque étape.",
+    "termine": "Terminé",
+    "infos": "{etiquettes} · étape {n} de « Nouveau voyage »",
+    "absent": "Aucune étiquette · absent de « Nouveau voyage »",
+    "vide": "Ajoutez une étiquette : le groupe deviendra une étape de « Nouveau voyage ».",
+    "ajouter": "Ajouter une étiquette",
+    "nouveauGroupe": "Nouveau groupe",
+    "modifierGroupe": "Modifier le groupe {nom}",
+    "modifierEtiquette": "{nom}, modifier",
+    "monter": "Monter {nom}",
+    "descendre": "Descendre {nom}",
+    "place": "{nom} : place {n} sur {total}",
+    "listeEtiquettes": "Étiquettes de {nom}",
+    "erreurOrdre": "Le nouvel ordre n’a pas pu être enregistré. Rien n’a changé ; réessayez."
+  },
+  "suppression": {
+    "garder": "Garder",
+    "supprimer": "Supprimer",
+    "etiquetteTitre": "Supprimer l’étiquette « {nom} » ?",
+    "etiquetteTexte": "Elle ne sera plus proposée dans « Nouveau voyage », et les catégories et objets de la bibliothèque qui la portent la perdent. Les voyages déjà créés ne changent pas.",
+    "groupeTitre": "Supprimer le groupe « {nom} » ?",
+    "groupeTexte": {
+      "one": "Son étiquette {etiquettes} sera supprimée aussi, et son étape disparaîtra de « Nouveau voyage ». Les voyages déjà créés ne changent pas.",
+      "other": "Ses étiquettes {etiquettes} seront supprimées aussi, et son étape disparaîtra de « Nouveau voyage ». Les voyages déjà créés ne changent pas."
+    },
+    "groupeVide": "Les voyages déjà créés ne changent pas.",
+    "erreur": "La suppression n’a pas pu être enregistrée. Rien n’a changé ; réessayez."
   },
   "modele": {
     "nom": "Nom",
@@ -486,6 +528,34 @@
         "valeurManquante": "Indiquez une quantité, de 1 à 999.",
         "plafondManquant": "Indiquez un plafond, de 1 à 999, ou retirez-le.",
         "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours inclus »."
+      }
+    },
+    "groupe": {
+      "nouveau": "Nouveau groupe",
+      "creer": "Créer le groupe",
+      "sousTitreNeuf": "Ses étiquettes s’ajoutent ensuite, dans sa carte.",
+      "aucune": "Aucune étiquette",
+      "aide": "Ce nom est le titre de son étape dans « Nouveau voyage ».",
+      "abandonTexte": "Ce que vous avez changé dans « {nom} » ne sera pas enregistré.",
+      "abandonNouveau": "Le nouveau groupe ne sera pas créé.",
+      "supprimer": "Supprimer le groupe",
+      "erreurs": {
+        "nomManquant": "Donnez un nom à ce groupe.",
+        "nomPris": "Le groupe « {nom} » existe déjà."
+      }
+    },
+    "etiquette": {
+      "nouvelle": "Nouvelle étiquette",
+      "ajouter": "Ajouter l’étiquette",
+      "dans": "Dans le groupe « {groupe} »",
+      "aide": "Le nom tel qu’il apparaîtra en puce dans « Nouveau voyage » et dans les fiches de la bibliothèque.",
+      "abandonTexte": "Ce que vous avez changé dans « {nom} » ne sera pas enregistré.",
+      "abandonNouvelle": "La nouvelle étiquette ne sera pas ajoutée.",
+      "supprimer": "Supprimer l’étiquette",
+      "erreurs": {
+        "nomManquant": "Donnez un nom à cette étiquette.",
+        "nomPris": "L’étiquette « {nom} » existe déjà, dans le groupe {groupe}.",
+        "nomPrisIci": "L’étiquette « {nom} » existe déjà dans ce groupe."
       }
     }
   },

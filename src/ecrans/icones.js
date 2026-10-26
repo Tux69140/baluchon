@@ -14,6 +14,7 @@ import checkCircle from '@phosphor-icons/core/bold/check-circle-bold.svg?raw';
 import x from '@phosphor-icons/core/bold/x-bold.svg?raw';
 import listChecks from '@phosphor-icons/core/bold/list-checks-bold.svg?raw';
 import tag from '@phosphor-icons/core/bold/tag-bold.svg?raw';
+import trash from '@phosphor-icons/core/bold/trash-bold.svg?raw';
 import list from '@phosphor-icons/core/bold/list-bold.svg?raw';
 import pencilSimple from '@phosphor-icons/core/bold/pencil-simple-bold.svg?raw';
 import arrowsDownUp from '@phosphor-icons/core/bold/arrows-down-up-bold.svg?raw';
@@ -42,6 +43,7 @@ const INTERFACE = {
   boucle: checkCircle,
   apercu: listChecks,
   etiquette: tag,
+  supprimer: trash,
   menu: list,
   modifier: pencilSimple,
   ranger: arrowsDownUp,
