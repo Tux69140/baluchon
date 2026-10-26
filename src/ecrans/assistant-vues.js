@@ -80,7 +80,8 @@ const nomEtape = (t, etape) =>
   etape.type === 'groupe' ? echapper(etape.groupe.nom) : t(`nouveauVoyage.etape.${etape.type}`);
 
 // Des ronds numérotés reliés, le nom dessous ; l'aperçu marqué d'une liste. Au téléphone, seul le nom
-// de l'étape en cours s'écrit, dans la légende ; les autres restent dits au lecteur d'écran.
+// de l'étape en cours s'écrit, dans la légende ; les autres restent dits au lecteur d'écran. Quand les
+// étapes ne tiennent plus, la rangée défile (src/ecrans/rangee-etapes.js).
 export function vueEtapes(t, etapes, etat, infosValides) {
   const derniere = etapes.length - 1;
   const items = etapes.map((etape, indice) => {
@@ -99,9 +100,14 @@ export function vueEtapes(t, etapes, etat, infosValides) {
     total: etapes.length,
     nom: nomEtape(t, etapes[etat.etape]),
   });
+  // Les deux traits qui prolongent la rangée jusqu'au bord quand elle défile (src/ecrans/rangee-etapes.js).
   return `
-      <ol class="etapes-liste">${items.join('')}
-      </ol>
+      <div class="etapes-cadre">
+        <span class="etapes-suite" data-cote="avant" aria-hidden="true"></span>
+        <ol class="etapes-liste">${items.join('')}
+        </ol>
+        <span class="etapes-suite" data-cote="apres" aria-hidden="true"></span>
+      </div>
       <p class="etapes-legende">${legende}</p>`;
 }
 

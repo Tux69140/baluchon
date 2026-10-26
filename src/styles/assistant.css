@@ -145,6 +145,69 @@
   display: none;
 }
 
+/* ---------- Rangée qui défile, quand les étapes ne tiennent plus (src/ecrans/rangee-etapes.js) ----------
+   Des étapes entières qui se partagent la largeur (--part), sans barre de défilement ; un trait
+   prolonge la rangée jusqu'au bord (--bord) de la fenêtre, ou de l'écran au téléphone, du côté des
+   étapes cachées (décision du chef de projet, 2026-10-26 ; maquette docs/maquettes/etiquettes/). */
+.fenetre .etapes {
+  --bord: var(--retrait-fenetre);
+}
+
+.assistant-plein .etapes {
+  --bord: var(--e-md);
+  margin-inline: calc(-1 * var(--bord));
+  padding-inline: var(--bord);
+}
+
+.etapes-cadre {
+  position: relative;
+}
+
+.etapes[data-defile] .etapes-liste {
+  overflow: auto hidden;
+  padding-block: 4px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.etapes[data-defile] .etapes-liste::-webkit-scrollbar {
+  display: none;
+}
+
+.etapes[data-defile] .etape {
+  flex: 0 0 var(--part);
+  scroll-snap-align: start;
+}
+
+/* À hauteur du trait des ronds : 4 px de marge de la liste, plus les 21 px du trait d'une étape. */
+.etapes-suite {
+  position: absolute;
+  top: 25px;
+  width: var(--bord);
+  height: 2px;
+  border-radius: 1px;
+  visibility: hidden;
+}
+
+.etapes-suite[data-cote='avant'] {
+  left: calc(-1 * var(--bord));
+}
+
+.etapes-suite[data-cote='apres'] {
+  right: calc(-1 * var(--bord));
+}
+
+.etapes-suite[data-visible] {
+  visibility: visible;
+}
+
+/* Quand la rangée défile, ses traits passent au gris des contours (3:1 au moins) : celui qui touche
+   le bord doit se voir sans hésitation. */
+.etapes[data-defile] .etape + .etape::before,
+.etapes-suite {
+  background: var(--contour);
+}
+
 /* Au téléphone, les noms ne tiennent pas sous les ronds : seul celui de l'étape en cours s'écrit,
    dessous ; les autres restent dits au lecteur d'écran. */
 @media (max-width: 599px) {

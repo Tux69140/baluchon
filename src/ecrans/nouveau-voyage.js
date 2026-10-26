@@ -42,6 +42,7 @@ import { DUREE_ALERTE } from './alerte.js';
 import { creerCalendrier } from './calendrier.js';
 import { demander, ouvrirFenetre, poserGardeRetour } from './fenetre.js';
 import { iconeInterface } from './icones.js';
+import { suivreRangee } from './rangee-etapes.js';
 import { vueAlerte } from './voyage-vues.js';
 import { ecranVoyages } from './voyages.js';
 
@@ -120,8 +121,13 @@ export const ecranNouveauVoyage = {
       else champ?.removeAttribute('aria-invalid');
     };
 
-    // L'aperçu devient touchable dans la rangée dès que les informations sont valides.
-    const peindreRangee = () => (rangee.innerHTML = vueEtapes(t, etapes, etat, infosValides()));
+    // L'aperçu devient touchable dans la rangée dès que les informations sont valides. Trop d'étapes
+    // pour la largeur : la rangée défile, l'étape en cours glisse au milieu (doux : changement d'étape).
+    const suiviRangee = suivreRangee(rangee, { signal: fin.signal });
+    const peindreRangee = ({ doux = false } = {}) => {
+      rangee.innerHTML = vueEtapes(t, etapes, etat, infosValides());
+      suiviRangee.centrer(etat.etape, { doux });
+    };
 
     function rafraichirInfos() {
       element('#resume-dates').textContent = resumeDates(infos, t, langue);
@@ -185,7 +191,7 @@ export const ecranNouveauVoyage = {
     function peindreEtape({ focus = true } = {}) {
       const type = etapes[etat.etape].type;
       corps.dataset.etape = type === 'informations' ? 'infos' : type;
-      peindreRangee();
+      peindreRangee({ doux: focus });
       if (type === 'groupe') {
         panneau.innerHTML = vueGroupe(t, langue, etapes[etat.etape], etat.choisies);
         peindrePied();
