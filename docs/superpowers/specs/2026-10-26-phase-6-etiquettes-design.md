@@ -61,10 +61,24 @@ Ceux du plan, phase 6 (US-6), et ses trois critères d'acceptation :
 - Appareils : tablette SM-X210, ASUS (Android 7, 360 points de large), Xiaomi (Android 15), Debian.
 - Pas de dépendance nouvelle.
 
+## Maquettes validées (2026-10-26)
+
+`docs/maquettes/etiquettes/` (servir la racine du dépôt : `python3 -m http.server 8645`, puis `/docs/maquettes/etiquettes/?etat=…`), validée par le chef de projet le 2026-10-26 sans changement (« je valide »). Elle fait foi pour tout ce qui se voit. Choix qu'elle fixe en plus de ce document :
+
+- Réglages : seconde ligne « Étiquettes » (picto étiquette), « Les questions posées par « Nouveau voyage » pour bâtir la liste » ;
+- écran Étiquettes : résumé « N groupes · N étiquettes », une phrase d'explication (« Chaque groupe est une étape de « Nouveau voyage », et ses étiquettes les réponses à toucher. Touchez une étiquette pour la renommer ou la supprimer. »), puce « Ranger », bouton flottant « Nouveau groupe » à tous les formats ;
+- carte de groupe : nom, puis « N étiquettes · étape N de « Nouveau voyage » » (ou « Aucune étiquette · absent de « Nouveau voyage » » et une phrase qui invite à en ajouter), crayon pour la fiche du groupe, étiquettes en puces (un appui ouvre la fiche de l'étiquette), « Ajouter une étiquette » en vert au pied de la carte ; cartes sur deux colonnes dès qu'elles tiennent (340 px au moins), d'égale hauteur sur une même ligne ;
+- un seul mode « Ranger » : chaque groupe avec ▲ ▼, ses étiquettes dessous en retrait avec les leurs ; ▲ grisé en tête et ▼ en fin, dans chaque liste ; aide « Cet ordre est celui des étapes de « Nouveau voyage », et des étiquettes dans chaque étape. » ;
+- fiches de groupe et d'étiquette : fenêtre de 480 px (panneau du bas au téléphone), titre, sous-titre (« Dans le groupe « Activités » », ou le nombre d'étiquettes), champ Nom, aide, puis, pour un élément existant, « Supprimer l'étiquette » / « Supprimer le groupe » en rouge sous un trait ; pied « Annuler » + « Enregistrer » (« Ajouter l'étiquette », « Créer le groupe » à la création), ombré tant qu'il reste à défiler ; Entrée vaut « Enregistrer » ;
+- refus sous le champ : « Donnez un nom à cette étiquette. », « L'étiquette « Plage » existe déjà, dans le groupe Activités. » (« … existe déjà dans ce groupe. » si c'est le même), « Le groupe « Climat » existe déjà. » ; le message suit chaque correction après un premier essai ;
+- confirmation de suppression : « Garder » et « Supprimer » (rouge, avec la corbeille) ; textes : « Elle ne sera plus proposée dans « Nouveau voyage », et les catégories et objets de la bibliothèque qui la portent la perdent. Les voyages déjà créés ne changent pas. » ; pour un groupe, « Ses étiquettes Chaud, Froid et Pluie seront supprimées aussi, et son étape disparaîtra de « Nouveau voyage ». Les voyages déjà créés ne changent pas. » ;
+- un groupe neuf apparaît en dernier et s'éclaire ; le focus va sur son « Ajouter une étiquette » ;
+- rangée d'étapes de l'assistant : elle défile dès que les étapes ne tiennent plus à 52 px chacune au téléphone (ronds seuls), 104 px ailleurs (rond et nom) ; elle montre alors un nombre entier d'étapes qui se partagent la largeur, l'étape en cours au milieu (sans dépasser les bords de la liste) ; ses traits passent au gris des contours, et un trait prolongé jusqu'au bord de la fenêtre (de l'écran au téléphone) apparaît du côté où des étapes sont cachées ; pas de barre de défilement visible.
+
 ## Suite des travaux
 
 1. Inscrire les décisions dans `docs/PRD.md` (« Écrans et gestes » : écran Étiquettes, unicité des noms, suppression en phase 6, rangée d'étapes qui défile) et préciser la phase 6 dans `docs/PLAN.md`.
-2. Maquettes (skill impeccable) : Réglages avec la ligne Étiquettes, écran Étiquettes, fiche de groupe, fiche d'étiquette, confirmations de suppression, mode « Ranger », messages de refus (nom vide, nom déjà pris), et rangée d'étapes de l'assistant avec beaucoup de groupes (décision 6), au téléphone de 360 points comme sur les grands formats. Une fois validées, elles font foi sur ce document pour tout ce qui se voit.
+2. Maquettes (skill impeccable) : Réglages avec la ligne Étiquettes, écran Étiquettes, fiche de groupe, fiche d'étiquette, confirmations de suppression, mode « Ranger », messages de refus (nom vide, nom déjà pris), et rangée d'étapes de l'assistant avec beaucoup de groupes (décision 6), au téléphone de 360 points comme sur les grands formats. Faites et validées le 2026-10-26 (voir ci-dessus).
 3. Après validation des maquettes : plan d'implémentation (superpowers:writing-plans), construction sur une branche `phase-6`, essais sur les appareils, validation par le chef de projet.
 
 ## Laissé au constructeur
