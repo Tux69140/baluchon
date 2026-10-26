@@ -31,7 +31,7 @@ import {
   toucher,
 } from './outils/fiches.mjs';
 import { arbreDe, arbreStocke, idEtiquette, idGroupe, lire } from './outils/etiquettes.mjs';
-import { attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
+import { attendreEcran, creerJuge, lireStockage, ouvrir } from './outils/page.mjs';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { creerDepuisLAssistant, etapeAffichee } from './outils/assistant.mjs';
 
@@ -78,7 +78,7 @@ async function supprimer(page, selecteur) {
 const lireEtapes = page => page.$$eval('.etapes-liste .etape-nom', l => l.map(n => n.textContent.trim()));
 const lirePuces = page => page.$$eval('.puce-etiquette', l => l.map(p => p.textContent.trim()));
 
-// Menu → Nouveau voyage, informations remplies, jusqu'à l'étape voulue (null = l'aperçu).
+// Menu → Nouveau voyage, informations remplies : l'assistant est prêt à passer à l'étape suivante.
 async function ouvrirAssistant(page, nom) {
   await viaMenu(page, '#/nouveau-voyage');
   await attendreEcran(page, 'nouveau-voyage');
@@ -100,15 +100,35 @@ const lireVoyage = page =>
     })),
   }));
 
-// Avance l'assistant jusqu'à l'aperçu en pressant, dans chaque étape de groupe, les puces voulues.
-async function jusqu_a_lApercu(page, cochees) {
+// Avance l'assistant jusqu'à l'aperçu en pressant, dans chaque étape de groupe, les puces voulues
+// (cochees = null : toutes). Rend les noms de toutes les puces proposées en route.
+async function jusquALApercu(page, cochees) {
+  const offertes = [];
   while ((await etapeAffichee(page)).etape !== 'apercu') {
-    for (const puce of await page.locator('.puce-etiquette').all())
-      if (cochees.includes((await puce.textContent()).trim()) && (await puce.getAttribute('aria-pressed')) !== 'true')
+    for (const puce of await page.locator('.puce-etiquette').all()) {
+      const nom = (await puce.textContent()).trim();
+      offertes.push(nom);
+      if ((!cochees || cochees.includes(nom)) && (await puce.getAttribute('aria-pressed')) !== 'true')
         await puce.click();
+    }
     await page.click('[data-action="suivant"]');
   }
   await calme(page);
+  return offertes;
+}
+
+// Ce que le stockage garde d'un voyage : le voyage, ses étiquettes copiées, ses catégories, ses objets
+// (quantités et état dans le sac compris), pour comparer avant et après sans passer par l'affichage.
+async function voyageStocke(page, nom) {
+  const d = await lireStockage(page);
+  const voyage = d.voyages.find(v => v.nom === nom);
+  const sien = x => x.voyageId === voyage.id;
+  return {
+    voyage,
+    etiquettes: (d.etiquettesDuVoyage ?? []).filter(sien),
+    categories: (d.categoriesDuVoyage ?? []).filter(sien),
+    objets: (d.objetsDuVoyage ?? []).filter(sien),
+  };
 }
 
 try {
@@ -170,13 +190,18 @@ try {
   // Critère 2 : voyage avec Camping, puis Camping renommée Bivouac.
   await page.click('[data-aller="1"]');
   await calme(page);
-  await jusqu_a_lApercu(page, ['Camping']);
+  await jusquALApercu(page, ['Camping']);
   const apercuAvant = await lireApercu(page);
   juge.exige(apercuAvant.includes('Camping'), `voyage avec Camping : aperçu ${vu(apercuAvant)}`);
   await creerDepuisLAssistant(page);
   await attendreEcran(page, 'voyage');
   const avant = await lireVoyage(page);
+  const stockeAvant = await voyageStocke(page, 'Premier');
   juge.exige(vu(avant.etiquettes) === vu(['Camping']), `voyage : en-tête ${vu(avant.etiquettes)}`);
+  juge.exige(
+    vu(stockeAvant.etiquettes.map(e => e.nom)) === vu(['Camping']) && stockeAvant.objets.length > 0,
+    `voyage : données gardées ${vu(stockeAvant)}`,
+  );
 
   await page.click('#app a.lien-retour');
   await attendreEcran(page, 'voyages');
@@ -192,20 +217,40 @@ try {
   await attendreEcran(page, 'voyage');
   const apres = await lireVoyage(page);
   juge.exige(vu(apres) === vu(avant), `critère 2 : le voyage a changé ${vu(apres)} au lieu de ${vu(avant)}`);
+  juge.exige(
+    vu(await voyageStocke(page, 'Premier')) === vu(stockeAvant),
+    'critère 2 : les données gardées du voyage ont changé',
+  );
 
   await page.click('#app a.lien-retour');
   await attendreEcran(page, 'voyages');
   await versBibliotheque(page);
-  const fiche = await (async () => {
-    await ouvrirFicheCategorie(page, 'Camping');
-    return lireFiche(page);
-  })();
+  await ouvrirFicheCategorie(page, 'Camping');
+  const fiche = await lireFiche(page);
   juge.exige(
     vu(fiche?.etiquettes) === vu(['Bivouac', 'Tente']) && vu(fiche.choix) === vu([m.selonEtiquettes]),
     `critère 2 : fiche de Camping ${vu(fiche)}`,
   );
   await page.keyboard.press('Escape');
-  await attendreFermee(page);
+  juge.exige(await attendreFermee(page), 'critère 2 : la fiche de Camping se ferme');
+
+  // Témoin : tant que Bivouac et Tente existent, « tout presser » fait entrer Camping. La même
+  // épreuve après la suppression ne peut donc devenir rouge que si la suppression a joué.
+  await viaMenu(page, '#/voyages');
+  await attendreEcran(page, 'voyages');
+  await ouvrirAssistant(page, 'Témoin');
+  const offertesAvant = await jusquALApercu(page, null);
+  juge.exige(
+    (await lireApercu(page)).includes('Camping') &&
+      offertesAvant.includes('Bivouac') &&
+      offertesAvant.includes('Tente'),
+    `Review Focus 3, témoin : ${vu(await lireApercu(page))} ${vu(offertesAvant)}`,
+  );
+  await creerDepuisLAssistant(page);
+  await attendreEcran(page, 'voyage');
+  await page.click('#app a.lien-retour');
+  await attendreEcran(page, 'voyages');
+  await versBibliotheque(page);
 
   // Review Focus 3 : Bivouac et Tente supprimées (la catégorie n'a pas d'autre étiquette).
   await page.click('#app a.lien-retour');
@@ -219,14 +264,23 @@ try {
   }
 
   await ouvrirAssistant(page, 'Second');
-  await jusqu_a_lApercu(page, []);
+  const offertes = await jusquALApercu(page, null);
   const apercuSans = await lireApercu(page);
   juge.exige(
+    !offertes.includes('Bivouac') && !offertes.includes('Tente') && offertes.includes('Voiture'),
+    `Review Focus 3 : puces offertes ${vu(offertes)}`,
+  );
+  juge.exige(
     !apercuSans.includes('Camping') && apercuSans.length > 0,
-    `Review Focus 3 : l'aperçu garde Camping ${vu(apercuSans)}`,
+    `Review Focus 3 : toutes les puces pressées, l'aperçu garde Camping ${vu(apercuSans)}`,
   );
   await creerDepuisLAssistant(page);
   await attendreEcran(page, 'voyage');
+  const second = await lireVoyage(page);
+  juge.exige(
+    !second.categories.some(c => c.nom === 'Camping') && !second.etiquettes.includes('Bivouac'),
+    `Review Focus 3 : « Second » a la catégorie Camping ${vu(second)}`,
+  );
   await page.click('#app a.lien-retour');
   await attendreEcran(page, 'voyages');
   await viaMenu(page, '#/reglages');
@@ -258,6 +312,10 @@ try {
   await attendreEcran(page, 'voyage');
   const final = await lireVoyage(page);
   juge.exige(vu(final) === vu(avant), `Review Focus 3 : le voyage a changé ${vu(final)} au lieu de ${vu(avant)}`);
+  juge.exige(
+    vu(await voyageStocke(page, 'Premier')) === vu(stockeAvant),
+    'Review Focus 3 : les données gardées du voyage ont changé',
+  );
 
   await fermerEssai(juge, 'parcours', ouvert);
 } finally {
