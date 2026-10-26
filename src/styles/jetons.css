@@ -21,6 +21,9 @@
   --principal: light-dark(#007232, #6ec083);
   --principal-survol: light-dark(#005f29, #86cf98);
   --sur-principal: light-dark(#ffffff, #0d1624);
+  /* Le vert départ de l'autre thème, pour une action posée sur l'encre (bandeau « Annuler ») : plus de
+     6:1 sur elle. */
+  --action-inverse: light-dark(#6ec083, #007232);
 
   /* Messages : jamais la couleur seule, toujours un texte (et une icône). */
   --succes: light-dark(#007232, #6ec083);

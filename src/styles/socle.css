@@ -24,10 +24,12 @@ h3 {
   margin: 0;
 }
 
+/* Le bas de chaque écran garde la place du bandeau « Annuler » (56 px et ses marges, maquette de la
+   phase 7) : en fin de liste, il ne cache jamais une dernière ligne, ni ne pousse rien en arrivant. */
 .ecran {
   max-width: var(--largeur-max);
   margin: 0 auto;
-  padding: var(--e-lg) var(--e-md) var(--e-2xl);
+  padding: var(--e-lg) var(--e-md) calc(var(--e-2xl) + 80px);
 }
 
 .ecran > h1,
@@ -150,8 +152,9 @@ a.bouton {
   box-shadow: 0 6px 16px rgb(26 38 60 / 0.25);
 }
 
+/* Le bouton flottant, puis le bandeau « Annuler » posé au-dessus de lui. */
 .ecran-avec-flottant {
-  padding-bottom: calc(var(--e-2xl) + 64px);
+  padding-bottom: calc(var(--e-2xl) + 64px + 72px);
 }
 
 .message {

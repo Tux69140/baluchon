@@ -1,0 +1,90 @@
+/* Bandeau « Annuler » (src/ecrans/annulation.js), repris de la maquette validée de la phase 7
+   (docs/maquettes/suppressions/bandeau.css). Fond à l'encre, texte au fond : il se distingue des
+   cartes et du message d'erreur (fond rose) sans emprunter de couleur de catégorie, en clair comme en
+   sombre. « Annuler » prend le vert départ de l'autre thème (--action-inverse), lisible sur l'encre.
+   Hors fenêtre, en bas à droite : --au-dessus le pose au-dessus du bouton flottant ou des boutons
+   collés de l'assistant. Les règles de la fenêtre qui l'accueille (.confirmation p…) ne l'atteignent
+   pas : marges, couleur et police sont les siennes. */
+.bandeau-annuler {
+  position: fixed;
+  inset: auto calc(var(--zone-droite) + var(--e-md)) var(--au-dessus, calc(var(--zone-bas) + var(--e-md))) auto;
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: min(440px, calc(100vw - var(--zone-gauche) - var(--zone-droite) - 2 * var(--e-md)));
+  min-height: 56px;
+  margin: 0;
+  padding: 4px 4px 4px 14px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--encre);
+  color: var(--fond);
+  font: 400 var(--taille-libelle) / 1.35 var(--police);
+  box-shadow: 0 12px 28px -12px rgb(13 22 36 / 0.5);
+  overflow: visible;
+}
+
+/* Une fenêtre est ouverte : en haut, centré, comme le message d'erreur d'enregistrement. */
+.bandeau-annuler[data-place='haut'] {
+  inset: calc(var(--zone-haut) + var(--e-md)) 0 auto 0;
+  margin: 0 auto;
+}
+
+.bandeau-annuler p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+.bandeau-annuler .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+.bandeau-action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-width: var(--cible);
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--action-inverse);
+  font: 700 16px var(--police);
+  cursor: pointer;
+}
+
+.bandeau-action:hover {
+  background: color-mix(in oklab, var(--fond) 12%, transparent);
+}
+
+/* Pendant le rétablissement : un seul appui compte. */
+.bandeau-action[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Le focus à l'encre disparaîtrait sur l'encre : il prend la couleur du fond. */
+.bandeau-action:focus-visible {
+  outline-color: var(--fond);
+}
+
+/* Une entrée de 200 ms, sans mouvement si l'appareil en demande moins ; jamais rejouée quand il passe
+   d'une fenêtre à la page. */
+@media (prefers-reduced-motion: no-preference) {
+  .bandeau-annuler[data-entree]:popover-open {
+    animation: bandeau-entre 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes bandeau-entre {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}

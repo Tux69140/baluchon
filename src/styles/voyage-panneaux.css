@@ -15,10 +15,11 @@
     padding: 0 var(--e-lg);
   }
 
+  /* Le bas de chaque panneau garde la place du bandeau « Annuler » (socle.css, .ecran). */
   .panneau {
     min-height: 0;
     overflow-y: auto;
-    padding: var(--e-lg) 0 var(--e-2xl);
+    padding: var(--e-lg) 0 calc(var(--e-2xl) + 80px);
   }
 
   /* ---------- À gauche : en-tête, progression, filtre, choix de catégorie ---------- */

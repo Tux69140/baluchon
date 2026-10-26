@@ -6,7 +6,7 @@
 // Le crayon d'une catégorie, la ligne d'un objet, « Nouvelle catégorie » et « Ajouter un objet »
 // ouvrent leur fiche (src/ecrans/edition-modeles.js) ; enregistrée, la bibliothèque est relue et ce qui
 // vient de changer s'éclaire ; supprimée (phase 7), elle est relue, et si la catégorie choisie est
-// partie, la première qui reste l'est à sa place.
+// partie, la première qui reste l'est à sa place ; rétablie par « Annuler », elle revient éclairée.
 // Ce fichier branche les gestes et le stockage ; le dessin est dans bibliotheque-vues.js.
 import { remplir } from '../i18n/traduction.js';
 import { alerterEnHaut } from './alerte.js';
@@ -256,6 +256,23 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
       if (objet) ouvrirObjet(objet);
     } else if (action === 'nouvel-objet') ouvrirObjet(null, id);
   });
+  // « Annuler » du bandeau (src/ecrans/annulation.js), sur cet écran ou un autre puis revenu ici : la
+  // bibliothèque relue, l'élément rétabli éclairé, sa catégorie choisie et dépliée pour qu'on le voie.
+  window.addEventListener(
+    'bibliotheque-retablie',
+    ({ detail: { cible, categorieId } }) => {
+      if (parti()) return;
+      if (categorieId) {
+        ui.choisie = categorieId;
+        ui.ouvertes.add(categorieId);
+      }
+      let recent = null;
+      if (cible.type === 'categorie') recent = `cat-${cible.id}`;
+      else if (cible.type === 'objet') recent = cible.id;
+      relire(recent);
+    },
+    { signal: fin.signal },
+  );
   deuxPanneaux.addEventListener(
     'change',
     () => {

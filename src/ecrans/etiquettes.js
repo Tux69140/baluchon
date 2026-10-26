@@ -252,6 +252,16 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
     });
   }
 
+  // « Annuler » du bandeau (src/ecrans/annulation.js) : la bibliothèque relue, l'étiquette ou le
+  // groupe rétabli éclairé.
+  window.addEventListener(
+    'bibliotheque-retablie',
+    ({ detail: { cible } }) => {
+      if (!parti()) relire(cible.type === 'etiquette' || cible.type === 'groupe' ? cible.id : null);
+    },
+    { signal: fin.signal },
+  );
+
   main.addEventListener('click', evenement => {
     const commande = evenement.target.closest('[data-action]');
     if (!commande || commande.getAttribute('aria-disabled') === 'true' || mode.gerer(evenement, commande)) return;
