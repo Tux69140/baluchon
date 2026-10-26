@@ -1,0 +1,316 @@
+/* Maquette de la phase 6 : ce qui n'existe pas encore dans les styles de l'appli (src/styles/). */
+
+/* ---------- Menu des états de la maquette (hors appli) ---------- */
+.maquette-menu {
+  position: fixed;
+  top: calc(var(--zone-haut) + 8px);
+  right: 8px;
+  z-index: 80;
+  max-width: 300px;
+  padding: 4px 10px;
+  border: 1px dashed var(--contour);
+  border-radius: var(--r-md);
+  background: var(--carte);
+  font-size: var(--taille-mention);
+}
+
+.maquette-menu nav {
+  display: grid;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.maquette-menu a {
+  padding: 6px 0;
+  color: var(--encre);
+}
+
+.maquette-menu a[aria-current] {
+  font-weight: 700;
+}
+
+/* ---------- Écran Étiquettes : une carte par groupe, ses étiquettes en puces ---------- */
+.etiquettes-aide {
+  margin-top: var(--e-sm);
+}
+
+/* Les cartes se rangent sur deux colonnes dès qu'elles y tiennent (tablette, ordinateur) : des
+   puces sur une seule ligne de 1000 px laisseraient la carte à moitié vide. */
+.groupes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--e-md);
+  margin-top: var(--e-md);
+}
+
+.groupe {
+  display: flex;
+  flex-direction: column;
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+}
+
+.groupe-entete {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  padding: var(--e-sm) var(--e-sm) 0 var(--e-md);
+}
+
+.groupe-titre {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--e-sm) 0;
+  font: inherit;
+}
+
+.groupe-titre b {
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.groupe-infos {
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.groupe-vide {
+  max-width: 62ch;
+  margin: var(--e-xs) var(--e-md) var(--e-md);
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  text-wrap: pretty;
+}
+
+.etiquettes-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-sm);
+  margin: 0;
+  padding: var(--e-sm) var(--e-md) var(--e-md);
+  list-style: none;
+}
+
+.puce-modele {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* L'ajout, au pied de la carte, comme « Ajouter un objet » dans la Bibliothèque. */
+.groupe-ajout {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: 100%;
+  min-height: 52px;
+  margin-top: auto;
+  padding: 0 var(--e-md);
+  border: 0;
+  border-top: 1px solid var(--separation);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  background: none;
+  color: var(--principal);
+  font: 600 var(--taille-libelle) var(--police);
+  cursor: pointer;
+}
+
+.groupe-ajout:hover {
+  background: var(--releve);
+}
+
+.groupe-ajout .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .puce[data-recent],
+  .groupe[data-recent] .groupe-entete {
+    animation: eclaire 1600ms ease-out;
+  }
+}
+
+/* ---------- Ranger : les groupes, et sous chacun ses étiquettes ---------- */
+.rang-arbre {
+  margin: var(--e-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rang-groupe {
+  border-top: 1px solid var(--separation);
+  background: var(--carte);
+}
+
+.rang-ligne {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+}
+
+.rang-groupe > .rang-ligne b {
+  flex: 1;
+  min-width: 0;
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.rang-picto {
+  display: inline-flex;
+  color: var(--encre-douce);
+}
+
+.rang-picto svg {
+  width: 20px;
+  height: 20px;
+}
+
+.rang-etiquettes {
+  margin: 0 0 var(--e-sm);
+  padding: 0 0 0 32px;
+  list-style: none;
+}
+
+.rang-etiquettes .rang-ligne {
+  min-height: 52px;
+  border-top: 1px dashed var(--separation);
+  background: var(--carte);
+}
+
+.rang-etiquettes .rang-ligne > span {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Fiches d'un groupe ou d'une étiquette : un nom, et « Supprimer » ---------- */
+.fiche-nom {
+  --largeur-fenetre: 480px;
+}
+
+.fiche-nom .aide {
+  margin-top: 0;
+}
+
+.zone-suppression {
+  margin-top: var(--e-lg);
+  padding-top: var(--e-md);
+  border-top: 1px solid var(--separation);
+}
+
+.bouton-supprimer {
+  border-color: var(--contour);
+  background: var(--carte);
+  color: var(--erreur);
+}
+
+.bouton-supprimer:hover {
+  background: var(--fond-erreur);
+}
+
+/* L'action d'une suppression : en rouge, pour qu'on ne la prenne pas pour une confirmation verte. */
+.bouton-danger {
+  background: var(--erreur);
+  color: var(--sur-principal);
+}
+
+.bouton-danger:hover {
+  background: color-mix(in oklab, var(--erreur) 85%, var(--encre));
+}
+
+.bouton-supprimer .icone svg,
+.bouton-danger .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Assistant : la rangée d'étapes qui défile ---------- */
+.demo-assistant {
+  --largeur-fenetre: 624px;
+}
+
+@media (min-width: 1000px) and (orientation: landscape) {
+  .demo-assistant {
+    --largeur-fenetre: 800px;
+  }
+}
+
+.fenetre .demo-corps {
+  height: 400px;
+}
+
+.demo-vide {
+  margin: auto;
+  text-align: center;
+}
+
+.demo-derriere {
+  opacity: 0.6;
+}
+
+/* Le bord que touche le trait : celui de la fenêtre, ou de l'écran au téléphone. */
+.fenetre .etapes {
+  --bord: var(--retrait-fenetre);
+}
+
+.assistant-plein .etapes {
+  --bord: var(--e-md);
+  margin-inline: calc(-1 * var(--bord));
+  padding-inline: var(--bord);
+}
+
+.etapes-cadre {
+  position: relative;
+}
+
+.etapes[data-defile] .etapes-liste {
+  overflow: auto hidden;
+  padding-block: 4px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.etapes[data-defile] .etapes-liste::-webkit-scrollbar {
+  display: none;
+}
+
+.etapes[data-defile] .etape {
+  flex: 0 0 var(--part);
+  scroll-snap-align: start;
+}
+
+/* Des étapes cachées de ce côté : le trait qui relie les ronds continue jusqu'au bord. */
+.etapes-suite {
+  position: absolute;
+  top: 25px;
+  width: var(--bord);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--separation);
+  visibility: hidden;
+}
+
+.etapes-suite[data-cote='avant'] {
+  left: calc(-1 * var(--bord));
+}
+
+.etapes-suite[data-cote='apres'] {
+  right: calc(-1 * var(--bord));
+}
+
+.etapes-suite[data-visible] {
+  visibility: visible;
+}
+
+/* Quand la rangée défile, ses traits passent au gris des contours (3:1 au moins) : celui qui touche
+   le bord doit se voir sans hésitation. */
+.etapes[data-defile] .etape + .etape::before,
+.etapes-suite {
+  background: var(--contour);
+}
