@@ -108,7 +108,9 @@ function fiche({ titre, sousTitre, aide, bouton, nom, valider, enregistrer, supp
 }
 
 // ---------- Étiquette ----------
-export function ficheEtiquette({ etiquette, groupe, groupes, panne, surEnregistrer, surSupprimer }) {
+// demanderSuppression (facultatif, maquette de la phase 7) remplace la simple confirmation : rend true
+// une fois la suppression faite.
+export function ficheEtiquette({ etiquette, groupe, groupes, panne, surEnregistrer, surSupprimer, demanderSuppression }) {
   const autre = nom =>
     groupes.flatMap(g => g.etiquettes.map(e => ({ e, g }))).find(({ e }) => e !== etiquette && cle(e.nom) === cle(nom));
   return fiche({
@@ -131,6 +133,7 @@ export function ficheEtiquette({ etiquette, groupe, groupes, panne, surEnregistr
     texteSupprimer: 'Supprimer l’étiquette',
     supprimer:
       etiquette &&
+      (demanderSuppression ??
       (async () => {
         const oui = await confirmerSuppression({
           titre: `Supprimer l’étiquette « ${echapper(etiquette.nom)} » ?`,
@@ -138,12 +141,12 @@ export function ficheEtiquette({ etiquette, groupe, groupes, panne, surEnregistr
         });
         if (oui && !panne()) surSupprimer();
         return oui;
-      }),
+      })),
   });
 }
 
 // ---------- Groupe ----------
-export function ficheGroupe({ groupe, groupes, panne, surEnregistrer, surSupprimer }) {
+export function ficheGroupe({ groupe, groupes, panne, surEnregistrer, surSupprimer, demanderSuppression }) {
   const n = groupe?.etiquettes.length ?? 0;
   return fiche({
     titre: groupe ? echapper(groupe.nom) : 'Nouveau groupe',
@@ -162,6 +165,7 @@ export function ficheGroupe({ groupe, groupes, panne, surEnregistrer, surSupprim
     texteSupprimer: 'Supprimer le groupe',
     supprimer:
       groupe &&
+      (demanderSuppression ??
       (async () => {
         const noms = groupe.etiquettes.map(e => echapper(e.nom));
         const oui = await confirmerSuppression({
@@ -174,6 +178,6 @@ export function ficheGroupe({ groupe, groupes, panne, surEnregistrer, surSupprim
         });
         if (oui && !panne()) surSupprimer();
         return oui;
-      }),
+      })),
   });
 }

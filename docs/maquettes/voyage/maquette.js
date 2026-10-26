@@ -698,3 +698,11 @@ if (ETAT === 'fiche') ouvrirFiche(trouver('o17'));
 if (ETAT === 'confirmation') confirmerVider(trouver('o20'));
 if (ETAT === 'tampon' && !largeMq.matches) document.querySelector('[data-flip="cat-toilette"]')?.scrollIntoView({ block: 'center' });
 if (ETAT === 'panne') alerte('La coche n’a pas pu être enregistrée. Rien n’a changé ; réessayez.');
+
+// Phase 7 : le bandeau « Annuler » qui suit d'un écran à l'autre (docs/maquettes/suppressions/).
+if (params.has('bandeau'))
+  import('../suppressions/bandeau.js').then(({ montrerBandeau }) => {
+    const reste = params.get('reste');
+    montrerBandeau({ texte: params.get('bandeau'), duree: CAPTURE || !reste || reste === 'toujours' ? Infinity : Number(reste) });
+    document.documentElement.dataset.bandeau = '';
+  });

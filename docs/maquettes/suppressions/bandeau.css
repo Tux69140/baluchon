@@ -1,0 +1,90 @@
+/* Bandeau « Annuler » (maquette de la phase 7). Fond à l'encre, texte au fond : il se distingue des
+   cartes et du message d'erreur (fond rose) sans emprunter de couleur de catégorie, en clair comme en
+   sombre. « Annuler » prend le vert départ de l'autre thème, lisible sur l'encre (plus de 6:1). */
+.bandeau-annuler {
+  --bandeau-action: light-dark(#6ec083, #007232);
+  position: fixed;
+  inset: auto calc(var(--zone-droite) + var(--e-md)) var(--au-dessus, calc(var(--zone-bas) + var(--e-md))) auto;
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: min(440px, calc(100vw - var(--zone-gauche) - var(--zone-droite) - 2 * var(--e-md)));
+  min-height: 56px;
+  margin: 0;
+  padding: 4px 4px 4px 14px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--encre);
+  color: var(--fond);
+  font: 400 var(--taille-libelle) / 1.35 var(--police);
+  box-shadow: 0 12px 28px -10px rgb(13 22 36 / 0.5);
+  overflow: visible;
+}
+
+/* Une fenêtre est ouverte : en haut, centré, comme le message d'erreur d'enregistrement. */
+.bandeau-annuler[data-place='haut'] {
+  inset: calc(var(--zone-haut) + var(--e-md)) 0 auto 0;
+  margin: 0 auto;
+}
+
+.bandeau-annuler p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.bandeau-picto {
+  display: inline-flex;
+  flex: none;
+}
+
+.bandeau-picto svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.bandeau-action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  min-width: var(--cible);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--bandeau-action);
+  font: 700 16px var(--police);
+  cursor: pointer;
+}
+
+.bandeau-action svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.bandeau-action:hover {
+  background: color-mix(in oklab, var(--fond) 12%, transparent);
+}
+
+/* Le focus à l'encre disparaîtrait sur l'encre : il prend la couleur du fond. */
+.bandeau-action:focus-visible {
+  outline-color: var(--fond);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bandeau-annuler[data-entree]:popover-open {
+    animation: bandeau-entre 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes bandeau-entre {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}

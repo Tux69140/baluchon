@@ -375,3 +375,11 @@ if (ETAT.startsWith('assistant')) {
 }
 await attendre();
 document.documentElement.dataset.pret = '';
+
+// Phase 7 : le bandeau « Annuler » qui suit d'un écran à l'autre (docs/maquettes/suppressions/).
+if (params.has('bandeau'))
+  import('../suppressions/bandeau.js').then(({ montrerBandeau }) => {
+    const reste = params.get('reste');
+    montrerBandeau({ texte: params.get('bandeau'), duree: CAPTURE || !reste || reste === 'toujours' ? Infinity : Number(reste) });
+    document.documentElement.dataset.bandeau = '';
+  });

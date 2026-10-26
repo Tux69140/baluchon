@@ -33,7 +33,7 @@ const segments = (nom, legende, options, valeur) => `
 const interrupteur = (cle, actif, libelle) =>
   `<button type="button" class="interrupteur" role="switch" data-f="${cle}" aria-checked="${actif}" aria-label="${libelle}"></button>`;
 
-function inclusion(b, erreur, { feminin, aideToujours }) {
+function inclusion(b, erreur, { feminin, aideToujours, groupesDispo = GROUPES }) {
   const toujours = b.etiquettes === null;
   const choisies = b.etiquettes ?? [];
   const aide = toujours
@@ -43,7 +43,7 @@ function inclusion(b, erreur, { feminin, aideToujours }) {
       : 'Choisissez les étiquettes qui la feront proposer.';
   const groupes = toujours
     ? ''
-    : GROUPES.map(
+    : groupesDispo.map(
         g => `
           <div class="groupe-etiquettes">
             <h4>${g.nom}</h4>
@@ -83,7 +83,9 @@ const lecture = b =>
     : `<b>${phraseQuantite(b)}</b><span>${exempleQuantite(b)}</span>`;
 
 // ---------- Mécanique commune d'une fiche ----------
-function fiche({ titre, sousTitre, bouton, initial, corps, valider, enregistrer, panne, nomPourAbandon }) {
+// supprimer (facultatif, maquette de la phase 7) : la question avant de supprimer ; rend true une
+// fois la suppression faite, et la fiche se ferme.
+function fiche({ titre, sousTitre, bouton, initial, corps, valider, enregistrer, panne, nomPourAbandon, supprimer, texteSupprimer }) {
   const b = structuredClone(initial);
   const depart = JSON.stringify(b);
   let erreurs = {};
@@ -106,7 +108,10 @@ function fiche({ titre, sousTitre, bouton, initial, corps, valider, enregistrer,
     const focus = document.activeElement?.closest('[data-f]');
     const cle = focus && [focus.dataset.f, focus.dataset.valeur];
     const haut = zone.scrollTop;
-    zone.innerHTML = (sousTitre ? `<p class="fiche-regle">${sousTitre}</p>` : '') + corps(b, erreurs);
+    zone.innerHTML =
+      (sousTitre ? `<p class="fiche-regle">${sousTitre}</p>` : '') +
+      corps(b, erreurs) +
+      (supprimer ? `<div class="zone-suppression"><button type="button" class="bouton bouton-supprimer" data-f="supprimer">${ic('trash')}${texteSupprimer}</button></div>` : '');
     zone.scrollTop = haut;
     if (cle) zone.querySelector(`[data-f="${cle[0]}"]${cle[1] ? `[data-valeur="${cle[1]}"]` : ''}`)?.focus({ preventScroll: true });
     ombrePied();
@@ -154,6 +159,10 @@ function fiche({ titre, sousTitre, bouton, initial, corps, valider, enregistrer,
     const el = e.target.closest('[data-f]');
     if (!el || el.getAttribute('aria-disabled') === 'true') return;
     const f = el.dataset.f;
+    if (f === 'supprimer') {
+      supprimer().then(fait => fait && fermer());
+      return;
+    }
     if (f === 'enregistrer') {
       tente = true;
       erreurs = valider(b);
@@ -184,7 +193,7 @@ function fiche({ titre, sousTitre, bouton, initial, corps, valider, enregistrer,
 }
 
 // ---------- Catégorie ----------
-export function ficheCategorie({ categorie, surEnregistrer, panne }) {
+export function ficheCategorie({ categorie, surEnregistrer, panne, groupes = GROUPES, supprimer }) {
   const initial = categorie
     ? { nom: categorie.nom, icone: categorie.icone, couleur: categorie.couleur, etiquettes: categorie.etiquettes.length ? [...categorie.etiquettes] : null }
     : { nom: '', icone: 'suitcase-rolling', couleur: 'corail', etiquettes: null };
@@ -201,6 +210,8 @@ export function ficheCategorie({ categorie, surEnregistrer, panne }) {
       ...(b.etiquettes && !b.etiquettes.length ? { etiquettes: 'Choisissez au moins une étiquette, ou « Toujours incluse ».' } : {}),
     }),
     enregistrer: b => surEnregistrer({ ...b, nom: b.nom.trim(), etiquettes: b.etiquettes ?? [] }),
+    supprimer: categorie && supprimer,
+    texteSupprimer: 'Supprimer la catégorie',
     corps: (b, err) => `
         ${champNom(b.nom, err.nom)}
         <fieldset class="champ champ-sans-message">
@@ -214,7 +225,7 @@ export function ficheCategorie({ categorie, surEnregistrer, panne }) {
             ${COULEURS.map(([cle, nom]) => `<button type="button" class="teinte" role="radio" data-f="couleur" data-valeur="${cle}" data-couleur="${cle}" aria-checked="${b.couleur === cle}" aria-label="${nom}">${b.couleur === cle ? svg.check : ''}</button>`).join('')}
           </div>
         </fieldset>
-        ${inclusion(b, err.etiquettes, { feminin: true, aideToujours: 'Proposée dans chaque nouveau voyage.' })}`,
+        ${inclusion(b, err.etiquettes, { feminin: true, aideToujours: 'Proposée dans chaque nouveau voyage.', groupesDispo: groupes })}`,
   });
 }
 
@@ -269,7 +280,7 @@ function ouvrirCatalogue(b, apres) {
 export { ouvrirCatalogue };
 
 // ---------- Objet ----------
-export function ficheObjet({ objet, categorie, surEnregistrer, panne }) {
+export function ficheObjet({ objet, categorie, surEnregistrer, panne, groupes = GROUPES, supprimer }) {
   const initial = objet
     ? { ...structuredClone(objet), etiquettes: objet.etiquettes.length ? [...objet.etiquettes] : null }
     : { nom: '', regle: 'fixe', valeur: 1, plafond: null, parPersonne: true, consommable: false, etiquettes: null, note: '' };
@@ -288,6 +299,8 @@ export function ficheObjet({ objet, categorie, surEnregistrer, panne }) {
     }),
     enregistrer: b =>
       surEnregistrer({ ...b, nom: b.nom.trim(), plafond: b.regle === 'fixe' ? null : b.plafond, etiquettes: b.etiquettes ?? [] }),
+    supprimer: objet && supprimer,
+    texteSupprimer: 'Supprimer l’objet',
     corps: (b, err) => `
         ${champNom(b.nom, err.nom)}
         <fieldset class="champ">
@@ -314,7 +327,7 @@ export function ficheObjet({ objet, categorie, surEnregistrer, panne }) {
           <span>Consommable<small>à racheter avant chaque voyage</small></span>
           ${interrupteur('consommable', b.consommable, 'Consommable')}
         </div>
-        ${inclusion(b, err.etiquettes, { feminin: false, aideToujours: `Proposé dès que la catégorie « ${echapper(categorie.nom)} » l’est.` })}
+        ${inclusion(b, err.etiquettes, { feminin: false, aideToujours: `Proposé dès que la catégorie « ${echapper(categorie.nom)} » l’est.`, groupesDispo: groupes })}
         <div class="champ champ-sans-message">
           <label for="f-note">Note <small>facultative, lue pendant le voyage</small></label>
           <textarea id="f-note" data-f="note" rows="3" maxlength="400">${echapper(b.note)}</textarea>
