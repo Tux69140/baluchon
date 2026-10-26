@@ -157,11 +157,11 @@ Un bouton menu (accueil, Réglages, Bibliothèque) ouvre Mes voyages, Nouveau vo
 
 ### Critères d'acceptation
 
-- [ ] Une catégorie « Alimentation » de 5 objets, liée à Camping, apparaît d'elle-même dans le premier voyage créé avec Camping cochée (critère de succès 1).
-- [ ] La recherche du catalogue trouve un picto par un mot français (« tente », « soleil »).
-- [ ] Renommer un objet modèle ne change pas son nom dans un voyage déjà créé.
-- [ ] L'ordre réglé par les flèches est repris dans l'aperçu et les nouveaux voyages.
-- [ ] Un objet sans nom ou sans valeur de quantité est refusé avec un message clair.
+- [x] Une catégorie « Alimentation » de 5 objets, liée à Camping, apparaît d'elle-même dans le premier voyage créé avec Camping cochée (critère de succès 1).
+- [x] La recherche du catalogue trouve un picto par un mot français (« tente », « soleil »).
+- [x] Renommer un objet modèle ne change pas son nom dans un voyage déjà créé.
+- [x] L'ordre réglé par les flèches est repris dans l'aperçu et les nouveaux voyages.
+- [x] Un objet sans nom ou sans valeur de quantité est refusé avec un message clair.
 
 ## Bloquée par
 
