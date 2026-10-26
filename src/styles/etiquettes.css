@@ -1,6 +1,169 @@
-/* Écran Étiquettes et ses fiches (src/ecrans/fiche-etiquette.js), repris de la maquette validée de la
-   phase 6 (docs/maquettes/etiquettes/maquette.css). La fiche elle-même est une fiche de modèle
+/* Écran Étiquettes (src/ecrans/etiquettes.js) et ses fiches (src/ecrans/fiche-etiquette.js), repris de
+   la maquette validée de la phase 6 (docs/maquettes/etiquettes/maquette.css). Le résumé, l'aide, la
+   puce « Ranger », le cadre du rangement et l'éclairage (@keyframes eclaire) sont ceux de la
+   Bibliothèque (bibliotheque.css, voyage.css) ; la fiche elle-même est une fiche de modèle
    (fiche-modele.css) ; le bouton rouge de la question, .bouton-danger, est dans socle.css. */
+
+/* ---------- Écran Étiquettes : une carte par groupe, ses étiquettes en puces ---------- */
+.etiquettes-aide {
+  margin-top: var(--e-sm);
+}
+
+/* Les cartes se rangent sur deux colonnes dès qu'elles y tiennent (tablette, ordinateur) : des
+   puces sur une seule ligne de 1000 px laisseraient la carte à moitié vide. */
+.groupes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--e-md);
+  margin-top: var(--e-md);
+}
+
+.groupe {
+  display: flex;
+  flex-direction: column;
+  background: var(--carte);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+}
+
+.groupe-entete {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  padding: var(--e-sm) var(--e-sm) 0 var(--e-md);
+}
+
+.groupe-titre {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--e-sm) 0;
+  font: inherit;
+}
+
+.groupe-titre b {
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.groupe-infos {
+  color: var(--encre-douce);
+  font-size: var(--taille-mention);
+}
+
+.groupe-vide {
+  max-width: 62ch;
+  margin: var(--e-xs) var(--e-md) var(--e-md);
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  text-wrap: pretty;
+}
+
+.etiquettes-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-sm);
+  margin: 0;
+  padding: var(--e-sm) var(--e-md) var(--e-md);
+  list-style: none;
+}
+
+.puce-modele {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* L'ajout, au pied de la carte, comme « Ajouter un objet » dans la Bibliothèque. */
+.groupe-ajout {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: 100%;
+  min-height: 52px;
+  margin-top: auto;
+  padding: 0 var(--e-md);
+  border: 0;
+  border-top: 1px solid var(--separation);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  background: none;
+  color: var(--principal);
+  font: 600 var(--taille-libelle) var(--police);
+  cursor: pointer;
+}
+
+.groupe-ajout:hover {
+  background: var(--releve);
+}
+
+.groupe-ajout .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Ce qui vient d'être enregistré s'éclaire un instant, puis reprend sa couleur. */
+@media (prefers-reduced-motion: no-preference) {
+  .puce[data-recent],
+  .groupe[data-recent] .groupe-entete {
+    animation: eclaire 1600ms ease-out;
+  }
+}
+
+/* ---------- Ranger : les groupes, et sous chacun ses étiquettes ---------- */
+.rang-arbre {
+  margin: var(--e-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rang-groupe {
+  border-top: 1px solid var(--separation);
+  background: var(--carte);
+}
+
+.rang-ligne {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+}
+
+.rang-groupe > .rang-ligne b {
+  flex: 1;
+  min-width: 0;
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.rang-picto {
+  display: inline-flex;
+  color: var(--encre-douce);
+}
+
+.rang-picto svg {
+  width: 20px;
+  height: 20px;
+}
+
+.rang-etiquettes {
+  margin: 0 0 var(--e-sm);
+  padding: 0 0 0 32px;
+  list-style: none;
+}
+
+.rang-etiquettes .rang-ligne {
+  min-height: 52px;
+  border-top: 1px dashed var(--separation);
+  background: var(--carte);
+}
+
+.rang-etiquettes .rang-ligne > span {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
 
 /* ---------- Fiches d'un groupe ou d'une étiquette : un nom, et « Supprimer » ---------- */
 .fiche-nom {

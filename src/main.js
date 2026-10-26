@@ -29,6 +29,7 @@ import { ecranVoyage } from './ecrans/voyage.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
 import { ecranReglages } from './ecrans/reglages.js';
 import { ecranBibliotheque } from './ecrans/bibliotheque.js';
+import { ecranEtiquettes } from './ecrans/etiquettes.js';
 import { retourDansLAppli } from './ecrans/retour-systeme.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
@@ -47,6 +48,7 @@ const ECRANS = [
   { motif: /^#\/nouveau-voyage$/, ecran: ecranNouveauVoyage },
   { motif: /^#\/reglages$/, ecran: ecranReglages },
   { motif: /^#\/bibliotheque$/, ecran: ecranBibliotheque },
+  { motif: /^#\/etiquettes$/, ecran: ecranEtiquettes },
 ];
 
 let stockage;
@@ -57,9 +59,10 @@ let dernierAffichage = 0;
 // étape y note sa profondeur (history.state) : l'écran ouvert au démarrage est à 0, chaque lien
 // suivi ajoute 1. Un lien vers Mes voyages remonte donc jusqu'à l'accueil au lieu d'empiler une
 // étape : sinon, depuis Mes voyages, le retour système rouvrirait l'écran quitté au lieu de fermer
-// l'appli. L'accueil ouvre les autres écrans, et Réglages la Bibliothèque ; le menu passe toujours
-// par l'accueil (allerDepuisAccueil). L'étape 0 est donc l'accueil, sauf quand l'appli a démarré sur
-// un autre écran (ouvert par son adresse) : un retour à l'étape 0 y pose alors l'accueil (remonterPuis).
+// l'appli. L'accueil ouvre les autres écrans, et Réglages la Bibliothèque et les Étiquettes ; le menu
+// passe toujours par l'accueil (allerDepuisAccueil). L'étape 0 est donc l'accueil, sauf quand l'appli
+// a démarré sur un autre écran (ouvert par son adresse) : un retour à l'étape 0 y pose alors
+// l'accueil (remonterPuis).
 let profondeur = -1;
 // Un retour par history.go ne s'achève qu'à l'affichage suivant : d'ici là, un nouvel appui sur le
 // lien remonterait trop loin et quitterait l'appli (double appui sur la tablette).
