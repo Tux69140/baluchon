@@ -35,7 +35,7 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - **US-5** : En tant qu'utilisateur, je veux régler l'ordre des catégories avec des flèches monter/descendre, afin que la liste suive mon ordre de préparation.
 - **US-6** : En tant qu'utilisateur, je veux créer, renommer et supprimer des groupes d'étiquettes et leurs étiquettes, afin de décrire mes voyages avec mes propres critères.
 - **US-7** : En tant qu'utilisateur, je veux qu'une suppression dans la bibliothèque m'annonce sa conséquence chiffrée et puisse être annulée pendant 10 secondes, afin de ne rien perdre par erreur.
-- **US-8** : En tant qu'utilisateur, je veux un filtre « Jamais proposés » qui montre les objets sans étiquette ni « toujours inclus », afin de repérer ceux que mes suppressions ont rendus orphelins.
+- **US-8** : *Retirée le 2026-10-26 (décision du chef de projet) : aucune suppression ne pouvant plus rendre un objet orphelin, le filtre « Jamais proposés » serait toujours vide. Voir « Hors périmètre ».*
 
 **Création d'un voyage**
 
@@ -115,6 +115,7 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Conseils automatiques ou suggestions par intelligence artificielle.
 - Publicité, statistiques d'usage, traceurs sous quelque forme que ce soit.
 - Corbeille.
+- Filtre « Jamais proposés » dans la bibliothèque (ancienne US-8) : sans objet, puisqu'une suppression ne peut plus rendre un objet orphelin (décision du chef de projet, 2026-10-26).
 
 ## Décisions d'implémentation
 
@@ -158,6 +159,7 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Bibliothèque : même allure que la liste d'un voyage (cartes de catégories dépliables, objets par ordre alphabétique, deux panneaux en paysage) ; un appui sur une catégorie ou un objet ouvre sa fiche, qui sert à créer comme à modifier. L'ordre des catégories se règle dans un mode « Ranger les catégories », liste compacte avec ▲ ▼ sur chaque ligne.
 - Étiquettes (décisions du chef de projet, 2026-10-26) : écran ouvert depuis Réglages, de même allure que la Bibliothèque (une carte par groupe avec ses étiquettes en puces, une fiche pour créer, renommer ou supprimer, « Nouveau groupe » en bas, mode « Ranger » avec ▲ ▼ pour l'ordre des groupes et des étiquettes dans leur groupe). Une étiquette appartient à un seul groupe ; supprimer un groupe supprime ses étiquettes. Un nom d'étiquette est unique parmi les étiquettes, un nom de groupe parmi les groupes, sans tenir compte des majuscules ; une étiquette peut porter le nom d'un groupe. Le nombre de groupes n'est pas limité : quand les étapes de l'assistant ne tiennent plus dans la largeur, leur rangée défile de côté, et le trait gris qui relie les ronds se prolonge jusqu'au bord du côté où des étapes sont cachées.
 - Toute suppression : confirmation qui chiffre la conséquence, puis bandeau « Annuler » pendant 10 secondes. Supprimer dans la bibliothèque ne touche jamais les voyages existants.
+- Suppressions dans la bibliothèque (décisions du chef de projet, 2026-10-26) : aucun orphelin. Supprimer une étiquette, ou un groupe, est refusé si un objet ou une catégorie se retrouverait sans aucune étiquette ; la fenêtre de refus les liste, chacun ouvre sa fiche, on revient à la liste une fois l'élément réglé, et quand elle est vide la suppression est proposée aussitôt. Le bandeau « Annuler » suit d'un écran à l'autre jusqu'au bout des 10 secondes ; une nouvelle suppression le remplace, la précédente devenant définitive.
 
 **Données**
 

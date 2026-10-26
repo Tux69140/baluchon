@@ -13,7 +13,7 @@ Décisions durables qui s'appliquent à toutes les phases :
   - `#/nouveau-voyage` : assistant en étapes (Informations → un groupe d'étiquettes par étape → Aperçu). « Refaire ce voyage » ouvre le même assistant, prérempli.
   - `#/voyage/:id` : liste du voyage.
   - `#/voyage/:id/courses` : écran Courses.
-  - `#/bibliotheque` : catégories et objets modèles, filtre « Jamais proposés ».
+  - `#/bibliotheque` : catégories et objets modèles.
   - `#/etiquettes` : groupes d'étiquettes et leurs étiquettes.
   - `#/reglages` : thème, sauvegarde et restauration.
 - **Schéma** (identifiants UUID en texte, `modifie_le` sur chaque ligne, en prévision de la synchronisation future) :
@@ -191,17 +191,17 @@ L'écran Étiquettes permet de créer, renommer, réordonner et supprimer les gr
 
 ## Phase 7 : Suppressions sûres dans la bibliothèque
 
-**User stories** : US-7, US-8
+**User stories** : US-7 (US-8 retirée le 2026-10-26)
 
 ### Ce qu'on livre
 
-Supprimer une catégorie, un objet, un groupe ou une étiquette demande une confirmation qui chiffre la conséquence (« 12 objets seront supprimés », « 7 objets perdront cette étiquette »). Un bandeau « Annuler » reste ensuite affiché 10 secondes. Le filtre « Jamais proposés » montre les objets sans étiquette ni « toujours inclus ». Aucune suppression ne touche les voyages existants.
+Supprimer une catégorie, un objet, un groupe ou une étiquette demande une confirmation qui chiffre la conséquence (« 12 objets seront supprimés », « 7 objets perdront cette étiquette »). Une suppression qui laisserait un objet ou une catégorie sans aucune étiquette est refusée : la fenêtre les liste, chacun ouvre sa fiche, on revient à la liste une fois l'élément réglé, et quand elle est vide la suppression est proposée. Un bandeau « Annuler » reste ensuite affiché 10 secondes, même si l'on change d'écran ; une nouvelle suppression le remplace. Les maquettes sont validées avant tout code. Conception détaillée : `docs/superpowers/specs/2026-10-26-phase-7-suppressions-design.md`. Aucune suppression ne touche les voyages existants.
 
 ### Critères d'acceptation
 
 - [ ] Les chiffres annoncés correspondent exactement à ce qui est supprimé ou modifié.
 - [ ] « Annuler » dans les 10 secondes rétablit tout à l'identique, liens d'étiquettes compris.
-- [ ] Après la suppression d'une étiquette, ses objets orphelins apparaissent dans « Jamais proposés ».
+- [ ] Supprimer une étiquette ou un groupe qui laisserait un objet ou une catégorie sans aucune étiquette est refusé, et la fenêtre de refus mène à chacun d'eux.
 - [ ] Un voyage créé avant la suppression est inchangé.
 - [ ] Le bandeau a une place réservée et ne fait rien bouger à l'écran.
 
