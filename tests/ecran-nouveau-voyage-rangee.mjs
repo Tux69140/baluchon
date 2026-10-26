@@ -320,6 +320,32 @@ try {
     await contexte.close();
   }
 
+  // Témoin : la mesure des erreurs de la fenêtre voit bien une boucle de ResizeObserver provoquée
+  // exprès (un observateur qui agrandit ce qu'il observe, à chaque notification).
+  {
+    const { contexte, page, erreurs } = await ouvrirAssistant(navigateur, serveur.url);
+    await page.evaluate(
+      () =>
+        new Promise(fini => {
+          const cible = document.createElement('div');
+          document.body.append(cible);
+          let n = 0;
+          new ResizeObserver(() => {
+            cible.style.height = `${20 + ++n}px`;
+            if (n > 5) fini();
+          }).observe(cible);
+          cible.style.height = '10px';
+          setTimeout(fini, 500);
+        }),
+    );
+    await page.waitForTimeout(200);
+    juge.exige(
+      erreurs.some(e => e.includes('ResizeObserver loop')),
+      `témoin : la boucle de ResizeObserver provoquée n’est pas vue (${erreurs.join(' | ') || 'aucune erreur'})`,
+    );
+    await contexte.close();
+  }
+
   // Bibliothèque de départ : tout tient, la rangée de la phase 4.
   for (const format of ['telephone-etroit', 'tablette-portrait']) {
     const { contexte, page } = await ouvrirAssistant(navigateur, serveur.url, { format });

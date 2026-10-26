@@ -255,15 +255,25 @@ export function demander({ t, titre, texte, contenu = '', boutons, signal }) {
 // Les réponses d'une question restent côte à côte quand elles tiennent ; sinon chacune prend sa
 // ligne, sur toute la largeur (data-empile). Le pied est un flex qui passe à la ligne : on le lâche
 // à largeur naturelle, et si les boutons ne sont plus au même niveau on les empile (ni 2+1, ni
-// demi-largeur). Ne dépend que de la largeur : pas de boucle. Rend la fonction qui arrête l'observation.
+// demi-largeur). Ne dépend que de la largeur : pas de boucle. Le calcul attend l'image suivante :
+// lâcher puis empiler les boutons change la hauteur du pied dans l'image de la notification, ce que
+// le navigateur signale en « ResizeObserver loop completed with undelivered notifications ». Rend la
+// fonction qui arrête l'observation.
 function empilerSiTropLarges(pied) {
   const boutons = [...pied.children];
+  let image = 0;
   const observateur = new ResizeObserver(() => {
-    pied.removeAttribute('data-empile');
-    if (new Set(boutons.map(b => b.offsetTop)).size > 1) pied.setAttribute('data-empile', '');
+    cancelAnimationFrame(image);
+    image = requestAnimationFrame(() => {
+      pied.removeAttribute('data-empile');
+      if (new Set(boutons.map(b => b.offsetTop)).size > 1) pied.setAttribute('data-empile', '');
+    });
   });
   observateur.observe(pied);
-  return () => observateur.disconnect();
+  return () => {
+    observateur.disconnect();
+    cancelAnimationFrame(image);
+  };
 }
 
 // Avant un geste qui défait quelque chose (vider un objet du sac) : « Annuler » puis le bouton de

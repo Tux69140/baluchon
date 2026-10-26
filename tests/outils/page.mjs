@@ -55,6 +55,9 @@ export async function ouvrir(
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
   page.on('console', m => m.type() === 'error' && erreurs.push(m.text()));
+  // Le « ResizeObserver loop completed with undelivered notifications » est un événement `error` de la
+  // fenêtre : ni pageerror ni console ne le voient. On le relaie vers la console, dès le chargement.
+  await page.addInitScript(() => addEventListener('error', e => console.error(`erreur de la fenêtre : ${e.message}`)));
   // Un plantage du navigateur ferme la page : on le dit, plutôt qu'une suite d'erreurs « page fermée ».
   page.on('crash', () => erreurs.push('la page a planté (processus du navigateur arrêté)'));
   // Hors ligne : toute requête qui quitte l'appli est coupée, et comptée comme une faute.

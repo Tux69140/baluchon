@@ -69,10 +69,22 @@ export function suivreRangee(nav, { signal }) {
   // Le défilement ne remonte pas : on l'écoute à la descente, pour toutes les listes successives.
   nav.addEventListener('scroll', suites, { capture: true, passive: true, signal });
   // Seule la largeur compte : un changement de hauteur (légende) ne doit pas couper un glissement.
+  // Le recalcul attend l'image suivante : centrer() bascule data-defile, donc la hauteur de la rangée
+  // (4 px de marge) et celle de la fenêtre. Fait dans la même image, il relancerait les observateurs
+  // déjà passés et le navigateur signalerait « ResizeObserver loop completed with undelivered
+  // notifications ».
+  let image = 0;
   const tailles = new ResizeObserver(() => {
-    if (nav.clientWidth !== largeur) centrer(courante);
+    if (nav.clientWidth === largeur) return;
+    cancelAnimationFrame(image);
+    image = requestAnimationFrame(() => {
+      if (nav.clientWidth !== largeur) centrer(courante);
+    });
   });
   tailles.observe(nav);
-  signal.addEventListener('abort', () => tailles.disconnect());
+  signal.addEventListener('abort', () => {
+    tailles.disconnect();
+    cancelAnimationFrame(image);
+  });
   return { centrer };
 }
