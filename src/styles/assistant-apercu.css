@@ -1,0 +1,146 @@
+/* L'aperçu de l'assistant « Nouveau voyage » : ce que le voyage contiendrait, catégories et objets
+   à cocher (src/ecrans/assistant-vues.js). Le reste de l'assistant : src/styles/assistant.css. */
+
+.apercu-tete {
+  display: grid;
+  gap: var(--e-xs);
+}
+
+.apercu-tete > * {
+  margin: 0;
+}
+
+.apercu-rappel {
+  font: 600 var(--taille-libelle) var(--police);
+  overflow-wrap: anywhere;
+}
+
+.apercu-categories {
+  display: grid;
+  gap: var(--e-md);
+  margin-top: var(--e-lg);
+}
+
+/* Écran couché et large : deux colonnes de catégories, dans l'ordre de la bibliothèque. */
+@media (orientation: landscape) and (min-width: 800px) {
+  .apercu-categories {
+    display: block;
+    columns: 2;
+    column-gap: var(--e-lg);
+  }
+
+  .apercu-categorie {
+    margin-bottom: var(--e-md);
+    break-inside: avoid;
+  }
+}
+
+/* Une ligne entière est la case : la tête pour toute la catégorie, chaque ligne pour un objet. */
+.apercu-tete-cat,
+.apercu-objet {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: var(--carte);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.apercu-tete-cat {
+  gap: 12px;
+  min-height: 68px;
+  padding: var(--e-sm) var(--e-md) var(--e-sm) 0;
+}
+
+.apercu-objet {
+  gap: var(--e-sm);
+  min-height: 56px;
+  padding: 6px var(--e-md) 6px 0;
+}
+
+.apercu-categorie li + li .apercu-objet {
+  border-top: 1px solid var(--separation);
+}
+
+.apercu-tete-cat:hover,
+.apercu-objet:hover {
+  background: var(--releve);
+}
+
+/* La case : 28 px dessinés au milieu de 56 px, alignée de la catégorie à ses objets. */
+.apercu-tete-cat > .case-boite,
+.apercu-objet > .case-boite {
+  flex: none;
+  margin: 0 6px 0 14px;
+  color: var(--sur-principal);
+}
+
+.apercu-tete-cat > .case-boite {
+  margin-right: 0;
+}
+
+[data-coche='plein'] > .case-boite {
+  border-color: var(--principal);
+  background: var(--principal);
+}
+
+/* En partie : un trait à l'encre sur fond actif, comme une case entamée du voyage. */
+[data-coche='entame'] > .case-boite {
+  border-color: var(--encre);
+  background: var(--actif);
+}
+
+[data-coche='entame'] > .case-boite::after {
+  content: '';
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--encre);
+}
+
+.apercu-objet .objet-texte {
+  flex: 1;
+}
+
+/* Un objet écarté reste à sa place, barré et atténué : jamais la couleur seule. */
+.apercu-objet[data-coche='vide'] .objet-nom,
+.apercu-objet[data-coche='vide'] .objet-quantite {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.message-info {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-sm);
+  max-width: none;
+  margin: var(--e-md) 0 0;
+  border-color: var(--info);
+  background: var(--fond-info);
+}
+
+.message-info .icone {
+  color: var(--info);
+}
+
+.apercu-vide {
+  display: grid;
+  justify-items: center;
+  gap: var(--e-sm);
+  max-width: 48ch;
+  margin: var(--e-xl) auto 0;
+  text-align: center;
+}
+
+.apercu-vide p {
+  margin: 0;
+  color: var(--encre-douce);
+}
+
+.apercu-vide .bouton {
+  margin-top: var(--e-md);
+}

@@ -13,6 +13,7 @@ import './styles/calendrier.css';
 import './styles/fenetre.css';
 import './styles/fiche.css';
 import './styles/assistant.css';
+import './styles/assistant-apercu.css';
 import './styles/assistant-questions.css';
 import './styles/menu.css';
 import './styles/bibliotheque.css';
