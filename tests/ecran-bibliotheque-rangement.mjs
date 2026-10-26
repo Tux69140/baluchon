@@ -11,7 +11,9 @@
 // - Review Focus 4 : six appuis rapides sur ▲, l'ordre affiché égale l'ordre enregistré ; panne
 //   d'enregistrement : message en haut, ordre inchangé à l'écran et dans le stockage ;
 // - écritures lentes (lenteurs) : trois ▲ rapides puis départ de l'écran (lien « Réglages », ou
-//   Menu → Mes voyages) avant la fin de la première écriture : les trois déplacements sont gardés.
+//   Menu → Mes voyages) avant la fin de la première écriture : les trois déplacements sont gardés ;
+// - téléphone étroit couché, animations permises : ▼ sur la dernière ligne entière de la vue, la
+//   ligne déplacée, une fois glissée, est entièrement visible et garde le focus.
 import { chromium } from 'playwright';
 import { calme, attendreQue } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -259,7 +261,47 @@ async function essaiDepartPendantLEcriture() {
   }
 }
 
+// La ligne déplacée reste visible (spec de la phase 5, « Rangement ») : au téléphone étroit couché,
+// ▼ sur la dernière ligne entièrement visible la pousse sous le bas de l'écran ; la page doit défiler
+// pour la montrer, glissement compris (l'appareil ne demande pas moins d'animations).
+async function essaiLigneDeplaceeVisible() {
+  const cas = 'ligne déplacée visible';
+  const ouvert = await ouvrirBibliotheque('telephone-etroit-paysage');
+  const { page } = ouvert;
+  await page.click('[data-action="ranger"]');
+  await calme(page);
+  const derniere = await page.evaluate(() => {
+    const lignes = [...document.querySelectorAll('.rangement-liste > li')].filter(li => {
+      const r = li.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= innerHeight;
+    });
+    const li = lignes.at(-1);
+    return {
+      nom: li?.querySelector('b').textContent.trim(),
+      id: li?.querySelector('[data-action="descendre"]').dataset.id,
+      animations: !matchMedia('(prefers-reduced-motion: reduce)').matches,
+    };
+  });
+  juge.exige(derniere.nom && derniere.animations, `${cas} : départ ${vu(derniere)}`);
+  const ordre = [...DEPART];
+  const place = ordre.indexOf(derniere.nom);
+  ordre.splice(place, 2, ordre[place + 1], derniere.nom);
+  await page.click(commande('descendre', derniere.id));
+  const apres = await attendreOrdre(page, ordre);
+  const vue = await page.evaluate(id => {
+    const r = document.querySelector(`.rangement-liste [data-id="${id}"]`).closest('li').getBoundingClientRect();
+    return { haut: Math.round(r.top), bas: Math.round(r.bottom), hauteur: innerHeight };
+  }, derniere.id);
+  juge.exige(vue.haut >= 0 && vue.bas <= vue.hauteur, `${cas}, ▼ ${derniere.nom} : ligne ${vu(vue)}`);
+  juge.exige(
+    apres.focus.action === 'descendre' && apres.focus.id === derniere.id,
+    `${cas}, ▼ ${derniere.nom} : focus ${vu(apres.focus)}`,
+  );
+  await fermer(cas, ouvert);
+}
+
 try {
+  await essaiLigneDeplaceeVisible();
   await essaiDepartPendantLEcriture();
   await essaiRangement();
   await essaiLienReglages();
@@ -268,4 +310,7 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Rangement des catégories', 'déplacements, Terminé, touche retour, lien Réglages, appuis rapides, panne');
+juge.conclure(
+  'Rangement des catégories',
+  'déplacements, ligne déplacée visible, Terminé, touche retour, lien Réglages, appuis rapides, panne',
+);

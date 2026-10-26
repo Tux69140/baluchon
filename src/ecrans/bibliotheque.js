@@ -86,8 +86,10 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
 
   // Chaque dessin suit la disposition du moment ; le focus reste sur la même commande (ou, la
   // disposition changée, sur la même catégorie), et chaque panneau garde son défilement, sauf le
-  // détail d'une autre catégorie, qui se lit depuis son début.
-  function peindre({ glissement = false } = {}) {
+  // détail d'une autre catégorie, qui se lit depuis son début. enVue : ce qu'il faut amener dans la
+  // vue, avant le glissement : un élément qui glisse est mesuré à son ancienne place, et la page ne
+  // défilerait pas pour le montrer à la nouvelle.
+  function peindre({ glissement = false, enVue = null } = {}) {
     const avant = glissement ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
@@ -106,6 +108,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
         trouverCommande('accordeon', cle.id) ??
         trouverCommande('choisir', cle.id)
       )?.focus({ preventScroll: true });
+    if (enVue) main.querySelector(enVue)?.scrollIntoView({ block: 'nearest' });
     glisser(main, avant, GLISSEMENT);
   }
 
@@ -156,11 +159,10 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     donnees = { ...donnees, rangees: reordonner(donnees.rangees, ids) };
     // La copie lue suit le rang confirmé : les fiches en partent.
     lue = { ...lue, categories: lue.categories.map(c => ({ ...c, ordre: ids.indexOf(c.id) })) };
-    peindre({ glissement: true });
+    peindre({ glissement: true, enVue: `[data-flip="cat-${CSS.escape(id)}"]` });
     const place = ids.indexOf(id);
     const { nom } = donnees.rangees[place].categorie;
     annonce.textContent = remplir(t('bibliotheque.place'), { nom, n: place + 1, total: ids.length });
-    main.querySelector(`[data-flip="cat-${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest' });
   }
 
   // L'écriture refusée : on revient à ce que le stockage garde réellement, et on le dit.
@@ -229,9 +231,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     voulu = [...voulu.filter(id => ids.includes(id)), ...ids.filter(id => !voulu.includes(id))];
     if (parti()) return;
     ui.recent = recent;
-    peindre();
-    const cible = recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent);
-    main.querySelector(cible)?.scrollIntoView({ block: 'nearest' });
+    peindre({ enVue: recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent) });
   }
   const commandeObjet = id => `[data-action="modifier-objet"][data-id="${CSS.escape(id)}"]`;
 
