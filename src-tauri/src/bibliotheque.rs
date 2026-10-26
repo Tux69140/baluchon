@@ -66,7 +66,11 @@ const INSTALLEE: &str = "bibliotheque_installee";
 
 fn est_installee(connexion: &Connection) -> Result<bool, String> {
     connexion
-        .query_row("SELECT COUNT(*) FROM meta WHERE cle = ?1", [INSTALLEE], |r| r.get::<_, i64>(0))
+        .query_row(
+            "SELECT COUNT(*) FROM meta WHERE cle = ?1",
+            [INSTALLEE],
+            |r| r.get::<_, i64>(0),
+        )
         .map(|n| n > 0)
         .map_err(en_texte)
 }
@@ -102,15 +106,30 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetModele> {
 }
 
 fn groupe_depuis(r: &Row<'_>) -> rusqlite::Result<GroupeEtiquettes> {
-    Ok(GroupeEtiquettes { id: r.get(0)?, nom: r.get(1)?, ordre: r.get(2)?, modifie_le: r.get(3)? })
+    Ok(GroupeEtiquettes {
+        id: r.get(0)?,
+        nom: r.get(1)?,
+        ordre: r.get(2)?,
+        modifie_le: r.get(3)?,
+    })
 }
 
 fn etiquette_depuis(r: &Row<'_>) -> rusqlite::Result<Etiquette> {
-    Ok(Etiquette { id: r.get(0)?, groupe_id: r.get(1)?, nom: r.get(2)?, ordre: r.get(3)?, modifie_le: r.get(4)? })
+    Ok(Etiquette {
+        id: r.get(0)?,
+        groupe_id: r.get(1)?,
+        nom: r.get(2)?,
+        ordre: r.get(3)?,
+        modifie_le: r.get(4)?,
+    })
 }
 
 // Les liens d'une table (modèle, étiquette) dans l'ordre d'écriture, regroupés par modèle.
-fn liens(connexion: &Connection, table: &str, colonne: &str) -> Result<Vec<(String, String)>, String> {
+fn liens(
+    connexion: &Connection,
+    table: &str,
+    colonne: &str,
+) -> Result<Vec<(String, String)>, String> {
     lire_lignes(
         connexion,
         &format!("SELECT {colonne}, etiquette_id FROM {table} ORDER BY rowid"),
@@ -128,7 +147,11 @@ impl Base {
     // Vérification et écriture dans une seule opération : une erreur ne laisse jamais une
     // bibliothèque à moitié installée, et un second appel ne l'installe pas deux fois.
     // Renvoie false si elle était déjà là (rien n'est écrit).
-    pub fn installer_bibliotheque(&self, bibliotheque: &Bibliotheque, langue: &str) -> Result<bool, String> {
+    pub fn installer_bibliotheque(
+        &self,
+        bibliotheque: &Bibliotheque,
+        langue: &str,
+    ) -> Result<bool, String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
         if est_installee(&tx)? {
@@ -235,7 +258,9 @@ impl Base {
             [],
             objet_depuis,
         )?;
-        for (categorie, etiquette) in liens(&connexion, "categorie_modele_etiquette", "categorie_id")? {
+        for (categorie, etiquette) in
+            liens(&connexion, "categorie_modele_etiquette", "categorie_id")?
+        {
             if let Some(c) = categories.iter_mut().find(|c| c.id == categorie) {
                 c.etiquettes.push(etiquette);
             }
@@ -245,7 +270,12 @@ impl Base {
                 o.etiquettes.push(etiquette);
             }
         }
-        Ok(Bibliotheque { groupes, etiquettes, categories, objets })
+        Ok(Bibliotheque {
+            groupes,
+            etiquettes,
+            categories,
+            objets,
+        })
     }
 }
 
@@ -257,7 +287,11 @@ mod tests {
     fn langue(base: &Base) -> Option<String> {
         base.connexion()
             .unwrap()
-            .query_row("SELECT valeur FROM meta WHERE cle = 'langue_bibliotheque'", [], |r| r.get(0))
+            .query_row(
+                "SELECT valeur FROM meta WHERE cle = 'langue_bibliotheque'",
+                [],
+                |r| r.get(0),
+            )
             .ok()
     }
 
@@ -304,7 +338,12 @@ mod tests {
         assert!(base.installer_bibliotheque(&bibliotheque, "fr").is_err());
         assert!(!base.bibliotheque_installee().unwrap());
         let connexion = base.connexion().unwrap();
-        for table in ["groupe_etiquettes", "etiquette", "categorie_modele_etiquette", "objet_modele_etiquette"] {
+        for table in [
+            "groupe_etiquettes",
+            "etiquette",
+            "categorie_modele_etiquette",
+            "objet_modele_etiquette",
+        ] {
             let lignes: i64 = connexion
                 .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
                 .unwrap();
@@ -318,6 +357,9 @@ mod tests {
         let mut bibliotheque = contrat().bibliotheque;
         bibliotheque.objets[0].etiquettes = vec!["et-froid".into(), "et-camping".into()];
         base.installer_bibliotheque(&bibliotheque, "fr").unwrap();
-        assert_eq!(base.lire_bibliotheque().unwrap().objets[0].etiquettes, vec!["et-froid", "et-camping"]);
+        assert_eq!(
+            base.lire_bibliotheque().unwrap().objets[0].etiquettes,
+            vec!["et-froid", "et-camping"]
+        );
     }
 }

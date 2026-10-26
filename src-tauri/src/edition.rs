@@ -29,8 +29,11 @@ impl Base {
             ],
         )
         .map_err(en_texte)?;
-        tx.execute("DELETE FROM categorie_modele_etiquette WHERE categorie_id = ?1", [&categorie.id])
-            .map_err(en_texte)?;
+        tx.execute(
+            "DELETE FROM categorie_modele_etiquette WHERE categorie_id = ?1",
+            [&categorie.id],
+        )
+        .map_err(en_texte)?;
         for etiquette in &categorie.etiquettes {
             tx.execute(
                 "INSERT INTO categorie_modele_etiquette (categorie_id, etiquette_id) VALUES (?1, ?2)",
@@ -69,8 +72,11 @@ impl Base {
             ],
         )
         .map_err(en_texte)?;
-        tx.execute("DELETE FROM objet_modele_etiquette WHERE objet_id = ?1", [&objet.id])
-            .map_err(en_texte)?;
+        tx.execute(
+            "DELETE FROM objet_modele_etiquette WHERE objet_id = ?1",
+            [&objet.id],
+        )
+        .map_err(en_texte)?;
         for etiquette in &objet.etiquettes {
             tx.execute(
                 "INSERT INTO objet_modele_etiquette (objet_id, etiquette_id) VALUES (?1, ?2)",
@@ -117,7 +123,8 @@ mod tests {
 
     fn base_installee() -> (crate::essais::Dossier, Base) {
         let (dossier, base) = base_jetable();
-        base.installer_bibliotheque(&contrat().bibliotheque, "fr").unwrap();
+        base.installer_bibliotheque(&contrat().bibliotheque, "fr")
+            .unwrap();
         (dossier, base)
     }
 
@@ -234,7 +241,8 @@ mod tests {
     fn ranger_suit_l_ordre_donne() {
         let (_d, base) = base_installee();
         let ids = vec!["cm-papiers".to_string(), "cm-vetements".to_string()];
-        base.ranger_categories(&ids, "2026-10-26T09:00:00.000Z").unwrap();
+        base.ranger_categories(&ids, "2026-10-26T09:00:00.000Z")
+            .unwrap();
         let categories = base.lire_bibliotheque().unwrap().categories;
         assert_eq!(categories[0].id, "cm-papiers");
         assert_eq!(categories[0].ordre, 0);
@@ -250,10 +258,16 @@ mod tests {
             vec!["cm-papiers".into()],
             vec!["cm-papiers".into(), "cm-inconnue".into()],
             vec!["cm-papiers".into(), "cm-papiers".into()],
-            vec!["cm-papiers".into(), "cm-vetements".into(), "cm-papiers".into()],
+            vec![
+                "cm-papiers".into(),
+                "cm-vetements".into(),
+                "cm-papiers".into(),
+            ],
         ];
         for ids in listes {
-            assert!(base.ranger_categories(&ids, "2026-10-26T09:00:00.000Z").is_err());
+            assert!(base
+                .ranger_categories(&ids, "2026-10-26T09:00:00.000Z")
+                .is_err());
         }
         assert_eq!(base.lire_bibliotheque().unwrap(), contrat().bibliotheque);
     }

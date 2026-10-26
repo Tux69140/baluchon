@@ -36,7 +36,11 @@ pub fn lire_lignes<T, P: Params>(
 // requête échoue alors avec une erreur SQLite, pas seulement « aucune ligne »).
 fn version_du_schema(connexion: &Connection) -> i64 {
     connexion
-        .query_row("SELECT COALESCE(MAX(version), 0) FROM schema_migrations", [], |r| r.get(0))
+        .query_row(
+            "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
+            [],
+            |r| r.get(0),
+        )
         .unwrap_or(0)
 }
 
@@ -48,10 +52,15 @@ fn migrer(connexion: &Connection) -> Result<(), String> {
         if version_du_schema(connexion) >= version {
             continue;
         }
-        let tx = connexion.unchecked_transaction().map_err(|e| e.to_string())?;
-        tx.execute_batch(sql).map_err(|e| e.to_string())?;
-        tx.execute("INSERT INTO schema_migrations (version) VALUES (?1)", [version])
+        let tx = connexion
+            .unchecked_transaction()
             .map_err(|e| e.to_string())?;
+        tx.execute_batch(sql).map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO schema_migrations (version) VALUES (?1)",
+            [version],
+        )
+        .map_err(|e| e.to_string())?;
         tx.commit().map_err(|e| e.to_string())?;
     }
     Ok(())
@@ -68,7 +77,9 @@ impl Base {
     }
 
     pub fn connexion(&self) -> Result<MutexGuard<'_, Connection>, String> {
-        self.0.lock().map_err(|_| "La base locale est verrouillée.".to_owned())
+        self.0
+            .lock()
+            .map_err(|_| "La base locale est verrouillée.".to_owned())
     }
 }
 
@@ -80,7 +91,9 @@ mod tests {
     fn version(base: &Base) -> i64 {
         base.connexion()
             .unwrap()
-            .query_row("SELECT MAX(version) FROM schema_migrations", [], |r| r.get(0))
+            .query_row("SELECT MAX(version) FROM schema_migrations", [], |r| {
+                r.get(0)
+            })
             .unwrap()
     }
 
@@ -156,11 +169,16 @@ mod tests {
         let chemin = dossier.chemin.join("phase2.sqlite3");
         {
             let connexion = Connection::open(&chemin).unwrap();
-            connexion.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            connexion
+                .execute_batch("PRAGMA foreign_keys = ON;")
+                .unwrap();
             for (indice, sql) in MIGRATIONS[0..2].iter().enumerate() {
                 connexion.execute_batch(sql).unwrap();
                 connexion
-                    .execute("INSERT INTO schema_migrations (version) VALUES (?1)", [indice as i64 + 1])
+                    .execute(
+                        "INSERT INTO schema_migrations (version) VALUES (?1)",
+                        [indice as i64 + 1],
+                    )
                     .unwrap();
             }
             connexion
@@ -181,7 +199,11 @@ mod tests {
         let voyage = base.lire_voyage("v1").unwrap().unwrap();
         assert_eq!(voyage.voyage.nom, "Vercors");
         assert_eq!(voyage.categories.len(), 1);
-        let pieces: Vec<_> = voyage.objets.iter().map(|o| (o.id.as_str(), o.dans_le_sac)).collect();
+        let pieces: Vec<_> = voyage
+            .objets
+            .iter()
+            .map(|o| (o.id.as_str(), o.dans_le_sac))
+            .collect();
         assert_eq!(pieces, vec![("o1", 16), ("o2", 0)]);
     }
 
@@ -191,11 +213,16 @@ mod tests {
         let chemin = dossier.chemin.join("phase3.sqlite3");
         {
             let connexion = Connection::open(&chemin).unwrap();
-            connexion.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            connexion
+                .execute_batch("PRAGMA foreign_keys = ON;")
+                .unwrap();
             for (indice, sql) in MIGRATIONS[0..3].iter().enumerate() {
                 connexion.execute_batch(sql).unwrap();
                 connexion
-                    .execute("INSERT INTO schema_migrations (version) VALUES (?1)", [indice as i64 + 1])
+                    .execute(
+                        "INSERT INTO schema_migrations (version) VALUES (?1)",
+                        [indice as i64 + 1],
+                    )
                     .unwrap();
             }
             connexion

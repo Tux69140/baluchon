@@ -17,7 +17,8 @@ pub struct Dossier {
 impl Dossier {
     pub fn nouveau() -> Dossier {
         let numero = COMPTEUR.fetch_add(1, Ordering::SeqCst);
-        let chemin = std::env::temp_dir().join(format!("baluchon-essai-{}-{numero}", std::process::id()));
+        let chemin =
+            std::env::temp_dir().join(format!("baluchon-essai-{}-{numero}", std::process::id()));
         std::fs::create_dir_all(&chemin).unwrap();
         Dossier { chemin }
     }

@@ -84,7 +84,8 @@ pub struct VoyageComplet {
 const COLONNES_VOYAGE: &str = "id, nom, destination, depart, retour, voyageurs, modifie_le";
 const COLONNES_ETIQUETTE: &str = "id, voyage_id, modele_id, nom, ordre, modifie_le";
 const COLONNES_CATEGORIE: &str = "id, voyage_id, modele_id, nom, icone, couleur, ordre, modifie_le";
-const COLONNES_OBJET: &str = "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
+const COLONNES_OBJET: &str =
+    "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
     consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achete, note, modifie_le";
 
 fn voyage_depuis(r: &Row<'_>) -> rusqlite::Result<Voyage> {
@@ -148,7 +149,12 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetDuVoyage> {
 impl Base {
     pub fn lister_voyages(&self) -> Result<Vec<Voyage>, String> {
         let connexion = self.connexion()?;
-        lire_lignes(&connexion, &format!("SELECT {COLONNES_VOYAGE} FROM voyage"), [], voyage_depuis)
+        lire_lignes(
+            &connexion,
+            &format!("SELECT {COLONNES_VOYAGE} FROM voyage"),
+            [],
+            voyage_depuis,
+        )
     }
 
     pub fn creer_voyage(&self, contenu: &VoyageComplet) -> Result<(), String> {
@@ -157,7 +163,15 @@ impl Base {
         let v = &contenu.voyage;
         tx.execute(
             &format!("INSERT INTO voyage ({COLONNES_VOYAGE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"),
-            params![v.id, v.nom, v.destination, v.depart, v.retour, v.voyageurs, v.modifie_le],
+            params![
+                v.id,
+                v.nom,
+                v.destination,
+                v.depart,
+                v.retour,
+                v.voyageurs,
+                v.modifie_le
+            ],
         )
         .map_err(en_texte)?;
         for e in &contenu.etiquettes {
@@ -208,7 +222,12 @@ impl Base {
 
     // La base refuse toute valeur hors de 0..=quantité (contrainte de la table) ; aucune ligne
     // modifiée veut dire objet inconnu.
-    pub fn regler_dans_le_sac(&self, id: &str, dans_le_sac: i64, modifie_le: &str) -> Result<(), String> {
+    pub fn regler_dans_le_sac(
+        &self,
+        id: &str,
+        dans_le_sac: i64,
+        modifie_le: &str,
+    ) -> Result<(), String> {
         let modifiees = self
             .connexion()?
             .execute(
@@ -228,17 +247,29 @@ impl Base {
             &connexion,
             "SELECT voyage_id, quantite, dans_le_sac FROM objet_du_voyage ORDER BY rowid",
             [],
-            |r| Ok(EtatObjet { voyage_id: r.get(0)?, quantite: r.get(1)?, dans_le_sac: r.get(2)? }),
+            |r| {
+                Ok(EtatObjet {
+                    voyage_id: r.get(0)?,
+                    quantite: r.get(1)?,
+                    dans_le_sac: r.get(2)?,
+                })
+            },
         )
     }
 
     pub fn lire_voyage(&self, id: &str) -> Result<Option<VoyageComplet>, String> {
         let connexion = self.connexion()?;
         let voyage = connexion
-            .query_row(&format!("SELECT {COLONNES_VOYAGE} FROM voyage WHERE id = ?1"), [id], voyage_depuis)
+            .query_row(
+                &format!("SELECT {COLONNES_VOYAGE} FROM voyage WHERE id = ?1"),
+                [id],
+                voyage_depuis,
+            )
             .optional()
             .map_err(en_texte)?;
-        let Some(voyage) = voyage else { return Ok(None) };
+        let Some(voyage) = voyage else {
+            return Ok(None);
+        };
         let etiquettes = lire_lignes(
             &connexion,
             &format!("SELECT {COLONNES_ETIQUETTE} FROM etiquette_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
@@ -253,11 +284,18 @@ impl Base {
         )?;
         let objets = lire_lignes(
             &connexion,
-            &format!("SELECT {COLONNES_OBJET} FROM objet_du_voyage WHERE voyage_id = ?1 ORDER BY rowid"),
+            &format!(
+                "SELECT {COLONNES_OBJET} FROM objet_du_voyage WHERE voyage_id = ?1 ORDER BY rowid"
+            ),
             [id],
             objet_depuis,
         )?;
-        Ok(Some(VoyageComplet { voyage, etiquettes, categories, objets }))
+        Ok(Some(VoyageComplet {
+            voyage,
+            etiquettes,
+            categories,
+            objets,
+        }))
     }
 }
 
@@ -277,7 +315,10 @@ mod tests {
         let (_dossier, base) = base_jetable();
         let contenu = contrat().voyage;
         base.creer_voyage(&contenu).unwrap();
-        assert_eq!(base.lire_voyage("v-vercors").unwrap(), Some(contenu.clone()));
+        assert_eq!(
+            base.lire_voyage("v-vercors").unwrap(),
+            Some(contenu.clone())
+        );
         assert_eq!(base.lister_voyages().unwrap(), vec![contenu.voyage]);
     }
 
@@ -322,7 +363,10 @@ mod tests {
         let dossier = Dossier::nouveau();
         let chemin = dossier.chemin.join("essai.sqlite3");
         let contenu = contrat().voyage;
-        Base::ouvrir(&chemin).unwrap().creer_voyage(&contenu).unwrap();
+        Base::ouvrir(&chemin)
+            .unwrap()
+            .creer_voyage(&contenu)
+            .unwrap();
         let rouverte = Base::ouvrir(&chemin).unwrap();
         assert_eq!(rouverte.lire_voyage("v-vercors").unwrap(), Some(contenu));
     }
@@ -358,12 +402,19 @@ mod tests {
         let chemin = dossier.chemin.join("essai.sqlite3");
         let contenu = contrat().voyage;
         let id = contenu.objets[0].id.clone();
-        Base::ouvrir(&chemin).unwrap().creer_voyage(&contenu).unwrap();
+        Base::ouvrir(&chemin)
+            .unwrap()
+            .creer_voyage(&contenu)
+            .unwrap();
         Base::ouvrir(&chemin)
             .unwrap()
             .regler_dans_le_sac(&id, 1, "2026-10-24T10:00:00.000Z")
             .unwrap();
-        let relu = Base::ouvrir(&chemin).unwrap().lire_voyage("v-vercors").unwrap().unwrap();
+        let relu = Base::ouvrir(&chemin)
+            .unwrap()
+            .lire_voyage("v-vercors")
+            .unwrap()
+            .unwrap();
         assert_eq!(relu.objets[0].dans_le_sac, 1);
         assert_eq!(relu.objets[0].modifie_le, "2026-10-24T10:00:00.000Z");
     }
@@ -375,7 +426,9 @@ mod tests {
         let objet = contenu.objets[0].clone();
         base.creer_voyage(&contenu).unwrap();
         assert!(base.regler_dans_le_sac(&objet.id, -1, "x").is_err());
-        assert!(base.regler_dans_le_sac(&objet.id, objet.quantite + 1, "x").is_err());
+        assert!(base
+            .regler_dans_le_sac(&objet.id, objet.quantite + 1, "x")
+            .is_err());
         assert!(base.regler_dans_le_sac("inconnu", 0, "x").is_err());
         let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
         assert_eq!(relu.objets[0].dans_le_sac, objet.dans_le_sac);
@@ -391,7 +444,11 @@ mod tests {
         assert_eq!(etats.len(), contenu.objets.len());
         assert!(etats.iter().all(|e| e.voyage_id == "v-vercors"));
         let quantites: Vec<_> = etats.iter().map(|e| (e.quantite, e.dans_le_sac)).collect();
-        let attendues: Vec<_> = contenu.objets.iter().map(|o| (o.quantite, o.dans_le_sac)).collect();
+        let attendues: Vec<_> = contenu
+            .objets
+            .iter()
+            .map(|o| (o.quantite, o.dans_le_sac))
+            .collect();
         assert_eq!(quantites, attendues);
     }
 }

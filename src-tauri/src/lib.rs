@@ -28,7 +28,11 @@ fn bibliotheque_installee(base: State<'_, Base>) -> Result<bool, String> {
 }
 
 #[tauri::command]
-fn installer_bibliotheque(base: State<'_, Base>, bibliotheque: Bibliotheque, langue: String) -> Result<bool, String> {
+fn installer_bibliotheque(
+    base: State<'_, Base>,
+    bibliotheque: Bibliotheque,
+    langue: String,
+) -> Result<bool, String> {
     base.installer_bibliotheque(&bibliotheque, &langue)
 }
 
@@ -48,7 +52,11 @@ fn enregistrer_objet(base: State<'_, Base>, objet: ObjetModele) -> Result<(), St
 }
 
 #[tauri::command]
-fn ranger_categories(base: State<'_, Base>, ids: Vec<String>, modifie_le: String) -> Result<(), String> {
+fn ranger_categories(
+    base: State<'_, Base>,
+    ids: Vec<String>,
+    modifie_le: String,
+) -> Result<(), String> {
     base.ranger_categories(&ids, &modifie_le)
 }
 
@@ -63,7 +71,12 @@ fn lire_voyage(base: State<'_, Base>, id: String) -> Result<Option<VoyageComplet
 }
 
 #[tauri::command]
-fn regler_dans_le_sac(base: State<'_, Base>, id: String, dans_le_sac: i64, modifie_le: String) -> Result<(), String> {
+fn regler_dans_le_sac(
+    base: State<'_, Base>,
+    id: String,
+    dans_le_sac: i64,
+    modifie_le: String,
+) -> Result<(), String> {
     base.regler_dans_le_sac(&id, dans_le_sac, &modifie_le)
 }
 

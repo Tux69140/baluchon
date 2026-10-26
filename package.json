@@ -15,8 +15,8 @@
     "test:ecrans": "node tests/ecrans.mjs",
     "test:base": "cargo test --manifest-path src-tauri/Cargo.toml --quiet",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:verif": "prettier --check .",
+    "format": "prettier --write . && cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "format:verif": "prettier --check . && cargo fmt --manifest-path src-tauri/Cargo.toml --check",
     "controles": "node scripts/controles/tous.mjs",
     "verif": "pnpm lint && pnpm format:verif && pnpm controles && pnpm test && pnpm test:base && pnpm test:ecrans"
   },
