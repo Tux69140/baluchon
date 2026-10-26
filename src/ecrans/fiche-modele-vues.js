@@ -1,6 +1,6 @@
 // Les morceaux de formulaire des fiches de modèle (src/ecrans/fiche-modele.js), d'après la maquette
 // validée le 2026-10-25 (docs/maquettes/bibliotheque/fiches.js) : nom, segments, interrupteur,
-// compteur − nombre +, inclusion par étiquettes, message sous un champ. Chaque commande porte
+// compteur − nombre +, inclusion par étiquettes, message sous un champ, « Supprimer ». Chaque commande porte
 // l'attribut que lit la mécanique commune (data-texte, data-nombre, data-pas, data-choix,
 // data-bascule, data-pose, data-etiquette) ; les zones qui suivent la saisie au clavier sans être
 // redessinées en entier portent data-vivant.
@@ -103,3 +103,11 @@ export function inclusion(t, brouillon, erreur, { genre, groupes, aideToujours }
           ${message('f-etiquettes-erreur', erreur)}
         </fieldset>`;
 }
+
+// « Supprimer » d'un élément existant, en fin de fiche et sous un trait : on ne le touche pas en voulant
+// enregistrer (maquettes des phases 6 et 7). texte : déjà traduit ; le bouton appelle supprimer() de
+// la fiche (src/ecrans/fiche-modele.js).
+export const zoneSuppression = texte => `
+        <div class="zone-suppression">
+          <button type="button" class="bouton bouton-supprimer" data-supprimer>${iconeInterface('supprimer')}${texte}</button>
+        </div>`;

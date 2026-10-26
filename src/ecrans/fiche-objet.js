@@ -1,8 +1,9 @@
 // Fiche d'un objet modèle de la bibliothèque (docs/PRD.md, US-4, US-5 ; maquette validée le
 // 2026-10-25, docs/maquettes/bibliotheque/, états « fiche-objet », « nouvel-objet », « refus ») : nom,
 // règle de quantité (fixe, par jour, par nuit), nombre, plafond, par personne ou partagé, avec la
-// phrase de quantité et un exemple chiffré ; consommable ; « Dans quels voyages ? » ; note. La
-// catégorie d'un objet ne se change pas. La mécanique est celle de toute fiche de modèle
+// phrase de quantité et un exemple chiffré ; consommable ; « Dans quels voyages ? » ; note ;
+// existant, « Supprimer l'objet » en bas (maquette de la phase 7). La catégorie d'un objet ne se
+// change pas. La mécanique est celle de toute fiche de modèle
 // (src/ecrans/fiche-modele.js).
 import { remplir } from '../i18n/traduction.js';
 import {
@@ -16,7 +17,15 @@ import {
   validerObjet,
 } from '../modele/modeles.js';
 import { ouvrirFicheModele } from './fiche-modele.js';
-import { champNom, compteur, interrupteur, inclusion, message, segments } from './fiche-modele-vues.js';
+import {
+  champNom,
+  compteur,
+  interrupteur,
+  inclusion,
+  message,
+  segments,
+  zoneSuppression,
+} from './fiche-modele-vues.js';
 import { decrireRegle, pluriel } from './format.js';
 import { echapper } from './html.js';
 
@@ -60,7 +69,7 @@ function vuePlafond(t, b, erreurs) {
           </div>${nombre}`;
 }
 
-function vueCorps(t, langue, b, codes, { categorie, groupes }) {
+function vueCorps(t, langue, b, codes, { categorie, groupes, supprimer }) {
   const o = 'modele.objet';
   const erreurs = Object.fromEntries(Object.entries(codes).map(([champ, code]) => [champ, t(`${o}.erreurs.${code}`)]));
   return `
@@ -111,7 +120,7 @@ function vueCorps(t, langue, b, codes, { categorie, groupes }) {
         <div class="champ champ-sans-message">
           <label for="f-note">${t(`${o}.note`)} <small>${t(`${o}.noteAide`)}</small></label>
           <textarea id="f-note" data-texte="note" rows="3" maxlength="400">${echapper(b.note)}</textarea>
-        </div>`;
+        </div>${supprimer ? zoneSuppression(t(`${o}.supprimer`)) : ''}`;
 }
 
 // Ce qu'un changement entraîne, selon les règles du modèle : « Fixe » efface le plafond ;
@@ -122,9 +131,21 @@ function ajuster(b, cle) {
 }
 
 // objet : celui à modifier, ou null pour un nouvel objet de categorie ; groupes : les étiquettes par
-// groupe (voir inclusion()). enregistrer(saisie) : l'écran prépare et écrit l'objet
-// (src/ecrans/bibliotheque.js).
-export function ouvrirFicheObjet({ t, langue, objet, categorie, groupes, enregistrer, surFermeture, signal, dans }) {
+// groupe (voir inclusion()). enregistrer(saisie) : l'écran prépare et écrit l'objet ; supprimer() : il
+// pose la question et le supprime, rend true une fois fait (src/ecrans/edition-modeles.js) ; absent
+// pour un objet neuf.
+export function ouvrirFicheObjet({
+  t,
+  langue,
+  objet,
+  categorie,
+  groupes,
+  enregistrer,
+  supprimer,
+  surFermeture,
+  signal,
+  dans,
+}) {
   return ouvrirFicheModele({
     t,
     titre: objet ? objet.nom : t('modele.objet.nouveau'),
@@ -132,11 +153,12 @@ export function ouvrirFicheObjet({ t, langue, objet, categorie, groupes, enregis
     bouton: objet ? t('modele.enregistrer') : t('modele.objet.ajouter'),
     saisie: saisieDObjet(objet),
     valider: validerObjet,
-    dessiner: (brouillon, codes) => vueCorps(t, langue, brouillon, codes, { categorie, groupes }),
+    dessiner: (brouillon, codes) => vueCorps(t, langue, brouillon, codes, { categorie, groupes, supprimer }),
     texteAbandon: objet
       ? remplir(t('modele.objet.abandonTexte'), { nom: objet.nom })
       : t('modele.objet.abandonNouveau'),
     enregistrer,
+    supprimer,
     ajuster,
     surFermeture,
     signal,

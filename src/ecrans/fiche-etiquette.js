@@ -7,23 +7,15 @@ import { remplir } from '../i18n/traduction.js';
 import { homonymeDEtiquette, homonymeDeGroupe, validerEtiquette, validerGroupe } from '../modele/etiquettes.js';
 import { demander } from './fenetre.js';
 import { ouvrirFicheModele } from './fiche-modele.js';
-import { champNom } from './fiche-modele-vues.js';
+import { champNom, zoneSuppression } from './fiche-modele-vues.js';
 import { pluriel } from './format.js';
-import { iconeInterface } from './icones.js';
 
 const ID_AIDE = 'f-nom-aide';
 
 // Le corps : le nom, son aide, et « Supprimer » à l'écart (absent d'une fiche neuve).
 const vueCorps = (t, nom, erreur, { aide, supprimer }) => `
         ${champNom(t, nom, erreur, { idAide: ID_AIDE, entree: true })}
-        <p class="aide" id="${ID_AIDE}">${aide}</p>${
-          supprimer
-            ? `
-        <div class="zone-suppression">
-          <button type="button" class="bouton bouton-supprimer" data-supprimer>${iconeInterface('supprimer')}${supprimer}</button>
-        </div>`
-            : ''
-        }`;
+        <p class="aide" id="${ID_AIDE}">${aide}</p>${supprimer ? zoneSuppression(supprimer) : ''}`;
 
 // La question avant de supprimer : « Garder » d'abord (le geste sans perte), « Supprimer » en rouge.
 // Rend true une fois l'écriture faite (supprimer, qui lève une erreur en cas de panne), false sinon.

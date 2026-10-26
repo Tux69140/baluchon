@@ -4,18 +4,15 @@
 // paysage et l'ordinateur, la catégorie choisie à gauche et ses objets à droite. « Ranger les
 // catégories » ouvre une liste compacte où ▲ et ▼ déplacent une catégorie d'une place.
 // Le crayon d'une catégorie, la ligne d'un objet, « Nouvelle catégorie » et « Ajouter un objet »
-// ouvrent leur fiche (src/ecrans/fiche-categorie.js, fiche-objet.js) ; enregistrée, la bibliothèque
-// est relue et ce qui vient de changer s'éclaire.
+// ouvrent leur fiche (src/ecrans/edition-modeles.js) ; enregistrée, la bibliothèque est relue et ce qui
+// vient de changer s'éclaire ; supprimée (phase 7), elle est relue, et si la catégorie choisie est
+// partie, la première qui reste l'est à sa place.
 // Ce fichier branche les gestes et le stockage ; le dessin est dans bibliotheque-vues.js.
 import { remplir } from '../i18n/traduction.js';
-import { groupesAvecEtiquettes } from '../modele/inclusion.js';
-import { nouvelId } from '../modele/identifiant.js';
-import { preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
 import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
-import { ouvrirFicheCategorie } from './fiche-categorie.js';
-import { ouvrirFicheObjet } from './fiche-objet.js';
+import { editerCategorie, editerObjet } from './edition-modeles.js';
 import { creerFileOrdre } from './file-ordre.js';
 import { GLISSEMENT, creerModeRangement, suivreFin } from './mode-rangement.js';
 
@@ -161,9 +158,10 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     });
   }
 
-  // Après une écriture : la bibliothèque relue, redessinée, et recent (« cat-<id> » ou l'id d'un
-  // objet) éclairé et amené dans la vue. Une relecture impossible laisse l'écran tel qu'il était :
-  // l'écriture, elle, a réussi, la fiche se ferme.
+  // Après une écriture : la bibliothèque relue, redessinée, et recent (« cat-<id> », l'id d'un objet,
+  // ou null après une suppression) éclairé et amené dans la vue. La catégorie choisie partie, la
+  // première qui reste l'est à sa place (aucune s'il n'en reste pas). Une relecture impossible laisse
+  // l'écran tel qu'il était : l'écriture, elle, a réussi, la fiche se ferme.
   async function relire(recent) {
     try {
       lue = await stockage.lireBibliotheque();
@@ -172,69 +170,69 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
       return;
     }
     donnees = preparer(lue, langue);
+    if (!donnees.rangees.some(r => r.categorie.id === ui.choisie))
+      ui.choisie = donnees.rangees[0]?.categorie.id ?? null;
     // L'ordre voulu garde ses déplacements en attente, et reçoit en dernier une catégorie neuve.
     ordre.definir('categories', idsAffiches());
     if (parti()) return;
     ui.recent = recent;
-    peindre({ enVue: recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent) });
+    let enVue = null;
+    if (recent) enVue = recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent);
+    peindre({ enVue });
   }
   const commandeObjet = id => `[data-action="modifier-objet"][data-id="${CSS.escape(id)}"]`;
+
+  // Une écriture faite depuis une fiche. Supprimé, le focus revient à ce qui reste de plus proche :
+  // « Ajouter un objet » de la même catégorie, ou la première catégorie, ou « Nouvelle catégorie ».
+  async function apresEcriture({ cible, neuve, supprimee }) {
+    const { type, id } = cible;
+    if (supprimee) {
+      const categorieId = type === 'objet' ? lue.objets.find(o => o.id === id)?.categorieId : null;
+      await relire(null);
+      const premiere = donnees.rangees[0]?.categorie.id;
+      if (categorieId) aFocaliser = { action: 'nouvel-objet', id: categorieId };
+      else aFocaliser = premiere ? { action: 'accordeon', id: premiere } : { action: 'nouvelle-categorie' };
+    } else if (type === 'categorie') {
+      // Neuve : dépliée (une colonne) et choisie (deux panneaux), pour qu'on y ajoute ses objets.
+      if (neuve) {
+        ui.ouvertes.add(id);
+        ui.choisie = id;
+        aFocaliser = { action: 'accordeon', id };
+      }
+      await relire(`cat-${id}`);
+    } else {
+      aFocaliser = { action: 'modifier-objet', id };
+      await relire(id);
+    }
+  }
 
   const commun = () => ({
     t,
     langue,
-    groupes: groupesAvecEtiquettes(lue),
+    stockage,
+    bibliotheque: lue,
     signal: fin.signal,
     dans: app,
     surFermeture: rendreFocus,
+    apresEcriture,
   });
 
-  // Une catégorie neuve a son id dès l'ouverture de la fiche : un nouvel essai après une panne écrit
-  // la même, jamais une seconde (Review Focus 3).
   function ouvrirCategorie(existante) {
-    const id = existante?.id ?? nouvelId();
-    aFocaliser = existante ? { action: 'modifier-categorie', id } : { action: 'nouvelle-categorie' };
-    ouvrirFicheCategorie({
+    aFocaliser = existante ? { action: 'modifier-categorie', id: existante.id } : { action: 'nouvelle-categorie' };
+    editerCategorie({
       ...commun(),
       categorie: existante,
-      nombreObjets: donnees.rangees.find(r => r.categorie.id === id)?.objets.length ?? 0,
-      async enregistrer(saisie) {
-        const maintenant = new Date().toISOString();
-        const categorie = preparerCategorie(saisie, {
-          existante,
-          categories: lue.categories,
-          nouvelId: () => id,
-          maintenant,
-        });
-        await stockage.enregistrerCategorie(categorie);
-        // Neuve : dépliée (une colonne) et choisie (deux panneaux), pour qu'on y ajoute ses objets.
-        if (!existante) {
-          ui.ouvertes.add(id);
-          ui.choisie = id;
-          aFocaliser = { action: 'accordeon', id };
-        }
-        await relire(`cat-${id}`);
-      },
+      nombreObjets: donnees.rangees.find(r => r.categorie.id === existante?.id)?.objets.length ?? 0,
     });
   }
 
   function ouvrirObjet(existant, categorieId) {
-    const id = existant?.id ?? nouvelId();
     const categorie = lue.categories.find(c => c.id === (existant?.categorieId ?? categorieId));
     if (!categorie) return;
-    aFocaliser = existant ? { action: 'modifier-objet', id } : { action: 'nouvel-objet', id: categorie.id };
-    ouvrirFicheObjet({
-      ...commun(),
-      objet: existant,
-      categorie,
-      async enregistrer(saisie) {
-        const maintenant = new Date().toISOString();
-        const objet = preparerObjet(saisie, { existant, categorieId: categorie.id, nouvelId: () => id, maintenant });
-        await stockage.enregistrerObjet(objet);
-        aFocaliser = { action: 'modifier-objet', id };
-        await relire(id);
-      },
-    });
+    aFocaliser = existant
+      ? { action: 'modifier-objet', id: existant.id }
+      : { action: 'nouvel-objet', id: categorie.id };
+    editerObjet({ ...commun(), objet: existant, categorie });
   }
 
   main.addEventListener('click', evenement => {
