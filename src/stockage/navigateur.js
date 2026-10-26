@@ -50,6 +50,39 @@ function remplacerOuAjouter(liste, element, garder) {
   return liste.map(x => (x === existant ? fusion : x));
 }
 
+// Comme la base : lenteur simulée, puis panne simulée, puis état relu au dernier moment (un autre appui a
+// pu écrire pendant l'attente).
+async function ecritureDe(operation) {
+  await lenteur(lire(), operation);
+  const donnees = lire();
+  panne(donnees, operation);
+  return donnees;
+}
+
+// La base relit par rang puis par ordre de création ; le tri est stable, comme ORDER BY ordre, rowid.
+const parOrdre = liste => [...liste].sort((a, b) => a.ordre - b.ordre);
+
+const trouver = (liste, id) => liste.find(x => x.id === id);
+
+function verifierListeExacte(existants, ids, quoi) {
+  const attendus = existants.map(x => x.id).sort();
+  if (JSON.stringify([...ids].sort()) !== JSON.stringify(attendus)) {
+    throw new Error(`La liste ne contient pas exactement ${quoi}`);
+  }
+}
+
+// Supprimer des étiquettes les retire des catégories et objets modèles, sans rien changer d'autre
+// (pas même leur `modifieLe`), comme le ON DELETE CASCADE de la base.
+function sansEtiquettes(bibliotheque, retirees) {
+  const retire = modele => ({ ...modele, etiquettes: modele.etiquettes.filter(id => !retirees.includes(id)) });
+  return {
+    ...bibliotheque,
+    etiquettes: bibliotheque.etiquettes.filter(e => !retirees.includes(e.id)),
+    categories: bibliotheque.categories.map(retire),
+    objets: bibliotheque.objets.map(retire),
+  };
+}
+
 export function creerStockageNavigateur() {
   return Object.freeze({
     async listerVoyages() {
@@ -104,6 +137,63 @@ export function creerStockageNavigateur() {
         modifieLe,
       }));
       ecrire({ ...donnees, bibliotheque: { ...bibliotheque, categories } });
+    },
+    // Étiquettes : mêmes refus que la base (src-tauri/src/etiquettes.rs).
+    async enregistrerGroupe(groupe) {
+      const donnees = await ecritureDe('enregistrerGroupe');
+      const bibliotheque = bibliothequeDe(donnees);
+      // Le rang ne change qu'à la création : seul rangerGroupes déplace un groupe existant.
+      const groupes = parOrdre(remplacerOuAjouter(bibliotheque.groupes, groupe, ['ordre']));
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, groupes } });
+    },
+    async enregistrerEtiquette(etiquette) {
+      const donnees = await ecritureDe('enregistrerEtiquette');
+      const bibliotheque = bibliothequeDe(donnees);
+      if (
+        !bibliotheque.groupes.some(g => g.id === etiquette.groupeId) &&
+        !trouver(bibliotheque.etiquettes, etiquette.id)
+      ) {
+        throw new Error(`Groupe inconnu : ${etiquette.groupeId}`);
+      }
+      // Une étiquette reste dans son groupe et à son rang.
+      const etiquettes = parOrdre(remplacerOuAjouter(bibliotheque.etiquettes, etiquette, ['groupeId', 'ordre']));
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, etiquettes } });
+    },
+    async rangerGroupes(ids, modifieLe) {
+      const donnees = await ecritureDe('rangerGroupes');
+      const bibliotheque = bibliothequeDe(donnees);
+      verifierListeExacte(bibliotheque.groupes, ids, 'les groupes existants');
+      const groupes = ids.map((id, ordre) => ({ ...trouver(bibliotheque.groupes, id), ordre, modifieLe }));
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, groupes } });
+    },
+    async rangerEtiquettes(groupeId, ids, modifieLe) {
+      const donnees = await ecritureDe('rangerEtiquettes');
+      const bibliotheque = bibliothequeDe(donnees);
+      if (!trouver(bibliotheque.groupes, groupeId)) throw new Error(`Groupe inconnu : ${groupeId}`);
+      verifierListeExacte(
+        bibliotheque.etiquettes.filter(e => e.groupeId === groupeId),
+        ids,
+        'les étiquettes de ce groupe',
+      );
+      const rangees = new Map(ids.map((id, ordre) => [id, ordre]));
+      const etiquettes = parOrdre(
+        bibliotheque.etiquettes.map(e => (rangees.has(e.id) ? { ...e, ordre: rangees.get(e.id), modifieLe } : e)),
+      );
+      ecrire({ ...donnees, bibliotheque: { ...bibliotheque, etiquettes } });
+    },
+    async supprimerEtiquette(id) {
+      const donnees = await ecritureDe('supprimerEtiquette');
+      const bibliotheque = bibliothequeDe(donnees);
+      if (!trouver(bibliotheque.etiquettes, id)) throw new Error(`Étiquette inconnue : ${id}`);
+      ecrire({ ...donnees, bibliotheque: sansEtiquettes(bibliotheque, [id]) });
+    },
+    async supprimerGroupe(id) {
+      const donnees = await ecritureDe('supprimerGroupe');
+      const bibliotheque = bibliothequeDe(donnees);
+      if (!trouver(bibliotheque.groupes, id)) throw new Error(`Groupe inconnu : ${id}`);
+      const parties = bibliotheque.etiquettes.filter(e => e.groupeId === id).map(e => e.id);
+      const groupes = bibliotheque.groupes.filter(g => g.id !== id);
+      ecrire({ ...donnees, bibliotheque: { ...sansEtiquettes(bibliotheque, parties), groupes } });
     },
     async creerVoyage({ voyage, etiquettes, categories, objets }) {
       const donnees = lire();

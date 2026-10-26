@@ -3,10 +3,11 @@ mod bibliotheque;
 mod edition;
 #[cfg(test)]
 mod essais;
+mod etiquettes;
 mod voyages;
 
 use base::Base;
-use bibliotheque::{Bibliotheque, CategorieModele, ObjetModele};
+use bibliotheque::{Bibliotheque, CategorieModele, Etiquette, GroupeEtiquettes, ObjetModele};
 use std::fs;
 use tauri::{AppHandle, Manager, State};
 use voyages::{EtatObjet, Voyage, VoyageComplet};
@@ -61,6 +62,45 @@ fn ranger_categories(
 }
 
 #[tauri::command]
+fn enregistrer_groupe(base: State<'_, Base>, groupe: GroupeEtiquettes) -> Result<(), String> {
+    base.enregistrer_groupe(&groupe)
+}
+
+#[tauri::command]
+fn enregistrer_etiquette(base: State<'_, Base>, etiquette: Etiquette) -> Result<(), String> {
+    base.enregistrer_etiquette(&etiquette)
+}
+
+#[tauri::command]
+fn ranger_groupes(
+    base: State<'_, Base>,
+    ids: Vec<String>,
+    modifie_le: String,
+) -> Result<(), String> {
+    base.ranger_groupes(&ids, &modifie_le)
+}
+
+#[tauri::command]
+fn ranger_etiquettes(
+    base: State<'_, Base>,
+    groupe_id: String,
+    ids: Vec<String>,
+    modifie_le: String,
+) -> Result<(), String> {
+    base.ranger_etiquettes(&groupe_id, &ids, &modifie_le)
+}
+
+#[tauri::command]
+fn supprimer_etiquette(base: State<'_, Base>, id: String) -> Result<(), String> {
+    base.supprimer_etiquette(&id)
+}
+
+#[tauri::command]
+fn supprimer_groupe(base: State<'_, Base>, id: String) -> Result<(), String> {
+    base.supprimer_groupe(&id)
+}
+
+#[tauri::command]
 fn creer_voyage(base: State<'_, Base>, contenu: VoyageComplet) -> Result<(), String> {
     base.creer_voyage(&contenu)
 }
@@ -101,6 +141,12 @@ pub fn run() {
             enregistrer_categorie,
             enregistrer_objet,
             ranger_categories,
+            enregistrer_groupe,
+            enregistrer_etiquette,
+            ranger_groupes,
+            ranger_etiquettes,
+            supprimer_etiquette,
+            supprimer_groupe,
             creer_voyage,
             lire_voyage,
             regler_dans_le_sac,

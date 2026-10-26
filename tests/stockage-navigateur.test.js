@@ -227,3 +227,124 @@ test('une panne simulée fait échouer chaque écriture de la bibliothèque sans
   await assert.rejects(stockage.rangerCategories(['cm-papiers', 'cm-vetements'], 'x'), /Panne/);
   assert.deepEqual(await stockage.lireBibliotheque(), contrat.bibliotheque);
 });
+
+const MAINTENANT = '2026-10-26T09:00:00.000Z';
+const groupeNeuf = { id: 'ge-neuf', nom: 'Saison', ordre: 2, modifieLe: MAINTENANT };
+const etiquetteNeuve = { id: 'et-neuve', groupeId: 'ge-climat', nom: 'Chaud', ordre: 1, modifieLe: MAINTENANT };
+
+test('un groupe neuf puis renommé est relu, avec son rang de création', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.enregistrerGroupe(groupeNeuf);
+  assert.deepEqual((await stockage.lireBibliotheque()).groupes[2], groupeNeuf);
+  await stockage.enregistrerGroupe({ ...groupeNeuf, nom: 'Saisons', ordre: 9, modifieLe: 'plus tard' });
+  const { groupes } = await stockage.lireBibliotheque();
+  assert.equal(groupes.length, 3);
+  assert.deepEqual(groupes[2], { ...groupeNeuf, nom: 'Saisons', modifieLe: 'plus tard' });
+});
+
+test('une étiquette neuve puis renommée garde son groupe et son rang ; un groupe inconnu est refusé', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.enregistrerEtiquette(etiquetteNeuve);
+  await stockage.enregistrerEtiquette({
+    ...etiquetteNeuve,
+    nom: 'Canicule',
+    groupeId: 'ge-activites',
+    ordre: 9,
+    modifieLe: 'plus tard',
+  });
+  const { etiquettes } = await stockage.lireBibliotheque();
+  assert.equal(etiquettes.length, 3);
+  assert.deepEqual(etiquettes[2], { ...etiquetteNeuve, nom: 'Canicule', modifieLe: 'plus tard' });
+  await assert.rejects(stockage.enregistrerEtiquette({ ...etiquetteNeuve, id: 'et-x', groupeId: 'ge-inconnu' }));
+  assert.equal((await stockage.lireBibliotheque()).etiquettes.length, 3);
+});
+
+test('ranger les groupes et les étiquettes suit l’ordre donné et refuse une liste inexacte', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.enregistrerEtiquette({ ...etiquetteNeuve, id: 'et-b', groupeId: 'ge-activites', ordre: 1 });
+  await stockage.rangerGroupes(['ge-climat', 'ge-activites'], MAINTENANT);
+  await stockage.rangerEtiquettes('ge-activites', ['et-b', 'et-camping'], MAINTENANT);
+  const { groupes, etiquettes } = await stockage.lireBibliotheque();
+  assert.deepEqual(
+    groupes.map(g => [g.id, g.ordre, g.modifieLe]),
+    [
+      ['ge-climat', 0, MAINTENANT],
+      ['ge-activites', 1, MAINTENANT],
+    ],
+  );
+  const activites = etiquettes.filter(e => e.groupeId === 'ge-activites');
+  assert.deepEqual(
+    activites.map(e => [e.id, e.ordre]),
+    [
+      ['et-b', 0],
+      ['et-camping', 1],
+    ],
+  );
+  assert.equal(etiquettes.find(e => e.id === 'et-froid').ordre, 0);
+  const avant = await stockage.lireBibliotheque();
+  for (const ids of [['ge-climat'], ['ge-climat', 'ge-inconnu'], ['ge-climat', 'ge-climat']]) {
+    await assert.rejects(stockage.rangerGroupes(ids, 'x'));
+  }
+  for (const ids of [[], ['et-b', 'et-inconnue'], ['et-b', 'et-b'], ['et-b', 'et-froid']]) {
+    await assert.rejects(stockage.rangerEtiquettes('ge-activites', ids, 'x'));
+  }
+  await assert.rejects(stockage.rangerEtiquettes('ge-inconnu', [], 'x'));
+  assert.deepEqual(await stockage.lireBibliotheque(), avant);
+});
+
+test('supprimer une étiquette la retire des modèles sans les modifier', async () => {
+  const stockage = await stockageInstalle();
+  await stockage.supprimerEtiquette('et-camping');
+  const { etiquettes, categories } = await stockage.lireBibliotheque();
+  assert.deepEqual(
+    etiquettes.map(e => e.id),
+    ['et-froid'],
+  );
+  const papiers = categories.find(c => c.id === 'cm-papiers');
+  assert.deepEqual(papiers, { ...contrat.bibliotheque.categories[1], etiquettes: [] });
+});
+
+test('supprimer un groupe supprime ses étiquettes et les retire des modèles ; un inconnu est refusé', async () => {
+  const stockage = await stockageInstalle();
+  await assert.rejects(stockage.supprimerGroupe('ge-inconnu'));
+  await assert.rejects(stockage.supprimerEtiquette('et-inconnue'));
+  assert.deepEqual(await stockage.lireBibliotheque(), contrat.bibliotheque);
+  await stockage.supprimerGroupe('ge-climat');
+  const { groupes, etiquettes, objets, categories } = await stockage.lireBibliotheque();
+  assert.deepEqual(
+    groupes.map(g => g.id),
+    ['ge-activites'],
+  );
+  assert.deepEqual(
+    etiquettes.map(e => e.id),
+    ['et-camping'],
+  );
+  assert.deepEqual(objets.find(o => o.id === 'om-tshirts').etiquettes, []);
+  assert.deepEqual(categories.find(c => c.id === 'cm-papiers').etiquettes, ['et-camping']);
+});
+
+test('une panne simulée fait échouer chaque écriture des étiquettes sans rien écrire', async () => {
+  const stockage = await stockageInstalle();
+  const donnees = JSON.parse(localStorage.getItem('baluchon-essai'));
+  const pannes = [
+    'enregistrerGroupe',
+    'enregistrerEtiquette',
+    'rangerGroupes',
+    'rangerEtiquettes',
+    'supprimerEtiquette',
+  ];
+  localStorage.setItem('baluchon-essai', JSON.stringify({ ...donnees, pannes: [...pannes, 'supprimerGroupe'] }));
+  await assert.rejects(stockage.enregistrerGroupe(groupeNeuf), /Panne/);
+  await assert.rejects(stockage.enregistrerEtiquette(etiquetteNeuve), /Panne/);
+  await assert.rejects(stockage.rangerGroupes(['ge-climat', 'ge-activites'], 'x'), /Panne/);
+  await assert.rejects(stockage.rangerEtiquettes('ge-activites', ['et-camping'], 'x'), /Panne/);
+  await assert.rejects(stockage.supprimerEtiquette('et-camping'), /Panne/);
+  await assert.rejects(stockage.supprimerGroupe('ge-climat'), /Panne/);
+  assert.deepEqual(await stockage.lireBibliotheque(), contrat.bibliotheque);
+  // Témoin : sans la panne, le groupe et ses étiquettes partent bien.
+  localStorage.setItem('baluchon-essai', JSON.stringify({ ...donnees, pannes: [] }));
+  await stockage.supprimerGroupe('ge-climat');
+  const { groupes, etiquettes } = await stockage.lireBibliotheque();
+  assert.equal(groupes.length, 1);
+  assert.equal(etiquettes.length, 1);
+});
