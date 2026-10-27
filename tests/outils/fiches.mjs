@@ -67,7 +67,7 @@ const enPanneaux = page => page.evaluate(() => document.querySelector('#app main
 const carte = nom => `#app section.categorie:has(.categorie-nom > b:text-is(${JSON.stringify(nom)}))`;
 
 // La catégorie visible : choisie à gauche (deux panneaux) ou dépliée (une colonne).
-async function montrerCategorie(page, nom) {
+export async function montrerCategorie(page, nom) {
   if (await enPanneaux(page)) await page.click(`#app .choix:has(b:text-is(${JSON.stringify(nom)}))`);
   else if ((await page.getAttribute(`${carte(nom)} [data-action="accordeon"]`, 'aria-expanded')) !== 'true')
     await page.click(`${carte(nom)} [data-action="accordeon"]`);
