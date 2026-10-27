@@ -222,10 +222,13 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
       groupe: existant,
       groupes: lue.groupes,
       etiquettesDuGroupe: donnees.rangees.find(r => r.groupe.id === id)?.etiquettes ?? [],
+      // Rang et unicité du nom sur la bibliothèque relue au moment d'écrire : « Annuler » a pu rendre un
+      // groupe pendant que la fiche était ouverte (deux groupes n'ont jamais le même rang).
       async enregistrer(saisie) {
+        const { groupes } = await stockage.lireBibliotheque();
         const groupe = preparerGroupe(saisie, {
           existant,
-          groupes: lue.groupes,
+          groupes,
           nouvelId: () => id,
           maintenant: new Date().toISOString(),
           langue,
@@ -258,11 +261,12 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
       etiquette: existante,
       groupe,
       bibliotheque: lue,
+      // Relue au moment d'écrire, comme pour un groupe.
       async enregistrer(saisie) {
         const etiquette = preparerEtiquette(saisie, {
           existante,
           groupeId: groupe.id,
-          bibliotheque: lue,
+          bibliotheque: await stockage.lireBibliotheque(),
           nouvelId: () => id,
           maintenant: new Date().toISOString(),
           langue,

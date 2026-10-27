@@ -45,23 +45,22 @@ function editer({ type, existant, contexte, ouvrir, ecrire }) {
 }
 
 // categorie : celle à modifier, ou null pour une nouvelle ; nombreObjets : les siens, dits sous le
-// titre ; bibliotheque : telle que lue (les rangs, les étiquettes proposées).
+// titre ; bibliotheque : telle que lue (les étiquettes proposées). Le rang d'une catégorie neuve se
+// calcule sur les catégories relues au moment d'écrire : « Annuler » a pu en rendre une pendant que la
+// fiche était ouverte, et deux catégories n'ont jamais le même rang.
 export function editerCategorie({ categorie, nombreObjets, ...contexte }) {
-  const { stockage, bibliotheque } = contexte;
+  const { stockage } = contexte;
   return editer({
     type: 'categorie',
     existant: categorie,
     contexte,
     ouvrir: rappels => ouvrirFicheCategorie({ ...rappels, categorie, nombreObjets }),
-    ecrire: (saisie, id, maintenant) =>
-      stockage.enregistrerCategorie(
-        preparerCategorie(saisie, {
-          existante: categorie,
-          categories: bibliotheque.categories,
-          nouvelId: () => id,
-          maintenant,
-        }),
-      ),
+    async ecrire(saisie, id, maintenant) {
+      const { categories } = await stockage.lireBibliotheque();
+      await stockage.enregistrerCategorie(
+        preparerCategorie(saisie, { existante: categorie, categories, nouvelId: () => id, maintenant }),
+      );
+    },
   });
 }
 
