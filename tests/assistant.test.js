@@ -17,6 +17,7 @@ import {
   etatEtape,
   raisonVide,
   remettre,
+  reprendreEtapes,
   saisieCommencee,
   signatureDe,
 } from '../src/ecrans/assistant.js';
@@ -144,4 +145,31 @@ test('saisieCommencee : les 2 voyageurs par défaut ne comptent pas', () => {
   assert.equal(saisieCommencee({ ...infos, destination: 'Gap' }, etat), true);
   assert.equal(saisieCommencee({ ...infos, depart: '2026-10-10' }, etat), true);
   assert.equal(saisieCommencee(infos, basculerEtiquette(etat, 'camping')), true);
+});
+
+// Constat I1 de la relecture finale : « Annuler » rend un groupe pendant l'assistant ; les étapes sont
+// refaites, l'étape en cours et les étapes vues restent les mêmes, à leur nouvelle place.
+test('reprendreEtapes : un groupe revenu décale les étapes sans rien perdre', () => {
+  const complete = depart();
+  const activites = complete.groupes.find(g => g.nom === 'Activités').id;
+  const sansActivites = {
+    ...complete,
+    groupes: complete.groupes.filter(g => g.id !== activites),
+    etiquettes: complete.etiquettes.filter(e => e.groupeId !== activites),
+  };
+  const anciennes = etapesDe(sansActivites);
+  const nouvelles = etapesDe(complete);
+  // Informations, Climat (1), Hébergement (2), Aperçu (3) ; on est sur Hébergement, Climat vue.
+  const etat = { ...allerA(allerA(creerAssistant(), 1), 2), choisies: new Set(['x']) };
+  const repris = reprendreEtapes(etat, anciennes, nouvelles);
+  assert.equal(nouvelles[repris.etape].groupe.nom, 'Hébergement');
+  assert.deepEqual(
+    [...repris.vues].sort().map(i => nouvelles[i].groupe?.nom ?? nouvelles[i].type),
+    ['informations', 'Climat', 'Hébergement'],
+  );
+  assert.deepEqual([...repris.choisies], ['x']);
+  assert.equal(etat.etape, 2);
+  // L'aperçu reste l'aperçu, à sa nouvelle place.
+  const apercu = reprendreEtapes(allerA(creerAssistant(), 3), anciennes, nouvelles);
+  assert.equal(nouvelles[apercu.etape].type, 'apercu');
 });

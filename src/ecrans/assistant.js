@@ -26,6 +26,20 @@ export function etatEtape(etat, indice, { derniere, infosValides }) {
   return etat.vues.has(indice) ? 'ouverte' : 'fermee';
 }
 
+// Ce qui désigne une étape d'une lecture de la bibliothèque à l'autre : son groupe, ou son type.
+const cleEtape = etape => (etape.type === 'groupe' ? `groupe-${etape.groupe.id}` : etape.type);
+
+// La bibliothèque relue pendant l'assistant (« Annuler » a rendu un groupe ou une étiquette) : les
+// étapes passent d'anciennes à nouvelles ; l'étape en cours et les étapes vues restent les mêmes, à
+// leur nouvelle place ; choix et objets écartés ne changent pas. Une étape disparue (Informations à la
+// place de l'étape en cours) n'arrive pas : un rétablissement ne fait qu'ajouter.
+export function reprendreEtapes(etat, anciennes, nouvelles) {
+  const places = new Map(nouvelles.map((etape, indice) => [cleEtape(etape), indice]));
+  const place = indice => places.get(cleEtape(anciennes[indice]));
+  const vues = [...etat.vues].map(place).filter(indice => indice !== undefined);
+  return { ...etat, etape: place(etat.etape) ?? 0, vues: new Set([0, ...vues]) };
+}
+
 export const allerA = (etat, indice) => ({ ...etat, etape: indice, vues: new Set(etat.vues).add(indice) });
 
 const basculer = (ensemble, id) => {

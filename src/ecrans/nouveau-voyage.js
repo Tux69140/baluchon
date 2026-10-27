@@ -23,6 +23,7 @@ import {
   idsDeLApercu,
   raisonVide,
   remettre,
+  reprendreEtapes,
   saisieCommencee,
   signatureDe,
 } from './assistant.js';
@@ -70,8 +71,9 @@ export const ecranNouveauVoyage = {
     // Une forme constante : une date absente vaut '' (signatureDe compare les informations d'un aperçu
     // à l'autre ; '' et undefined y feraient deux signatures).
     const infos = { nom: '', destination: '', depart: '', retour: '', voyageurs: VOYAGEURS.parDefaut };
-    const etapes = etapesDe(bibliotheque);
-    const derniere = etapes.length - 1;
+    // Relues quand « Annuler » rend un élément de la bibliothèque (relireBibliotheque, plus bas).
+    let etapes = etapesDe(bibliotheque);
+    let derniere = etapes.length - 1;
     let etat = creerAssistant();
     // Les messages n'apparaissent qu'après un premier essai, puis suivent chaque correction.
     let essaye = false;
@@ -380,6 +382,29 @@ export const ecranNouveauVoyage = {
         enregistrement = false;
       }
     }
+
+    // « Annuler » du bandeau pendant l'assistant (src/ecrans/annulation.js) : la bibliothèque relue,
+    // l'élément revenu se voit dans l'étape en cours (une étape de groupe revient dans la rangée), sans
+    // rien perdre des réponses déjà données ni bouger. Pendant la création du voyage, rien : il est
+    // déjà en train d'être copié.
+    async function relireBibliotheque() {
+      let relue;
+      try {
+        relue = await stockage.lireBibliotheque();
+      } catch (erreur) {
+        console.error(erreur);
+        return;
+      }
+      if (fin.signal.aborted || enregistrement) return;
+      const nouvelles = etapesDe(relue);
+      etat = reprendreEtapes(etat, etapes, nouvelles);
+      [bibliotheque, etapes, derniere] = [relue, nouvelles, nouvelles.length - 1];
+      const hauts = [corps.scrollTop, panneau.scrollTop, window.scrollY];
+      peindreEtape({ focus: false });
+      [corps.scrollTop, panneau.scrollTop] = hauts;
+      window.scrollTo(0, hauts[2]);
+    }
+    window.addEventListener('bibliotheque-retablie', relireBibliotheque, { signal: fin.signal });
 
     function basculerPuce(puce) {
       etat = basculerEtiquette(etat, puce.dataset.etiquette);
