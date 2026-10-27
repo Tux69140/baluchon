@@ -67,7 +67,7 @@ porte les mêmes requêtes (un test vérifie l'égalité). Les vues produisent t
 - Produces: `export const GRAND_FORMAT = '(min-width: 600px) and (min-height: 600px)'` et
   `export const TROIS_COLONNES = '(min-width: 1340px) and (min-height: 600px)'` dans `disposition.js`
   (`places`, `glisser` inchangés) ; classes CSS `main.grand-format`, `.gf-gauche`, `.gf-menu`,
-  `.gf-liste`, `.gf-liste-tete`, `.tuiles`, `.tuile`, `.tuile-nouvelle`, et les règles `.choix`
+  `.gf-liste`, `.gf-liste-tete`, `.gf-tuiles`, `.gf-tuile`, `.gf-tuile-nouvelle`, et les règles `.choix`
   (reprises de `voyage-panneaux.css`) sous `main.grand-format` ; `main.grand-format[data-colonnes="3"]`
   pour les trois colonnes (attribut posé par les vues, voir tâches 2 et 3).
 - Produces (tests) : `FORMATS` gagne `portable: { width: 1366, height: 768 }` et
@@ -103,7 +103,7 @@ porte les mêmes requêtes (un test vérifie l'égalité). Les vues produisent t
   `{ classe: 'grand-format', colonnes: 3 | 'repli', html }` en grand format (le paramètre `deuxPanneaux`
   disparaît) ; `voyage.js` pose `data-colonnes` sur `<main>`. Dans le HTML : `.gf-gauche` (en-tête,
   progression, filtre), `nav.gf-menu` contenant `ul.choix-liste > li > button.choix` (trois colonnes) ou
-  `ul.tuiles > li > button.tuile` (repli), chacun `data-action="choisir" data-id aria-current` ;
+  `ul.gf-tuiles > li > button.gf-tuile` (repli), chacun `data-action="choisir" data-id aria-current` ;
   `section.gf-liste[aria-labelledby="liste-titre"]` avec `h2#liste-titre` (classe `lecteur` en trois
   colonnes) puis les lignes d'aujourd'hui.
 
@@ -163,11 +163,11 @@ porte les mêmes requêtes (un test vérifie l'égalité). Les vues produisent t
 
 **Interfaces:**
 - Consumes: tâche 1 ; même structure que la tâche 2 (`grand-format`, `data-colonnes`, `.gf-gauche`,
-  `.gf-menu`, `.gf-liste`, `h2#liste-titre`, `.tuile`).
+  `.gf-menu`, `.gf-liste`, `h2#liste-titre`, `.gf-tuile`).
 - Produces: `vueBibliotheque({ ...vue, grandFormat, troisColonnes })` ; en trois colonnes, chaque
   `.choix` porte dans sa carte un bouton `data-action="modifier-categorie" data-id` (nom accessible
   `bibliotheque.modifierCategorie`) avant la flèche, puis « Nouvelle catégorie » en `bouton-large` sous
-  les cartes ; en repli, dernière tuile `button.tuile.tuile-nouvelle[data-action="nouvelle-categorie"]`
+  les cartes ; en repli, dernière tuile `button.gf-tuile.gf-tuile-nouvelle[data-action="nouvelle-categorie"]`
   et, dans `.gf-liste-tete`, le bouton « Modifier » (`bibliotheque.modifier`,
   `data-action="modifier-categorie"`) ; pas de bouton flottant en grand format ; en mode « Ranger », la
   liste de rangement d'aujourd'hui remplace `.gf-menu`.
