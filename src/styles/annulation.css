@@ -24,9 +24,10 @@
   overflow: visible;
 }
 
-/* Une fenêtre est ouverte : en haut, centré, comme le message d'erreur d'enregistrement. */
+/* Une fenêtre est ouverte : en haut, centré, comme le message d'erreur d'enregistrement ; sous ce
+   message quand il est là (--sous). */
 .bandeau-annuler[data-place='haut'] {
-  inset: calc(var(--zone-haut) + var(--e-md)) 0 auto 0;
+  inset: var(--sous, calc(var(--zone-haut) + var(--e-md))) 0 auto 0;
   margin: 0 auto;
 }
 

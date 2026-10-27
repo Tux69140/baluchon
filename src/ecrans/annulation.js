@@ -8,7 +8,7 @@
 // liste (annulation.css). Une fenêtre ouverte rend le reste de la page intouchable : il se range alors
 // dans celle du dessus, en haut, comme le message d'erreur d'enregistrement, et revient en bas à sa
 // fermeture, sans que ses 10 s repartent de zéro.
-import { alerterEnHaut } from './alerte.js';
+import { DUREE_ALERTE, alerterEnHaut } from './alerte.js';
 import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
 
@@ -34,8 +34,9 @@ const ECRITURES_BIBLIOTHEQUE = [
   'supprimerGroupe',
 ];
 
-// Le bandeau affiché : son élément, sa minuterie, et la fin de sa vie (qui retire aussi le message
-// d'un rétablissement refusé).
+// Le bandeau affiché : son élément, son bouton « Annuler », sa minuterie, la fin de sa vie (qui retire
+// aussi le message d'un rétablissement refusé), et ce qu'il est en train de faire : retablit (« Annuler »
+// touché, le rétablissement court), expire (ses 10 s se sont écoulées pendant ce temps).
 let courant = null;
 // Le rétablissement en cours (« Annuler » touché), ou une promesse déjà tenue : toute lecture de la
 // bibliothèque l'attend, et voit ce qu'il rend (une suppression qui relit avant d'écrire, surtout).
@@ -67,8 +68,16 @@ function placer() {
   if (!el.matches(':popover-open')) el.showPopover();
   el.dataset.place = fenetre ? 'haut' : 'bas';
   const haut = fenetre ? null : hautDuBasFixe();
-  const auDessus = haut === null ? '' : `${innerHeight - haut + ECART}px`;
-  if (el.style.getPropertyValue('--au-dessus') !== auDessus) el.style.setProperty('--au-dessus', auDessus);
+  regler(el, '--au-dessus', haut === null ? '' : `${innerHeight - haut + ECART}px`);
+  // Le message d'une écriture refusée, en haut de la même fenêtre, le couvrirait : il se pose dessous,
+  // « Annuler » touchable pour un nouvel essai, et remonte quand le message s'en va.
+  const message = fenetre?.querySelector(':scope > .alerte-haut:popover-open');
+  regler(el, '--sous', message ? `${message.getBoundingClientRect().bottom + ECART}px` : '');
+}
+
+// Ne touche au style que s'il change.
+function regler(el, propriete, valeur) {
+  if (el.style.getPropertyValue(propriete) !== valeur) el.style.setProperty(propriete, valeur);
 }
 
 // Chaque fenêtre qui s'ouvre, commence à se fermer ou se ferme, et chaque écran dessiné (son bouton
@@ -88,6 +97,45 @@ function retirerAnnulation() {
   courant = null;
 }
 
+// Retire ce bandeau-là s'il est encore affiché (pas celui qui l'a remplacé).
+function retirer(bandeau) {
+  if (courant === bandeau) retirerAnnulation();
+}
+
+// Au bout de son temps, le bandeau s'en va ; pas pendant un rétablissement : c'est sa fin qui décide
+// (réussi, il part ; refusé, il le dit).
+function expirer(bandeau) {
+  if (bandeau.retablit) bandeau.expire = true;
+  else retirer(bandeau);
+}
+
+// Rend « Annuler » inactif (rétablissement ou autre écriture en cours) ou de nouveau actif.
+function activer(bandeau, actif) {
+  if (actif) bandeau.bouton.removeAttribute('aria-disabled');
+  else bandeau.bouton.setAttribute('aria-disabled', 'true');
+}
+
+// « Annuler » touché. Tant que le rétablissement court, « Annuler » ne répond plus : un seul
+// rétablissement. Refusé, le bandeau reste jusqu'au bout de ses 10 s pour un nouvel essai ; si elles se
+// sont écoulées pendant le rétablissement, il reste encore le temps de lire le message (6 s).
+async function retablir(bandeau, { t, app, annuler }) {
+  bandeau.retablit = true;
+  activer(bandeau, false);
+  try {
+    await annuler();
+    retirer(bandeau);
+  } catch (erreur) {
+    console.error(erreur);
+    if (courant !== bandeau) return;
+    activer(bandeau, true);
+    if (bandeau.expire) bandeau.minuterie = setTimeout(() => expirer(bandeau), DUREE_ALERTE);
+    alerterEnHaut(app, t('annulation.erreur'), bandeau.fin.signal);
+  } finally {
+    bandeau.retablit = false;
+    bandeau.expire = false;
+  }
+}
+
 // texte : ce qui vient d'être supprimé, en texte simple ; annuler() rétablit et rend une promesse.
 // app : la racine de l'appli, où dire un rétablissement refusé.
 export function montrerAnnulation({ t, app, texte, annuler }) {
@@ -103,37 +151,35 @@ export function montrerAnnulation({ t, app, texte, annuler }) {
     <button type="button" class="bandeau-action">${iconeInterface('annuler')}${echapper(t('annulation.annuler'))}</button>`;
   // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.
   el.addEventListener('animationend', () => delete el.dataset.entree, { once: true });
-  const bandeau = { el, fin: new AbortController(), minuterie: setTimeout(retirerAnnulation, DUREE) };
-  courant = bandeau;
   const bouton = el.querySelector('button');
-  // Tant que le rétablissement court, « Annuler » ne répond plus : un seul rétablissement. Refusé, le
-  // bandeau reste jusqu'au bout de ses 10 s, pour un nouvel essai.
+  const bandeau = { el, bouton, fin: new AbortController(), retablit: false, expire: false };
+  bandeau.minuterie = setTimeout(() => expirer(bandeau), DUREE);
+  courant = bandeau;
   bouton.addEventListener('click', () => {
-    if (bouton.getAttribute('aria-disabled') === 'true') return;
-    bouton.setAttribute('aria-disabled', 'true');
-    retablissement = annuler().then(
-      () => {
-        if (courant === bandeau) retirerAnnulation();
-      },
-      erreur => {
-        console.error(erreur);
-        bouton.removeAttribute('aria-disabled');
-        if (courant === bandeau) alerterEnHaut(app, t('annulation.erreur'), bandeau.fin.signal);
-      },
-    );
+    if (bouton.getAttribute('aria-disabled') !== 'true') retablissement = retablir(bandeau, { t, app, annuler });
   });
   placer();
 }
 
-// Le stockage, de même forme, dont chaque écriture de la bibliothèque retire d'abord le bandeau. Le
-// rétablissement et les écritures d'un voyage le laissent. Une lecture de la bibliothèque attend la
-// fin d'un rétablissement en cours.
+// Le stockage, de même forme, dont chaque écriture de la bibliothèque retire le bandeau une fois
+// faite : refusée, rien n'a changé, et le bandeau reste, son « Annuler » toujours bon (pendant
+// l'écriture, il ne répond plus). Le rétablissement et les écritures d'un voyage le laissent. Une
+// lecture ou une écriture de la bibliothèque attend la fin d'un rétablissement en cours.
 export function surveillerEcritures(stockage) {
   const surveillees = ECRITURES_BIBLIOTHEQUE.map(nom => [
     nom,
-    (...valeurs) => {
-      retirerAnnulation();
-      return stockage[nom](...valeurs);
+    async (...valeurs) => {
+      await retablissement;
+      const bandeau = courant;
+      if (bandeau) activer(bandeau, false);
+      try {
+        const resultat = await stockage[nom](...valeurs);
+        if (bandeau) retirer(bandeau);
+        return resultat;
+      } catch (erreur) {
+        if (bandeau && courant === bandeau) activer(bandeau, true);
+        throw erreur;
+      }
     },
   ]);
   async function lireBibliotheque() {
