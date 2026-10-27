@@ -1,14 +1,15 @@
 // Fiches d'un groupe et d'une étiquette de l'écran Étiquettes (spec de la phase 6 ; maquette validée,
-// docs/maquettes/etiquettes/fiches.js) : un nom seul, et pour un élément existant « Supprimer », qui
-// demande confirmation (décision du chef de projet, 2026-10-26 : simple confirmation, sans chiffrage
-// des conséquences). Entrée dans le champ vaut « Enregistrer ». La mécanique (brouillon, abandon,
-// enregistrement, suppression) est celle de toute fiche de modèle (src/ecrans/fiche-modele.js).
+// docs/maquettes/etiquettes/fiches.js) : un nom seul, et pour un élément existant « Supprimer ». Depuis
+// la phase 7, la suppression dit ses conséquences en chiffres, ou est refusée tant qu'elle laisserait des
+// catégories ou des objets sans aucune étiquette (src/ecrans/suppression.js). Entrée dans le champ vaut
+// « Enregistrer ». La mécanique (brouillon, abandon, enregistrement, suppression) est celle de toute
+// fiche de modèle (src/ecrans/fiche-modele.js).
 import { remplir } from '../i18n/traduction.js';
 import { homonymeDEtiquette, homonymeDeGroupe, validerEtiquette, validerGroupe } from '../modele/etiquettes.js';
-import { demander } from './fenetre.js';
 import { ouvrirFicheModele } from './fiche-modele.js';
 import { champNom, zoneSuppression } from './fiche-modele-vues.js';
 import { pluriel } from './format.js';
+import { supprimerDeLaBibliotheque } from './suppression.js';
 
 const ID_AIDE = 'f-nom-aide';
 
@@ -17,41 +18,23 @@ const vueCorps = (t, nom, erreur, { aide, supprimer }) => `
         ${champNom(t, nom, erreur, { idAide: ID_AIDE, entree: true })}
         <p class="aide" id="${ID_AIDE}">${aide}</p>${supprimer ? zoneSuppression(supprimer) : ''}`;
 
-// La question avant de supprimer : « Garder » d'abord (le geste sans perte), « Supprimer » en rouge.
-// Rend true une fois l'écriture faite (supprimer, qui lève une erreur en cas de panne), false sinon.
-async function confirmerPuisSupprimer({ t, titre, texte, supprimer, signal }) {
-  const reponse = await demander({
-    t,
-    titre,
-    texte,
-    signal,
-    boutons: [
-      { cle: 'garder', libelle: t('suppression.garder') },
-      { cle: 'supprimer', libelle: t('suppression.supprimer'), danger: true },
-    ],
-  });
-  if (reponse !== 'supprimer') return false;
-  await supprimer();
-  return true;
+// « Supprimer » de la fiche : la question chiffrée ou le refus, puis l'écriture et le bandeau ; rend
+// true une fois l'écriture faite (la fiche se ferme), false sinon ; une panne lève (la fiche la dit).
+// apresSuppression() : l'écran relit la bibliothèque, avant que la fiche ne se ferme.
+function suppression({ t, langue, stockage, ouvrirFiche, apresSuppression, signal, dans }, cible) {
+  return async () => {
+    const fait = await supprimerDeLaBibliotheque({ t, langue, stockage, cible, signal, dans, ouvrirFiche });
+    if (fait) await apresSuppression();
+    return fait;
+  };
 }
 
 // groupe : celui à modifier, ou null pour un nouveau ; groupes : tous, pour l'unicité du nom ;
-// etiquettesDuGroupe : les siennes, dans leur ordre (dites sous le titre et dans la question).
-// enregistrer(saisie), supprimer() : les écritures, faites par l'écran.
-export function ouvrirFicheGroupe({
-  t,
-  langue,
-  groupe,
-  groupes,
-  etiquettesDuGroupe,
-  enregistrer,
-  supprimer,
-  surFermeture,
-  signal,
-  dans,
-}) {
+// etiquettesDuGroupe : les siennes (leur nombre, dit sous le titre). enregistrer(saisie) : l'écriture,
+// faite par l'écran. stockage, ouvrirFiche, apresSuppression : la suppression (voir suppression()).
+export function ouvrirFicheGroupe(contexte) {
+  const { t, langue, groupe, groupes, etiquettesDuGroupe, enregistrer, surFermeture, signal, dans } = contexte;
   const n = etiquettesDuGroupe.length;
-  const noms = new Intl.ListFormat(langue, { type: 'conjunction' }).format(etiquettesDuGroupe.map(e => e.nom));
   const texteErreur = (code, nom) =>
     code &&
     remplir(t(`modele.groupe.erreurs.${code}`), {
@@ -77,18 +60,7 @@ export function ouvrirFicheGroupe({
       ? remplir(t('modele.groupe.abandonTexte'), { nom: groupe.nom })
       : t('modele.groupe.abandonNouveau'),
     enregistrer,
-    supprimer:
-      groupe &&
-      (() =>
-        confirmerPuisSupprimer({
-          t,
-          titre: remplir(t('suppression.groupeTitre'), { nom: groupe.nom }),
-          texte: n
-            ? remplir(pluriel(t, 'suppression.groupeTexte', n, langue), { etiquettes: noms })
-            : t('suppression.groupeVide'),
-          supprimer,
-          signal,
-        })),
+    supprimer: groupe && suppression(contexte, { type: 'groupe', id: groupe.id }),
     surFermeture,
     signal,
     dans,
@@ -97,18 +69,8 @@ export function ouvrirFicheGroupe({
 
 // etiquette : celle à modifier, ou null pour une nouvelle ; groupe : le sien (qui ne change pas) ;
 // bibliotheque : { groupes, etiquettes }, pour l'unicité du nom, tous groupes confondus.
-export function ouvrirFicheEtiquette({
-  t,
-  langue,
-  etiquette,
-  groupe,
-  bibliotheque,
-  enregistrer,
-  supprimer,
-  surFermeture,
-  signal,
-  dans,
-}) {
+export function ouvrirFicheEtiquette(contexte) {
+  const { t, langue, etiquette, groupe, bibliotheque, enregistrer, surFermeture, signal, dans } = contexte;
   // Le message nomme l'étiquette déjà là, avec sa casse, et son groupe.
   function texteErreur(code, nom) {
     if (!code) return '';
@@ -136,16 +98,7 @@ export function ouvrirFicheEtiquette({
       ? remplir(t('modele.etiquette.abandonTexte'), { nom: etiquette.nom })
       : t('modele.etiquette.abandonNouvelle'),
     enregistrer,
-    supprimer:
-      etiquette &&
-      (() =>
-        confirmerPuisSupprimer({
-          t,
-          titre: remplir(t('suppression.etiquetteTitre'), { nom: etiquette.nom }),
-          texte: t('suppression.etiquetteTexte'),
-          supprimer,
-          signal,
-        })),
+    supprimer: etiquette && suppression(contexte, { type: 'etiquette', id: etiquette.id }),
     surFermeture,
     signal,
     dans,

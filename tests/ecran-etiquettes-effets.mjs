@@ -6,21 +6,14 @@
 //   l'étape « Transport » de l'assistant avec ses deux puces ; le groupe vide « Saison » n'en fait pas ;
 // - critère 2 : un voyage créé avec Camping, puis Camping renommée « Bivouac » : l'en-tête du voyage
 //   montre toujours « Camping », la fiche de la catégorie Camping (Bibliothèque) montre la puce « Bivouac » ;
-// - Review Focus 3 : Bivouac et Tente supprimées (la catégorie Camping est liée à ces deux seules
-//   étiquettes) : elle n'entre plus dans l'aperçu d'un nouveau voyage, sa fiche reste « Selon les
-//   étiquettes » sans puce cochée et refuse d'enregistrer ; le voyage créé avant reste identique.
+// - Review Focus 3 : la catégorie Camping est liée aux deux seules étiquettes Bivouac et Tente.
+//   Bivouac se supprime (Camping garde Tente) ; supprimer Tente la laisserait sans étiquette : c'est
+//   refusé (règle changée par le chef de projet le 2026-10-26, phase 7 : aucun orphelin), et Camping
+//   reste proposée dans l'aperçu d'un nouveau voyage, sa fiche avec la seule puce Tente ; le voyage
+//   créé avant reste identique.
 import { chromium } from 'playwright';
 import { demarrerServeur } from './outils/serveur.mjs';
-import {
-  TOUS_FORMATS,
-  commande,
-  fermerEssai,
-  fr,
-  DONNEES,
-  lire as lireBibliotheque,
-  versBibliotheque,
-  vu,
-} from './outils/bibliotheque.mjs';
+import { TOUS_FORMATS, commande, fermerEssai, fr, DONNEES, versBibliotheque, vu } from './outils/bibliotheque.mjs';
 import {
   attendreFermee,
   attendreOuverte,
@@ -64,12 +57,25 @@ async function nommer(page, selecteur, nom) {
   return attendreFermee(page);
 }
 
-async function supprimer(page, selecteur) {
+// Ouvrir la fiche, toucher « Supprimer » ; rend la fenêtre qui s'ouvre : 'question' ou 'refus'.
+async function demanderSuppression(page, selecteur) {
   await page.click(selecteur);
   juge.exige(await attendreOuverte(page), `la fiche de ${selecteur} s'ouvre`);
   await toucher(page, '[data-supprimer]');
-  await attendreQue(page, q => document.querySelector(`${q}[open]`) !== null, QUESTION);
+  const fenetre = await attendreQue(
+    page,
+    q => {
+      if (document.querySelector('dialog.refus[open]')) return 'refus';
+      return document.querySelector(`${q}[open]`) ? 'question' : null;
+    },
+    QUESTION,
+  );
   await calme(page);
+  return fenetre;
+}
+
+async function supprimer(page, selecteur) {
+  juge.exige((await demanderSuppression(page, selecteur)) === 'question', `${selecteur} : pas de question`);
   await page.click(`${QUESTION} .fenetre-pied button:text-is("${fr.suppression.supprimer}")`);
   return attendreFermee(page);
 }
@@ -235,7 +241,7 @@ try {
   juge.exige(await attendreFermee(page), 'critère 2 : la fiche de Camping se ferme');
 
   // Témoin : tant que Bivouac et Tente existent, « tout presser » fait entrer Camping. La même
-  // épreuve après la suppression ne peut donc devenir rouge que si la suppression a joué.
+  // épreuve après le refus dit que Tente, gardée, la fait toujours entrer.
   await viaMenu(page, '#/voyages');
   await attendreEcran(page, 'voyages');
   await ouvrirAssistant(page, 'Témoin');
@@ -252,34 +258,46 @@ try {
   await attendreEcran(page, 'voyages');
   await versBibliotheque(page);
 
-  // Review Focus 3 : Bivouac et Tente supprimées (la catégorie n'a pas d'autre étiquette).
+  // Review Focus 3 : Bivouac se supprime (Camping garde Tente) ; Tente, sa dernière étiquette, est
+  // refusée : le refus nomme Camping, « Fermer » rend la fiche de Tente, qui reste.
   await page.click('#app a.lien-retour');
   await attendreEcran(page, 'reglages');
   await page.click('#app a.reglage[href="#/etiquettes"]');
   await attendreEcran(page, 'etiquettes');
   vue = await lire(page);
-  for (const nom of ['Bivouac', 'Tente']) {
-    juge.exige(await supprimer(page, commande('modifier-etiquette', idEtiquette(vue, nom))), `${nom} : supprimée`);
-    vue = await lire(page);
-  }
+  juge.exige(await supprimer(page, commande('modifier-etiquette', idEtiquette(vue, 'Bivouac'))), 'Bivouac : supprimée');
+  vue = await lire(page);
+  const tente = commande('modifier-etiquette', idEtiquette(vue, 'Tente'));
+  juge.exige((await demanderSuppression(page, tente)) === 'refus', 'Review Focus 3 : Tente supprimée sans refus');
+  const refus = await page.$$eval('dialog.refus .refus-texte b', l => l.map(b => b.textContent.trim()));
+  juge.exige(vu(refus) === vu(['Camping']), `Review Focus 3 : refus ${vu(refus)}`);
+  await page.click(`dialog.refus .fenetre-pied button:text-is("${fr.refus.fermer}")`);
+  juge.exige(await attendreFermee(page, 'dialog.refus'), 'Review Focus 3 : le refus reste ouvert');
+  await page.keyboard.press('Escape');
+  juge.exige(await attendreFermee(page), 'Review Focus 3 : la fiche de Tente se ferme');
+  juge.exige(
+    vu((await lire(page)).cartes.find(c => c.nom === 'Hébergement')?.puces.map(p => p.nom)) ===
+      vu(['Hôtel', 'Tente', 'Chez l’habitant']),
+    'Review Focus 3 : Tente a quitté l’écran',
+  );
 
   await ouvrirAssistant(page, 'Second');
   const offertes = await jusquALApercu(page, null);
-  const apercuSans = await lireApercu(page);
+  const apercuAvec = await lireApercu(page);
   juge.exige(
-    !offertes.includes('Bivouac') && !offertes.includes('Tente') && offertes.includes('Voiture'),
+    !offertes.includes('Bivouac') && offertes.includes('Tente') && offertes.includes('Voiture'),
     `Review Focus 3 : puces offertes ${vu(offertes)}`,
   );
   juge.exige(
-    !apercuSans.includes('Camping') && apercuSans.length > 0,
-    `Review Focus 3 : toutes les puces pressées, l'aperçu garde Camping ${vu(apercuSans)}`,
+    apercuAvec.includes('Camping'),
+    `Review Focus 3 : toutes les puces pressées, Camping n'est plus proposée ${vu(apercuAvec)}`,
   );
   await creerDepuisLAssistant(page);
   await attendreEcran(page, 'voyage');
   const second = await lireVoyage(page);
   juge.exige(
-    !second.categories.some(c => c.nom === 'Camping') && !second.etiquettes.includes('Bivouac'),
-    `Review Focus 3 : « Second » a la catégorie Camping ${vu(second)}`,
+    second.categories.some(c => c.nom === 'Camping') && !second.etiquettes.includes('Bivouac'),
+    `Review Focus 3 : « Second » sans la catégorie Camping ${vu(second)}`,
   );
   await page.click('#app a.lien-retour');
   await attendreEcran(page, 'voyages');
@@ -287,23 +305,14 @@ try {
   await attendreEcran(page, 'reglages');
   await page.click('#app a.reglage[href="#/bibliotheque"]');
   await attendreEcran(page, 'bibliotheque');
-  const carte = (await lireBibliotheque(page)).cartes.find(c => c.nom === 'Camping');
   await ouvrirFicheCategorie(page, 'Camping');
-  const sans = await lireFiche(page);
+  const avecTente = await lireFiche(page);
   juge.exige(
-    vu(sans?.choix) === vu([m.selonEtiquettes]) && sans.etiquettes.length === 0,
-    `Review Focus 3 : fiche ${vu(sans)} carte ${vu(carte)}`,
+    vu(avecTente?.choix) === vu([m.selonEtiquettes]) && vu(avecTente.etiquettes) === vu(['Tente']),
+    `Review Focus 3 : fiche de Camping ${vu(avecTente)}`,
   );
-  await enregistrer(page);
-  const refus = await lireFiche(page);
-  juge.exige(
-    vu(refus?.erreurs) === vu([m.categorie.erreurs.etiquettesManquantes]),
-    `Review Focus 3 : refus ${vu(refus?.erreurs)}`,
-  );
-
-  // Le refus ne change rien : on ferme la fiche (aucune saisie, donc aucune question d'abandon).
   await page.keyboard.press('Escape');
-  juge.exige(await attendreFermee(page), 'Review Focus 3 : la fiche se ferme');
+  juge.exige(await attendreFermee(page), 'Review Focus 3 : la fiche de Camping se ferme');
 
   // Le voyage créé avant la suppression est identique, en-tête comprise.
   await viaMenu(page, '#/voyages');
@@ -322,4 +331,7 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Effets des étiquettes', 'étapes, voyages existants, Bibliothèque et suppression de la seule étiquette');
+juge.conclure(
+  'Effets des étiquettes',
+  'étapes, voyages existants, Bibliothèque et refus de supprimer la seule étiquette',
+);

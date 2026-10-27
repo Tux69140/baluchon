@@ -7,7 +7,8 @@
 // - « Nouveau groupe » « Transport » : carte en dernier, « Aucune étiquette · absent… », éclairée,
 //   focus sur son « Ajouter une étiquette » ; y ajouter « Train » → « étape 5 » ; double appui sur
 //   « Créer le groupe » pendant une écriture lente : un seul groupe (Review Focus 4) ;
-// - renommer Plage, supprimer Pluie, supprimer Climat (Hébergement passe à l'étape 3) ;
+// - renommer Plage, supprimer Pluie, supprimer Climat (Hébergement passe à l'étape 3), sur une
+//   bibliothèque où ces suppressions ne laissent aucun modèle sans étiquette (phase 7) ;
 // - Review Focus 1 : noms à balises rendus en texte (carte, puce et son libellé, ▲ ▼) ;
 // - tous les formats, clair et sombre : deux colonnes de cartes dès qu'elles tiennent (tablette,
 //   ordinateur), une au téléphone ; cibles, barres système ; captures etiquettes-… et reglages-….
@@ -57,6 +58,25 @@ const DONNEES_PIEGE = {
       ...base.etiquettes,
       { id: 'e-piege', groupeId: 'g-piege', nom: PIEGE.etiquette, ordre: 0, modifieLe: 'x' },
     ],
+  },
+};
+
+// Depuis la phase 7, une suppression qui laisserait un modèle sans étiquette est refusée (décision du
+// chef de projet du 2026-10-26) : Doudoune, Bonnet et Cape de pluie, qui ne portent que des étiquettes
+// de Climat, sont ici « toujours inclus », pour que Pluie et Climat se suppriment.
+const climat = new Set(
+  base.etiquettes.filter(x => x.groupeId === base.groupes.find(g => g.nom === 'Climat').id).map(x => x.id),
+);
+const DONNEES_SANS_ORPHELIN = {
+  ...DONNEES,
+  meta: DONNEES_PIEGE.meta,
+  bibliotheque: {
+    ...base,
+    objets: base.objets.map(o =>
+      o.etiquettes.length && o.etiquettes.every(id => climat.has(id))
+        ? { ...o, toujoursInclus: true, etiquettes: [] }
+        : o,
+    ),
   },
 };
 
@@ -191,7 +211,7 @@ async function essaiNouveauGroupe() {
 
 async function essaiRenommerSupprimer() {
   const cas = 'renommer et supprimer';
-  const ouvert = await ouvrirEtiquettes();
+  const ouvert = await ouvrirEtiquettes('telephone', { donnees: DONNEES_SANS_ORPHELIN });
   const { page } = ouvert;
   const depart = await lire(page);
   juge.exige(

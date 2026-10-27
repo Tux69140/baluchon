@@ -9,8 +9,8 @@
 // - « Supprimer » : question « Garder » / « Supprimer » (rouge, picto), « Garder » laisse la fiche et
 //   sa saisie, « Supprimer » ferme tout sans question d'abandon, panne = message en haut et fiche
 //   ouverte ; pendant l'écriture, « Enregistrer » et « Supprimer » inactifs ;
-// - question d'un groupe (étiquettes en toutes lettres, groupe vide) ; retour système ; noms à balises
-//   rendus en texte (Review Focus 1) ;
+// - question d'un groupe (étiquettes en toutes lettres, groupe vide), aux textes chiffrés de la phase 7
+//   (src/ecrans/suppression.js) ; retour système ; noms à balises rendus en texte (Review Focus 1) ;
 // - tous les formats, clair et sombre : cibles, barres système, ombre du pied quand « Supprimer » est
 //   sous le pli ; captures fiche-etiquette-…, fiche-groupe-…, supprimer-… dans captures-travail/.
 import { mkdir } from 'node:fs/promises';
@@ -80,13 +80,13 @@ const lireQuestion = page =>
     const texte = el => el?.textContent.replace(/\s+/g, ' ').trim() ?? null;
     return {
       titre: texte(d.querySelector('h2')),
-      texte: texte(d.querySelector('#texte-confirmation')),
+      texte: texte(d.querySelector('#suppression-texte, #texte-confirmation')),
       boutons: [...d.querySelectorAll('.fenetre-pied button')].map(
         b =>
           `${texte(b)}:${b.classList.contains('bouton-danger') ? 'danger' : 'autre'}:${b.querySelector('svg') ? 'picto' : ''}`,
       ),
       focus: texte(document.activeElement),
-      balises: d.querySelectorAll('h2 *, #texte-confirmation *').length,
+      balises: d.querySelectorAll('h2 *, #suppression-texte *, #texte-confirmation *').length,
     };
   }, QUESTION);
 
@@ -119,6 +119,9 @@ async function retour(page) {
   await calme(page);
 }
 const BOUTONS_QUESTION = [`${s.garder}:autre:`, `${s.supprimer}:danger:picto`];
+// Le texte d'une question de suppression, tel qu'on le lit : ce que la bibliothèque d'essai (sans
+// catégorie ni objet) emporte, puis la phrase sur les voyages.
+const texteSuppression = debut => [debut, s.voyages].filter(Boolean).join(' ').replace(/\s+/g, ' ');
 
 // 1. Nouvelle étiquette dans Climat : refus, messages au nom existant, Entrée enregistre.
 async function essaiNouvelleEtiquette() {
@@ -231,7 +234,7 @@ async function essaiSupprimerEtiquette() {
   const question = await attendreQuestion(page);
   juge.exige(
     question?.titre === remplir(s.etiquetteTitre, { nom: 'Plage' }) &&
-      question.texte === s.etiquetteTexte &&
+      question.texte === texteSuppression(s.etiquetteSuite) &&
       vu(question.boutons) === vu(BOUTONS_QUESTION) &&
       question.focus === s.garder,
     `${cas} : question ${vu(question)}`,
@@ -308,7 +311,7 @@ async function essaiGroupes() {
   const question = await attendreQuestion(page);
   juge.exige(
     question?.titre === remplir(s.groupeTitre, { nom: 'Climat' }) &&
-      question.texte === remplir(s.groupeTexte.other, { etiquettes: 'Chaud, Froid et Pluie' }) &&
+      question.texte === texteSuppression(remplir(s.groupeEtiquettes.other, { etiquettes: 'Chaud, Froid et Pluie' })) &&
       vu(question.boutons) === vu(BOUTONS_QUESTION),
     `${cas} : question de Climat ${vu(question)}`,
   );
@@ -339,7 +342,7 @@ async function essaiGroupes() {
   await supprimer(page);
   const vide = await attendreQuestion(page);
   juge.exige(
-    vide?.titre === remplir(s.groupeTitre, { nom: 'Saison' }) && vide.texte === s.groupeVide,
+    vide?.titre === remplir(s.groupeTitre, { nom: 'Saison' }) && vide.texte === texteSuppression(''),
     `${cas} : question du groupe vide ${vu(vide)}`,
   );
   await repondre(page, s.garder);
@@ -354,7 +357,7 @@ async function essaiGroupes() {
   const qBizarre = await attendreQuestion(page);
   juge.exige(
     qBizarre?.titre === remplir(s.groupeTitre, { nom: '<b>&"x' }) &&
-      qBizarre.texte === remplir(s.groupeTexte.one, { etiquettes: '<i>&"y' }) &&
+      qBizarre.texte === texteSuppression(remplir(s.groupeEtiquettes.one, { etiquettes: '<i>&"y' })) &&
       qBizarre.balises === 0,
     `${cas} : question du groupe à balises ${vu(qBizarre)}`,
   );

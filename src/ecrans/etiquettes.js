@@ -3,8 +3,9 @@
 // « Nouveau voyage », et leurs étiquettes, les réponses à toucher. Une carte par groupe ; le crayon,
 // une puce, « Ajouter une étiquette » et « Nouveau groupe » ouvrent leur fiche
 // (src/ecrans/fiche-etiquette.js) ; enregistrée, la bibliothèque est relue et ce qui vient de changer
-// s'éclaire. « Ranger » ouvre une seule liste où ▲ et ▼ déplacent un groupe, ou une étiquette dans son
-// groupe, d'une place.
+// s'éclaire. Une suppression refusée (phase 7) ouvre, depuis sa fenêtre de refus, la fiche des
+// catégories et des objets qu'elle rendrait orphelins (src/ecrans/edition-modeles.js). « Ranger »
+// ouvre une seule liste où ▲ et ▼ déplacent un groupe, ou une étiquette dans son groupe, d'une place.
 // Ce fichier branche les gestes et le stockage ; le dessin est dans etiquettes-vues.js.
 import { remplir } from '../i18n/traduction.js';
 import { preparerEtiquette, preparerGroupe } from '../modele/etiquettes.js';
@@ -13,6 +14,7 @@ import { parOrdre } from '../modele/inclusion.js';
 import { alerterEnHaut } from './alerte.js';
 import { etapesDe } from './assistant.js';
 import { glisser, places } from './disposition.js';
+import { editerCategorie, editerObjet } from './edition-modeles.js';
 import { vueEtiquettes } from './etiquettes-vues.js';
 import { ouvrirFicheEtiquette, ouvrirFicheGroupe } from './fiche-etiquette.js';
 import { creerFileOrdre } from './file-ordre.js';
@@ -179,7 +181,36 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
     aFocaliser = voisin ? { action, id: voisin.id } : repli;
   }
 
-  const commun = () => ({ t, langue, signal: fin.signal, dans: app, surFermeture: rendreFocus });
+  // La fiche d'une catégorie ou d'un objet, ouverte par-dessus la fenêtre de refus d'une suppression ;
+  // rend la promesse résolue à sa fermeture, où le refus reprend le focus. Chaque écriture relit la
+  // bibliothèque : la fiche suivante part de ce que le stockage garde.
+  function ouvrirModele(element, type) {
+    const contexte = {
+      t,
+      langue,
+      stockage,
+      bibliotheque: lue,
+      signal: fin.signal,
+      dans: app,
+      apresEcriture: () => relire(),
+    };
+    if (type === 'categorie') {
+      const nombreObjets = lue.objets.filter(o => o.categorieId === element.id).length;
+      return editerCategorie({ ...contexte, categorie: element, nombreObjets });
+    }
+    const categorie = lue.categories.find(c => c.id === element.categorieId);
+    return editerObjet({ ...contexte, objet: element, categorie });
+  }
+
+  const commun = () => ({
+    t,
+    langue,
+    stockage,
+    ouvrirFiche: ouvrirModele,
+    signal: fin.signal,
+    dans: app,
+    surFermeture: rendreFocus,
+  });
 
   // Un groupe neuf a son id dès l'ouverture de la fiche : un nouvel essai après une panne, ou un
   // second appui, écrit le même, jamais un second (Review Focus 4).
@@ -204,8 +235,7 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
         if (!existant) aFocaliser = { action: 'nouvelle-etiquette', id };
         await relire(id);
       },
-      async supprimer() {
-        await stockage.supprimerGroupe(id);
+      async apresSuppression() {
         focusVoisin(
           donnees.rangees.map(r => r.groupe),
           id,
@@ -241,8 +271,7 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
         aFocaliser = { action: 'modifier-etiquette', id };
         await relire(id);
       },
-      async supprimer() {
-        await stockage.supprimerEtiquette(id);
+      async apresSuppression() {
         focusVoisin(donnees.rangees.find(r => r.groupe.id === groupe.id)?.etiquettes ?? [], id, 'modifier-etiquette', {
           action: 'nouvelle-etiquette',
           id: groupe.id,

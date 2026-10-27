@@ -62,24 +62,33 @@ const CLES = [
     'garder',
     'supprimer',
     'etiquetteTitre',
-    'etiquetteTexte',
+    'etiquetteSuite',
     'groupeTitre',
-    'groupeTexte',
-    'groupeVide',
+    'groupeEtiquettes',
+    'voyages',
     'erreur',
   ].map(c => `suppression.${c}`),
 ];
 
-test('chaque texte de l’écran Étiquettes existe', () => {
+// Les textes de la phase 6 remplacés par la question chiffrée de la phase 7 n'existent plus.
+test('chaque texte de l’écran Étiquettes existe, les anciennes questions de suppression non', () => {
   for (const cle of CLES) assert.ok(estUnTexte(lire(cle)), `texte manquant : ${cle}`);
+  for (const cle of ['etiquetteTexte', 'groupeTexte', 'groupeVide'])
+    assert.equal(lire(`suppression.${cle}`), undefined, `texte remplacé encore là : suppression.${cle}`);
 });
 
 test('les valeurs reprennent la maquette, apostrophes typographiques', () => {
   assert.equal(lire('etiquettes.place'), '{nom} : place {n} sur {total}');
   assert.equal(lire('etiquettes.infos'), '{etiquettes} · étape {n} de « Nouveau voyage »');
   assert.equal(lire('modele.etiquette.erreurs.nomPrisIci'), 'L’étiquette « {nom} » existe déjà dans ce groupe.');
-  assert.equal(lire('suppression.groupeTexte').one.startsWith('Son étiquette {etiquettes} sera supprimée aussi'), true);
-  assert.equal(lire('suppression.groupeTexte').other.startsWith('Ses étiquettes {etiquettes} seront supprimées'), true);
+  assert.equal(
+    lire('suppression.groupeEtiquettes').one.startsWith('Son étiquette {etiquettes} sera supprimée aussi'),
+    true,
+  );
+  assert.equal(
+    lire('suppression.groupeEtiquettes').other.startsWith('Ses étiquettes {etiquettes} seront supprimées'),
+    true,
+  );
   const tous = JSON.stringify([fr.etiquettes, fr.suppression, fr.modele.groupe, fr.modele.etiquette]);
   assert.equal(tous.includes("'"), false, 'apostrophe droite');
 });

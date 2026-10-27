@@ -1,7 +1,8 @@
 // Page d'essai de src/ecrans/fiche-etiquette.js : chaque bouton ouvre une fiche sur une bibliothèque
 // d'essai, et ce que la fiche demande à l'écran s'écrit dans la page pour que le test le lise :
-// #enregistrements (les saisies), #suppressions, #fermetures. La case #panne fait échouer ces
-// écritures ; window.retenir les tient en cours jusqu'à window.liberer().
+// #enregistrements (les saisies), #suppressions (écrites par le stockage d'essai, après la question
+// chiffrée de la phase 7), #fermetures. La case #panne fait échouer ces écritures ; window.retenir les
+// tient en cours jusqu'à window.liberer().
 import '../../src/styles/polices.css';
 import '../../src/styles/jetons.css';
 import '../../src/styles/socle.css';
@@ -11,6 +12,7 @@ import '../../src/styles/fiche.css';
 import '../../src/styles/bibliotheque.css';
 import '../../src/styles/fiche-modele.css';
 import '../../src/styles/etiquettes.css';
+import '../../src/styles/annulation.css';
 import fr from '../../src/i18n/fr.json';
 import { creerTraducteur } from '../../src/i18n/traduction.js';
 import { ouvrirFicheEtiquette, ouvrirFicheGroupe } from '../../src/ecrans/fiche-etiquette.js';
@@ -35,7 +37,8 @@ const etiquettes = [
   ['e-pluie', 'g-cli', 'Pluie'],
   ['e-bizarre', 'g-bizarre', '<i>&"y'],
 ].map(([id, groupeId, nom], ordre) => ({ id, groupeId, nom, ordre }));
-const bibliotheque = { groupes, etiquettes };
+// Sans catégorie ni objet : aucune suppression n'est refusée ni ne fait perdre une étiquette.
+const bibliotheque = { groupes, etiquettes, categories: [], objets: [] };
 
 const compter = id => {
   const sortie = document.querySelector(`#${id}`);
@@ -57,11 +60,19 @@ const enregistrer = saisie =>
     sortie.textContent = JSON.stringify([...JSON.parse(sortie.textContent), saisie]);
   });
 const supprimer = () => ecrire(() => compter('suppressions'));
+// Le stockage que lit et fait écrire la suppression (src/ecrans/suppression.js).
+const stockage = {
+  lireBibliotheque: async () => structuredClone(bibliotheque),
+  supprimerEtiquette: supprimer,
+  supprimerGroupe: supprimer,
+  retablirBibliotheque: async () => {},
+};
 const commun = {
   t,
   langue,
   enregistrer,
-  supprimer,
+  stockage,
+  apresSuppression: async () => {},
   surFermeture: () => compter('fermetures'),
   signal: fin.signal,
   dans: app,

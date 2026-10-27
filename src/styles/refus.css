@@ -1,0 +1,116 @@
+/* Fenêtre de refus d'une suppression (src/ecrans/refus-suppression.js), reprise de la maquette validée
+   de la phase 7 (docs/maquettes/suppressions/maquette.css, « Fenêtre de refus ») : la liste de ce qui
+   bloque. La fenêtre, et son panneau du bas au téléphone, sont ceux de fenetre.css et fiche.css ; les
+   lignes, le pavé et le chevron, ceux des listes de l'appli. */
+.refus {
+  --largeur-fenetre: 520px;
+}
+
+.refus .bouton-fermer {
+  flex: none;
+}
+
+/* Plus rien ne bloque : la question n'a pas de « × », « Garder » dit déjà la même chose. */
+.refus .bouton-fermer[hidden] {
+  display: none;
+}
+
+/* Une colonne qui défile : aucun bloc ne se tasse pour tenir (la liste, qui rogne ses coins,
+   s'écrasait à rien au téléphone couché). */
+.refus .fiche-corps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-md);
+}
+
+.refus .fiche-corps > * {
+  flex: none;
+}
+
+.refus p {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.refus p.message-succes {
+  max-width: none;
+}
+
+/* Comme le pied des fiches : ombré tant que la liste continue dessous. */
+.refus .fenetre-pied[data-ombre] {
+  box-shadow: 0 -10px 18px -10px rgb(13 22 36 / 0.35);
+}
+
+.refus-reste {
+  margin: 0;
+  font: 700 var(--taille-libelle) var(--police);
+  color: var(--encre-douce);
+}
+
+.refus-liste {
+  display: grid;
+  margin: calc(-1 * var(--e-sm)) 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--separation);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.refus-liste li + li {
+  border-top: 1px solid var(--separation);
+}
+
+.refus-ligne {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--e-sm) 0 var(--e-sm) var(--e-sm);
+  border: 0;
+  background: var(--carte);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.refus-ligne:hover {
+  background: var(--releve);
+}
+
+.refus-ligne:focus-visible {
+  outline-offset: -3px;
+}
+
+.refus-texte {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.refus-texte b {
+  font: 600 var(--taille-objet) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.refus-texte span {
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  overflow-wrap: anywhere;
+}
+
+/* Plus rien ne bloque : la bonne nouvelle en vert, avec sa coche (jamais la couleur seule). */
+.message-succes {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-sm);
+  border-color: var(--succes);
+  background: var(--fond-succes);
+}
+
+.message-succes .icone {
+  margin-top: 2px;
+  color: var(--succes);
+}

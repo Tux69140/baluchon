@@ -167,7 +167,8 @@ export async function verifierBarres(page, juge, cas) {
           if (dessus || dessous || r.left < gauche - 0.5 || r.right > W - droite + 0.5)
             empietes.push(`${el.tagName.toLowerCase()} « ${el.textContent.trim().slice(0, 30)} »`);
         }
-        const modale = document.querySelector('dialog:modal');
+        // Des fenêtres empilées (le refus d'une suppression sur sa fiche) : c'est celle du dessus qui voile.
+        const modale = [...document.querySelectorAll('dialog:modal')].at(-1);
         const bandes = ['haut', 'bas', 'gauche', 'droite'].filter(zone => {
           const bande = document.querySelector(`.zone-systeme[data-zone="${zone}"]`);
           const r = bande?.getBoundingClientRect();

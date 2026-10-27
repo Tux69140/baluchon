@@ -452,13 +452,7 @@
     "garder": "Garder",
     "supprimer": "Supprimer",
     "etiquetteTitre": "Supprimer l’étiquette « {nom} » ?",
-    "etiquetteTexte": "Elle ne sera plus proposée dans « Nouveau voyage », et les catégories et objets de la bibliothèque qui la portent la perdent. Les voyages déjà créés ne changent pas.",
     "groupeTitre": "Supprimer le groupe « {nom} » ?",
-    "groupeTexte": {
-      "one": "Son étiquette {etiquettes} sera supprimée aussi, et son étape disparaîtra de « Nouveau voyage ». Les voyages déjà créés ne changent pas.",
-      "other": "Ses étiquettes {etiquettes} seront supprimées aussi, et son étape disparaîtra de « Nouveau voyage ». Les voyages déjà créés ne changent pas."
-    },
-    "groupeVide": "Les voyages déjà créés ne changent pas.",
     "erreur": "La suppression n’a pas pu être enregistrée. Rien n’a changé ; réessayez.",
     "voyages": "Les voyages déjà créés ne changent pas.",
     "objetTitre": "Supprimer l’objet « {nom} » ?",
