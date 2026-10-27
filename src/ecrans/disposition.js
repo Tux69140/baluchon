@@ -15,7 +15,7 @@ export const GRAND_FORMAT = '(min-width: 600px) and (min-height: 600px)';
 export const TROIS_COLONNES = '(min-width: 1340px) and (min-height: 600px)';
 
 // Relu à chaque appel : le module reste importable sans navigateur (le test des seuils).
-const moinsDAnimations = () => matchMedia('(prefers-reduced-motion: reduce)');
+export const moinsDAnimations = () => matchMedia('(prefers-reduced-motion: reduce)');
 
 // La place de chaque élément mobile ([data-flip]), relevée par rapport à l'élément mobile qui le
 // contient : une ligne qui descend avec sa carte ne glisse qu'une fois, avec elle. Rien (null) si

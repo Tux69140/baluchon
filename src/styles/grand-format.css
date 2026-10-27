@@ -16,7 +16,8 @@
                               ou ul.gf-tuiles de button.gf-tuile (repli) ; aria-current='true' sur la choisie ;
                               li.gf-tuile-nouvelle pour « Nouvelle catégorie » (Bibliothèque) ;
    - section.gf-liste         la liste des objets, avec .gf-liste-tete (h2#liste-titre, visible en
-                              repli ; classe lecteur en trois colonnes). */
+                              repli ; classe lecteur en trois colonnes), puis .gf-carte-objets, la carte
+                              qui porte les lignes. */
 
 /* ---------- Commun aux trois colonnes et au repli ----------
    Dès que la largeur et la hauteur de l'écran atteignent 600 px (le seuil de la fenêtre modale,
@@ -51,6 +52,14 @@
 
   main.grand-format .gf-menu .choix-liste {
     margin: 0;
+  }
+
+  /* Les lignes de la catégorie choisie, en une seule carte. */
+  main.grand-format .gf-carte-objets {
+    overflow: hidden;
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    background: var(--carte);
   }
 
   /* Le voyage, puis ce qui le mesure et le filtre : 24 px les séparent, comme deux groupes. */

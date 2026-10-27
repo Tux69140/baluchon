@@ -1,7 +1,8 @@
 // Écran d'un voyage (#/voyage/:id) : sa liste, où l'on compte pièce par pièce ce qui est dans le sac
-// (docs/PRD.md, US-15, US-16, US-17, US-22 ; maquette docs/maquettes/voyage/). Une colonne de cartes
-// au téléphone et sur la tablette en portrait ; deux panneaux sur la tablette en paysage et
-// l'ordinateur, la catégorie choisie à gauche et ses objets à droite.
+// (docs/PRD.md, US-15, US-16, US-17, US-22 ; maquettes docs/maquettes/voyage/ et grand-ecran/). Une
+// colonne de cartes au téléphone ; dès 600 px de petit côté (tablettes, ordinateur), le voyage, le
+// menu des catégories et la liste de la choisie : en trois colonnes dès 1340 px de large, sinon les
+// catégories en tuiles et la liste dessous (le « repli »).
 // Ce fichier branche les gestes, les minuteries et le stockage ; le dessin est dans voyage-vues.js,
 // l'état d'affichage figé dans rangement.js, les règles du sac dans le modèle.
 //
@@ -12,7 +13,7 @@
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
-import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
+import { GRAND_FORMAT, TROIS_COLONNES, glisser, moinsDAnimations, places } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import {
   apresRepit,
@@ -29,7 +30,10 @@ const REPIT = 1000;
 const TAMPON = 1000;
 // Glissement des lignes qui changent de place (docs/DESIGN.md, journal du 2026-10-24).
 const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
-const deuxPanneaux = matchMedia(DEUX_PANNEAUX);
+const grandFormat = matchMedia(GRAND_FORMAT);
+const troisColonnes = matchMedia(TROIS_COLONNES);
+// Les colonnes qui défilent chacune (trois colonnes) ; en repli, c'est la page qui défile.
+const COLONNES = '.gf-gauche, .gf-menu, .gf-liste';
 
 // Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
 // un voyage supprimé, plutôt que de passer pour une panne de lecture.
@@ -70,18 +74,28 @@ function ouvrirListe(app, donnees, contexte) {
   let choisieDessinee = null;
 
   // Chaque dessin suit la disposition du moment : tourner l'appareil ou élargir la fenêtre redessine
-  // le même état (coches, catégorie choisie, filtre). Les panneaux défilent chacun : un dessin dans
-  // la même disposition les laisse là où on les avait menés, sauf le détail d'une autre catégorie.
+  // le même état (coches, catégorie choisie, filtre). Les trois colonnes défilent chacune : un dessin
+  // dans la même disposition les laisse là où on les avait menées, sauf la liste d'une autre catégorie.
   function peindre({ glissement = false } = {}) {
     const avant = glissement ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    const { classe, html } = vueVoyage(contexte, { contenu, liste, etat, poses, deuxPanneaux: deuxPanneaux.matches });
-    const defilements = classe === main.className ? [...main.querySelectorAll('.panneau')].map(p => p.scrollTop) : [];
+    const { classe, colonnes, html } = vueVoyage(contexte, {
+      contenu,
+      liste,
+      etat,
+      poses,
+      grandFormat: grandFormat.matches,
+      troisColonnes: troisColonnes.matches,
+    });
+    const memeDisposition = classe === main.className && String(colonnes) === String(main.dataset.colonnes);
+    const defilements = memeDisposition ? [...main.querySelectorAll(COLONNES)].map(c => c.scrollTop) : [];
     main.className = classe;
+    if (colonnes) main.dataset.colonnes = colonnes;
+    else delete main.dataset.colonnes;
     main.innerHTML = html;
-    main.querySelectorAll('.panneau').forEach((p, i) => (p.scrollTop = defilements[i] ?? 0));
-    if (etat.choisie !== choisieDessinee) main.querySelector('.panneau-droit')?.scrollTo(0, 0);
+    main.querySelectorAll(COLONNES).forEach((c, i) => (c.scrollTop = defilements[i] ?? 0));
+    if (etat.choisie !== choisieDessinee) main.querySelector('.gf-liste')?.scrollTo(0, 0);
     choisieDessinee = etat.choisie;
     poses = { tampons: new Set(), bandeau: false };
     if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
@@ -95,8 +109,8 @@ function ouvrirListe(app, donnees, contexte) {
 
   // La commande qui reprend le focus quand celle d'avant n'est plus dessinée (ligne masquée, catégorie
   // repliée ou quittée, disposition changée) : la même, sinon la ligne de l'objet, sinon sa catégorie
-  // (en-tête d'accordéon en une colonne, choix à gauche en deux panneaux), sinon le filtre ; jamais la
-  // page entière.
+  // (en-tête d'accordéon au téléphone, carte ou tuile du menu en grand format), sinon le filtre ;
+  // jamais la page entière.
   function commandeProche(action, id) {
     const objet = contenu.objets.find(o => o.id === id);
     const categorieId = objet ? objet.categorieId : id;
@@ -108,6 +122,16 @@ function ouvrirListe(app, donnees, contexte) {
       deSaCategorie() ??
       trouverCommande('filtre')
     );
+  }
+
+  // Repli : toucher une tuile montre sa liste ; si elle commence dans la moitié basse de l'écran (des
+  // dizaines de catégories, ou un écran de 600 px), elle monte jusqu'à son titre, 16 px sous le haut
+  // (scroll-margin-top, grand-format.css). Le focus reste sur la tuile.
+  function allerALaListe() {
+    if (main.dataset.colonnes !== 'repli') return;
+    const section = main.querySelector('.gf-liste');
+    if (section && section.getBoundingClientRect().top > innerHeight / 2)
+      section.scrollIntoView({ block: 'start', behavior: moinsDAnimations().matches ? 'auto' : 'smooth' });
   }
 
   function arreter() {
@@ -250,6 +274,7 @@ function ouvrirListe(app, donnees, contexte) {
     } else if (action === 'choisir') {
       etat = choisirCategorie(etat, id);
       peindre();
+      allerALaListe();
     } else if (action === 'filtre') {
       etat = basculerFiltre(etat, liste);
       stockage.ecrireFiltre(contenu.voyage.id, etat.filtre);
@@ -257,13 +282,14 @@ function ouvrirListe(app, donnees, contexte) {
     }
   });
   fin.signal.addEventListener('abort', arreter);
-  deuxPanneaux.addEventListener(
-    'change',
-    () => {
-      if (!parti()) peindre();
-    },
-    { signal: fin.signal },
-  );
+  for (const requete of [grandFormat, troisColonnes])
+    requete.addEventListener(
+      'change',
+      () => {
+        if (!parti()) peindre();
+      },
+      { signal: fin.signal },
+    );
   const observateur = new MutationObserver(() => parti() && observateur.disconnect());
   observateur.observe(app, { childList: true });
   peindre();

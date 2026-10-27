@@ -139,8 +139,8 @@ export async function versMesVoyages(page) {
 // Ce que le bandeau couvre. Fenêtre ouverte : les commandes qu'il rend intouchables (leur milieu est
 // sous lui) ; sinon, tout ce qui est fixé au bas de l'écran (bouton flottant, boutons collés de
 // l'assistant) et, la page et chaque panneau défilés jusqu'en bas, les lignes et commandes de l'écran
-// qu'il touche, même d'un pixel (ou seulement ce que désigne seulement). Un panneau entier, qui va
-// jusqu'au bas de l'écran, n'est pas une ligne.
+// qu'il touche, même d'un pixel (ou seulement ce que désigne seulement). Un panneau entier, ou une des
+// trois colonnes du grand format, qui va jusqu'au bas de l'écran, n'est pas une ligne.
 export const couvert = (page, seulement = null) =>
   page.evaluate(
     ({ selecteur, seulement }) => {
@@ -157,7 +157,12 @@ export const couvert = (page, seulement = null) =>
       const quoi = seulement ?? (fenetre ? 'a, button, input' : 'a, button, input, li, h1, h2, p, section');
       const dedans = (x, y) => x > b.left && x < b.right && y > b.top && y < b.bottom;
       return [...racine.querySelectorAll(quoi)]
-        .filter(el => !el.closest(selecteur) && !el.closest('dialog:not(:modal)') && !el.matches('.panneau'))
+        .filter(
+          el =>
+            !el.closest(selecteur) &&
+            !el.closest('dialog:not(:modal)') &&
+            !el.matches('.panneau, main[data-colonnes="3"] > *'),
+        )
         .filter(el => {
           const r = el.getBoundingClientRect();
           if (!r.width || !r.height) return false;

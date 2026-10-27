@@ -13,10 +13,11 @@
 //   lettres et un retour vers Mes voyages ;
 // - une panne de lecture affiche l'écran d'erreur ; hors de l'accueil, il offre le retour vers Mes
 //   voyages, qui fonctionne ; témoin : sur l'accueil, il n'en offre pas (il mènerait au même écran).
-// - sur la tablette en paysage, deux panneaux : les mêmes catégories à gauche (nom, pavé, compte ou
-//   tampon), les objets de Vêtements, première non bouclée, à droite ; voyage sans objet en une colonne
-//   (le reste des deux panneaux : tests/ecran-voyage-panneaux.mjs).
-// Téléphone, tablette en portrait et en paysage × 2 thèmes : cibles de 44 px, pas de défilement de
+// - sur les tablettes (portrait compris) et l'ordinateur, le grand format : les mêmes catégories dans
+//   le menu, en tuiles ou en cartes (nom, pavé, compte ou tampon), et la liste des objets de Vêtements,
+//   première non bouclée ; voyage sans objet en une colonne (le reste du grand format :
+//   tests/ecran-voyage-grand-format*.mjs).
+// Téléphone, tablettes, portable et ordinateur × 2 thèmes : cibles de 44 px, pas de défilement de
 // côté (nom très long compris), rien sous les barres système.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -37,7 +38,8 @@ import { DONNEES, ETIQUETTES, NOM } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
-const DEUX_PANNEAUX = new Set(['tablette-paysage']);
+// Le grand format : tout sauf le téléphone (un côté sous 600 px).
+const grandFormat = format => format !== 'telephone';
 
 // [nom, couleur du pavé, compte ou tampon, ouverte, [nom, quantité, état de la case, note, partagé]].
 const ATTENDU = [
@@ -103,13 +105,13 @@ const lire = page =>
       boucle: document.querySelector('.progression')?.hasAttribute('data-boucle'),
       filtre: document.querySelector('[data-action="filtre"]')?.getAttribute('aria-pressed'),
       masques: Boolean(document.querySelector('.masques')),
-      // Deux panneaux : chaque choix de gauche, puis les objets de la catégorie choisie, à droite.
-      choix: [...document.querySelectorAll('.choix')].map(c => [
-        c.querySelector('.categorie-nom b')?.textContent,
+      // Grand format : chaque catégorie du menu (carte ou tuile), puis les objets de la choisie.
+      choix: [...document.querySelectorAll('.gf-menu :is(.choix, .gf-tuile)')].map(c => [
+        c.querySelector('b')?.textContent,
         getComputedStyle(c.querySelector('.pave')).backgroundColor,
-        (c.querySelector('.tampon') ?? c.querySelector('.compte'))?.textContent.trim(),
+        c.querySelector('.tampon, .gf-tuile-boucle, .compte, .gf-tuile-compte')?.textContent.trim(),
       ]),
-      detail: [...document.querySelectorAll('.panneau-droit .objet')].map(o => [
+      detail: [...document.querySelectorAll('.gf-liste .objet')].map(o => [
         o.querySelector('.objet-nom').textContent,
         o.querySelector('.objet-quantite').textContent,
         o.dataset.etat,
@@ -203,7 +205,7 @@ try {
         `${cas} : progression « ${m.progression} »${m.boucle ? ', bouclée' : ''}`,
       );
       juge.exige(m.filtre === 'false' && !m.masques, `${cas} : filtre ${m.filtre}, masqués ${m.masques}`);
-      if (DEUX_PANNEAUX.has(format)) {
+      if (grandFormat(format)) {
         const choix = ATTENDU.map(([nom, couleur, compte]) => [nom, couleur, compte]);
         juge.exige(
           m.categories.length === 0 && JSON.stringify(m.choix) === JSON.stringify(choix),
@@ -218,8 +220,8 @@ try {
           JSON.stringify(m.categories) === JSON.stringify(ATTENDU),
           `${cas} : liste ${JSON.stringify(m.categories)}`,
         );
-      // Les lignes de Toilette et d'Alimentation : en deux panneaux, elles ne sont pas à droite.
-      for (const [id, attendus] of DEUX_PANNEAUX.has(format) ? [] : Object.entries(LIBELLES))
+      // Les lignes de Toilette et d'Alimentation : en grand format, seule Vêtements a sa liste.
+      for (const [id, attendus] of grandFormat(format) ? [] : Object.entries(LIBELLES))
         juge.exige(
           JSON.stringify(m.libelles[id]) === JSON.stringify(attendus),
           `${cas} : noms de la ligne ${id} ${JSON.stringify(m.libelles[id])}`,
@@ -354,5 +356,5 @@ try {
 }
 juge.conclure(
   'Écran d’un voyage',
-  '3 formats (dont deux panneaux en paysage) × 2 thèmes, voyage sans objet, voyageur seul, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
+  '5 formats (grand format dès la tablette) × 2 thèmes, voyage sans objet, voyageur seul, nom long, voyage inconnu, adresse mal formée et pannes de lecture compris',
 );

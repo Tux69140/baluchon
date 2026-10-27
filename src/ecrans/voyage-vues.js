@@ -1,8 +1,9 @@
-// Le HTML de l'écran d'un voyage (src/ecrans/voyage.js), d'après la maquette validée le 2026-10-24
-// (docs/maquettes/voyage/) : en-tête, progression, filtre, cartes de catégorie ou deux panneaux (choix
-// à gauche, détail à droite), lignes d'objet, voyage vide. Rien ne vit ici que du dessin : l'ordre,
-// les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les pièces du
-// voyage lui-même.
+// Le HTML de l'écran d'un voyage (src/ecrans/voyage.js), d'après les maquettes validées le 2026-10-24
+// (docs/maquettes/voyage/) et le 2026-10-27 (docs/maquettes/grand-ecran/) : en-tête, progression,
+// filtre, cartes de catégorie (téléphone) ou grand format (le voyage, le menu des catégories en cartes
+// ou en tuiles, la liste de la choisie), lignes d'objet, voyage vide. Rien ne vit ici que du dessin :
+// l'ordre, les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les
+// pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
 import { appuiSurCase, estComplet, etatDansLeSac, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
@@ -59,7 +60,6 @@ function vueEtiquettes(t, etiquettes) {
 function vueEntete({ t, langue }, voyage, etiquettes) {
   const destination = voyage.destination ? `<p>${echapper(voyage.destination)}</p>` : '';
   return `
-      ${lienRetour(t)}
       <h1>${echapper(voyage.nom)}</h1>
       <div class="voyage-entete">
         ${destination}
@@ -134,7 +134,7 @@ function vueCategorie(contexte, affichee, toute, etat, poses) {
       </section>`;
 }
 
-// Deux panneaux : à gauche, une catégorie se choisit ; la choisie porte aria-current et sa flèche.
+// Trois colonnes : dans le menu, une catégorie se choisit ; la choisie porte aria-current et sa flèche.
 function vueChoix({ t }, affichee, toute, etat, poses) {
   const { categorie } = affichee;
   const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
@@ -149,36 +149,51 @@ function vueChoix({ t }, affichee, toute, etat, poses) {
           </li>`;
 }
 
-// Deux panneaux : à droite, la catégorie choisie, son tampon dans sa tête, puis ses objets.
-function vueDetail(contexte, affichee, toute, etat, poses) {
-  const { t } = contexte;
+// Repli : la même chose en tuile compacte, pavé, nom, puis le compte ou « Bouclé ! » en petit. Les
+// tuiles passent à la ligne : sans glissement (data-flip), une tuile changerait de colonne d'un bond.
+function vueTuile({ t }, affichee, toute, etat) {
   const { categorie } = affichee;
+  const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
+  const infos = etat.bouclees.has(categorie.id)
+    ? `<span class="gf-tuile-boucle">${t('voyage.boucle')}</span>`
+    : `<span class="gf-tuile-compte">${compte(t, progression(toute.objets))}</span>`;
   return `
-      <section class="panneau panneau-droit" aria-labelledby="detail-titre">
-        <div class="detail">
-          <div class="detail-tete">
-            ${paveCategorie(categorie)}
-            <h2 id="detail-titre">${echapper(categorie.nom)}</h2>
-            ${compteOuTampon(t, toute, etat, poses)}
-          </div>
-          ${vueLignes(contexte, affichee, toute.objets.length)}
-        </div>
-      </section>`;
+          <li>
+            <button type="button" class="gf-tuile" data-action="choisir" data-id="${echapper(categorie.id)}" aria-current="${etat.choisie === categorie.id}"${attenuee}>
+              ${paveCategorie(categorie)}
+              <span class="gf-tuile-texte"><b>${echapper(categorie.nom)}</b>${infos}</span>
+            </button>
+          </li>`;
 }
 
-// debut : l'en-tête, la progression et le filtre, en haut du panneau de gauche.
-function vuePanneaux(contexte, { liste, etat, poses }, debut) {
+// Tablette et ordinateur (src/styles/grand-format.css) : le voyage (debut : en-tête, progression,
+// filtre), le menu des catégories (cartes en trois colonnes, tuiles en repli), puis la liste de la
+// choisie. Le titre de la liste ne se voit qu'en repli, où les tuiles sortent de l'écran en défilant ;
+// en trois colonnes, la carte choisie le dit, et il reste pour la lecture d'écran.
+function vueGrandFormat(contexte, { liste, etat, poses }, debut, troisColonnes) {
+  const { t } = contexte;
   const parId = new Map(liste.map(c => [c.categorie.id, c]));
   const affichees = categoriesAffichees(etat, liste);
   const choisie = affichees.find(c => c.categorie.id === etat.choisie);
-  const choix = affichees.map(c => vueChoix(contexte, c, parId.get(c.categorie.id), etat, poses.tampons)).join('');
+  const toute = affichee => parId.get(affichee.categorie.id);
+  const menu = troisColonnes
+    ? `<ul class="choix-liste">${affichees.map(c => vueChoix(contexte, c, toute(c), etat, poses.tampons)).join('')}
+        </ul>`
+    : `<ul class="gf-tuiles">${affichees.map(c => vueTuile(contexte, c, toute(c), etat)).join('')}
+        </ul>`;
   return `
-      <div class="panneau panneau-gauche">${debut}
-        <nav aria-label="${contexte.t('voyage.categories')}">
-          <ul class="choix-liste">${choix}
-          </ul>
-        </nav>
-      </div>${vueDetail(contexte, choisie, parId.get(etat.choisie), etat, poses.tampons)}`;
+      <div class="gf-gauche">${debut}
+      </div>
+      <nav class="gf-menu" aria-labelledby="menu-titre">
+        <h2 id="menu-titre" class="lecteur">${t('voyage.categories')}</h2>
+        ${menu}
+      </nav>
+      <section class="gf-liste" aria-labelledby="liste-titre">
+        <div class="gf-liste-tete">
+          <h2 id="liste-titre"${troisColonnes ? ' class="lecteur"' : ''}>${echapper(choisie.categorie.nom)}</h2>
+        </div>
+        <div class="gf-carte-objets">${vueLignes(contexte, choisie, toute(choisie).objets.length)}</div>
+      </section>`;
 }
 
 function vueVide(t) {
@@ -190,25 +205,34 @@ function vueVide(t) {
       </section>`;
 }
 
-// Le contenu de l'écran et sa disposition (la classe de <main>) : une colonne de cartes, ou deux
-// panneaux si deuxPanneaux (tablette en paysage, ordinateur) ; un voyage vide reste en une colonne.
+// Le contenu de l'écran et sa disposition (la classe de <main>, et colonnes, son data-colonnes) : une
+// colonne de cartes au téléphone ; le grand format si grandFormat (tablettes, ordinateur), en trois
+// colonnes si troisColonnes, sinon en repli. Un voyage vide reste en une colonne.
 // liste : les catégories du voyage et leurs pièces (listeParCategorie) ; poses : les tampons et le
 // bandeau qui viennent d'apparaître, animés une seule fois.
-export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, deuxPanneaux }) {
+export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, grandFormat, troisColonnes }) {
   // Le nombre de voyageurs suit le contexte jusqu'aux lignes, qui en ont besoin pour « partagé ».
   const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs };
   const { t, langue } = contexte;
+  // Le lien retour vient en tête, hors du voyage : en grand format, il est seul sur sa ligne.
+  const lien = `
+      ${lienRetour(t)}`;
   const entete = vueEntete(contexte, contenu.voyage, contenu.etiquettes);
-  if (!contenu.objets.length) return { classe: 'ecran', html: entete + vueVide(t) };
+  if (!contenu.objets.length) return { classe: 'ecran', html: lien + entete + vueVide(t) };
   const debut = `${entete}${vueProgression(t, contenu.objets, { sacBoucle: etat.sacBoucle, pose: poses.bandeau })}${vueOutils(t, langue, etat)}`;
-  if (deuxPanneaux) return { classe: 'panneaux', html: vuePanneaux(contexte, { liste, etat, poses }, debut) };
+  if (grandFormat)
+    return {
+      classe: 'grand-format',
+      colonnes: troisColonnes ? 3 : 'repli',
+      html: lien + vueGrandFormat(contexte, { liste, etat, poses }, debut, troisColonnes),
+    };
   const parId = new Map(liste.map(c => [c.categorie.id, c]));
   const categories = categoriesAffichees(etat, liste)
     .map(c => vueCategorie(contexte, c, parId.get(c.categorie.id), etat, poses.tampons))
     .join('');
   return {
     classe: 'ecran',
-    html: `${debut}
+    html: `${lien}${debut}
       <div class="categories">${categories}
       </div>`,
   };
