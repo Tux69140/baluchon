@@ -45,11 +45,12 @@ function vueLigne(t, langue, bibliotheque, { element, type }, rang) {
 // cible : { type: 'etiquette' | 'groupe', id } ; nom : le sien. lire() : relit la bibliothèque (rend
 // une promesse), à l'ouverture, après chaque fiche fermée et quand « Annuler » rétablit un élément
 // (événement « bibliotheque-retablie »). ouvrirFiche(element, type) : ouvre la fiche d'une catégorie ou
-// d'un objet par-dessus, et rend une promesse résolue à sa fermeture. supprimer(bibliotheque) : écrit la
-// suppression et montre le bandeau, d'après la bibliothèque dont la question a dit les chiffres.
-// Rend une promesse : true une fois la suppression écrite ; false pour « Fermer », « Garder », ×, Échap,
-// le voile, le retour système, ou l'écran qui s'en va (signal) ; une écriture refusée la rejette, et la
-// fiche de l'étiquette dit la panne. dans : l'écran, pour que la fenêtre parte avec lui.
+// d'un objet par-dessus, et rend une promesse résolue à sa fermeture. supprimer(annoncees) : écrit la
+// suppression et montre le bandeau si elle emporte toujours ce qu'annonce « Plus rien ne bloque »
+// (annoncees : les conséquences de ce dernier dessin), et rend ce qu'en dit l'écran appelant.
+// Rend une promesse : ce que rend supprimer() ; false pour « Fermer », « Garder », ×, Échap, le voile,
+// le retour système, ou l'écran qui s'en va (signal) ; une écriture refusée la rejette, et la fiche de
+// l'étiquette dit la panne. dans : l'écran, pour que la fenêtre parte avec lui.
 export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, supprimer, signal, dans }) {
   let lue = await lire();
   const fenetre = document.createElement('dialog');
@@ -69,8 +70,9 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
   const pied = fenetre.querySelector('.fenetre-pied');
   // Hors du corps redessiné : une annonce n'est dite que par une zone qui était déjà là.
   const annonce = fenetre.querySelector('[aria-live]');
-  // Les éléments que montre la liste, au dernier dessin.
+  // Les éléments que montre la liste, et les conséquences annoncées, au dernier dessin.
   let montres = [];
+  let annoncees = null;
   // Chaque lecture porte un numéro : une lecture lente ne recouvre jamais une plus récente.
   let lecture = 0;
   // « Supprimer » touché : la fenêtre se ferme, puis la suppression s'écrit (une seule fois).
@@ -93,6 +95,7 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
 
   function peindre() {
     const chiffres = consequences(lue, cible, langue);
+    annoncees = chiffres;
     const elements = estBloquee(chiffres) ? bloquants(chiffres) : [];
     annoncer(elements);
     montres = elements;
@@ -137,7 +140,7 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
       relue = await lire();
     } catch (erreur) {
       // Relecture impossible : la fenêtre garde ce qu'elle montre ; la suppression, si on la demande,
-      // s'écrira sur ce qui a été annoncé.
+      // relit avant d'écrire, et n'écrit que ce qui a été annoncé.
       console.error(erreur);
       return;
     }
@@ -161,8 +164,7 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
       effacer();
       if (!choisi) return resoudre(false);
       try {
-        await supprimer(lue);
-        resoudre(true);
+        resoudre(await supprimer(annoncees));
       } catch (erreur) {
         rejeter(erreur);
       }

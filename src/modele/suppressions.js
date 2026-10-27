@@ -54,6 +54,19 @@ export function consequences(bibliotheque, cible, langue) {
 
 export const estBloquee = ({ bloquent }) => bloquent.categories.length > 0 || bloquent.objets.length > 0;
 
+// Les identifiants de tout ce que dit consequences(), chaque liste triée : deux lectures se comparent
+// sans dépendre de l'ordre d'affichage.
+const ids = liste => liste.map(x => x.id).sort();
+const empreinte = ({ objets, etiquettes, perdent, bloquent }) =>
+  JSON.stringify(
+    [objets, etiquettes, perdent.categories, perdent.objets, bloquent.categories, bloquent.objets].map(ids),
+  );
+
+// Deux résultats de consequences() emportent, font perdre et bloquent les mêmes éléments. Entre la
+// question et l'écriture, « Annuler » a pu rendre un élément : la suppression n'écrit que si ce
+// qu'elle emporte est bien ce qu'elle a annoncé (constat C1 de la relecture finale de la phase 7).
+export const memesConsequences = (annoncees, actuelles) => empreinte(annoncees) === empreinte(actuelles);
+
 // Les lignes entières, telles qu'avant, de tout ce que la suppression enlève ou modifie : c'est ce
 // qu'« Annuler » remet, à l'identique (mêmes rangs, mêmes dates, mêmes liens dans le même ordre).
 export function extraitAvant(bibliotheque, cible) {

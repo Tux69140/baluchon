@@ -37,6 +37,9 @@ const ECRITURES_BIBLIOTHEQUE = [
 // Le bandeau affiché : son élément, sa minuterie, et la fin de sa vie (qui retire aussi le message
 // d'un rétablissement refusé).
 let courant = null;
+// Le rétablissement en cours (« Annuler » touché), ou une promesse déjà tenue : toute lecture de la
+// bibliothèque l'attend, et voit ce qu'il rend (une suppression qui relit avant d'écrire, surtout).
+let retablissement = Promise.resolve();
 
 // Le haut du plus haut de ce qui est fixé au bas de l'écran (à 48 px du bord au plus), ou null.
 function hautDuBasFixe() {
@@ -105,24 +108,26 @@ export function montrerAnnulation({ t, app, texte, annuler }) {
   const bouton = el.querySelector('button');
   // Tant que le rétablissement court, « Annuler » ne répond plus : un seul rétablissement. Refusé, le
   // bandeau reste jusqu'au bout de ses 10 s, pour un nouvel essai.
-  bouton.addEventListener('click', async () => {
+  bouton.addEventListener('click', () => {
     if (bouton.getAttribute('aria-disabled') === 'true') return;
     bouton.setAttribute('aria-disabled', 'true');
-    try {
-      await annuler();
-    } catch (erreur) {
-      console.error(erreur);
-      bouton.removeAttribute('aria-disabled');
-      if (courant === bandeau) alerterEnHaut(app, t('annulation.erreur'), bandeau.fin.signal);
-      return;
-    }
-    if (courant === bandeau) retirerAnnulation();
+    retablissement = annuler().then(
+      () => {
+        if (courant === bandeau) retirerAnnulation();
+      },
+      erreur => {
+        console.error(erreur);
+        bouton.removeAttribute('aria-disabled');
+        if (courant === bandeau) alerterEnHaut(app, t('annulation.erreur'), bandeau.fin.signal);
+      },
+    );
   });
   placer();
 }
 
 // Le stockage, de même forme, dont chaque écriture de la bibliothèque retire d'abord le bandeau. Le
-// rétablissement et les écritures d'un voyage le laissent.
+// rétablissement et les écritures d'un voyage le laissent. Une lecture de la bibliothèque attend la
+// fin d'un rétablissement en cours.
 export function surveillerEcritures(stockage) {
   const surveillees = ECRITURES_BIBLIOTHEQUE.map(nom => [
     nom,
@@ -131,5 +136,9 @@ export function surveillerEcritures(stockage) {
       return stockage[nom](...valeurs);
     },
   ]);
-  return Object.freeze({ ...stockage, ...Object.fromEntries(surveillees) });
+  async function lireBibliotheque() {
+    await retablissement;
+    return stockage.lireBibliotheque();
+  }
+  return Object.freeze({ ...stockage, ...Object.fromEntries(surveillees), lireBibliotheque });
 }

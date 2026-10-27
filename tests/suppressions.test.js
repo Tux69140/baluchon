@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { consequences, estBloquee, extraitAvant } from '../src/modele/suppressions.js';
+import { consequences, estBloquee, extraitAvant, memesConsequences } from '../src/modele/suppressions.js';
 
 // Bibliothèque construite sur le modèle de docs/maquettes/suppressions/donnees.js, avec les
 // formes que rend lireBibliotheque() : les étiquettes des modèles sont des identifiants, dans l'ordre.
@@ -164,4 +164,33 @@ test('l’extrait d’une catégorie contient ses objets ; celui d’un groupe s
   assert.deepEqual(noms(grp.etiquettes), ['Hôtel', 'Tente', 'Chez l’habitant']);
   assert.deepEqual(noms(grp.categories), ['Camping']);
   assert.deepEqual(grp.objets, []);
+});
+
+// Constat C1 de la relecture finale : au moment d'écrire, la suppression relit la bibliothèque ; elle
+// n'écrit que si ce qu'elle emporte est bien ce que la question a annoncé.
+test('mêmes conséquences : rien de ce qui est emporté, perdu ou bloquant n’a changé', () => {
+  const sans = (liste, id) => liste.filter(x => x.id !== id);
+  const climat = { type: 'groupe', id: 'g-cli' };
+  const toilette = { type: 'categorie', id: 'c-toil' };
+  const de = (b, cible) => consequences(b, cible, 'fr');
+  assert.equal(memesConsequences(de(bibliotheque, climat), de(structuredClone(bibliotheque), climat)), true);
+  // Ailleurs, rien ne compte : un objet de plus dans Baignade, Hôtel renommé.
+  const ailleurs = {
+    ...bibliotheque,
+    etiquettes: bibliotheque.etiquettes.map(e => (e.id === 'e-hotel' ? { ...e, nom: 'Gîte' } : e)),
+    objets: [...bibliotheque.objets, objet('o-seau', 'Seau', 'c-bai', [], true)],
+  };
+  assert.equal(memesConsequences(de(bibliotheque, climat), de(ailleurs, climat)), true);
+  // Crème solaire revenue : la catégorie Toilette emporte un objet de plus.
+  const sansCreme = { ...bibliotheque, objets: sans(bibliotheque.objets, 'o-creme') };
+  assert.equal(memesConsequences(de(sansCreme, toilette), de(bibliotheque, toilette)), false);
+  // Chaud revenue : le groupe Climat emporte une étiquette de plus.
+  const sansChaud = { ...bibliotheque, etiquettes: sans(bibliotheque.etiquettes, 'e-chaud') };
+  assert.equal(memesConsequences(de(sansChaud, climat), de(bibliotheque, climat)), false);
+  // Bonnet revenu : un élément bloque de plus.
+  const sansBonnet = { ...bibliotheque, objets: sans(bibliotheque.objets, 'o-bonnet') };
+  assert.equal(memesConsequences(de(sansBonnet, climat), de(bibliotheque, climat)), false);
+  // Crème solaire revenue : un élément perd une étiquette de plus.
+  const chaud = etiquette('e-chaud');
+  assert.equal(memesConsequences(de(sansCreme, chaud), de(bibliotheque, chaud)), false);
 });
