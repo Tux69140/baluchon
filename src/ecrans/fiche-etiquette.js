@@ -9,7 +9,7 @@ import { homonymeDEtiquette, homonymeDeGroupe, validerEtiquette, validerGroupe }
 import { ouvrirFicheModele } from './fiche-modele.js';
 import { champNom, zoneSuppression } from './fiche-modele-vues.js';
 import { pluriel } from './format.js';
-import { supprimerDeLaBibliotheque } from './suppression.js';
+import { supprimerPuis } from './suppression.js';
 
 const ID_AIDE = 'f-nom-aide';
 
@@ -18,16 +18,10 @@ const vueCorps = (t, nom, erreur, { aide, supprimer }) => `
         ${champNom(t, nom, erreur, { idAide: ID_AIDE, entree: true })}
         <p class="aide" id="${ID_AIDE}">${aide}</p>${supprimer ? zoneSuppression(supprimer) : ''}`;
 
-// « Supprimer » de la fiche : la question chiffrée ou le refus, puis l'écriture et le bandeau ; rend
-// true une fois l'écriture faite (la fiche se ferme), false sinon ; une panne lève (la fiche la dit).
-// apresSuppression() : l'écran relit la bibliothèque, avant que la fiche ne se ferme.
-function suppression({ t, langue, stockage, ouvrirFiche, apresSuppression, signal, dans }, cible) {
-  return async () => {
-    const fait = await supprimerDeLaBibliotheque({ t, langue, stockage, cible, signal, dans, ouvrirFiche });
-    if (fait) await apresSuppression();
-    return fait;
-  };
-}
+// « Supprimer » de la fiche : la question chiffrée ou le refus, l'écriture et le bandeau
+// (supprimerPuis) ; apresSuppression() : l'écran relit la bibliothèque, avant que la fiche ne se ferme.
+const suppression = ({ t, langue, stockage, ouvrirFiche, apresSuppression, signal, dans }, cible) =>
+  supprimerPuis({ t, langue, stockage, cible, signal, dans, ouvrirFiche }, apresSuppression);
 
 // groupe : celui à modifier, ou null pour un nouveau ; groupes : tous, pour l'unicité du nom ;
 // etiquettesDuGroupe : les siennes (leur nombre, dit sous le titre). enregistrer(saisie) : l'écriture,

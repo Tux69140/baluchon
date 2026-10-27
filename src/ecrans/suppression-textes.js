@@ -6,7 +6,9 @@ import { remplir } from '../i18n/traduction.js';
 import { pluriel } from './format.js';
 import { echapper } from './html.js';
 
-const enToutesLettres = (langue, morceaux) => new Intl.ListFormat(langue, { type: 'conjunction' }).format(morceaux);
+// « A, B et C », dans la langue de l'appli.
+export const enToutesLettres = (langue, morceaux) =>
+  new Intl.ListFormat(langue, { type: 'conjunction' }).format(morceaux);
 
 // « 2 objets et 1 catégorie » : ce qui perd une étiquette, en gras ; vide si rien n'est touché.
 function compte(t, langue, { categories, objets }) {

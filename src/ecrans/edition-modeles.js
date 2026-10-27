@@ -9,7 +9,7 @@ import { groupesAvecEtiquettes } from '../modele/inclusion.js';
 import { preparerCategorie, preparerObjet } from '../modele/modeles.js';
 import { ouvrirFicheCategorie } from './fiche-categorie.js';
 import { ouvrirFicheObjet } from './fiche-objet.js';
-import { supprimerDeLaBibliotheque } from './suppression.js';
+import { supprimerPuis } from './suppression.js';
 
 // La fiche ouverte par ouvrir(rappels), avec ce qui est commun aux deux : son effacement attendu, et
 // « Supprimer » pour un élément existant. Un élément neuf a son id dès l'ouverture de la fiche : un
@@ -35,11 +35,9 @@ function editer({ type, existant, contexte, ouvrir, ecrire }) {
       },
       supprimer:
         existant &&
-        (async () => {
-          const fait = await supprimerDeLaBibliotheque({ t, langue, stockage, cible, signal, dans });
-          if (fait) await apresEcriture({ cible, neuve: false, supprimee: true });
-          return fait;
-        }),
+        supprimerPuis({ t, langue, stockage, cible, signal, dans }, () =>
+          apresEcriture({ cible, neuve: false, supprimee: true }),
+        ),
     });
   });
 }

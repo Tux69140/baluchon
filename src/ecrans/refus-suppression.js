@@ -13,7 +13,7 @@ import { ouvrirFenetre } from './fenetre.js';
 import { pluriel } from './format.js';
 import { echapper } from './html.js';
 import { iconeInterface, paveCategorie } from './icones.js';
-import { question } from './suppression-textes.js';
+import { enToutesLettres, question } from './suppression-textes.js';
 
 const ID_TITRE = 'refus-titre';
 const ID_TEXTE = 'suppression-texte';
@@ -87,7 +87,10 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
   function annoncer(elements) {
     const partis = montres.filter(m => !elements.some(e => cle(e) === cle(m)));
     if (!partis.length) return;
-    const noms = new Intl.ListFormat(langue, { type: 'conjunction' }).format(partis.map(p => p.element.nom));
+    const noms = enToutesLettres(
+      langue,
+      partis.map(p => p.element.nom),
+    );
     annonce.textContent = elements.length
       ? remplir(t('refus.regle'), { noms, n: elements.length })
       : t('refus.toutRegle');
