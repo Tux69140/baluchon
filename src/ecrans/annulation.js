@@ -20,9 +20,10 @@ const FENETRE = 'dialog:modal:not([data-fermeture])';
 const BAS_FIXE = '.bouton-flottant, .assistant-pied';
 const ECART = 8;
 
-// Le bandeau affiché : son élément, son bouton « Annuler », sa minuterie, la fin de sa vie (qui retire
-// aussi le message d'un rétablissement refusé), et ce qu'il est en train de faire : retablit (« Annuler »
-// touché, le rétablissement court), expire (ses 10 s se sont écoulées pendant ce temps).
+// Le bandeau affiché : son élément, son bouton « Annuler », sa minuterie et son échéance, la fin de sa
+// vie (qui retire aussi le message d'un rétablissement refusé), et ce qui le tient : retablit (« Annuler »
+// touché, le rétablissement court), occupations (rétablissement, écritures et revérifications en
+// cours, pendant lesquels « Annuler » ne répond plus).
 let courant = null;
 // Le rétablissement en cours (« Annuler » touché), ou une promesse déjà tenue : toute lecture de la
 // bibliothèque l'attend, et voit ce qu'il rend (une suppression qui relit avant d'écrire, surtout).
@@ -88,37 +89,59 @@ function retirer(bandeau) {
   if (courant === bandeau) retirerAnnulation();
 }
 
-// Au bout de son temps, le bandeau s'en va ; pas pendant un rétablissement : c'est sa fin qui décide
-// (réussi, il part ; refusé, il le dit).
-function expirer(bandeau) {
-  if (bandeau.retablit) bandeau.expire = true;
-  else retirer(bandeau);
+// Le bandeau s'en va dans duree ms ; à l'échéance, pas pendant un rétablissement : c'est sa fin qui
+// décide (réussi, il part ; refusé, il le dit et reste encore un peu).
+function programmerFin(bandeau, duree) {
+  clearTimeout(bandeau.minuterie);
+  bandeau.echeance = Date.now() + duree;
+  bandeau.minuterie = setTimeout(() => {
+    if (!bandeau.retablit) retirer(bandeau);
+  }, duree);
 }
 
-// Rend « Annuler » inactif (rétablissement ou autre écriture en cours) ou de nouveau actif.
-function activer(bandeau, actif) {
-  if (actif) bandeau.bouton.removeAttribute('aria-disabled');
-  else bandeau.bouton.setAttribute('aria-disabled', 'true');
+// « Annuler » ne répond plus tant qu'au moins une chose le tient, et de nouveau ensuite.
+function occuper(bandeau) {
+  bandeau.occupations += 1;
+  bandeau.bouton.setAttribute('aria-disabled', 'true');
+}
+function liberer(bandeau) {
+  bandeau.occupations -= 1;
+  if (!bandeau.occupations) bandeau.bouton.removeAttribute('aria-disabled');
 }
 
-// « Annuler » touché. Tant que le rétablissement court, « Annuler » ne répond plus : un seul
-// rétablissement. Refusé, le bandeau reste jusqu'au bout de ses 10 s pour un nouvel essai ; si elles se
-// sont écoulées pendant le rétablissement, il reste encore le temps de lire le message (6 s).
+// « Annuler » touché : un seul rétablissement à la fois. Refusé, le bandeau reste pour un nouvel essai
+// jusqu'au bout de ses 10 s, et au moins le temps de lire le message (6 s), même si elles s'achèvent
+// avant (ou se sont achevées pendant le rétablissement).
 async function retablir(bandeau, { t, app, annuler }) {
   bandeau.retablit = true;
-  activer(bandeau, false);
+  occuper(bandeau);
   try {
     await annuler();
     retirer(bandeau);
   } catch (erreur) {
     console.error(erreur);
     if (courant !== bandeau) return;
-    activer(bandeau, true);
-    if (bandeau.expire) bandeau.minuterie = setTimeout(() => expirer(bandeau), DUREE_ALERTE);
+    programmerFin(bandeau, Math.max(bandeau.echeance - Date.now(), DUREE_ALERTE));
     alerterEnHaut(app, t('annulation.erreur'), bandeau.fin.signal);
   } finally {
     bandeau.retablit = false;
-    bandeau.expire = false;
+    liberer(bandeau);
+  }
+}
+
+// La garde, seule définition : travail(bandeau) (une écriture de la bibliothèque, ou une relecture
+// suivie d'une écriture) attend la fin d'un rétablissement en cours, puis court avec « Annuler »
+// inactif jusqu'à sa fin. Aucun rétablissement ne se glisse entre ce qu'il lit et ce qu'il écrit : une
+// suppression n'écrit jamais sur une lecture que « Annuler » aurait rendue périmée (résiduel N1).
+// bandeau : celui affiché au début, ou null.
+export async function sansAnnuler(travail) {
+  await retablissement;
+  const bandeau = courant;
+  if (bandeau) occuper(bandeau);
+  try {
+    return await travail(bandeau);
+  } finally {
+    if (bandeau) liberer(bandeau);
   }
 }
 
@@ -138,35 +161,31 @@ export function montrerAnnulation({ t, app, texte, annuler }) {
   // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.
   el.addEventListener('animationend', () => delete el.dataset.entree, { once: true });
   const bouton = el.querySelector('button');
-  const bandeau = { el, bouton, fin: new AbortController(), retablit: false, expire: false };
-  bandeau.minuterie = setTimeout(() => expirer(bandeau), DUREE);
+  const bandeau = { el, bouton, fin: new AbortController(), retablit: false, occupations: 0 };
+  programmerFin(bandeau, DUREE);
   courant = bandeau;
+  // Toujours une promesse tenue, quoi qu'il arrive dans retablir : les lectures et écritures qui
+  // l'attendent ne restent jamais bloquées.
   bouton.addEventListener('click', () => {
-    if (bouton.getAttribute('aria-disabled') !== 'true') retablissement = retablir(bandeau, { t, app, annuler });
+    if (bouton.getAttribute('aria-disabled') !== 'true')
+      retablissement = retablir(bandeau, { t, app, annuler }).catch(console.error);
   });
   placer();
 }
 
-// Le stockage, de même forme, dont chaque écriture de la bibliothèque retire le bandeau une fois
-// faite : refusée, rien n'a changé, et le bandeau reste, son « Annuler » toujours bon (pendant
-// l'écriture, il ne répond plus). Le rétablissement et les écritures d'un voyage le laissent. Une
-// lecture ou une écriture de la bibliothèque attend la fin d'un rétablissement en cours.
+// Le stockage, de même forme, dont chaque écriture de la bibliothèque passe par la garde et retire le
+// bandeau une fois faite : refusée, rien n'a changé, et le bandeau reste, son « Annuler » toujours bon.
+// Le rétablissement et les écritures d'un voyage le laissent. Une lecture de la bibliothèque attend
+// la fin d'un rétablissement en cours.
 export function surveillerEcritures(stockage) {
   const surveillees = ECRITURES_BIBLIOTHEQUE.map(nom => [
     nom,
-    async (...valeurs) => {
-      await retablissement;
-      const bandeau = courant;
-      if (bandeau) activer(bandeau, false);
-      try {
+    (...valeurs) =>
+      sansAnnuler(async bandeau => {
         const resultat = await stockage[nom](...valeurs);
         if (bandeau) retirer(bandeau);
         return resultat;
-      } catch (erreur) {
-        if (bandeau && courant === bandeau) activer(bandeau, true);
-        throw erreur;
-      }
-    },
+      }),
   ]);
   async function lireBibliotheque() {
     await retablissement;

@@ -29,6 +29,7 @@ import {
   attendreLignes,
   attendreQuestion,
   attendreRefus,
+  climat,
   donnees,
   empreinte,
   etiquettesDe,
@@ -49,26 +50,6 @@ const a = fr.annulation;
 const FORMAT = 'telephone-etroit';
 const ETIQUETTE = 'dialog.fiche-nom';
 const compte = (cle, n) => remplir(s[cle][n === 1 ? 'one' : 'other'], { n });
-
-const objet = (nom, etiquettes) => ({ nom, regle: 'fixe', valeur: 1, parPersonne: true, etiquettes });
-// Les groupes de départ ; chaque objet garde une étiquette hors de Climat, sauf Bouillotte (Froid
-// seule) : présente, elle fait refuser la suppression de Climat.
-const climat = ({ bouillotte }) => ({
-  groupes: structuredClone(fr.bibliothequeDeDepart.groupes),
-  categories: [
-    {
-      nom: 'Vêtements',
-      icone: 't-shirt',
-      couleur: 'ciel',
-      objets: [
-        objet('Doudoune', ['froid', 'randonnee']),
-        objet('Cape de pluie', ['pluie', 'randonnee']),
-        objet('Crème solaire', ['plage', 'chaud']),
-        ...(bouillotte ? [objet('Bouillotte', ['froid'])] : []),
-      ],
-    },
-  ],
-});
 
 // La panne simulée et les lenteurs sont posées dans le stockage du navigateur.
 async function poser(page, cle, valeur) {

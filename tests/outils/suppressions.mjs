@@ -60,6 +60,25 @@ export const depart = () => ({
   ],
 });
 
+// Les groupes de départ ; chaque objet garde une étiquette hors de Climat, sauf Bouillotte (Froid
+// seule) : présente, elle fait refuser la suppression de Climat (constat C1 de la relecture finale).
+export const climat = ({ bouillotte }) => ({
+  groupes: structuredClone(fr.bibliothequeDeDepart.groupes),
+  categories: [
+    {
+      nom: 'Vêtements',
+      icone: 't-shirt',
+      couleur: 'ciel',
+      objets: [
+        objet('Doudoune', ['froid', 'randonnee']),
+        objet('Cape de pluie', ['pluie', 'randonnee']),
+        objet('Crème solaire', ['plage', 'chaud']),
+        ...(bouillotte ? [objet('Bouillotte', ['froid'])] : []),
+      ],
+    },
+  ],
+});
+
 // Les voyages d'essai, et la bibliothèque décrite par description (depart() par défaut).
 export function donnees(description = depart()) {
   let n = 0;

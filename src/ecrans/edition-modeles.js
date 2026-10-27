@@ -7,6 +7,7 @@
 import { nouvelId } from '../modele/identifiant.js';
 import { groupesAvecEtiquettes } from '../modele/inclusion.js';
 import { preparerCategorie, preparerObjet } from '../modele/modeles.js';
+import { sansAnnuler } from './annulation.js';
 import { ouvrirFicheCategorie } from './fiche-categorie.js';
 import { ouvrirFicheObjet } from './fiche-objet.js';
 import { supprimerPuis } from './suppression.js';
@@ -45,7 +46,8 @@ function editer({ type, existant, contexte, ouvrir, ecrire }) {
 // categorie : celle à modifier, ou null pour une nouvelle ; nombreObjets : les siens, dits sous le
 // titre ; bibliotheque : telle que lue (les étiquettes proposées). Le rang d'une catégorie neuve se
 // calcule sur les catégories relues au moment d'écrire : « Annuler » a pu en rendre une pendant que la
-// fiche était ouverte, et deux catégories n'ont jamais le même rang.
+// fiche était ouverte, et deux catégories n'ont jamais le même rang. Relecture et écriture passent
+// ensemble par la garde du bandeau (sansAnnuler) : aucun « Annuler » ne s'intercale entre elles.
 export function editerCategorie({ categorie, nombreObjets, ...contexte }) {
   const { stockage } = contexte;
   return editer({
@@ -53,12 +55,13 @@ export function editerCategorie({ categorie, nombreObjets, ...contexte }) {
     existant: categorie,
     contexte,
     ouvrir: rappels => ouvrirFicheCategorie({ ...rappels, categorie, nombreObjets }),
-    async ecrire(saisie, id, maintenant) {
-      const { categories } = await stockage.lireBibliotheque();
-      await stockage.enregistrerCategorie(
-        preparerCategorie(saisie, { existante: categorie, categories, nouvelId: () => id, maintenant }),
-      );
-    },
+    ecrire: (saisie, id, maintenant) =>
+      sansAnnuler(async () => {
+        const { categories } = await stockage.lireBibliotheque();
+        await stockage.enregistrerCategorie(
+          preparerCategorie(saisie, { existante: categorie, categories, nouvelId: () => id, maintenant }),
+        );
+      }),
   });
 }
 

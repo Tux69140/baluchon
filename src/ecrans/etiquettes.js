@@ -12,6 +12,7 @@ import { preparerEtiquette, preparerGroupe } from '../modele/etiquettes.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { parOrdre } from '../modele/inclusion.js';
 import { alerterEnHaut } from './alerte.js';
+import { sansAnnuler } from './annulation.js';
 import { etapesDe } from './assistant.js';
 import { glisser, places } from './disposition.js';
 import { editerCategorie, editerObjet } from './edition-modeles.js';
@@ -223,17 +224,20 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
       groupes: lue.groupes,
       etiquettesDuGroupe: donnees.rangees.find(r => r.groupe.id === id)?.etiquettes ?? [],
       // Rang et unicité du nom sur la bibliothèque relue au moment d'écrire : « Annuler » a pu rendre un
-      // groupe pendant que la fiche était ouverte (deux groupes n'ont jamais le même rang).
+      // groupe pendant que la fiche était ouverte (deux groupes n'ont jamais le même rang). Relecture et
+      // écriture passent ensemble par la garde du bandeau : aucun « Annuler » entre elles.
       async enregistrer(saisie) {
-        const { groupes } = await stockage.lireBibliotheque();
-        const groupe = preparerGroupe(saisie, {
-          existant,
-          groupes,
-          nouvelId: () => id,
-          maintenant: new Date().toISOString(),
-          langue,
+        await sansAnnuler(async () => {
+          const { groupes } = await stockage.lireBibliotheque();
+          const groupe = preparerGroupe(saisie, {
+            existant,
+            groupes,
+            nouvelId: () => id,
+            maintenant: new Date().toISOString(),
+            langue,
+          });
+          await stockage.enregistrerGroupe(groupe);
         });
-        await stockage.enregistrerGroupe(groupe);
         // Neuf : on y ajoute aussitôt ses étiquettes.
         if (!existant) aFocaliser = { action: 'nouvelle-etiquette', id };
         await relire(id);
@@ -263,15 +267,17 @@ function ouvrirEtiquettes(app, bibliotheque, contexte) {
       bibliotheque: lue,
       // Relue au moment d'écrire, comme pour un groupe.
       async enregistrer(saisie) {
-        const etiquette = preparerEtiquette(saisie, {
-          existante,
-          groupeId: groupe.id,
-          bibliotheque: await stockage.lireBibliotheque(),
-          nouvelId: () => id,
-          maintenant: new Date().toISOString(),
-          langue,
+        await sansAnnuler(async () => {
+          const etiquette = preparerEtiquette(saisie, {
+            existante,
+            groupeId: groupe.id,
+            bibliotheque: await stockage.lireBibliotheque(),
+            nouvelId: () => id,
+            maintenant: new Date().toISOString(),
+            langue,
+          });
+          await stockage.enregistrerEtiquette(etiquette);
         });
-        await stockage.enregistrerEtiquette(etiquette);
         aFocaliser = { action: 'modifier-etiquette', id };
         await relire(id);
       },

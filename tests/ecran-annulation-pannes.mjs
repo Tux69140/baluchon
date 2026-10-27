@@ -2,10 +2,13 @@
 // la page simulée (page.clock). Téléphone étroit, Bibliothèque de départ.
 // - M1 : « Annuler » touché à 9,9 s, rétablissement lent qui tombe en panne : le bandeau ne s'en va pas
 //   pendant le rétablissement (« Annuler » inactif) ; la panne dite, il reste encore le temps de lire
-//   le message (6 s), « Annuler » de nouveau actif, puis s'en va ;
+//   le message (6 s), « Annuler » de nouveau actif, puis s'en va ; N2 : de même pour une panne dite
+//   juste avant la fin des 10 s (touché à 9,85 s, refusé à 9,95 s) ;
 // - M2 : une suppression qui tombe en panne laisse le bandeau de la précédente, actif, posé sous le
 //   message de la panne (capture dans captures-travail/), et son « Annuler » rend l'élément ; pendant une suppression lente, « Annuler » est inactif ; réussie, son
-//   bandeau remplace le précédent.
+//   bandeau remplace le précédent ;
+// - N3 : un rétablissement dont même la panne ne peut être dite ne bloque pas les lectures et
+//   écritures suivantes.
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -51,9 +54,11 @@ const alerte = page =>
 // Sans attendre que l'écran se calme : l'horloge arrêtée tient les images.
 const bandeauParti = page => page.evaluate(() => document.querySelector('.bandeau-annuler') === null);
 
-// M1. « Annuler » touché à 9,9 s, rétablissement lent puis refusé.
-async function essaiFinDuDelai() {
-  const cas = 'rétablissement en fin de délai';
+// M1. « Annuler » touché à 9,9 s, rétablissement lent, refusé à 10,5 s (après l'échéance) ; N2 :
+// touché à 9,85 s, refusé à 9,95 s (juste avant). Dans les deux cas, la panne dite, bandeau et message
+// restent 6 s.
+async function essaiFinDuDelai({ annulerA, panneA }) {
+  const cas = `rétablissement en fin de délai (refusé à ${panneA} ms)`;
   const ouvert = await ouvrirAvecHorloge(navigateur, serveur.url, FORMAT);
   const { page } = ouvert;
   await page.evaluate(() => {
@@ -69,12 +74,12 @@ async function essaiFinDuDelai() {
   await page.clock.pauseAt(maintenant);
   const ecoule = maintenant - (await page.evaluate(() => window.arriveeBandeau));
   juge.exige(ecoule < 9000, `${cas} : le parcours a pris ${ecoule} ms, trop pour juger les 10 s`);
-  await page.clock.runFor(Math.max(0, 9900 - ecoule));
+  await page.clock.runFor(Math.max(0, annulerA - ecoule));
   await annuler(page);
   await attendreQue(page, () => typeof window.debloquerStockage === 'function');
-  await page.clock.runFor(600);
+  await page.clock.runFor(panneA - annulerA);
   const pendant = await lireBandeau(page);
-  juge.exige(pendant?.texte === CREME && pendant.bouton.inactif, `${cas} : à 10,5 s ${vu(pendant)}`);
+  juge.exige(pendant?.texte === CREME && pendant.bouton.inactif, `${cas} : avant la panne ${vu(pendant)}`);
   await libererEcritures(page);
   await attendreQue(page, () => document.querySelector('.alerte-haut') !== null);
   const apres = await lireBandeau(page);
@@ -86,7 +91,10 @@ async function essaiFinDuDelai() {
     `${cas} : panne ${vu({ alerte: await alerte(page), bandeau: apres })}`,
   );
   await page.clock.runFor(5900);
-  juge.exige((await lireBandeau(page))?.texte === CREME, `${cas} : parti avant la fin du message`);
+  juge.exige(
+    (await lireBandeau(page))?.texte === CREME && (await alerte(page)) === a.erreur,
+    `${cas} : parti avant la fin du message ${vu({ bandeau: await lireBandeau(page), alerte: await alerte(page) })}`,
+  );
   await page.clock.runFor(300);
   juge.exige(
     (await bandeauParti(page)) && (await alerte(page)) === null,
@@ -155,8 +163,44 @@ async function essaiPanneSuivante() {
   await fermer(cas, ouvert);
 }
 
+// N3. Un rétablissement dont même la panne ne peut pas être dite (le message refuse de s'afficher) ne
+// bloque pas la bibliothèque : la suppression suivante relit et s'écrit.
+async function essaiRetablissementRejete() {
+  const cas = 'rétablissement rejeté';
+  const ouvert = await ouvrirAvecHorloge(navigateur, serveur.url, FORMAT);
+  const { page } = ouvert;
+  await supprimerObjet(page, 'Toilette', 'Crème solaire');
+  await poser(page, 'pannes', ['retablirBibliotheque']);
+  await page.evaluate(() => {
+    const montrer = HTMLElement.prototype.showPopover;
+    window.montrerPopover = montrer;
+    HTMLElement.prototype.showPopover = function () {
+      if (this.matches('.alerte-haut')) throw new Error('Panne simulée : message impossible à montrer');
+      return montrer.call(this);
+    };
+  });
+  await annuler(page);
+  await attendreQue(page, () => document.querySelector('.alerte-haut') !== null);
+  await page.evaluate(() => (HTMLElement.prototype.showPopover = window.montrerPopover));
+  await poser(page, 'pannes', []);
+  await ouvrirFicheObjet(page, 'Toilette', 'Dentifrice');
+  await toucher(page, '[data-supprimer]');
+  const question = await attendreQue(page, q => document.querySelector(`${q}[open]`) !== null, QUESTION);
+  juge.exige(Boolean(question), `${cas} : la question de la suppression suivante ne s'ouvre pas`);
+  if (!question) return fermer(cas, ouvert);
+  await calme(page);
+  await page.click(`${QUESTION} .fenetre-pied button:text-is("${fr.suppression.supprimer}")`);
+  const venu = await attendreQue(page, () =>
+    document.querySelector('.bandeau-annuler p')?.textContent.includes('Dentifrice'),
+  );
+  juge.exige(Boolean(venu), `${cas} : la suppression suivante ne s'écrit pas ${vu(await lireBandeau(page))}`);
+  await fermer(cas, ouvert);
+}
+
 try {
-  await essaiFinDuDelai();
+  await essaiRetablissementRejete();
+  await essaiFinDuDelai({ annulerA: 9900, panneA: 10500 });
+  await essaiFinDuDelai({ annulerA: 9850, panneA: 9950 });
   await essaiPanneSuivante();
 } finally {
   await navigateur.close();

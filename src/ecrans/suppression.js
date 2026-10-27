@@ -6,7 +6,7 @@
 // laisserait des catégories ou des objets sans aucune étiquette est refusé : la fenêtre de refus
 // (src/ecrans/refus-suppression.js) les montre, et devient la question une fois tout réglé.
 import { consequences, estBloquee, extraitAvant, memesConsequences } from '../modele/suppressions.js';
-import { montrerAnnulation } from './annulation.js';
+import { montrerAnnulation, sansAnnuler } from './annulation.js';
 import { demander } from './fenetre.js';
 import { ouvrirRefus } from './refus-suppression.js';
 import { question, texteBandeau } from './suppression-textes.js';
@@ -48,18 +48,21 @@ async function ecrire({ t, langue, stockage, cible, dans }, bibliotheque, chiffr
 
 // La seule revérification, partagée par la question et le refus (« Plus rien ne bloque ») : entre
 // l'annonce et l'appui sur « Supprimer », « Annuler » du bandeau a pu rendre un élément. La
-// bibliothèque est relue au moment d'écrire (après un rétablissement en cours) : si la suppression
+// bibliothèque est relue au moment d'écrire, sous la garde du bandeau (sansAnnuler : après un
+// rétablissement en cours, et « Annuler » inactif jusqu'à la fin de l'écriture) : si la suppression
 // emporte, fait perdre et bloque les mêmes éléments que ceux annoncés, elle s'écrit sur cette lecture
 // fraîche, d'où vient aussi l'extrait d'« Annuler » ; sinon rien n'est écrit, et PERIMEE le dit.
 // Rend true, ou PERIMEE ; une écriture refusée lève.
 const PERIMEE = 'perimee';
-async function ecrireSiInchangee(contexte, annoncees, nom) {
+function ecrireSiInchangee(contexte, annoncees, nom) {
   const { stockage, cible, langue } = contexte;
-  const fraiche = await stockage.lireBibliotheque();
-  const chiffres = consequences(fraiche, cible, langue);
-  if (!memesConsequences(annoncees, chiffres)) return PERIMEE;
-  await ecrire(contexte, fraiche, chiffres, nom);
-  return true;
+  return sansAnnuler(async () => {
+    const fraiche = await stockage.lireBibliotheque();
+    const chiffres = consequences(fraiche, cible, langue);
+    if (!memesConsequences(annoncees, chiffres)) return PERIMEE;
+    await ecrire(contexte, fraiche, chiffres, nom);
+    return true;
+  });
 }
 
 // cible : { type, id }. La bibliothèque est relue : le chiffre annoncé est celui de ce que le stockage

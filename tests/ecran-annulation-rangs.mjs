@@ -2,14 +2,15 @@
 // « Ajouter une étiquette » ouverte, « Annuler » du bandeau rend le dernier élément de la liste ;
 // l'élément créé ensuite prend la place d'après, jamais le même rang. Téléphone étroit.
 // - Camping (dernière catégorie) supprimée, fiche « Nouvelle catégorie », « Annuler », « Plongée »
-//   créée : rangs tous différents, Plongée après Camping ;
+//   créée : rangs tous différents, Plongée après Camping ; « Annuler » touché pendant que
+//   l'enregistrement relit la bibliothèque (résiduel N1) : jamais deux au même rang ;
 // - groupe Hébergement (le dernier), puis « Transport » ; étiquette « Chez l’habitant » (la dernière
 //   d'Hébergement), puis « Gîte » : de même.
 import { chromium } from 'playwright';
 import { attendreSansBandeau, ouvrirAvecHorloge, supprimerCategorie } from './outils/annulation.mjs';
 import { attendreQue } from './outils/attente.mjs';
 import { fermerEssai, fr, vu } from './outils/bibliotheque.mjs';
-import { idGroupe, lire, ouvrirEtiquettes } from './outils/etiquettes.mjs';
+import { idGroupe, libererEcritures, lire, ouvrirEtiquettes } from './outils/etiquettes.mjs';
 import {
   attendreFermee,
   attendreOuverte,
@@ -18,7 +19,7 @@ import {
   ouvrirNouvelleCategorie,
   saisir,
 } from './outils/fiches.mjs';
-import { creerJuge } from './outils/page.mjs';
+import { creerJuge, ecrireStockage, lireStockage } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { QUESTION, attendreQuestion, ouvrirFicheDe, repondre, toucherSupprimer } from './outils/suppressions.mjs';
 
@@ -37,6 +38,10 @@ async function annulerDansLaFiche(page, liste, nom) {
     ({ liste, nom }) => JSON.parse(localStorage.getItem('baluchon-essai')).bibliotheque[liste].some(x => x.nom === nom),
     { liste, nom },
   );
+}
+
+async function poser(page, cle, valeur) {
+  await ecrireStockage(page, { ...(await lireStockage(page)), [cle]: valeur });
 }
 
 // Les rangs d'une liste gardée, par nom ; distincts : aucun en double.
@@ -58,6 +63,33 @@ async function essaiCategorie() {
   await attendreFermee(page);
   const { parNom, distincts } = rangs((await bibliothequeStockee(page)).categories);
   juge.exige(distincts && parNom['Plongée'] > parNom.Camping, `${cas} : rangs ${vu(parNom)}`);
+  await fermerEssai(juge, cas, ouvert);
+}
+
+// 1 bis. « Annuler » touché pendant que l'enregistrement relit la bibliothèque (résiduel N1) : la
+// lecture lente rend l'état d'avant ; « Annuler » ne répond plus jusqu'à la fin de l'écriture.
+async function essaiCategoriePendantLaRelecture() {
+  const cas = 'nouvelle catégorie, « Annuler » pendant la relecture';
+  const ouvert = await ouvrirAvecHorloge(navigateur, serveur.url, FORMAT);
+  const { page } = ouvert;
+  await supprimerCategorie(page, 'Camping');
+  await ouvrirNouvelleCategorie(page);
+  await saisir(page, '#f-nom', 'Plongée');
+  await poser(page, 'lenteurs', ['lireBibliotheque']);
+  await enregistrer(page);
+  await attendreQue(page, () => typeof window.debloquerStockage === 'function');
+  await poser(page, 'lenteurs', []);
+  await page.click('.bandeau-annuler button', { force: true });
+  await attendreQue(
+    page,
+    () => JSON.parse(localStorage.getItem('baluchon-essai')).bibliotheque.categories.some(c => c.nom === 'Camping'),
+    undefined,
+    { max: 1000 },
+  );
+  await libererEcritures(page);
+  await attendreFermee(page);
+  const { parNom, distincts } = rangs((await bibliothequeStockee(page)).categories);
+  juge.exige(distincts, `${cas} : rangs ${vu(parNom)}`);
   await fermerEssai(juge, cas, ouvert);
 }
 
@@ -113,6 +145,7 @@ async function essaiEtiquettes() {
 
 try {
   await essaiCategorie();
+  await essaiCategoriePendantLaRelecture();
   await essaiEtiquettes();
 } finally {
   await navigateur.close();

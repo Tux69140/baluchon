@@ -1,8 +1,8 @@
 // Variante navigateur du stockage, pour les tests d’écran : même forme que le stockage Tauri, données
 // rangées dans le navigateur sous une seule clé. Un test y dépose son état de départ avant le
 // chargement de la page ; « pannes » y simule une erreur de lecture ou d’enregistrement, « lenteurs » une
-// écriture qui n'aboutit que lorsque le test appelle window.debloquerStockage(), « toucheRetour » la
-// touche retour d'Android (ecouterRetourNavigateur).
+// écriture (ou une lecture de la bibliothèque) qui n'aboutit que lorsque le test appelle
+// window.debloquerStockage(), « toucheRetour » la touche retour d'Android (ecouterRetourNavigateur).
 import { lireFiltre, ecrireFiltre } from './preferences.js';
 
 const CLE = 'baluchon-essai';
@@ -97,9 +97,11 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque, meta: { bibliothequeInstallee: true, langueBibliotheque: langue } });
       return true;
     },
+    // Lente, elle rend l'état lu à l'appel, comme une réponse de la base qui tarde à revenir.
     async lireBibliotheque() {
       const donnees = lire();
       panne(donnees, 'lireBibliotheque');
+      await lenteur(donnees, 'lireBibliotheque');
       return bibliothequeDe(donnees);
     },
     async enregistrerCategorie(categorie) {
