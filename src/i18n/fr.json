@@ -506,6 +506,7 @@
     "libre": "Plus rien ne bloque : vous pouvez supprimer « {nom} ».",
     "regle": "{noms} : réglé. Il en reste {n}.",
     "toutRegle": "Tout est réglé.",
+    "erreurLecture": "La liste n’a pas pu être mise à jour. Fermez cette fenêtre, puis rouvrez-la.",
     "fermer": "Fermer"
   },
   "annulation": {

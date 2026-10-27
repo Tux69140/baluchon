@@ -5,6 +5,7 @@
 //   se tasser ; le pied est ombré tant qu'il reste à défiler ;
 // - noms « Plage <&"> », « Tongs <&"> », « Vêtements <&"> » rendus en texte dans le titre, les lignes,
 //   puis « Plus rien ne bloque » (Review Focus 1) ; « Garder » ne supprime rien ;
+// - après une fiche enregistrée, la liste relue en panne : le message en haut du refus (capture) ;
 // - « Supprimer » du refus : une panne laisse la fiche ouverte, sans bandeau ni changement (Review
 //   Focus 3) ; un double appui pendant une écriture lente n'écrit qu'une fois (Review Focus 2) ;
 // - chaque format (TOUS_FORMATS : téléphones portrait et couché, tablettes, ordinateur), clair et
@@ -209,7 +210,38 @@ async function essaiEcriture() {
   await fermerEssai(juge, `${cas}, double appui`, ouvert);
 }
 
-// 4. Les trois états, chaque format et thème : cibles, barres système, captures.
+// 4. La liste relue en panne, après une fiche enregistrée (relecture finale, mineur de T6) : le refus
+// le dit en haut, comme toute panne, et garde ce qu'il montrait.
+async function essaiRelecture() {
+  const cas = 'relecture en panne';
+  const ouvert = await ouvrirEtiquettes(navigateur, serveur.url, 'telephone-etroit', { donnees: donnees() });
+  const { page } = ouvert;
+  await refuserPlage(page);
+  await ouvrirLigne(page, 'Tongs');
+  await poser(page, 'pannes', ['lireBibliotheque']);
+  await rendreToujoursInclus(page, fr.modele.toujoursInclus);
+  await attendreQue(page, () => document.querySelector('.alerte-haut') !== null);
+  await calme(page);
+  const vue = await page.evaluate(sel => {
+    const alerte = document.querySelector('.alerte-haut');
+    return {
+      alerte: alerte?.textContent.trim() ?? null,
+      dansLeRefus: Boolean(alerte?.closest(sel)),
+      visible: alerte?.matches(':popover-open') ?? false,
+    };
+  }, REFUS);
+  await page.screenshot({ path: join(CAPTURES, 'refus-relecture-en-panne-telephone-etroit.png') });
+  const refus = await lireRefus(page);
+  juge.exige(
+    vue.alerte === r.erreurLecture && vue.dansLeRefus && vue.visible && refus?.lignes.length === 3,
+    `${cas} : ${vu({ ...vue, lignes: refus?.lignes })}`,
+  );
+  await poser(page, 'pannes', []);
+  ouvert.erreurs.splice(0, Infinity, ...ouvert.erreurs.filter(e => !e.includes('Panne simulée')));
+  await fermerEssai(juge, cas, ouvert);
+}
+
+// 5. Les trois états, chaque format et thème : cibles, barres système, captures.
 async function essaiCaptures(format, theme) {
   const cas = `captures (${format}, ${NOMS_THEME[theme]})`;
   const ouvert = await ouvrirEtiquettes(navigateur, serveur.url, format, { theme, donnees: donnees() });
@@ -257,6 +289,7 @@ try {
   await essayer('téléphone couché', essaiCouche);
   await essayer('noms piégés', essaiPieges);
   await essayer('écriture depuis le refus', essaiEcriture);
+  await essayer('relecture en panne', essaiRelecture);
   for (const format of Object.keys(TOUS_FORMATS))
     for (const theme of Object.keys(NOMS_THEME))
       await essayer(`${format}, ${theme}`, () => essaiCaptures(format, theme));

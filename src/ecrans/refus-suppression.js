@@ -9,6 +9,7 @@
 // pour fermer y tient, et le bandeau « Annuler », rangé dans la fenêtre, n'est jamais effacé.
 import { remplir } from '../i18n/traduction.js';
 import { consequences, estBloquee } from '../modele/suppressions.js';
+import { alerterEnHaut } from './alerte.js';
 import { ouvrirFenetre } from './fenetre.js';
 import { pluriel } from './format.js';
 import { echapper } from './html.js';
@@ -142,9 +143,12 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
     try {
       relue = await lire();
     } catch (erreur) {
-      // Relecture impossible : la fenêtre garde ce qu'elle montre ; la suppression, si on la demande,
-      // relit avant d'écrire, et n'écrit que ce qui a été annoncé.
+      // Relecture impossible : la fenêtre garde ce qu'elle montre, et le dit en haut, comme toute
+      // panne ; la suppression, si on la demande, relit avant d'écrire, et n'écrit que ce qui a été
+      // annoncé.
       console.error(erreur);
+      if (numero === lecture && fenetre.isConnected && !choisi)
+        alerterEnHaut(dans, t('refus.erreurLecture'), fin.signal);
       return;
     }
     if (numero !== lecture || !fenetre.isConnected || choisi) return;

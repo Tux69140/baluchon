@@ -27,9 +27,19 @@ const CLES = [
     'perteEtiquette',
     'perteGroupe',
   ].map(c => `suppression.${c}`),
-  ...['titre', 'etiquette', 'groupe', 'reste', 'categorie', 'objet', 'libre', 'regle', 'toutRegle', 'fermer'].map(
-    c => `refus.${c}`,
-  ),
+  ...[
+    'titre',
+    'etiquette',
+    'groupe',
+    'reste',
+    'categorie',
+    'objet',
+    'libre',
+    'regle',
+    'toutRegle',
+    'fermer',
+    'erreurLecture',
+  ].map(c => `refus.${c}`),
   ...['objet', 'categorie', 'categorieVide', 'etiquette', 'groupe', 'groupeVide', 'annuler', 'erreur'].map(
     c => `annulation.${c}`,
   ),

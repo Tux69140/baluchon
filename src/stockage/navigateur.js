@@ -97,7 +97,11 @@ export function creerStockageNavigateur() {
       ecrire({ ...donnees, bibliotheque, meta: { bibliothequeInstallee: true, langueBibliotheque: langue } });
       return true;
     },
-    lireBibliotheque: async () => bibliothequeDe(lire()),
+    async lireBibliotheque() {
+      const donnees = lire();
+      panne(donnees, 'lireBibliotheque');
+      return bibliothequeDe(donnees);
+    },
     async enregistrerCategorie(categorie) {
       const donnees = await ecritureDe('enregistrerCategorie');
       const bibliotheque = bibliothequeDe(donnees);
