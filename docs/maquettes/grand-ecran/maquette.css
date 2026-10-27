@@ -1,0 +1,347 @@
+/* Maquette validée par le chef de projet le 2026-10-27 : l'écran d'un voyage et la Bibliothèque sur
+   tablette et ordinateur (règles complètes en tête de maquette.js). Les cartes, lignes, pavés, jauges,
+   puces et tampons sont ceux de l'appli (src/styles/) ; ici, la disposition, les tuiles du repli et le
+   menu de la maquette. */
+/* ---------- Commun aux trois colonnes et au repli ----------
+   Sur toutes les tablettes et l'ordinateur : dès que le plus petit côté de l'écran atteint 600 px (le
+   seuil de la fenêtre modale, docs/DESIGN.md) ; le téléphone (360 à 412 px), même couché, garde
+   l'accordéon. Le lien retour (ou la barre du haut de la Bibliothèque) est seul sur la première
+   ligne ; le titre, le menu et la liste commencent ensemble sur la seconde. */
+@media (min-width: 600px) and (min-height: 600px) {
+  .ge-ecran {
+    display: grid;
+    column-gap: var(--e-xl);
+    row-gap: var(--e-xs);
+    align-items: start;
+    max-width: none;
+    margin: 0;
+    padding: var(--e-lg) var(--e-xl) calc(var(--e-2xl) + 80px);
+  }
+
+  .ge-ecran > .lien-retour,
+  .ge-ecran > .barre-haut {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .ge-ecran h1 {
+    font-size: var(--taille-ecran);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .ge-menu,
+  .ge-liste {
+    min-width: 0;
+  }
+
+  .ge-menu .choix-liste {
+    margin: 0;
+  }
+
+  .ge-carte-objets {
+    background: var(--carte);
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+
+  /* Le voyage, puis ce qui le mesure et le filtre : 24 px les séparent, comme deux groupes. */
+  .ge-voyage .progression {
+    margin-top: var(--e-lg);
+  }
+
+  /* Le choix d'une catégorie (src/styles/voyage-panneaux.css, qui ne vaut qu'en paysage dès 1000 px) :
+     repris ici pour la tablette en portrait. Dans l'appli, sa requête suivra celle de cet écran. */
+  .ge-ecran .choix-liste {
+    display: grid;
+    gap: var(--e-sm);
+    padding: 0;
+    list-style: none;
+  }
+
+  .ge-ecran .choix {
+    display: flex;
+    align-items: center;
+    gap: var(--e-md);
+    width: 100%;
+    min-height: 72px;
+    padding: var(--e-sm) var(--e-sm) var(--e-sm) var(--e-md);
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--encre);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .ge-ecran .choix:hover {
+    background: var(--releve);
+  }
+
+  .ge-ecran .choix[aria-current='true'] {
+    padding-left: calc(var(--e-md) - 1px);
+    border: 2px solid var(--encre);
+    background: var(--actif);
+  }
+
+  .ge-ecran .choix .chevron {
+    visibility: hidden;
+  }
+
+  .ge-ecran .choix[aria-current='true'] .chevron {
+    visibility: visible;
+    color: var(--encre);
+  }
+
+  /* Bibliothèque : le crayon d'une catégorie, posé dans sa carte, avant la flèche. */
+  .ge-choix-modifiable {
+    position: relative;
+  }
+
+  .ge-place-crayon {
+    flex: none;
+    width: var(--cible);
+  }
+
+  .ge-crayon {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--e-sm) + var(--cible));
+    margin: 0;
+    translate: 0 -50%;
+  }
+}
+
+/* ---------- Trois colonnes : le voyage | le menu | la liste, dès 1340 px de large ----------
+   Largeurs fixes pour le voyage (320 px) et le menu (360 px) ; la liste prend le reste jusqu'à
+   800 px : une ligne d'objet se lit encore d'un coup d'œil (la tablette en portrait en a 768). Au-delà,
+   l'ensemble se centre : 188 px de marge de chaque côté en 1920 px. En 1340 px, la liste a encore
+   532 px ; en dessous, le repli. */
+@media (min-width: 1340px) and (min-height: 600px) {
+  .ge-ecran {
+    grid-template-columns: 320px 360px minmax(0, 800px);
+    grid-template-rows: auto minmax(0, 1fr);
+    justify-content: center;
+    height: calc(100dvh - var(--zone-haut) - var(--zone-bas));
+    padding-bottom: 0;
+  }
+
+  /* Chaque colonne défile seule (comme les deux panneaux d'aujourd'hui) : un long menu ne pousse
+     jamais la liste, qui reste en haut. Le bas de chacune garde la place du bandeau « Annuler » ; 6 px
+     de côté laissent voir le contour du focus. */
+  .ge-ecran > .ge-voyage,
+  .ge-ecran > .ge-menu,
+  .ge-ecran > .ge-liste {
+    align-self: stretch;
+    min-height: 0;
+    margin-inline: -6px;
+    padding: 0 6px calc(var(--e-2xl) + 80px);
+    overflow-y: auto;
+  }
+}
+
+/* ---------- Repli : de 600 à 1339 px de large (tablettes, portrait et paysage) ----------
+   En haut, le voyage (320 px) et, à côté, les catégories en tuiles compactes qui passent à la ligne
+   (dès 720 px de large ; l'un sous l'autre avant). Dessous, juste après, la liste sur toute la
+   largeur, avec un titre : à côté du voyage, onze catégories tiennent en trois rangées (tablette en
+   paysage) ou six (en portrait), et la liste reste à l'écran sans défiler. */
+@media (min-width: 600px) and (max-width: 1339.98px) and (min-height: 600px) {
+  .ge-ecran {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: var(--e-lg);
+    padding-inline: var(--e-lg);
+  }
+
+  .ge-ecran .ge-menu {
+    margin-top: var(--e-lg);
+  }
+
+  .ge-ecran .ge-liste {
+    grid-column: 1 / -1;
+    margin-top: var(--e-xl);
+    scroll-margin-top: var(--e-md);
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1339.98px) and (min-height: 600px) {
+  .ge-ecran {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .ge-ecran .ge-menu {
+    margin-top: 0;
+  }
+}
+
+/* ---------- Les tuiles du repli ----------
+   Une grille qui passe à la ligne, tuiles de 190 px au moins : 4 par rangée à côté du voyage en
+   1280 px, 2 en 800 px (6 et 3 si elles passaient sous le voyage, mais la liste descendrait d'autant). */
+.ge-tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--e-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ge-tuile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+  padding: var(--e-sm);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  background: var(--carte);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ge-tuile:hover {
+  background: var(--releve);
+}
+
+/* La choisie : fond actif, bord à l'encre de 2 px, sans que le contenu bouge d'un pixel. */
+.ge-tuile[aria-current='true'] {
+  padding: calc(var(--e-sm) - 1px);
+  border: 2px solid var(--encre);
+  background: var(--actif);
+}
+
+.ge-tuile[data-attenuee] {
+  border-style: dashed;
+  background: transparent;
+}
+
+.ge-tuile[data-attenuee] .pave {
+  opacity: 0.55;
+}
+
+.ge-tuile-texte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ge-tuile-texte b {
+  font: 600 var(--taille-libelle) / 1.25 var(--police);
+  overflow-wrap: anywhere;
+}
+
+.ge-tuile-compte {
+  color: var(--encre-douce);
+  font: 600 var(--taille-mention) / 1.3 var(--police);
+  font-variant-numeric: tabular-nums;
+}
+
+/* « Bouclé ! » en petit : le tampon, à 13 px. */
+.ge-tuile-boucle {
+  padding: 0 6px;
+  border: 2px solid var(--principal);
+  border-radius: 8px;
+  background: var(--carte);
+  color: var(--principal);
+  font: 400 var(--taille-mention) / 1.35 var(--police-titre);
+  transform: rotate(-5deg);
+}
+
+/* Bibliothèque : « Nouvelle catégorie », dernière tuile, au contour pointillé. */
+.ge-tuile-ajout {
+  border-style: dashed;
+  color: var(--principal);
+}
+
+.ge-tuile-ajout .icone svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Le titre de la liste en repli (et « Modifier » dans la Bibliothèque). */
+.ge-liste-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-sm) var(--e-md);
+}
+
+.ge-liste-tete h2:not(.ge-cache) {
+  margin-bottom: var(--e-md);
+  font-size: var(--taille-section);
+  line-height: 1.15;
+}
+
+.ge-liste-tete .bouton {
+  margin-bottom: var(--e-md);
+}
+
+/* ---------- Menu de la maquette (absent des captures) ---------- */
+.maquette-menu {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 70;
+}
+
+.maquette-menu summary {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: #2a1a4a;
+  color: #fff;
+  font: 600 14px var(--police);
+  cursor: pointer;
+  list-style: none;
+}
+
+.maquette-menu nav {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: var(--r-md);
+  background: #2a1a4a;
+}
+
+.maquette-menu a {
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font: 500 14px var(--police);
+  text-decoration: none;
+}
+
+.maquette-menu a:hover,
+.maquette-menu a[aria-current='true'] {
+  background: #4a3a6a;
+}
+
+.maquette-menu hr {
+  width: 100%;
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid #4a3a6a;
+}
+
+.maquette-menu[open] nav {
+  margin: 8px 0 0;
+}
+
+/* Lu par la lecture d'écran, invisible à l'œil (le titre de la liste et du menu en trois colonnes). */
+.ge-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
