@@ -1,6 +1,24 @@
 // Porte d'entrée de la couche de stockage : les écrans n'en connaissent que ceci. Dans l'appli,
 // le stockage est la base SQLite (par Tauri) ; dans un simple navigateur — tests d'écran —, une
 // variante en mémoire du navigateur, de même forme.
+// Les écritures de la bibliothèque autres que l'installation et le rétablissement (docs/PRD.md,
+// « Toute suppression ») : chacune rend définitive la suppression que le bandeau « Annuler » propose
+// encore (src/ecrans/annulation.js). Toute fonction du stockage est rangée ici ou dans
+// tests/ecritures-bibliotheque.test.js, qui le vérifie.
+export const ECRITURES_BIBLIOTHEQUE = Object.freeze([
+  'enregistrerCategorie',
+  'enregistrerObjet',
+  'rangerCategories',
+  'enregistrerGroupe',
+  'enregistrerEtiquette',
+  'rangerGroupes',
+  'rangerEtiquettes',
+  'supprimerCategorie',
+  'supprimerObjet',
+  'supprimerEtiquette',
+  'supprimerGroupe',
+]);
+
 const dansTauri = () => typeof window.__TAURI_INTERNALS__?.invoke === 'function';
 
 export async function ouvrirStockage() {

@@ -8,6 +8,7 @@
 // liste (annulation.css). Une fenêtre ouverte rend le reste de la page intouchable : il se range alors
 // dans celle du dessus, en haut, comme le message d'erreur d'enregistrement, et revient en bas à sa
 // fermeture, sans que ses 10 s repartent de zéro.
+import { ECRITURES_BIBLIOTHEQUE } from '../stockage/index.js';
 import { DUREE_ALERTE, alerterEnHaut } from './alerte.js';
 import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
@@ -18,21 +19,6 @@ const FENETRE = 'dialog:modal:not([data-fermeture])';
 // Ce qui est fixé au bas de l'écran et se touche : le bandeau se pose au-dessus.
 const BAS_FIXE = '.bouton-flottant, .assistant-pied';
 const ECART = 8;
-// Les écritures de la bibliothèque autres que le rétablissement (docs/PRD.md, « Toute suppression ») :
-// chacune rend la suppression précédente définitive.
-const ECRITURES_BIBLIOTHEQUE = [
-  'enregistrerCategorie',
-  'enregistrerObjet',
-  'rangerCategories',
-  'enregistrerGroupe',
-  'enregistrerEtiquette',
-  'rangerGroupes',
-  'rangerEtiquettes',
-  'supprimerCategorie',
-  'supprimerObjet',
-  'supprimerEtiquette',
-  'supprimerGroupe',
-];
 
 // Le bandeau affiché : son élément, son bouton « Annuler », sa minuterie, la fin de sa vie (qui retire
 // aussi le message d'un rétablissement refusé), et ce qu'il est en train de faire : retablit (« Annuler »
