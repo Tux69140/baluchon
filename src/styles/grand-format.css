@@ -1,0 +1,270 @@
+/* Écran d'un voyage sur tablette et ordinateur, repris de la maquette validée le 2026-10-27
+   (docs/maquettes/grand-ecran/maquette.css). Les cartes, lignes, pavés, jauges et tampons sont ceux de
+   voyage.css ; ici, la disposition, les tuiles du repli et le titre de la liste.
+
+   Toutes les règles sont sous main.grand-format : la page de l'écran porte cette classe, et le
+   téléphone (petit côté < 600 px) ne la reçoit pas.
+
+   Les requêtes sont celles de src/ecrans/disposition.js (GRAND_FORMAT, TROIS_COLONNES), qu'un test
+   garde identiques ; le seuil de 720 px (repli, côte à côte) n'existe qu'ici.
+
+   Ce que le HTML de l'écran fournit :
+   - main.grand-format        la page ; data-colonnes="3" (trois colonnes) ou "repli" (tuiles) ;
+   - .lien-retour             seul sur la première ligne ;
+   - .gf-gauche               le bloc de gauche : voyage, progression, filtre ;
+   - nav.gf-menu              le choix de catégorie : ul.choix-liste de button.choix (trois colonnes)
+                              ou ul.tuiles de button.tuile (repli) ; aria-current='true' sur la choisie ;
+                              li.tuile-nouvelle pour « Nouvelle catégorie » (Bibliothèque) ;
+   - section.gf-liste         la liste des objets, avec .gf-liste-tete (h2#liste-titre, visible en
+                              repli ; classe lecteur en trois colonnes). */
+
+/* ---------- Commun aux trois colonnes et au repli ----------
+   Dès que le plus petit côté de l'écran atteint 600 px (le seuil de la fenêtre modale,
+   docs/DESIGN.md). Le lien retour est seul sur la première ligne ; le titre, le menu et la liste
+   commencent ensemble sur la seconde. */
+@media (min-width: 600px) and (min-height: 600px) {
+  main.grand-format {
+    display: grid;
+    column-gap: var(--e-xl);
+    row-gap: var(--e-xs);
+    align-items: start;
+    max-width: none;
+    margin: 0;
+    padding: var(--e-lg) var(--e-xl) calc(var(--e-2xl) + 80px);
+  }
+
+  main.grand-format > .lien-retour {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  main.grand-format h1 {
+    font-size: var(--taille-ecran);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  main.grand-format .gf-menu,
+  main.grand-format .gf-liste {
+    min-width: 0;
+  }
+
+  main.grand-format .gf-menu .choix-liste {
+    margin: 0;
+  }
+
+  /* Le voyage, puis ce qui le mesure et le filtre : 24 px les séparent, comme deux groupes. */
+  main.grand-format .gf-gauche .progression {
+    margin-top: var(--e-lg);
+  }
+
+  /* Le choix d'une catégorie (cartes), repris de voyage-panneaux.css pour toute tablette. */
+  main.grand-format .choix-liste {
+    display: grid;
+    gap: var(--e-sm);
+    padding: 0;
+    list-style: none;
+  }
+
+  main.grand-format .choix {
+    display: flex;
+    align-items: center;
+    gap: var(--e-md);
+    width: 100%;
+    min-height: 72px;
+    padding: var(--e-sm) var(--e-sm) var(--e-sm) var(--e-md);
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--encre);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  main.grand-format .choix:hover {
+    background: var(--releve);
+  }
+
+  /* La choisie : fond actif, bord à l'encre de 2 px (le contenu ne bouge pas d'un pixel), flèche vers
+     ses objets. Les autres gardent la place de la flèche : les comptes restent alignés. */
+  main.grand-format .choix[aria-current='true'] {
+    padding-left: calc(var(--e-md) - 1px);
+    border: 2px solid var(--encre);
+    background: var(--actif);
+  }
+
+  main.grand-format .choix .chevron {
+    visibility: hidden;
+  }
+
+  main.grand-format .choix[aria-current='true'] .chevron {
+    visibility: visible;
+    color: var(--encre);
+  }
+
+  /* ---------- Les tuiles du repli ----------
+     Une grille qui passe à la ligne, tuiles de 190 px au moins : 4 par rangée à côté du voyage en
+     1280 px, 2 en 800 px. */
+  main.grand-format .tuiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: var(--e-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  main.grand-format .tuile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    min-height: 60px;
+    padding: var(--e-sm);
+    border: 1px solid var(--separation);
+    border-radius: var(--r-lg);
+    background: var(--carte);
+    color: var(--encre);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  main.grand-format .tuile:hover {
+    background: var(--releve);
+  }
+
+  /* La choisie : fond actif, bord à l'encre de 2 px, sans que le contenu bouge d'un pixel. */
+  main.grand-format .tuile[aria-current='true'] {
+    padding: calc(var(--e-sm) - 1px);
+    border: 2px solid var(--encre);
+    background: var(--actif);
+  }
+
+  main.grand-format .tuile[data-attenuee] {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  main.grand-format .tuile[data-attenuee] .pave {
+    opacity: 0.55;
+  }
+
+  main.grand-format .tuile-texte {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  main.grand-format .tuile-texte b {
+    font: 600 var(--taille-libelle) / 1.25 var(--police);
+    overflow-wrap: anywhere;
+  }
+
+  main.grand-format .tuile-compte {
+    color: var(--encre-douce);
+    font: 600 var(--taille-mention) / 1.3 var(--police);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* « Bouclé ! » en petit : le tampon, à 13 px. */
+  main.grand-format .tuile-boucle {
+    padding: 0 6px;
+    border: 2px solid var(--principal);
+    border-radius: 8px;
+    background: var(--carte);
+    color: var(--principal);
+    font: 400 var(--taille-mention) / 1.35 var(--police-titre);
+    transform: rotate(-5deg);
+  }
+
+  /* Bibliothèque : « Nouvelle catégorie », dernière tuile, au contour pointillé. */
+  main.grand-format .tuile-nouvelle {
+    border-style: dashed;
+    color: var(--principal);
+  }
+
+  main.grand-format .tuile-nouvelle .icone svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Le titre de la liste en repli (et « Modifier » dans la Bibliothèque). */
+  main.grand-format .gf-liste-tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e-sm) var(--e-md);
+  }
+
+  main.grand-format .gf-liste-tete h2:not(.lecteur) {
+    margin-bottom: var(--e-md);
+    font-size: var(--taille-section);
+    line-height: 1.15;
+  }
+
+  main.grand-format .gf-liste-tete .bouton {
+    margin-bottom: var(--e-md);
+  }
+}
+
+/* ---------- Trois colonnes : le voyage | le menu | la liste, dès 1340 px de large ----------
+   Largeurs fixes pour le voyage (320 px) et le menu (360 px) ; la liste prend le reste jusqu'à
+   800 px. Au-delà, l'ensemble se centre. */
+@media (min-width: 1340px) and (min-height: 600px) {
+  main.grand-format[data-colonnes='3'] {
+    grid-template-columns: 320px 360px minmax(0, 800px);
+    grid-template-rows: auto minmax(0, 1fr);
+    justify-content: center;
+    height: calc(100dvh - var(--zone-haut) - var(--zone-bas));
+    padding-bottom: 0;
+  }
+
+  /* Chaque colonne défile seule : un long menu ne pousse jamais la liste, qui reste en haut. Le bas de
+     chacune garde la place du bandeau « Annuler » ; 6 px de côté laissent voir le contour du focus. */
+  main.grand-format[data-colonnes='3'] > .gf-gauche,
+  main.grand-format[data-colonnes='3'] > .gf-menu,
+  main.grand-format[data-colonnes='3'] > .gf-liste {
+    align-self: stretch;
+    min-height: 0;
+    margin-inline: -6px;
+    padding: 0 6px calc(var(--e-2xl) + 80px);
+    overflow-y: auto;
+  }
+}
+
+/* ---------- Repli : de 600 à 1339 px de large (tablettes, portrait et paysage) ----------
+   En haut, le voyage (320 px) et, à côté, les catégories en tuiles (dès 720 px de large ; l'un sous
+   l'autre avant). Dessous, la liste sur toute la largeur, avec un titre. */
+@media (min-width: 600px) and (min-height: 600px) and (max-width: 1339.98px) {
+  main.grand-format[data-colonnes='repli'] {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: var(--e-lg);
+    padding-inline: var(--e-lg);
+  }
+
+  main.grand-format[data-colonnes='repli'] > .gf-menu {
+    margin-top: var(--e-lg);
+  }
+
+  main.grand-format[data-colonnes='repli'] > .gf-liste {
+    grid-column: 1 / -1;
+    margin-top: var(--e-xl);
+    scroll-margin-top: var(--e-md);
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1339.98px) and (min-height: 600px) {
+  main.grand-format[data-colonnes='repli'] {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  main.grand-format[data-colonnes='repli'] > .gf-menu {
+    margin-top: 0;
+  }
+}

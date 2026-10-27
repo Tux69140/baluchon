@@ -11,6 +11,8 @@ export const FORMATS = {
   telephone: { width: 393, height: 873 },
   'tablette-portrait': { width: 800, height: 1280 },
   'tablette-paysage': { width: 1280, height: 800 },
+  portable: { width: 1366, height: 768 },
+  ordinateur: { width: 1920, height: 1080 },
 };
 export const NOMS_THEME = { light: 'clair', dark: 'sombre' };
 // Barres système d'une tablette Android : heure en haut, boutons en bas, encoches sur les côtés.
