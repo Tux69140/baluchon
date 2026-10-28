@@ -101,13 +101,16 @@ export function suivreDisposition(main, options) {
 }
 
 // Repli : toucher une tuile montre sa liste ; si elle commence dans la moitié basse de l'écran (des
-// dizaines de catégories, ou un écran de 600 px), elle monte jusqu'à son titre, 16 px sous le haut
-// (scroll-margin-top, grand-format.css), en douceur sauf si l'appareil demande moins d'animations.
+// dizaines de catégories, ou un écran de 600 px) et n'y tient pas en entier, elle monte jusqu'à son
+// titre, 16 px sous le haut (scroll-margin-top, grand-format.css), en douceur sauf si l'appareil demande
+// moins d'animations. Une liste déjà toute à l'écran ne bouge pas : la page, à peine plus haute que
+// l'écran, ne ferait qu'un sursaut de quelques pixels (décision du contrôleur, phase 8, tâche 6).
 // Le focus reste sur la tuile.
 export function allerALaListe(main) {
   if (main.dataset.colonnes !== 'repli') return;
   const section = main.querySelector('.gf-liste');
-  if (section && section.getBoundingClientRect().top > innerHeight / 2)
+  const place = section?.getBoundingClientRect();
+  if (place && place.top > innerHeight / 2 && place.bottom > innerHeight)
     section.scrollIntoView({ block: 'start', behavior: moinsDAnimations().matches ? 'auto' : 'smooth' });
 }
 

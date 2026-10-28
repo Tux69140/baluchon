@@ -128,9 +128,3 @@
 .vide-voyage .bouton {
   margin-top: var(--e-md);
 }
-
-/* Amenée dans la vue (objet ajouté, ou rendu par « Annuler »), une ligne s'arrête au-dessus du bouton
-   flottant plutôt que dessous. */
-.ecran-avec-flottant .objet {
-  scroll-margin-bottom: calc(var(--zone-bas) + var(--e-md) + 64px);
-}

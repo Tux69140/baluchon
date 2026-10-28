@@ -344,6 +344,41 @@ try {
     await fermerEssai(juge, cas, ouvert);
   }
 
+  // La quantité : − inactif à 1, + inactif à 999, 1000 tapé ramené à 999 ; vidée, elle revient à 1 en
+  // quittant le champ (maquette validée).
+  {
+    const cas = 'quantité';
+    const ouvert = await ouvrirEssai({ format: 'telephone-etroit' });
+    const { page } = ouvert;
+    await toucherAjouter(page, FLOTTANT);
+    const champ = `${AJOUT} input[data-nombre="quantite"]`;
+    const bornes = () =>
+      page.evaluate(s => {
+        const inactif = sens =>
+          document.querySelector(`${s} [data-pas="quantite"][data-sens="${sens}"]`)?.getAttribute('aria-disabled') ===
+          'true';
+        return {
+          valeur: document.querySelector(`${s} input[data-nombre="quantite"]`).value,
+          moins: inactif(-1),
+          plus: inactif(1),
+        };
+      }, AJOUT);
+    const depart = await bornes();
+    await page.fill(champ, '1000');
+    const haut = await bornes();
+    await page.fill(champ, '');
+    await page.focus(`${AJOUT} #f-nom`);
+    await calme(page);
+    const vide = await bornes();
+    juge.exige(
+      vu(depart) === vu({ valeur: '1', moins: true, plus: false }) &&
+        vu(haut) === vu({ valeur: '999', moins: false, plus: true }) &&
+        vu(vide) === vu({ valeur: '1', moins: true, plus: false }),
+      `${cas} : au départ ${vu(depart)}, 1000 tapé ${vu(haut)}, vidée puis quittée ${vu(vide)}`,
+    );
+    await fermerEssai(juge, cas, ouvert);
+  }
+
   // Sans nom : refusé, le nom en faute reçoit le focus ; rien n'est écrit.
   {
     const cas = 'sans nom';

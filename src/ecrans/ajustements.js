@@ -1,9 +1,9 @@
 // Les gestes d'ajustement de l'écran d'un voyage, depuis la fiche d'un objet (spec de la phase 8,
 // docs/superpowers/specs/2026-10-28-phase-8-ajuster-design.md ; maquette validée docs/maquettes/ajuster/) :
 // corriger la quantité prévue (US-18), renommer, retirer avec son « Annuler » (US-21) ; et, depuis l'écran,
-// ajouter un objet (US-19, US-20). Rien de tout cela ne touche la bibliothèque. Les règles (bornes, confirmation, ce qu'emporte un retrait) viennent du modèle
-// (src/modele/ajustements.js) ; l'écran du voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la
-// file d'écriture, et les prête ici :
+// ajouter un objet (US-19, US-20). Rien de tout cela ne touche la bibliothèque. Les règles (bornes,
+// confirmation, ce qu'emporte un retrait) viennent du modèle (src/modele/ajustements.js) ; l'écran du
+// voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la file d'écriture, et les prête ici :
 // - contenu() : le voyage tel que l'écran le montre ;
 // - appliquer(nouveau, ecriture) : le changement montré aussitôt, l'écriture dans la file ; refusée, l'écran
 //   relit et le dit au bas de l'écran (la quantité, comme une coche) ;

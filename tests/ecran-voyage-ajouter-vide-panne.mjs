@@ -124,19 +124,22 @@ try {
     await fermerEssai(juge, cas, ouvert);
   }
 
-  // Ajouter rend définitif un retrait du même voyage : le bandeau s'en va.
+  // Ajouter rend définitif un retrait du même voyage : le bandeau s'en va. L'horloge est figée dès qu'il
+  // paraît : ses 10 s ne peuvent pas s'écouler, seul l'ajout peut le retirer. Sans calme() ensuite (il
+  // attend une image, que l'horloge figée retient).
   {
     const cas = 'retrait rendu définitif';
-    const ouvert = await ouvrirEssai({ format: 'telephone-etroit' });
+    const ouvert = await ouvrirEssai({ format: 'telephone-etroit', horloge: true });
     const { page } = ouvert;
     await ouvrirFiche(page, 'o-tsh');
     await toucherFiche(page, 'retirer');
     await attendreQuestion(page);
     await repondre(page, fr.ajustement.retrait.retirer);
     const bandeau = await attendreQue(page, s => document.querySelector(s)?.matches(':popover-open'), BANDEAU);
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 20);
     await partie(page, 'dialog.fiche-voyage');
-    await calme(page);
-    await toucherAjouter(page, FLOTTANT);
+    await page.click(FLOTTANT);
+    await attendreQue(page, s => document.querySelector(s)?.matches(':modal'), AJOUT);
     juge.exige(bandeau && (await texteBandeau(page)) !== null, `${cas} : pas de bandeau avant l'ajout`);
     await remplirEtAjouter(page, { nom: 'Gants' });
     await partie(page, AJOUT);

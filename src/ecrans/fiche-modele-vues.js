@@ -47,14 +47,16 @@ export const interrupteur = (cle, actif, libelle) =>
   `<button type="button" class="interrupteur" role="switch" data-bascule="${cle}" aria-checked="${actif}" aria-label="${echapper(libelle)}"></button>`;
 
 // − nombre + : le nombre se tape aussi au clavier (chiffres seuls). Aux bornes, − ou + reste à sa
-// place mais ne fait rien (aria-disabled). valeur : null quand le champ est vide.
-export function compteur(t, { cle, valeur, libelle, idMessage, erreur }) {
+// place mais ne fait rien (aria-disabled). valeur : null quand le champ est vide. defaut : la valeur que
+// reprend le champ laissé vide quand on le quitte (data-defaut, lu par src/ecrans/fiche-modele.js) ; sans
+// lui, il reste vide et la validation le refuse.
+export function compteur(t, { cle, valeur, libelle, idMessage, erreur, defaut = null }) {
   const bouton = (sens, picto, texte, inactif) =>
     `<button type="button" class="bouton-icone" data-pas="${cle}" data-sens="${sens}" data-vivant="${cle}${sens}" aria-label="${echapper(remplir(t(texte), { libelle }))}"${inactif ? ' aria-disabled="true"' : ''}>${iconeInterface(picto)}</button>`;
   return `
             <span class="compteur compteur-saisie">
               ${bouton(-1, 'moins', 'modele.objet.moins', valeur !== null && valeur <= BORNES_QUANTITE.min)}
-              <input type="text" inputmode="numeric" autocomplete="off" data-nombre="${cle}" value="${valeur ?? ''}" aria-label="${echapper(libelle)}" aria-describedby="${idMessage}"${invalide(erreur)} />
+              <input type="text" inputmode="numeric" autocomplete="off" data-nombre="${cle}"${defaut === null ? '' : ` data-defaut="${defaut}"`} value="${valeur ?? ''}" aria-label="${echapper(libelle)}" aria-describedby="${idMessage}"${invalide(erreur)} />
               ${bouton(1, 'plus', 'modele.objet.plus', valeur !== null && valeur >= BORNES_QUANTITE.max)}
             </span>`;
 }

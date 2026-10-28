@@ -59,7 +59,9 @@ function ouvrirNouvelleCategorie({ t, langue, initiale = null, signal, dans }) {
   const { nom, icone, couleur } = initiale ?? saisieDeCategorie(null);
   return new Promise(resoudre => {
     let choisie = null;
-    signal.addEventListener('abort', () => resoudre(null), { once: true });
+    // L'écran parti emporte la fiche sans la fermer : la réponse est null.
+    const partir = () => resoudre(null);
+    signal.addEventListener('abort', partir, { once: true });
     ouvrirFicheModele({
       t,
       titre: t('modele.categorie.nouvelle'),
@@ -78,7 +80,10 @@ function ouvrirNouvelleCategorie({ t, langue, initiale = null, signal, dans }) {
         choisie = { nom: b.nom.trim(), icone: b.icone, couleur: b.couleur };
       },
       actions: { catalogue: actionCatalogue({ t, langue, signal, dans }) },
-      surFermeture: () => resoudre(choisie),
+      surFermeture: () => {
+        signal.removeEventListener('abort', partir);
+        resoudre(choisie);
+      },
       signal,
       dans,
     });
@@ -105,7 +110,9 @@ export function ouvrirAjout({ t, langue, contenu, choisie = null, signal, dans, 
   };
   return new Promise(resoudre => {
     let ecrit = null;
-    signal.addEventListener('abort', () => resoudre(null), { once: true });
+    // L'écran parti emporte la fiche sans la fermer : la réponse est null.
+    const partir = () => resoudre(null);
+    signal.addEventListener('abort', partir, { once: true });
     ouvrirFicheModele({
       t,
       titre: t('ajustement.ajout.titre'),
@@ -124,7 +131,7 @@ export function ouvrirAjout({ t, langue, contenu, choisie = null, signal, dans, 
         )}
         <div class="ligne-reglage ligne-seule">
           <span>${t('ajustement.ajout.quantite')}<small id="${ID_AIDE_QUANTITE}">${t('ajustement.ajout.pourToutLeVoyage')}</small></span>
-          ${compteur(t, { cle: 'quantite', valeur: b.quantite, libelle: t('ajustement.ajout.quantite'), idMessage: ID_AIDE_QUANTITE })}
+          ${compteur(t, { cle: 'quantite', valeur: b.quantite, libelle: t('ajustement.ajout.quantite'), idMessage: ID_AIDE_QUANTITE, defaut: 1 })}
         </div>`,
       titreAbandon: t('ajustement.ajout.abandon.titre'),
       texteAbandon: t('ajustement.ajout.abandon.texte'),
@@ -167,7 +174,10 @@ export function ouvrirAjout({ t, langue, contenu, choisie = null, signal, dans, 
           dans.querySelector('dialog.fiche-ajout [data-action="categorie"]')?.focus();
         },
       },
-      surFermeture: () => resoudre(ecrit),
+      surFermeture: () => {
+        signal.removeEventListener('abort', partir);
+        resoudre(ecrit);
+      },
       signal,
       dans,
     });

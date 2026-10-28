@@ -10,6 +10,7 @@
 // attributs (src/ecrans/fiche-modele-vues.js) :
 // - data-texte="cle" : un champ de texte, recopié tel quel ;
 // - data-nombre="cle" : un nombre tapé au clavier, chiffres seuls, ramené de 1 à 999, vide = null ;
+//   data-defaut="n" : laissé vide, il reprend n quand on le quitte ;
 // - data-pas="cle" data-sens="±1" : − ou +, borné de 1 à 999 ;
 // - data-choix="cle" : un bouton radio ('true' et 'false' deviennent des booléens) ;
 // - data-bascule="cle" : un interrupteur ; data-pose="cle" data-valeur="v" : un choix posé (couleur) ;
@@ -241,6 +242,17 @@ export function ouvrirFicheModele({
       }
       ajuster(brouillon, nombre);
     } else return;
+    rafraichir();
+  });
+
+  // Un nombre laissé vide qui a une valeur par défaut la reprend en quittant le champ : ce qui est
+  // affiché reste ce qui sera enregistré.
+  fenetre.addEventListener('focusout', ({ target }) => {
+    const { nombre, defaut } = target.dataset;
+    if (!nombre || defaut === undefined || brouillon[nombre] !== null) return;
+    brouillon[nombre] = Number(defaut);
+    target.value = defaut;
+    ajuster(brouillon, nombre);
     rafraichir();
   });
 

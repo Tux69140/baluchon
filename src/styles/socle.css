@@ -169,6 +169,12 @@ a.bouton {
   padding-bottom: calc(var(--e-2xl) + 64px + 72px);
 }
 
+/* Une ligne amenée dans la vue s'arrête au-dessus du bouton flottant plutôt que dessous : l'objet ajouté
+   ou rendu par « Annuler » dans un voyage, l'objet enregistré dans la Bibliothèque. */
+.ecran-avec-flottant .objet {
+  scroll-margin-bottom: calc(var(--zone-bas) + var(--e-md) + 64px);
+}
+
 .message {
   max-width: 62ch;
   padding: 12px 14px;

@@ -3,7 +3,8 @@
 // celles de la bibliothèque pour « Ajouter aussi à la bibliothèque ? ». Les lignes sont celles de la
 // fenêtre de refus de la phase 7 (src/styles/refus.css) ; la retenue est sur fond actif avec une coche
 // (jamais la seule couleur) ; « Nouvelle catégorie » vient en dernier, pavé neutre et « + » vert. Au
-// téléphone, elle monte du bas comme les fiches ; ailleurs, fenêtre centrée (src/styles/ajustements.css).
+// téléphone, elle monte du bas comme les fiches (classe fiche, src/styles/fiche.css) ; ailleurs, fenêtre
+// centrée de la largeur de la fenêtre de refus (src/styles/refus.css). Ses lignes : ajustements.css.
 import { ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { echapper } from './html.js';
 import { iconeInterface, paveCategorie } from './icones.js';
