@@ -84,7 +84,7 @@ pub struct VoyageComplet {
 const COLONNES_VOYAGE: &str = "id, nom, destination, depart, retour, voyageurs, modifie_le";
 const COLONNES_ETIQUETTE: &str = "id, voyage_id, modele_id, nom, ordre, modifie_le";
 const COLONNES_CATEGORIE: &str = "id, voyage_id, modele_id, nom, icone, couleur, ordre, modifie_le";
-pub(crate) const COLONNES_OBJET: &str =
+const COLONNES_OBJET: &str =
     "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
     consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achete, note, modifie_le";
 
