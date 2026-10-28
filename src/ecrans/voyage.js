@@ -13,7 +13,7 @@
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
-import { GRAND_FORMAT, TROIS_COLONNES, glisser, moinsDAnimations, places } from './disposition.js';
+import { GRAND_FORMAT, TROIS_COLONNES, allerALaListe, glisser, places, poserDessin } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import {
   apresRepit,
@@ -32,8 +32,6 @@ const TAMPON = 1000;
 const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
 const grandFormat = matchMedia(GRAND_FORMAT);
 const troisColonnes = matchMedia(TROIS_COLONNES);
-// Les colonnes qui défilent chacune (trois colonnes) ; en repli, c'est la page qui défile.
-const COLONNES = '.gf-gauche, .gf-menu, .gf-liste';
 
 // Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
 // un voyage supprimé, plutôt que de passer pour une panne de lecture.
@@ -80,21 +78,17 @@ function ouvrirListe(app, donnees, contexte) {
     const avant = glissement ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    const { classe, colonnes, html } = vueVoyage(contexte, {
-      contenu,
-      liste,
-      etat,
-      poses,
-      grandFormat: grandFormat.matches,
-      troisColonnes: troisColonnes.matches,
-    });
-    const memeDisposition = classe === main.className && String(colonnes) === String(main.dataset.colonnes);
-    const defilements = memeDisposition ? [...main.querySelectorAll(COLONNES)].map(c => c.scrollTop) : [];
-    main.className = classe;
-    if (colonnes) main.dataset.colonnes = colonnes;
-    else delete main.dataset.colonnes;
-    main.innerHTML = html;
-    main.querySelectorAll(COLONNES).forEach((c, i) => (c.scrollTop = defilements[i] ?? 0));
+    poserDessin(
+      main,
+      vueVoyage(contexte, {
+        contenu,
+        liste,
+        etat,
+        poses,
+        grandFormat: grandFormat.matches,
+        troisColonnes: troisColonnes.matches,
+      }),
+    );
     if (etat.choisie !== choisieDessinee) main.querySelector('.gf-liste')?.scrollTo(0, 0);
     choisieDessinee = etat.choisie;
     poses = { tampons: new Set(), bandeau: false };
@@ -122,16 +116,6 @@ function ouvrirListe(app, donnees, contexte) {
       deSaCategorie() ??
       trouverCommande('filtre')
     );
-  }
-
-  // Repli : toucher une tuile montre sa liste ; si elle commence dans la moitié basse de l'écran (des
-  // dizaines de catégories, ou un écran de 600 px), elle monte jusqu'à son titre, 16 px sous le haut
-  // (scroll-margin-top, grand-format.css). Le focus reste sur la tuile.
-  function allerALaListe() {
-    if (main.dataset.colonnes !== 'repli') return;
-    const section = main.querySelector('.gf-liste');
-    if (section && section.getBoundingClientRect().top > innerHeight / 2)
-      section.scrollIntoView({ block: 'start', behavior: moinsDAnimations().matches ? 'auto' : 'smooth' });
   }
 
   function arreter() {
@@ -274,7 +258,7 @@ function ouvrirListe(app, donnees, contexte) {
     } else if (action === 'choisir') {
       etat = choisirCategorie(etat, id);
       peindre();
-      allerALaListe();
+      allerALaListe(main);
     } else if (action === 'filtre') {
       etat = basculerFiltre(etat, liste);
       stockage.ecrireFiltre(contenu.voyage.id, etat.filtre);

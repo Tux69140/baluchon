@@ -11,21 +11,13 @@
 //   voyage déjà créé garde son ordre.
 import { chromium } from 'playwright';
 import { demarrerServeur } from './outils/serveur.mjs';
-import {
-  commande,
-  fermerEssai,
-  fr,
-  idDe,
-  lire,
-  ouvrirBibliotheque,
-  versBibliotheque,
-  vu,
-} from './outils/bibliotheque.mjs';
+import { fermerEssai, fr, lire, ouvrirBibliotheque, versBibliotheque, vu } from './outils/bibliotheque.mjs';
 import {
   attendreFermee,
   bibliothequeStockee,
   enregistrer,
   lireFiche,
+  montrerCategorie,
   ouvrirFicheCategorie,
   ouvrirFicheObjet,
   ouvrirNouvelObjet,
@@ -54,14 +46,23 @@ const lireApercu = page =>
     })),
   );
 
-// Les catégories avec leurs objets, telles que l'écran d'un voyage les montre.
-const lireVoyage = page =>
-  page.evaluate(() =>
-    [...document.querySelectorAll('#app section.categorie')].map(s => ({
-      nom: s.querySelector('.categorie-nom b')?.textContent.trim(),
-      objets: [...s.querySelectorAll('.objet-nom')].map(o => o.textContent.trim()).toSorted(),
-    })),
-  );
+// Les catégories avec leurs objets, telles que l'écran d'un voyage les montre : sur la tablette, chaque
+// tuile touchée tour à tour montre sa liste.
+async function lireVoyage(page) {
+  const ids = await page.$$eval('#app .gf-menu [data-action="choisir"]', tuiles => tuiles.map(t => t.dataset.id));
+  const vue = [];
+  for (const id of ids) {
+    await page.click(`#app .gf-menu [data-action="choisir"][data-id="${id}"]`);
+    await calme(page);
+    vue.push(
+      await page.evaluate(() => ({
+        nom: document.querySelector('#liste-titre')?.textContent.trim(),
+        objets: [...document.querySelectorAll('.gf-liste .objet-nom')].map(o => o.textContent.trim()).toSorted(),
+      })),
+    );
+  }
+  return vue;
+}
 
 const noms = vue => vue.map(c => c.nom);
 const objetsDe = (vue, nom) => vue.find(c => c.nom === nom)?.objets;
@@ -151,11 +152,16 @@ try {
   await toucher(page, '.puce-etiquette:has-text("Camping")');
   await enregistrer(page);
   juge.exige(await attendreFermee(page), 'Alimentation : la fiche reste ouverte');
+  // Les étiquettes d'une catégorie ne se voient pas sur sa tuile : on les lit dans le stockage.
+  await montrerCategorie(page, 'Alimentation');
   const biblio = await lire(page);
-  const alim = biblio.cartes.find(c => c.nom === 'Alimentation');
+  const stockee = await bibliothequeStockee(page);
+  const liees = stockee.categories
+    .find(c => c.nom === 'Alimentation')
+    ?.etiquettes.map(id => stockee.etiquettes.find(e => e.id === id)?.nom);
   juge.exige(
-    vu(alim?.objets.map(o => o.nom)) === vu(ALIMENTATION_5) && vu(alim.puces) === vu(['Camping']),
-    `bibliothèque : Alimentation ${vu(alim)}`,
+    biblio.detail === 'Alimentation' && vu(biblio.detailObjets) === vu(ALIMENTATION_5) && vu(liees) === vu(['Camping']),
+    `bibliothèque : Alimentation ${vu({ detail: biblio.detail, objets: biblio.detailObjets, liees })}`,
   );
 
   // Premier voyage, Camping cochée : Alimentation et ses 5 objets, à l'aperçu et dans le voyage.
@@ -201,16 +207,15 @@ try {
   // Critère 4 : Camping rangée en tête, quatre fois ▲ (elle était dernière) ; le nouvel
   // ordre ouvre l'aperçu et le voyage créé, le voyage déjà créé garde le sien.
   await retourBibliotheque(page);
-  const camping = idDe(await lire(page), 'Camping');
   await page.click('[data-action="ranger"]');
   await calme(page);
   for (let i = 0; i < 4; i++) {
-    await page.click(commande('monter', camping));
+    await page.click('.rangement-liste li:has(b:text-is("Camping")) [data-action="monter"]');
     await calme(page);
   }
   await page.click('[data-action="terminer"]');
   await calme(page);
-  const ordre = (await lire(page)).cartes.map(c => c.nom);
+  const ordre = (await lire(page)).choix;
   juge.exige(ordre[0] === 'Camping', `critère 4, bibliothèque : ordre ${vu(ordre)}`);
   const quatre = await nouveauVoyage(page, 'Quatrième', { camping: true });
   juge.exige(

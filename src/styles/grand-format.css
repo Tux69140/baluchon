@@ -1,6 +1,7 @@
-/* Écran d'un voyage sur tablette et ordinateur, repris de la maquette validée le 2026-10-27
-   (docs/maquettes/grand-ecran/maquette.css). Les cartes, lignes, pavés, jauges et tampons sont ceux de
-   voyage.css ; ici, la disposition, les tuiles du repli et le titre de la liste.
+/* L'écran d'un voyage et la Bibliothèque sur tablette et ordinateur, repris de la maquette validée le
+   2026-10-27 (docs/maquettes/grand-ecran/maquette.css). Les cartes, lignes, pavés, jauges et tampons
+   sont ceux de voyage.css et bibliotheque.css ; ici, la disposition, les cartes du menu, les tuiles du
+   repli et le titre de la liste. Le HTML commun vient de src/ecrans/grand-format-vues.js.
 
    Toutes les règles sont sous main.grand-format : la page de l'écran porte cette classe, et le
    téléphone (un côté sous 600 px : il faut largeur et hauteur d'au moins 600 px) ne la reçoit pas.
@@ -10,14 +11,17 @@
 
    Ce que le HTML de l'écran fournit :
    - main.grand-format        la page ; data-colonnes="3" (trois colonnes) ou "repli" (tuiles) ;
-   - .lien-retour             seul sur la première ligne ;
-   - .gf-gauche               le bloc de gauche : voyage, progression, filtre ;
+   - .lien-retour, .barre-haut  seul sur la première ligne (voyage ; Bibliothèque : menu et retour) ;
+   - .gf-gauche               le bloc de gauche : voyage, progression, filtre ; ou la Bibliothèque ;
    - nav.gf-menu              le choix de catégorie : ul.choix-liste de button.choix (trois colonnes)
-                              ou ul.gf-tuiles de button.gf-tuile (repli) ; aria-current='true' sur la choisie ;
-                              li.gf-tuile-nouvelle pour « Nouvelle catégorie » (Bibliothèque) ;
+                              ou ul.gf-tuiles de button.gf-tuile (repli) ; aria-current='true' sur la
+                              choisie. Bibliothèque : li.gf-choix-modifiable qui porte la carte et son
+                              crayon (.gf-crayon), puis .bouton-large « Nouvelle catégorie » (trois
+                              colonnes) ; button.gf-tuile-nouvelle en dernière tuile (repli). Pendant le
+                              rangement, div.gf-menu porte la liste ▲ ▼ (.rangement) à sa place ;
    - section.gf-liste         la liste des objets, avec .gf-liste-tete (h2#liste-titre, visible en
-                              repli ; classe lecteur en trois colonnes), puis .gf-carte-objets, la carte
-                              qui porte les lignes. */
+                              repli ; classe lecteur en trois colonnes ; « Modifier » de la Bibliothèque
+                              en repli), puis .gf-carte-objets, la carte qui porte les lignes. */
 
 /* ---------- Commun aux trois colonnes et au repli ----------
    Dès que la largeur et la hauteur de l'écran atteignent 600 px (le seuil de la fenêtre modale,
@@ -34,7 +38,8 @@
     padding: var(--e-lg) var(--e-xl) calc(var(--e-2xl) + 80px);
   }
 
-  main.grand-format > .lien-retour {
+  main.grand-format > .lien-retour,
+  main.grand-format > .barre-haut {
     grid-column: 1 / -1;
     justify-self: start;
   }
@@ -67,7 +72,7 @@
     margin-top: var(--e-lg);
   }
 
-  /* Le choix d'une catégorie (cartes), repris de voyage-panneaux.css pour toute tablette. */
+  /* Le choix d'une catégorie (cartes), en trois colonnes. */
   main.grand-format .choix-liste {
     display: grid;
     gap: var(--e-sm);
@@ -110,6 +115,30 @@
   main.grand-format .choix[aria-current='true'] .chevron {
     visibility: visible;
     color: var(--encre);
+  }
+
+  /* Bibliothèque : le crayon d'une catégorie, dans sa carte avant la flèche. La carte lui garde sa
+     place ; lui est posé par-dessus, car un bouton ne peut pas en contenir un autre. */
+  main.grand-format .gf-choix-modifiable {
+    position: relative;
+  }
+
+  main.grand-format .gf-place-crayon {
+    flex: none;
+    width: var(--cible);
+  }
+
+  main.grand-format .gf-crayon {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--e-sm) + var(--cible));
+    margin: 0;
+    translate: 0 -50%;
+  }
+
+  /* Bibliothèque : la liste ▲ ▼ du rangement, à la place du menu, commence avec lui. */
+  main.grand-format .gf-menu > .rangement {
+    margin-top: 0;
   }
 
   /* ---------- Les tuiles du repli ----------

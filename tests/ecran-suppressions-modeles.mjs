@@ -1,11 +1,11 @@
 // Phase 7 (spec, « Maquettes validées », docs/maquettes/suppressions/) : supprimer une catégorie ou un
 // objet modèle depuis sa fiche, après la question chiffrée (src/ecrans/suppression.js). Téléphone
-// étroit (360 × 640) puis tablette en paysage (deux panneaux).
+// étroit (360 × 640) puis tablette en paysage (grand format, en repli).
 // - « Supprimer la catégorie » / « Supprimer l’objet » : absent d'une fiche neuve, présent sous un
 //   trait, en fin de fiche, dans une fiche existante ;
 // - Camping : « Ses 3 objets seront supprimés aussi. … », « 3 objets » seul en gras ; « Garder » ne
 //   change rien ; « Supprimer » ferme question et fiche, Camping et ses objets quittent l'écran et le
-//   stockage ; en deux panneaux, la première catégorie restante est choisie (Review Focus 4) ;
+//   stockage ; en grand format, la première catégorie restante est choisie (Review Focus 4) ;
 // - un objet : « Supprimer l’objet « … » ? » ; supprimé, il quitte sa catégorie ;
 // - panne de supprimerObjet : la fiche reste, message en haut, stockage inchangé ;
 // - double appui sur « Supprimer » pendant une écriture lente : une seule écriture, boutons de la
@@ -152,9 +152,12 @@ async function poser(page, cle, operations) {
   await ecrireStockage(page, { ...donnees, [cle]: operations });
 }
 
+// Grand format (tablettes, ordinateur) : la catégorie se choisit dans le menu, ses objets sont dans la
+// liste ; au téléphone, elle se déplie.
+const enGrandFormat = vue => vue.disposition !== 'telephone';
 // Les objets que l'écran montre d'une catégorie (dépliée ou choisie).
 const objetsVus = (vue, nom) =>
-  (vue.panneaux ? vue.detailObjets : vue.cartes.find(c => c.nom === nom)?.objets.map(o => o.nom)) ?? [];
+  (enGrandFormat(vue) ? vue.detailObjets : vue.cartes.find(c => c.nom === nom)?.objets.map(o => o.nom)) ?? [];
 
 // 1. « Supprimer » : absent d'une fiche neuve, présent sous un trait dans une fiche existante.
 async function essaiPresence(format) {
@@ -229,7 +232,7 @@ async function essaiCategorie(format) {
     `${cas} : stockage ${vu(apres.categories.map(c => c.nom))}`,
   );
   // Camping était choisie (la fiche s'ouvre depuis le détail) : la première restante l'est à sa place.
-  if (vue.panneaux)
+  if (enGrandFormat(vue))
     juge.exige(
       vue.choisie === 'Vêtements' && vue.detail === 'Vêtements',
       `${cas} : choisie ${vu({ choisie: vue.choisie, detail: vue.detail })}`,

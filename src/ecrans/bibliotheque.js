@@ -1,8 +1,11 @@
 // Écran Bibliothèque (#/bibliotheque), ouvert depuis Réglages (docs/PRD.md, US-2 à US-5 ; maquette
-// validée le 2026-10-25, docs/maquettes/bibliotheque/) : les catégories de la bibliothèque et leurs
-// objets modèles. Une colonne de cartes repliées à l'ouverture ; deux panneaux sur la tablette en
-// paysage et l'ordinateur, la catégorie choisie à gauche et ses objets à droite. « Ranger les
-// catégories » ouvre une liste compacte où ▲ et ▼ déplacent une catégorie d'une place.
+// validée le 2026-10-25, docs/maquettes/bibliotheque/ ; grand écran le 2026-10-27,
+// docs/maquettes/grand-ecran/) : les catégories de la bibliothèque et leurs objets modèles. Au
+// téléphone, une colonne de cartes repliées à l'ouverture ; dès 600 px de petit côté (tablettes,
+// ordinateur), la même disposition que l'écran d'un voyage : la Bibliothèque, le menu des catégories
+// et les objets de la choisie, en trois colonnes dès 1340 px de large, sinon les catégories en tuiles
+// et la liste dessous (le « repli »). « Ranger les catégories » ouvre une liste compacte où ▲ et ▼
+// déplacent une catégorie d'une place ; en grand format, elle prend la place du menu.
 // Le crayon d'une catégorie, la ligne d'un objet, « Nouvelle catégorie » et « Ajouter un objet »
 // ouvrent leur fiche (src/ecrans/edition-modeles.js) ; enregistrée, la bibliothèque est relue et ce qui
 // vient de changer s'éclaire ; supprimée (phase 7), elle est relue, et si la catégorie choisie est
@@ -11,12 +14,13 @@
 import { remplir } from '../i18n/traduction.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
-import { DEUX_PANNEAUX, glisser, places } from './disposition.js';
+import { GRAND_FORMAT, TROIS_COLONNES, allerALaListe, glisser, places, poserDessin } from './disposition.js';
 import { editerCategorie, editerObjet } from './edition-modeles.js';
 import { creerFileOrdre } from './file-ordre.js';
 import { GLISSEMENT, creerModeRangement, suivreFin } from './mode-rangement.js';
 
-const deuxPanneaux = matchMedia(DEUX_PANNEAUX);
+const grandFormat = matchMedia(GRAND_FORMAT);
+const troisColonnes = matchMedia(TROIS_COLONNES);
 
 // Ce que l'écran dessine, tiré de la bibliothèque lue : les catégories par rang, les objets de chacune
 // par nom, le nom de chaque étiquette.
@@ -74,31 +78,36 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
 
   const trouverCommande = (action, id) =>
     main.querySelector(`[data-action="${action}"]${id ? `[data-id="${CSS.escape(id)}"]` : ''}`);
+  // La commande, ou, si elle n'est plus dessinée (disposition changée, crayon d'une carte devenu
+  // « Modifier » de la choisie), sa catégorie : en-tête d'accordéon, carte ou tuile du menu.
+  const commandeProche = (action, id) =>
+    trouverCommande(action, id) ?? trouverCommande('accordeon', id) ?? trouverCommande('choisir', id);
 
-  // Chaque dessin suit la disposition du moment ; le focus reste sur la même commande (ou, la
-  // disposition changée, sur la même catégorie), et chaque panneau garde son défilement, sauf le
-  // détail d'une autre catégorie, qui se lit depuis son début. enVue : ce qu'il faut amener dans la
-  // vue, avant le glissement : un élément qui glisse est mesuré à son ancienne place, et la page ne
-  // défilerait pas pour le montrer à la nouvelle.
+  // Chaque dessin suit la disposition du moment : tourner l'appareil ou élargir la fenêtre redessine
+  // le même état (catégorie choisie, rangement). Le focus reste sur la même commande (ou, la
+  // disposition changée, sur la même catégorie), et chaque colonne garde son défilement, sauf la liste
+  // d'une autre catégorie, qui se lit depuis son début. enVue : ce qu'il faut amener dans la vue, avant
+  // le glissement : un élément qui glisse est mesuré à son ancienne place, et la page ne défilerait pas
+  // pour le montrer à la nouvelle.
   function peindre({ glissement = false, enVue = null } = {}) {
     const avant = glissement ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    const { classe, html } = vueBibliotheque({ ...contexte, ...donnees, ...ui, deuxPanneaux: deuxPanneaux.matches });
+    poserDessin(
+      main,
+      vueBibliotheque({
+        ...contexte,
+        ...donnees,
+        ...ui,
+        grandFormat: grandFormat.matches,
+        troisColonnes: troisColonnes.matches,
+      }),
+    );
     ui.recent = null;
-    const defilements = classe === main.className ? [...main.querySelectorAll('.panneau')].map(p => p.scrollTop) : [];
-    main.className = classe;
-    main.innerHTML = html;
-    main.querySelectorAll('.panneau').forEach((p, i) => (p.scrollTop = defilements[i] ?? 0));
-    if (ui.choisie !== choisieDessinee) main.querySelector('.panneau-droit')?.scrollTo(0, 0);
+    if (ui.choisie !== choisieDessinee) main.querySelector('.gf-liste')?.scrollTo(0, 0);
     choisieDessinee = ui.choisie;
     main.querySelector('[data-annonce]')?.replaceWith(annonce);
-    if (cle)
-      (
-        trouverCommande(cle.action, cle.id) ??
-        trouverCommande('accordeon', cle.id) ??
-        trouverCommande('choisir', cle.id)
-      )?.focus({ preventScroll: true });
+    if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
     if (enVue) main.querySelector(enVue)?.scrollIntoView({ block: 'nearest' });
     glisser(main, avant, GLISSEMENT);
   }
@@ -152,10 +161,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   let aFocaliser = null;
   function rendreFocus() {
     if (!aFocaliser || parti()) return;
-    const { action, id } = aFocaliser;
-    (trouverCommande(action, id) ?? trouverCommande('accordeon', id) ?? trouverCommande('choisir', id))?.focus({
-      preventScroll: true,
-    });
+    commandeProche(aFocaliser.action, aFocaliser.id)?.focus({ preventScroll: true });
   }
 
   // Après une écriture : la bibliothèque relue, redessinée, et recent (« cat-<id> », l'id d'un objet,
@@ -177,9 +183,11 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     if (parti()) return;
     ui.recent = recent;
     let enVue = null;
-    if (recent) enVue = recent.startsWith('cat-') ? `[data-flip="${CSS.escape(recent)}"]` : commandeObjet(recent);
+    if (recent) enVue = recent.startsWith('cat-') ? commandeCategorie(recent.slice(4)) : commandeObjet(recent);
     peindre({ enVue });
   }
+  // Une catégorie à l'écran : sa carte (téléphone), sa carte du menu (trois colonnes) ou sa tuile.
+  const commandeCategorie = id => `[data-flip="cat-${CSS.escape(id)}"], .gf-tuile[data-id="${CSS.escape(id)}"]`;
   const commandeObjet = id => `[data-action="modifier-objet"][data-id="${CSS.escape(id)}"]`;
 
   // Une écriture faite depuis une fiche. Supprimé, le focus revient à ce qui reste de plus proche :
@@ -193,7 +201,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
       if (categorieId) aFocaliser = { action: 'nouvel-objet', id: categorieId };
       else aFocaliser = premiere ? { action: 'accordeon', id: premiere } : { action: 'nouvelle-categorie' };
     } else if (type === 'categorie') {
-      // Neuve : dépliée (une colonne) et choisie (deux panneaux), pour qu'on y ajoute ses objets.
+      // Neuve : dépliée (téléphone) et choisie (grand format), pour qu'on y ajoute ses objets.
       if (neuve) {
         ui.ouvertes.add(id);
         ui.choisie = id;
@@ -245,6 +253,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     } else if (action === 'choisir') {
       ui.choisie = id;
       peindre();
+      allerALaListe(main);
     } else if (action === 'monter') ordre.deplacer('categories', id, -1);
     else if (action === 'descendre') ordre.deplacer('categories', id, 1);
     else if (action === 'modifier-categorie') {
@@ -273,13 +282,14 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     },
     { signal: fin.signal },
   );
-  deuxPanneaux.addEventListener(
-    'change',
-    () => {
-      if (!parti()) peindre();
-    },
-    { signal: fin.signal },
-  );
+  for (const requete of [grandFormat, troisColonnes])
+    requete.addEventListener(
+      'change',
+      () => {
+        if (!parti()) peindre();
+      },
+      { signal: fin.signal },
+    );
   peindre();
 }
 

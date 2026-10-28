@@ -5,11 +5,12 @@
 //   bibliothèque ; sous le nom, « N objets · Toujours incluse », ou « N objets » et les étiquettes en
 //   puces (Camping) ; Alimentation dépliée : ses objets par nom, leur règle, « consommable », ⓘ, puis
 //   « Ajouter un objet » ;
-// - deux panneaux sur la tablette en paysage (choix à gauche, la première choisie, ses objets à
-//   droite ; toucher une autre la montre), une colonne en portrait ;
+// - l'accordéon au téléphone, même couché (petit côté sous 600 px) ; tablettes et ordinateur en
+//   grand format (tests/ecran-bibliotheque-grand-format.mjs) ;
 // - noms avec < & " : rendus en texte sur la carte, ses puces, ses objets, les libellés ▲ ▼ ;
-// Téléphones 360 × 640 et 640 × 360, téléphone, tablette (portrait, paysage) et ordinateur, en clair
-// et en sombre : cibles de 44 px, rien sous les barres système ; captures bibliotheque-… et ranger-…
+// Téléphones 360 × 640 et 640 × 360, téléphone, tablette (portrait, paysage), portable et ordinateur,
+// en clair et en sombre : cibles de 44 px, rien sous les barres système ; captures bibliotheque-… et
+// ranger-…
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -32,7 +33,8 @@ import {
 } from './outils/bibliotheque.mjs';
 import { CAPTURES, NOMS_THEME, creerJuge, verifierBarres, verifierCommandes } from './outils/page.mjs';
 
-const LARGES = new Set(['tablette-paysage', 'ordinateur']);
+// Les formats en grand format (petit côté d'au moins 600 px) : la catégorie se choisit dans le menu.
+const GRANDS = new Set(['tablette-portrait', 'tablette-paysage', 'portable', 'ordinateur']);
 
 // Une catégorie, son étiquette et son objet aux noms piégés (Review Focus 1), ajoutés à la
 // bibliothèque de départ.
@@ -103,7 +105,7 @@ async function essaiLecture() {
       vue.menu &&
       vue.ranger &&
       vue.nouvelle &&
-      !vue.panneaux,
+      vue.disposition === 'telephone',
     `${cas} : en-tête ${vu({ ...vue, cartes: undefined })}`,
   );
   juge.exige(vu(vue.cartes.map(c => c.nom)) === vu(DEPART), `${cas} : ordre ${vu(vue.cartes.map(c => c.nom))}`);
@@ -151,40 +153,16 @@ async function essaiLecture() {
   await fermer(cas, ouvert);
 }
 
-// Deux panneaux à 1280 × 800, une colonne à 800 × 1280.
-async function essaiDispositions() {
-  const cas = 'deux panneaux';
-  const large = await ouvrirBibliotheque('tablette-paysage');
-  const vue = await lire(large.page);
+// Le téléphone couché (640 × 360) garde l'accordéon : son petit côté est sous 600 px.
+async function essaiTelephoneCouche() {
+  const cas = 'téléphone couché';
+  const ouvert = await ouvrirBibliotheque('telephone-etroit-paysage');
+  const vue = await lire(ouvert.page);
   juge.exige(
-    vue.panneaux &&
-      vue.cartes.length === 0 &&
-      vu(vue.choix) === vu(DEPART) &&
-      vue.choisie === 'Vêtements' &&
-      vue.choixAGauche &&
-      vue.detail === 'Vêtements' &&
-      vu(vue.detailObjets) === vu(vue.detailObjets.toSorted((x, y) => x.localeCompare(y, 'fr'))) &&
-      vue.detailObjets.length === 7,
-    `${cas} : ${vu(vue)}`,
+    vue.disposition === 'telephone' && vu(vue.cartes.map(c => c.nom)) === vu(DEPART) && vue.choix.length === 0,
+    `${cas} : ${vu({ disposition: vue.disposition, cartes: vue.cartes.map(c => c.nom), choix: vue.choix })}`,
   );
-  await large.page.click('.choix:has-text("Alimentation")');
-  await calme(large.page);
-  const choisie = await lire(large.page);
-  juge.exige(
-    choisie.choisie === 'Alimentation' &&
-      choisie.detail === 'Alimentation' &&
-      vu(choisie.detailObjets) === vu(['Gourde', 'Repas']),
-    `${cas}, Alimentation touchée : ${vu(choisie)}`,
-  );
-  await fermer(cas, large);
-
-  const etroit = await ouvrirBibliotheque('tablette-portrait');
-  const colonne = await lire(etroit.page);
-  juge.exige(
-    !colonne.panneaux && colonne.cartes.length === 5 && colonne.choix.length === 0,
-    `une colonne en portrait : ${vu(colonne)}`,
-  );
-  await fermer('une colonne', etroit);
+  await fermer(cas, ouvert);
 }
 
 // Review Focus 1 : des noms avec < & " restent du texte.
@@ -229,13 +207,16 @@ async function essaiFormat(format, theme) {
   const cas = `${format}, ${NOMS_THEME[theme]}`;
   const ouvert = await ouvrirBibliotheque(format, { theme });
   const { page } = ouvert;
-  const alimentation = idDe(await lire(page), 'Alimentation');
-  if (LARGES.has(format)) await page.click('.choix:has-text("Alimentation")');
-  else await page.click(commande('accordeon', alimentation));
+  if (GRANDS.has(format)) await page.click('.gf-menu [data-action="choisir"]:has(b:text-is("Alimentation"))');
+  else await page.click(commande('accordeon', idDe(await lire(page), 'Alimentation')));
   await page.mouse.move(0, 0);
   await calme(page);
   const vue = await lire(page);
-  juge.exige(vue.panneaux === LARGES.has(format), `${cas} : disposition ${vu(vue.panneaux)}`);
+  juge.exige(
+    (vue.disposition !== 'telephone') === GRANDS.has(format) &&
+      (GRANDS.has(format) ? vue.detail === 'Alimentation' : vue.cartes.some(c => c.objets.length === 2)),
+    `${cas} : disposition ${vu({ disposition: vue.disposition, detail: vue.detail })}`,
+  );
   await verifierCommandes(page, juge, `${cas}, Bibliothèque`);
   await page.screenshot({ path: join(CAPTURES, `bibliotheque-${format}-${NOMS_THEME[theme]}.png`) });
   await page.click('[data-action="ranger"]');
@@ -254,7 +235,7 @@ async function essaiFormat(format, theme) {
 try {
   await mkdir(CAPTURES, { recursive: true });
   await essaiLecture();
-  await essaiDispositions();
+  await essaiTelephoneCouche();
   await essaiNomsPieges();
   for (const theme of ['light', 'dark'])
     for (const format of Object.keys(TOUS_FORMATS)) await essaiFormat(format, theme);
@@ -262,4 +243,7 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Bibliothèque', 'lecture, deux panneaux, noms piégés ; 6 formats × 2 thèmes, captures');
+juge.conclure(
+  'Bibliothèque',
+  `lecture, téléphone couché, noms piégés ; ${Object.keys(TOUS_FORMATS).length} formats × 2 thèmes, captures`,
+);

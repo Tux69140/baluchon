@@ -7,6 +7,7 @@
 import { remplir } from '../i18n/traduction.js';
 import { appuiSurCase, estComplet, etatDansLeSac, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
+import { colonnesGrandFormat, marqueAttenuee, tuileCategorie } from './grand-format-vues.js';
 import { echapper } from './html.js';
 import { iconeInterface, paveCategorie } from './icones.js';
 import { jauge } from './jauge.js';
@@ -67,12 +68,18 @@ function vueEntete({ t, langue }, voyage, etiquettes) {
       </div>`;
 }
 
+// Sous le filtre, une catégorie bouclée descend en bas, atténuée (carte, choix ou tuile).
+const estAttenuee = (etat, categorie) => etat.filtre && etat.enBas.has(categorie.id);
+
 // Le tampon remplace le compte dès qu'une catégorie est bouclée pour l'état d'affichage (après la
-// seconde de répit) ; pose : il vient d'être posé, il s'imprime avec un rebond.
-function compteOuTampon(t, { categorie, objets }, etat, poses) {
+// seconde de répit) ; pose : il vient d'être posé, il s'imprime avec un rebond. classes : celles des
+// cartes (tampon, compte), ou celles des tuiles, qui le disent en petit.
+const CARTE = { tampon: 'tampon', compte: 'compte' };
+const TUILE = { tampon: 'gf-tuile-boucle', compte: 'gf-tuile-compte' };
+function compteOuTampon(t, { categorie, objets }, etat, { classes = CARTE, poses = new Set() } = {}) {
   if (etat.bouclees.has(categorie.id))
-    return `<span class="tampon"${poses.has(categorie.id) ? ' data-pose' : ''}>${t('voyage.boucle')}</span>`;
-  return `<span class="compte">${compte(t, progression(objets))}</span>`;
+    return `<span class="${classes.tampon}"${poses.has(categorie.id) ? ' data-pose' : ''}>${t('voyage.boucle')}</span>`;
+  return `<span class="${classes.compte}">${compte(t, progression(objets))}</span>`;
 }
 
 // Le nom de la case dit l'état et ce que fera l'appui (« Ajouter une pièce », « Vider »…).
@@ -119,14 +126,13 @@ function vueCategorie(contexte, affichee, toute, etat, poses) {
   const { t } = contexte;
   const { categorie } = affichee;
   const ouverte = etat.ouvertes.has(categorie.id);
-  const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
   return `
-      <section class="categorie" data-id="${echapper(categorie.id)}" data-flip="cat-${echapper(categorie.id)}"${attenuee}>
+      <section class="categorie" data-id="${echapper(categorie.id)}" data-flip="cat-${echapper(categorie.id)}"${marqueAttenuee(estAttenuee(etat, categorie))}>
         <h2 class="categorie-titre">
           <button type="button" class="categorie-tete" data-action="accordeon" data-id="${echapper(categorie.id)}" aria-expanded="${ouverte}">
             ${paveCategorie(categorie)}
             <span class="categorie-nom"><b>${echapper(categorie.nom)}</b>${jauge(progression(toute.objets), true)}</span>
-            ${compteOuTampon(t, toute, etat, poses)}
+            ${compteOuTampon(t, toute, etat, { poses })}
             <span class="chevron" aria-hidden="true">${iconeInterface('deplier')}</span>
           </button>
         </h2>
@@ -137,13 +143,12 @@ function vueCategorie(contexte, affichee, toute, etat, poses) {
 // Trois colonnes : dans le menu, une catégorie se choisit ; la choisie porte aria-current et sa flèche.
 function vueChoix({ t }, affichee, toute, etat, poses) {
   const { categorie } = affichee;
-  const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
   return `
           <li data-flip="cat-${echapper(categorie.id)}">
-            <button type="button" class="choix" data-action="choisir" data-id="${echapper(categorie.id)}" aria-current="${etat.choisie === categorie.id}"${attenuee}>
+            <button type="button" class="choix" data-action="choisir" data-id="${echapper(categorie.id)}" aria-current="${etat.choisie === categorie.id}"${marqueAttenuee(estAttenuee(etat, categorie))}>
               ${paveCategorie(categorie)}
               <span class="categorie-nom"><b>${echapper(categorie.nom)}</b>${jauge(progression(toute.objets), true)}</span>
-              ${compteOuTampon(t, toute, etat, poses)}
+              ${compteOuTampon(t, toute, etat, { poses })}
               <span class="chevron" aria-hidden="true">${iconeInterface('suivant')}</span>
             </button>
           </li>`;
@@ -151,27 +156,17 @@ function vueChoix({ t }, affichee, toute, etat, poses) {
 
 // Repli : la même chose en tuile compacte, pavé, nom, puis le compte ou « Bouclé ! » en petit. Les
 // tuiles passent à la ligne : sans glissement (data-flip), une tuile changerait de colonne d'un bond.
-function vueTuile({ t }, affichee, toute, etat) {
-  const { categorie } = affichee;
-  const attenuee = etat.filtre && etat.enBas.has(categorie.id) ? ' data-attenuee' : '';
-  const infos = etat.bouclees.has(categorie.id)
-    ? `<span class="gf-tuile-boucle">${t('voyage.boucle')}</span>`
-    : `<span class="gf-tuile-compte">${compte(t, progression(toute.objets))}</span>`;
-  return `
-          <li>
-            <button type="button" class="gf-tuile" data-action="choisir" data-id="${echapper(categorie.id)}" aria-current="${etat.choisie === categorie.id}"${attenuee}>
-              ${paveCategorie(categorie)}
-              <span class="gf-tuile-texte"><b>${echapper(categorie.nom)}</b>${infos}</span>
-            </button>
-          </li>`;
-}
+const vueTuile = ({ t }, { categorie }, toute, etat) =>
+  tuileCategorie(categorie, {
+    choisie: etat.choisie,
+    infos: compteOuTampon(t, toute, etat, { classes: TUILE }),
+    attenuee: estAttenuee(etat, categorie),
+  });
 
 // Tablette et ordinateur (src/styles/grand-format.css) : le voyage (debut : en-tête, progression,
 // filtre), le menu des catégories (cartes en trois colonnes, tuiles en repli), puis la liste de la
-// choisie. Le titre de la liste ne se voit qu'en repli, où les tuiles sortent de l'écran en défilant ;
-// en trois colonnes, la carte choisie le dit, et il reste pour la lecture d'écran.
+// choisie.
 function vueGrandFormat(contexte, { liste, etat, poses }, debut, troisColonnes) {
-  const { t } = contexte;
   const parId = new Map(liste.map(c => [c.categorie.id, c]));
   const affichees = categoriesAffichees(etat, liste);
   const choisie = affichees.find(c => c.categorie.id === etat.choisie);
@@ -181,19 +176,16 @@ function vueGrandFormat(contexte, { liste, etat, poses }, debut, troisColonnes) 
         </ul>`
     : `<ul class="gf-tuiles">${affichees.map(c => vueTuile(contexte, c, toute(c), etat)).join('')}
         </ul>`;
-  return `
-      <div class="gf-gauche">${debut}
-      </div>
-      <nav class="gf-menu" aria-labelledby="menu-titre">
-        <h2 id="menu-titre" class="lecteur">${t('voyage.categories')}</h2>
-        ${menu}
-      </nav>
-      <section class="gf-liste" aria-labelledby="liste-titre">
-        <div class="gf-liste-tete">
-          <h2 id="liste-titre"${troisColonnes ? ' class="lecteur"' : ''}>${echapper(choisie.categorie.nom)}</h2>
-        </div>
-        <div class="gf-carte-objets">${vueLignes(contexte, choisie, toute(choisie).objets.length)}</div>
-      </section>`;
+  return colonnesGrandFormat({
+    t: contexte.t,
+    debut,
+    menu,
+    liste: {
+      titre: echapper(choisie.categorie.nom),
+      lignes: vueLignes(contexte, choisie, toute(choisie).objets.length),
+    },
+    troisColonnes,
+  });
 }
 
 function vueVide(t) {

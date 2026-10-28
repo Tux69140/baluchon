@@ -74,7 +74,8 @@ const CINQ = [
 ];
 
 const vides = noms => noms.map(nom => [nom, 1, 0]);
-const SIX = [
+// Reprises par la Bibliothèque de 11 catégories (tests/ecran-bibliotheque-grand-format.mjs).
+export const SIX = [
   ['ele', 'Électronique', 'battery-charging', 'lilas', vides(['Batterie externe', 'Câbles', 'Écouteurs'])],
   ['pha', 'Pharmacie', 'first-aid-kit', 'corail', vides(['Antidouleur', 'Pansements', 'Pince à tiques'])],
   ['cha', 'Chaussures', 'sneaker', 'framboise', vides(['Chaussures de marche', 'Sandales'])],

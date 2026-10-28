@@ -2,7 +2,7 @@
 // fiche d'une catégorie ou d'un objet depuis l'écran, lire ce qu'elle montre, son catalogue des
 // pictos, et attendre qu'elle se ferme.
 import { attendreQue, calme } from './attente.mjs';
-import { fr, remplir } from './bibliotheque.mjs';
+import { disposition, fr, remplir } from './bibliotheque.mjs';
 import { lireStockage } from './page.mjs';
 
 export const m = fr.modele;
@@ -63,25 +63,35 @@ export async function attendreFermee(page, selecteur = FICHE) {
   return Boolean(fermee);
 }
 
-const enPanneaux = page => page.evaluate(() => document.querySelector('#app main.panneaux') !== null);
 const carte = nom => `#app section.categorie:has(.categorie-nom > b:text-is(${JSON.stringify(nom)}))`;
+// En grand format, la carte (trois colonnes) ou la tuile (repli) du menu, et la ligne qui porte la
+// carte et son crayon.
+const entree = nom => `#app .gf-menu [data-action="choisir"]:has(b:text-is(${JSON.stringify(nom)}))`;
+const ligneDuMenu = nom => `#app .gf-menu li:has(> .choix b:text-is(${JSON.stringify(nom)}))`;
 
-// La catégorie visible : choisie à gauche (deux panneaux) ou dépliée (une colonne).
+// La catégorie visible : choisie dans le menu (grand format) ou dépliée (téléphone).
 export async function montrerCategorie(page, nom) {
-  if (await enPanneaux(page)) await page.click(`#app .choix:has(b:text-is(${JSON.stringify(nom)}))`);
+  if ((await disposition(page)) !== 'telephone') await page.click(entree(nom));
   else if ((await page.getAttribute(`${carte(nom)} [data-action="accordeon"]`, 'aria-expanded')) !== 'true')
     await page.click(`${carte(nom)} [data-action="accordeon"]`);
   await calme(page);
 }
 
+// Le crayon de la catégorie : dans sa carte (téléphone, trois colonnes) ; en repli, « Modifier » au
+// titre de la liste, une fois la catégorie choisie.
 export async function ouvrirFicheCategorie(page, nom) {
-  if (await enPanneaux(page)) {
+  const ou = await disposition(page);
+  if (ou === 'repli') {
     await montrerCategorie(page, nom);
-    await page.click('#app .detail-tete [data-action="modifier-categorie"]');
-  } else await page.click(`${carte(nom)} [data-action="modifier-categorie"]`);
+    await page.click('#app .gf-liste-tete [data-action="modifier-categorie"]');
+  } else {
+    await page.click(`${ou === 'trois' ? ligneDuMenu(nom) : carte(nom)} [data-action="modifier-categorie"]`);
+  }
   return attendreOuverte(page);
 }
 
+// Une seule commande « Nouvelle catégorie » quelle que soit la disposition : bouton flottant, bouton
+// sous les cartes ou dernière tuile.
 export async function ouvrirNouvelleCategorie(page) {
   await page.click('#app [data-action="nouvelle-categorie"]');
   return attendreOuverte(page);
@@ -95,7 +105,7 @@ export async function ouvrirFicheObjet(page, categorie, objet) {
 
 export async function ouvrirNouvelObjet(page, categorie) {
   await montrerCategorie(page, categorie);
-  const dans = (await enPanneaux(page)) ? '#app .panneau-droit' : carte(categorie);
+  const dans = (await disposition(page)) === 'telephone' ? carte(categorie) : '#app .gf-liste';
   await page.click(`${dans} [data-action="nouvel-objet"]`);
   return attendreOuverte(page);
 }
@@ -145,12 +155,12 @@ export async function chercherPicto(page, mot) {
 export const bibliothequeStockee = async page => (await lireStockage(page)).bibliotheque;
 export const idEtiquette = (bibliotheque, nom) => bibliotheque.etiquettes.find(e => e.nom === nom)?.id;
 
-// L'élément éclairé après un enregistrement : son nom affiché.
+// L'élément éclairé après un enregistrement : son nom affiché (ligne, carte ou tuile).
 export const eclaire = page =>
   page.evaluate(
     () =>
       document
         .querySelector('#app [data-recent]')
-        ?.querySelector('.objet-nom, .categorie-nom > b')
+        ?.querySelector('.objet-nom, .categorie-nom > b, .gf-tuile-texte > b')
         ?.textContent.trim() ?? null,
   );

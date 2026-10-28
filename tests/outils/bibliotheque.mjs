@@ -22,8 +22,22 @@ export const TOUS_FORMATS = {
   ordinateur: { taille: { width: 1440, height: 900 }, tactile: false },
 };
 
-export const lire = page =>
+// La disposition de l'écran : l'accordéon au téléphone, le repli (tuiles, la liste dessous) ou les trois
+// colonnes (tablettes et ordinateur, docs/superpowers/specs/2026-10-27-grand-ecran-design.md).
+export const disposition = page =>
   page.evaluate(() => {
+    const main = document.querySelector('#app main');
+    if (!main?.classList.contains('grand-format')) return 'telephone';
+    return main.dataset.colonnes === '3' ? 'trois' : 'repli';
+  });
+
+// Ce que l'écran montre. Au téléphone : cartes ; en grand format : choix (les catégories du menu, cartes
+// ou tuiles), choisie, crayons (le nom de chaque crayon des cartes), puis la liste de la choisie :
+// detail (son titre), detailObjets, detailDerniere (« Ajouter un objet »), modifierListe (« Modifier »
+// à côté du titre, en repli).
+export const lire = async page => ({
+  disposition: await disposition(page),
+  ...(await page.evaluate(() => {
     const texte = el => el?.textContent.replace(/\s+/g, ' ').trim() ?? null;
     const puces = el => [...(el?.querySelectorAll('.puces-mini > span') ?? [])].map(texte);
     const objets = racine =>
@@ -39,9 +53,7 @@ export const lire = page =>
       const bouton = li?.querySelector('button');
       return li && { texte: texte(li), action: bouton?.dataset.action, id: bouton?.dataset.id };
     };
-    const main = document.querySelector('#app main');
-    const choisie = document.querySelector('.choix[aria-current="true"]');
-    const detail = document.querySelector('.panneau-droit');
+    const liste = document.querySelector('.gf-liste');
     return {
       ecran: document.querySelector('#app')?.dataset.ecran ?? null,
       adresse: location.hash,
@@ -51,7 +63,7 @@ export const lire = page =>
       menu: Boolean(document.querySelector('#app [data-action="menu"]')),
       ranger: Boolean(document.querySelector('[data-action="ranger"]')),
       nouvelle: Boolean(document.querySelector('[data-action="nouvelle-categorie"]')),
-      panneaux: main?.classList.contains('panneaux') ?? false,
+      flottant: Boolean(document.querySelector('#app .bouton-flottant')),
       cartes: [...document.querySelectorAll('#app section.categorie')].map(s => ({
         id: s.dataset.categorie,
         nom: texte(s.querySelector('.categorie-nom b')),
@@ -62,13 +74,15 @@ export const lire = page =>
         objets: objets(s),
         derniere: derniere(s),
       })),
-      choix: [...document.querySelectorAll('.panneau-gauche .choix')].map(c => texte(c.querySelector('b'))),
-      choisie: texte(choisie?.querySelector('b')),
-      choixAGauche: Boolean(
-        choisie && detail && choisie.getBoundingClientRect().right <= detail.getBoundingClientRect().left,
+      choix: [...document.querySelectorAll('.gf-menu [data-action="choisir"]')].map(c => texte(c.querySelector('b'))),
+      choisie: texte(document.querySelector('.gf-menu [data-action="choisir"][aria-current="true"] b')),
+      crayons: [...document.querySelectorAll('.gf-menu [data-action="modifier-categorie"]')].map(c =>
+        c.getAttribute('aria-label'),
       ),
-      detail: texte(document.querySelector('#detail-titre')),
-      detailObjets: detail ? objets(detail).map(o => o.nom) : [],
+      detail: texte(document.querySelector('#liste-titre')),
+      detailObjets: liste ? objets(liste).map(o => o.nom) : [],
+      detailDerniere: derniere(liste),
+      modifierListe: texte(document.querySelector('.gf-liste-tete [data-action="modifier-categorie"]')),
       rangement: [...document.querySelectorAll('.rangement-liste > li')].map(li => ({
         nom: texte(li.querySelector('b')),
         monter: li.querySelector('[data-action="monter"]')?.getAttribute('aria-label'),
@@ -80,7 +94,8 @@ export const lire = page =>
       focus: { action: document.activeElement?.dataset.action, id: document.activeElement?.dataset.id },
       sorties: window.sortiesDemandees ?? null,
     };
-  });
+  })),
+});
 
 export const ordreStocke = async page =>
   ((await lireStockage(page)).bibliotheque?.categories ?? []).toSorted((x, y) => x.ordre - y.ordre).map(c => c.nom);
@@ -92,16 +107,18 @@ export async function toucheRetour(page) {
   await calme(page);
 }
 
-// Menu → Réglages → Bibliothèque, depuis l'accueil.
+// Menu → Réglages → Bibliothèque, depuis l'accueil. appareil : la taille et le pointeur, s'ils ne sont
+// pas ceux du format (les formats du grand format, à 1920 px pour l'ordinateur) ; taille : une autre
+// fenêtre (600 × 600).
 export async function ouvrirBibliotheque(
   navigateur,
   url,
   format = 'telephone',
-  { theme = 'light', donnees = DONNEES, maintenant } = {},
+  { theme = 'light', donnees = DONNEES, maintenant, appareil = TOUS_FORMATS[format], taille: autreTaille } = {},
 ) {
-  const { taille, ecran, tactile } = TOUS_FORMATS[format];
+  const { taille, ecran, tactile } = appareil;
   const ouvert = await ouvrir(navigateur, url, {
-    taille,
+    taille: autreTaille ?? taille,
     ecran,
     tactile,
     theme,

@@ -32,8 +32,7 @@ h3 {
   padding: var(--e-lg) var(--e-md) calc(var(--e-2xl) + 80px);
 }
 
-.ecran > h1,
-.panneau-gauche > h1 {
+.ecran > h1 {
   font-size: var(--taille-ecran);
   line-height: 1.15;
   overflow-wrap: anywhere;
@@ -91,6 +90,17 @@ a.bouton {
 .bouton-danger .icone svg {
   width: 20px;
   height: 20px;
+}
+
+/* Un texte pour le seul lecteur d'écran (annonce du rangement, « une note », titres des colonnes du
+   grand format). */
+.lecteur {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Focus visible sur toute commande, au clavier : à l'encre, il se détache à plus de 3:1 de la carte,

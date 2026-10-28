@@ -32,3 +32,24 @@ test('les classes propres au grand format portent le préfixe gf-', async () => 
   const classes = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\.([a-z][\w-]*)/g)].map(m => m[1]);
   for (const nom of classes.filter(n => /^tuile/.test(n))) assert.fail(`classe sans préfixe : .${nom}`);
 });
+
+test('les deux panneaux ont disparu : plus de feuille, plus de condition sur l’orientation', async () => {
+  // Fin de la règle « deux panneaux dès 1000 px en paysage » : l'orientation n'entre plus dans aucune
+  // condition de l'écran d'un voyage ni de la Bibliothèque (le grand format suit la largeur et la hauteur).
+  await assert.rejects(readFile(new URL('../src/styles/voyage-panneaux.css', import.meta.url)), { code: 'ENOENT' });
+  const fichiers = [
+    'src/ecrans/disposition.js',
+    'src/ecrans/voyage.js',
+    'src/ecrans/voyage-vues.js',
+    'src/ecrans/bibliotheque.js',
+    'src/ecrans/bibliotheque-vues.js',
+    'src/styles/grand-format.css',
+    'src/styles/voyage.css',
+    'src/styles/bibliotheque.css',
+    'src/main.js',
+  ];
+  for (const fichier of fichiers) {
+    const texte = await readFile(new URL(`../${fichier}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(texte, /orientation:\s*landscape|voyage-panneaux|DEUX_PANNEAUX/, fichier);
+  }
+});

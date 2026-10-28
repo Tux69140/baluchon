@@ -1,16 +1,7 @@
 /* L'écran Bibliothèque (src/ecrans/bibliotheque.js), repris de la maquette validée le 2026-10-25
-   (docs/maquettes/bibliotheque/maquette.css). Les cartes, lignes, choix et panneaux sont ceux de
-   voyage.css et voyage-panneaux.css ; ici, ce qui n'existe que dans la bibliothèque. */
-
-/* Un texte pour le seul lecteur d'écran (annonce du rangement, « une note »). */
-.lecteur {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
+   (docs/maquettes/bibliotheque/maquette.css). Les cartes et les lignes sont celles de voyage.css, la
+   disposition sur tablette et ordinateur celle de grand-format.css ; ici, ce qui n'existe que dans la
+   bibliothèque. */
 
 .biblio-resume {
   margin: var(--e-xs) 0 0;
@@ -97,30 +88,18 @@
   height: 20px;
 }
 
-/* ---------- Deux panneaux : « Nouvelle catégorie » sous les choix, nom et infos à droite ---------- */
+/* ---------- Trois colonnes : « Nouvelle catégorie » sous les cartes ---------- */
 .bouton-large {
   width: 100%;
   margin-top: var(--e-md);
-}
-
-.detail-titre {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.detail-titre h2 {
-  font-size: var(--taille-section);
-  overflow-wrap: anywhere;
 }
 
 /* Ce qui vient d'être enregistré s'éclaire un instant, puis reprend sa couleur. */
 @media (prefers-reduced-motion: no-preference) {
   [data-recent] > .objet-corps,
   [data-recent] .categorie-tete,
-  [data-recent] > .choix {
+  [data-recent] > .choix,
+  [data-recent] > .gf-tuile {
     animation: eclaire 1600ms ease-out;
   }
 }

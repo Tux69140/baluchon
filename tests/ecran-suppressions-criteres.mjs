@@ -1,7 +1,7 @@
 // Phase 7 (docs/PLAN.md, critères d'acceptation) de bout en bout, sur la bibliothèque de départ
 // installée par l'appli, avec les voyages d'essai et un voyage créé avant par « Nouveau voyage » (Plage,
 // Camping, Chaud et Tente cochées : il reçoit les modèles visés). Téléphone étroit (une colonne) puis
-// tablette en paysage (deux panneaux). Une cible de chaque type : l'étiquette Chaud et le groupe
+// tablette en paysage (grand format, en repli). Une cible de chaque type : l'étiquette Chaud et le groupe
 // Hébergement (permis : personne n'y perd sa dernière étiquette), puis l'objet Crème solaire et la
 // catégorie Vêtements. Chacune est supprimée deux fois :
 // - d'abord, le chiffre annoncé (en gras dans la question, et dans le bandeau) est celui du stockage :
@@ -136,7 +136,7 @@ function changements(avant, apres) {
   };
 }
 
-// Tout ce que l'écran montre (#app), à sa place dans la fenêtre, avec ce que la page et chaque panneau
+// Tout ce que l'écran montre (#app), à sa place dans la fenêtre, avec ce que la page et chaque colonne
 // défilent et ont à défiler : un élément qui bouge, une place qui change, se voient.
 const positions = page =>
   page.evaluate(() => {

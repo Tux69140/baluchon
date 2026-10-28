@@ -85,10 +85,13 @@ function fermer(cas, ouvert) {
   return fermerEssai(juge, cas, ouvert);
 }
 
+// Grand format (tablettes, ordinateur) : la catégorie se choisit dans le menu, ses objets sont dans la
+// liste ; au téléphone, elle se déplie.
+const enGrandFormat = vue => vue.disposition !== 'telephone';
 // Les objets que l'écran montre d'une catégorie (dépliée ou choisie).
 const objetsVus = (vue, nom) =>
-  (vue.panneaux ? vue.detailObjets : vue.cartes.find(c => c.nom === nom)?.objets.map(o => o.nom)) ?? [];
-const categoriesVues = vue => (vue.panneaux ? vue.choix : vue.cartes.map(c => c.nom));
+  (enGrandFormat(vue) ? vue.detailObjets : vue.cartes.find(c => c.nom === nom)?.objets.map(o => o.nom)) ?? [];
+const categoriesVues = vue => (enGrandFormat(vue) ? vue.choix : vue.cartes.map(c => c.nom));
 
 async function poser(page, cle, operations) {
   const donnees = await lireStockage(page);
@@ -163,7 +166,7 @@ async function essaiCategorie(format) {
   await calme(page);
   const vue = await lire(page);
   const recent = await page.evaluate(() => document.querySelector('#app [data-recent] b')?.textContent.trim());
-  const ouverte = vue.panneaux
+  const ouverte = enGrandFormat(vue)
     ? vue.choisie === 'Camping' && vue.detail === 'Camping'
     : vue.cartes.find(c => c.nom === 'Camping')?.ouverte === 'true';
   juge.exige(
@@ -390,7 +393,7 @@ async function essaiPiege(format) {
   await attendreObjet(page, PIEGE);
   await calme(page);
   const vue = await lire(page);
-  const ouverte = vue.panneaux ? vue.choisie === PIEGE : vue.cartes[0]?.ouverte === 'true';
+  const ouverte = enGrandFormat(vue) ? vue.choisie === PIEGE : vue.cartes[0]?.ouverte === 'true';
   const recent = await page.evaluate(() => document.querySelector('#app [data-recent] b')?.textContent);
   juge.exige(
     vu(categoriesVues(vue)) === vu([PIEGE]) && ouverte && recent === PIEGE && vu(objetsVus(vue, PIEGE)) === vu([PIEGE]),

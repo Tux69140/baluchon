@@ -8,10 +8,10 @@
 // - catalogue : 80 tuiles en dix thèmes, la courante pressée ; « tente », « soleil », « xyz » ; la
 //   hauteur de la fenêtre ne bouge pas pendant la recherche ; une tuile touchée referme le catalogue
 //   et change le pavé de la fiche ;
-// - nouvelle catégorie « Courses » en Lilas, liée à Plage : en dernier, dépliée (une colonne) ou
-//   choisie (deux panneaux), éclairée ; stockage à jour ; « Selon les étiquettes » sans étiquette :
+// - nouvelle catégorie « Courses » en Lilas, liée à Plage : en dernier, dépliée (téléphone) ou
+//   choisie (tablette), éclairée ; stockage à jour ; « Selon les étiquettes » sans étiquette :
 //   message, rien d'écrit ;
-// - rotation (1280 × 800 → 800 × 1280) fiche ouverte : la fiche et sa saisie restent.
+// - trois colonnes → repli (1440 × 900 → 800 × 1280) fiche ouverte : la fiche et sa saisie restent.
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -183,7 +183,7 @@ async function essaiNouvelleCategorie(format) {
     `${cas} : stockage ${vu(courses)}`,
   );
   const vue = await lire(page);
-  if (vue.panneaux)
+  if (vue.disposition !== 'telephone')
     juge.exige(
       vue.choix.at(-1) === 'Courses' && vue.choisie === 'Courses' && vue.detail === 'Courses',
       `${cas} : choisie ${vu({ choix: vue.choix, choisie: vue.choisie })}`,
@@ -197,21 +197,27 @@ async function essaiNouvelleCategorie(format) {
   await fermer(cas, ouvert);
 }
 
-// Tablette tournée, fiche ouverte : elle reste, avec sa saisie.
+// La disposition change, fiche ouverte (fenêtre rétrécie, de trois colonnes au repli) : elle reste,
+// avec sa saisie.
 async function essaiRotation() {
-  const cas = 'rotation';
-  const ouvert = await ouvrirBibliotheque('tablette-paysage');
+  const cas = 'changement de disposition';
+  const ouvert = await ouvrirBibliotheque('ordinateur');
   const { page } = ouvert;
   await ouvrirFicheObjet(page, 'Alimentation', 'Repas');
   await toucher(page, '[data-pas="valeur"][data-sens="1"]');
   await saisir(page, '#f-nom', 'Repas chauds');
+  const avant = (await lire(page)).disposition;
   await page.setViewportSize({ width: 800, height: 1280 });
   await calme(page);
   const fiche = await lireFiche(page);
   const vue = await lire(page);
   juge.exige(
-    fiche?.titre === 'Repas' && fiche.nom === 'Repas chauds' && fiche.valeur === '3' && !vue.panneaux,
-    `${cas} : ${vu({ fiche, panneaux: vue.panneaux })}`,
+    fiche?.titre === 'Repas' &&
+      fiche.nom === 'Repas chauds' &&
+      fiche.valeur === '3' &&
+      avant === 'trois' &&
+      vue.disposition === 'repli',
+    `${cas} : ${vu({ fiche, avant, apres: vue.disposition })}`,
   );
   await fermer(cas, ouvert);
 }
@@ -225,4 +231,7 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Fiches de catégorie', 'Camping, catalogue, nouvelle catégorie (une colonne, deux panneaux), rotation');
+juge.conclure(
+  'Fiches de catégorie',
+  'Camping, catalogue, nouvelle catégorie (téléphone, tablette), changement de disposition',
+);
