@@ -13,7 +13,7 @@
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
-import { GRAND_FORMAT, TROIS_COLONNES, allerALaListe, glisser, places, poserDessin } from './disposition.js';
+import { allerALaListe, suivreDisposition, trouverCommande } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import {
   apresRepit,
@@ -30,8 +30,6 @@ const REPIT = 1000;
 const TAMPON = 1000;
 // Glissement des lignes qui changent de place (docs/DESIGN.md, journal du 2026-10-24).
 const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
-const grandFormat = matchMedia(GRAND_FORMAT);
-const troisColonnes = matchMedia(TROIS_COLONNES);
 
 // Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
 // un voyage supprimé, plutôt que de passer pour une panne de lecture.
@@ -67,56 +65,25 @@ function ouvrirListe(app, donnees, contexte) {
   const fin = new AbortController();
   // La fiche ouverte : l'objet qu'elle montre et de quoi la repeindre.
   let fiche = null;
-  // La catégorie choisie au dernier dessin : une autre (touchée, ou venue seule après un tampon) se
-  // lit depuis son début.
-  let choisieDessinee = null;
 
-  // Chaque dessin suit la disposition du moment : tourner l'appareil ou élargir la fenêtre redessine
-  // le même état (coches, catégorie choisie, filtre). Les trois colonnes défilent chacune : un dessin
-  // dans la même disposition les laisse là où on les avait menées, sauf la liste d'une autre catégorie.
-  function peindre({ glissement = false } = {}) {
-    const avant = glissement ? places(main) : null;
-    const focus = document.activeElement?.closest('[data-action]');
-    const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    poserDessin(
-      main,
-      vueVoyage(contexte, {
-        contenu,
-        liste,
-        etat,
-        poses,
-        grandFormat: grandFormat.matches,
-        troisColonnes: troisColonnes.matches,
-      }),
-    );
-    if (etat.choisie !== choisieDessinee) main.querySelector('.gf-liste')?.scrollTo(0, 0);
-    choisieDessinee = etat.choisie;
-    poses = { tampons: new Set(), bandeau: false };
-    if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
-    glisser(main, avant, GLISSEMENT);
-    // Un objet disparu à la relecture ferme la fiche (repeindre(undefined)).
-    fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
-  }
-
-  const trouverCommande = (action, id) =>
-    main.querySelector(`[data-action="${action}"]${id ? `[data-id="${CSS.escape(id)}"]` : ''}`);
-
-  // La commande qui reprend le focus quand celle d'avant n'est plus dessinée (ligne masquée, catégorie
-  // repliée ou quittée, disposition changée) : la même, sinon la ligne de l'objet, sinon sa catégorie
-  // (en-tête d'accordéon au téléphone, carte ou tuile du menu en grand format), sinon le filtre ;
-  // jamais la page entière.
-  function commandeProche(action, id) {
-    const objet = contenu.objets.find(o => o.id === id);
-    const categorieId = objet ? objet.categorieId : id;
-    const deSaCategorie = () =>
-      categorieId && (trouverCommande('accordeon', categorieId) ?? trouverCommande('choisir', categorieId));
-    return (
-      trouverCommande(action, id) ??
-      (objet && trouverCommande('fiche', id)) ??
-      deSaCategorie() ??
-      trouverCommande('filtre')
-    );
-  }
+  // Chaque dessin suit la disposition du moment (src/ecrans/disposition.js) : tourner l'appareil ou
+  // élargir la fenêtre redessine le même état (coches, catégorie choisie, filtre). Le focus d'une
+  // commande qui n'est plus dessinée va à la ligne de son objet, sinon à sa catégorie, sinon au filtre.
+  const { peindre, commandeProche } = suivreDisposition(main, {
+    dessin: disposition => vueVoyage(contexte, { contenu, liste, etat, poses, ...disposition }),
+    choisie: () => etat.choisie,
+    categorieDe: id => contenu.objets.find(o => o.id === id)?.categorieId,
+    ligne: 'fiche',
+    repli: 'filtre',
+    apresPose() {
+      poses = { tampons: new Set(), bandeau: false };
+      // Un objet disparu à la relecture ferme la fiche (repeindre(undefined)).
+      fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
+    },
+    animation: GLISSEMENT,
+    signal: fin.signal,
+    parti,
+  });
 
   function arreter() {
     for (const cle of Object.keys(minuteries)) clearTimeout(minuteries[cle]);
@@ -204,7 +171,7 @@ function ouvrirListe(app, donnees, contexte) {
     contenu = { ...contenu, objets: contenu.objets.map(o => (o.id === id ? { ...o, dansLeSac } : o)) };
     liste = listeParCategorie(contenu);
     peindre();
-    const caseCochee = trouverCommande('case', id);
+    const caseCochee = trouverCommande(main, 'case', id);
     if (caseCochee) caseCochee.dataset.pulse = '';
     relancerRepit();
     enregistrer(id, dansLeSac);
@@ -218,7 +185,7 @@ function ouvrirListe(app, donnees, contexte) {
       const accord = await confirmerVider({ t, objet, signal: fin.signal });
       if (parti()) return;
       // Le dessin a pu changer pendant la question : le focus revient à la case de l'objet.
-      trouverCommande('case', id)?.focus();
+      trouverCommande(main, 'case', id)?.focus();
       if (!accord) return;
     }
     changer(id, dansLeSac);
@@ -238,7 +205,7 @@ function ouvrirListe(app, donnees, contexte) {
         surChangement: valeur => changer(id, valeur),
         surFermeture: () => {
           fiche = null;
-          commandeProche('fiche', id)?.focus();
+          commandeProche({ action: 'fiche', id })?.focus();
         },
         signal: fin.signal,
         dans: app,
@@ -266,14 +233,6 @@ function ouvrirListe(app, donnees, contexte) {
     }
   });
   fin.signal.addEventListener('abort', arreter);
-  for (const requete of [grandFormat, troisColonnes])
-    requete.addEventListener(
-      'change',
-      () => {
-        if (!parti()) peindre();
-      },
-      { signal: fin.signal },
-    );
   const observateur = new MutationObserver(() => parti() && observateur.disconnect());
   observateur.observe(app, { childList: true });
   peindre();

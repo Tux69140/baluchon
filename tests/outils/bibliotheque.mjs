@@ -31,6 +31,23 @@ export const disposition = page =>
     return main.dataset.colonnes === '3' ? 'trois' : 'repli';
   });
 
+// La fenêtre passe à un autre format dans la même page (fenêtre redimensionnée sur Debian, tablette
+// tournée) ; on attend la disposition qui lui revient, puis que la page se pose.
+const ATTENDUE = { telephone: 'telephone', 'tablette-portrait': 'repli', ordinateur: 'trois' };
+export async function changerDeFormat(page, format) {
+  await page.setViewportSize(FORMATS[format]);
+  await attendreQue(
+    page,
+    d => {
+      const main = document.querySelector('#app main');
+      if (!main?.classList.contains('grand-format')) return d === 'telephone';
+      return (main.dataset.colonnes === '3' ? 'trois' : 'repli') === d;
+    },
+    ATTENDUE[format],
+  );
+  await calme(page);
+}
+
 // Ce que l'écran montre. Au téléphone : cartes ; en grand format : choix (les catégories du menu, cartes
 // ou tuiles), choisie, crayons (le nom de chaque crayon des cartes), puis la liste de la choisie :
 // detail (son titre), detailObjets, detailDerniere (« Ajouter un objet »), modifierListe (« Modifier »

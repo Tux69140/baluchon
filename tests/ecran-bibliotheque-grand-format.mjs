@@ -12,8 +12,8 @@
 // - aucun bouton flottant ; la catégorie neuve enregistrée devient la choisie ; « Ranger les
 //   catégories » remplace le menu par la liste ▲ ▼, « Terminé » le rend ;
 // - la catégorie choisie supprimée : la première restante l'est à sa place (Review Focus 2) ; un nom
-//   long et piégé reste du texte et ne déborde pas (Review Focus 3) ; passer de l'ordinateur à la
-//   tablette, au téléphone, et revenir garde la catégorie choisie et le focus (Review Focus 1).
+//   long et piégé reste du texte et ne déborde pas (Review Focus 3) ; le changement de disposition est
+//   essayé dans ecran-bibliotheque-grand-format-disposition.mjs.
 // 4 formats × 2 thèmes : cibles de 44 px, rien sous 13 px, pas de défilement de côté, rien sous les
 // barres système, captures bibliotheque-grand-format-….
 import { mkdir } from 'node:fs/promises';
@@ -21,19 +21,9 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { construireBibliotheque } from '../src/modele/bibliotheque.js';
 import { supprimerCategorie } from './outils/annulation.mjs';
-import { attendreQue, calme } from './outils/attente.mjs';
+import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
-import {
-  DEPART,
-  DONNEES,
-  disposition,
-  fermerEssai,
-  fr,
-  lire,
-  ouvrirBibliotheque,
-  remplir,
-  vu,
-} from './outils/bibliotheque.mjs';
+import { DEPART, DONNEES, fermerEssai, fr, lire, ouvrirBibliotheque, remplir, vu } from './outils/bibliotheque.mjs';
 import {
   FICHE,
   attendreFermee,
@@ -44,7 +34,7 @@ import {
   montrerCategorie,
   saisir,
 } from './outils/fiches.mjs';
-import { CAPTURES, FORMATS, NOMS_THEME, creerJuge, verifierBarres, verifierCommandes } from './outils/page.mjs';
+import { CAPTURES, NOMS_THEME, creerJuge, verifierBarres, verifierCommandes } from './outils/page.mjs';
 import {
   GRANDS,
   PIEGE,
@@ -361,54 +351,6 @@ async function essaiRangerEtSupprimer(format) {
   await fermer(cas, ouvert);
 }
 
-// Ordinateur → tablette en portrait → téléphone → ordinateur, dans la même page : Alimentation reste
-// choisie, le focus sur une commande visible (Review Focus 1).
-async function essaiChangementDeDisposition() {
-  const cas = 'changement de disposition';
-  const ouvert = await ouvrirSur('ordinateur');
-  const { page } = ouvert;
-  await toucher(juge, page, entree('Alimentation'));
-  await calme(page);
-  for (const [nom, attendue] of [
-    ['tablette-portrait', 'repli'],
-    ['telephone', 'telephone'],
-    ['ordinateur', 'trois'],
-  ]) {
-    await page.setViewportSize(FORMATS[nom]);
-    await attendreQue(
-      page,
-      d => {
-        const main = document.querySelector('#app main');
-        if (!main?.classList.contains('grand-format')) return d === 'telephone';
-        return (main.dataset.colonnes === '3' ? 'trois' : 'repli') === d;
-      },
-      attendue,
-    );
-    await calme(page);
-    const v = await lire(page);
-    const focus = await focusActuel(page);
-    // Au téléphone, l'accordéon d'aujourd'hui ne déplie rien : la catégorie gardée est celle dont
-    // l'en-tête a le focus ; on la lit au lieu de la supposer.
-    const gardee =
-      attendue === 'telephone'
-        ? await page.evaluate(() => {
-            const tete = document.activeElement?.closest('[data-action="accordeon"]');
-            return { id: tete?.dataset.id, nom: tete?.querySelector('.categorie-nom b')?.textContent };
-          })
-        : null;
-    const choisie = gardee ? gardee.nom : v.choisie;
-    juge.exige(
-      (await disposition(page)) === attendue &&
-        choisie === 'Alimentation' &&
-        (gardee ? gardee.id && focus === `accordeon:${gardee.id}` : focus.startsWith('choisir:')) &&
-        focus !== 'body' &&
-        !focus.endsWith('(invisible)'),
-      `${cas}, vers ${nom} : ${vu({ disposition: await disposition(page), choisie: v.choisie, focus })}`,
-    );
-  }
-  await fermer(cas, ouvert);
-}
-
 // Un nom long et piégé, en tuiles et en cartes : rien d'interprété, rien qui déborde (Review Focus 3).
 async function essaiNomPiege(format) {
   const cas = `${format}, nom piégé`;
@@ -444,7 +386,6 @@ try {
     await essaiFiches(format);
     await essaiRangerEtSupprimer(format);
   }
-  await essaiChangementDeDisposition();
   for (const format of ['ordinateur', 'tablette-paysage', 'tablette-portrait']) await essaiNomPiege(format);
 } finally {
   await navigateur.close();
@@ -452,5 +393,5 @@ try {
 }
 juge.conclure(
   'Bibliothèque sur tablette et ordinateur',
-  '4 formats × 2 thèmes, trois colonnes et repli, 11 catégories, fiches, nouvelle catégorie, rangement, suppression, changement de disposition, nom piégé',
+  '4 formats × 2 thèmes, trois colonnes et repli, 11 catégories, fiches, nouvelle catégorie, rangement, suppression, nom piégé',
 );

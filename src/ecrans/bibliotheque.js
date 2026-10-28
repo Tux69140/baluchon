@@ -14,13 +14,10 @@
 import { remplir } from '../i18n/traduction.js';
 import { alerterEnHaut } from './alerte.js';
 import { vueBibliotheque } from './bibliotheque-vues.js';
-import { GRAND_FORMAT, TROIS_COLONNES, allerALaListe, glisser, places, poserDessin } from './disposition.js';
+import { allerALaListe, suivreDisposition } from './disposition.js';
 import { editerCategorie, editerObjet } from './edition-modeles.js';
 import { creerFileOrdre } from './file-ordre.js';
 import { GLISSEMENT, creerModeRangement, suivreFin } from './mode-rangement.js';
-
-const grandFormat = matchMedia(GRAND_FORMAT);
-const troisColonnes = matchMedia(TROIS_COLONNES);
 
 // Ce que l'écran dessine, tiré de la bibliothèque lue : les catégories par rang, les objets de chacune
 // par nom, le nom de chaque étiquette.
@@ -64,6 +61,24 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   // La fin de l'écran, quel que soit le chemin : plus rien ne touche la page.
   const fin = suivreFin(app, main);
   const { parti } = fin;
+
+  // Chaque dessin suit la disposition du moment (src/ecrans/disposition.js) : tourner l'appareil ou
+  // élargir la fenêtre redessine le même état (catégorie choisie, rangement). Le focus d'une commande
+  // qui n'est plus dessinée (disposition changée, crayon d'une carte devenu « Modifier » de la choisie,
+  // objet d'une catégorie repliée) va à sa catégorie, sinon à « Ranger les catégories ».
+  const { peindre, commandeProche } = suivreDisposition(main, {
+    dessin: disposition => vueBibliotheque({ ...contexte, ...donnees, ...ui, ...disposition }),
+    choisie: () => ui.choisie,
+    categorieDe: id => lue.objets.find(o => o.id === id)?.categorieId,
+    repli: 'ranger',
+    apresPose() {
+      ui.recent = null;
+      main.querySelector('[data-annonce]')?.replaceWith(annonce);
+    },
+    animation: GLISSEMENT,
+    signal: fin.signal,
+    parti,
+  });
   // « Ranger les catégories », la touche retour qui le termine, le lien de retour et le menu.
   const mode = creerModeRangement({
     main,
@@ -74,43 +89,6 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     contexte,
   });
   const { annonce } = mode;
-  let choisieDessinee = ui.choisie;
-
-  const trouverCommande = (action, id) =>
-    main.querySelector(`[data-action="${action}"]${id ? `[data-id="${CSS.escape(id)}"]` : ''}`);
-  // La commande, ou, si elle n'est plus dessinée (disposition changée, crayon d'une carte devenu
-  // « Modifier » de la choisie), sa catégorie : en-tête d'accordéon, carte ou tuile du menu.
-  const commandeProche = (action, id) =>
-    trouverCommande(action, id) ?? trouverCommande('accordeon', id) ?? trouverCommande('choisir', id);
-
-  // Chaque dessin suit la disposition du moment : tourner l'appareil ou élargir la fenêtre redessine
-  // le même état (catégorie choisie, rangement). Le focus reste sur la même commande (ou, la
-  // disposition changée, sur la même catégorie), et chaque colonne garde son défilement, sauf la liste
-  // d'une autre catégorie, qui se lit depuis son début. enVue : ce qu'il faut amener dans la vue, avant
-  // le glissement : un élément qui glisse est mesuré à son ancienne place, et la page ne défilerait pas
-  // pour le montrer à la nouvelle.
-  function peindre({ glissement = false, enVue = null } = {}) {
-    const avant = glissement ? places(main) : null;
-    const focus = document.activeElement?.closest('[data-action]');
-    const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    poserDessin(
-      main,
-      vueBibliotheque({
-        ...contexte,
-        ...donnees,
-        ...ui,
-        grandFormat: grandFormat.matches,
-        troisColonnes: troisColonnes.matches,
-      }),
-    );
-    ui.recent = null;
-    if (ui.choisie !== choisieDessinee) main.querySelector('.gf-liste')?.scrollTo(0, 0);
-    choisieDessinee = ui.choisie;
-    main.querySelector('[data-annonce]')?.replaceWith(annonce);
-    if (cle) commandeProche(cle.action, cle.id)?.focus({ preventScroll: true });
-    if (enVue) main.querySelector(enVue)?.scrollIntoView({ block: 'nearest' });
-    glisser(main, avant, GLISSEMENT);
-  }
 
   // L'ordre confirmé par le stockage s'affiche ; la catégorie déplacée glisse à sa place et l'annonce
   // dit sa nouvelle place.
@@ -161,7 +139,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   let aFocaliser = null;
   function rendreFocus() {
     if (!aFocaliser || parti()) return;
-    commandeProche(aFocaliser.action, aFocaliser.id)?.focus({ preventScroll: true });
+    commandeProche(aFocaliser)?.focus({ preventScroll: true });
   }
 
   // Après une écriture : la bibliothèque relue, redessinée, et recent (« cat-<id> », l'id d'un objet,
@@ -282,14 +260,6 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
     },
     { signal: fin.signal },
   );
-  for (const requete of [grandFormat, troisColonnes])
-    requete.addEventListener(
-      'change',
-      () => {
-        if (!parti()) peindre();
-      },
-      { signal: fin.signal },
-    );
   peindre();
 }
 
