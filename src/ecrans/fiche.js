@@ -119,7 +119,7 @@ export function ouvrirFiche({
     if (!nouveau) return fermer?.();
     actuel = nouveau;
     q('h2').textContent = actuel.nom;
-    q('.fiche-regle').textContent = sienne.nom;
+    q('.fiche-regle').textContent = sienne?.nom ?? '';
     q('.compteur output').textContent = actuel.dansLeSac;
     q('.compteur-total').textContent = remplir(t('fiche.sur'), { total: actuel.quantite });
     q('.fiche-ajuster output').textContent = actuel.quantite;
