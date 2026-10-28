@@ -218,7 +218,7 @@ Supprimer une catégorie, un objet, un groupe ou une étiquette demande une conf
 
 ### Ce qu'on livre
 
-Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité prévue, qui devient alors « manuelle » ; si elle descend sous le nombre de pièces déjà dans le sac, ce nombre la suit. Renommer et retirer passent aussi par la fiche. On ajoute un objet ponctuel, puis l'appli propose « Ajouter aussi à la bibliothèque ? ». On ajoute une catégorie ponctuelle, avec une icône et une couleur. On retire un objet, avec une confirmation et un « Annuler » de 10 s.
+Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité prévue, qui devient alors « manuelle » ; si elle descend sous le nombre de pièces déjà dans le sac, une confirmation le demande, puis ce nombre la suit (décision du chef de projet, 2026-10-28). Renommer et retirer passent aussi par la fiche. On ajoute un objet ponctuel, puis l'appli propose « Ajouter aussi à la bibliothèque ? ». On ajoute une catégorie ponctuelle, avec une icône et une couleur. On retire un objet, avec une confirmation et un « Annuler » de 10 s. Les maquettes sont validées avant tout code. Conception détaillée : `docs/superpowers/specs/2026-10-28-phase-8-ajuster-design.md`.
 
 ### Critères d'acceptation
 
