@@ -2,7 +2,7 @@
 // indépendante de la bibliothèque (docs/PLAN.md, « Schéma ») ; il est créé en une seule opération,
 // qui n'écrit rien si une seule ligne est refusée.
 use crate::base::{en_texte, lire_lignes, Base};
-use rusqlite::{params, OptionalExtension, Row};
+use rusqlite::{params, OptionalExtension, Row, Transaction};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -84,7 +84,7 @@ pub struct VoyageComplet {
 const COLONNES_VOYAGE: &str = "id, nom, destination, depart, retour, voyageurs, modifie_le";
 const COLONNES_ETIQUETTE: &str = "id, voyage_id, modele_id, nom, ordre, modifie_le";
 const COLONNES_CATEGORIE: &str = "id, voyage_id, modele_id, nom, icone, couleur, ordre, modifie_le";
-const COLONNES_OBJET: &str =
+pub(crate) const COLONNES_OBJET: &str =
     "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
     consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achete, note, modifie_le";
 
@@ -146,6 +146,47 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetDuVoyage> {
     })
 }
 
+// Les insertions d'une catégorie et d'un objet du voyage, partagées avec ajustements.rs : un objet
+// ajouté ou rétabli s'écrit exactement comme à la création du voyage.
+pub(crate) fn inserer_categorie(tx: &Transaction, c: &CategorieDuVoyage) -> Result<(), String> {
+    tx.execute(
+        &format!("INSERT INTO categorie_du_voyage ({COLONNES_CATEGORIE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"),
+        params![c.id, c.voyage_id, c.modele_id, c.nom, c.icone, c.couleur, c.ordre, c.modifie_le],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
+pub(crate) fn inserer_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), String> {
+    tx.execute(
+        &format!(
+            "INSERT INTO objet_du_voyage ({COLONNES_OBJET})
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
+        ),
+        params![
+            o.id,
+            o.voyage_id,
+            o.categorie_id,
+            o.modele_id,
+            o.nom,
+            o.regle,
+            o.valeur,
+            o.plafond,
+            o.par_personne,
+            o.consommable,
+            o.quantite,
+            o.quantite_manuelle,
+            o.dans_le_sac,
+            o.a_acheter,
+            o.achete,
+            o.note,
+            o.modifie_le
+        ],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
 impl Base {
     pub fn lister_voyages(&self) -> Result<Vec<Voyage>, String> {
         let connexion = self.connexion()?;
@@ -182,39 +223,10 @@ impl Base {
             .map_err(en_texte)?;
         }
         for c in &contenu.categories {
-            tx.execute(
-                &format!("INSERT INTO categorie_du_voyage ({COLONNES_CATEGORIE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"),
-                params![c.id, c.voyage_id, c.modele_id, c.nom, c.icone, c.couleur, c.ordre, c.modifie_le],
-            )
-            .map_err(en_texte)?;
+            inserer_categorie(&tx, c)?;
         }
         for o in &contenu.objets {
-            tx.execute(
-                &format!(
-                    "INSERT INTO objet_du_voyage ({COLONNES_OBJET})
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
-                ),
-                params![
-                    o.id,
-                    o.voyage_id,
-                    o.categorie_id,
-                    o.modele_id,
-                    o.nom,
-                    o.regle,
-                    o.valeur,
-                    o.plafond,
-                    o.par_personne,
-                    o.consommable,
-                    o.quantite,
-                    o.quantite_manuelle,
-                    o.dans_le_sac,
-                    o.a_acheter,
-                    o.achete,
-                    o.note,
-                    o.modifie_le
-                ],
-            )
-            .map_err(en_texte)?;
+            inserer_objet(&tx, o)?;
         }
         // Sans ce commit (erreur plus haut), la transaction abandonnée n'a rien écrit.
         tx.commit().map_err(en_texte)

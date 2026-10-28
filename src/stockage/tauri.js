@@ -26,6 +26,13 @@ export function creerStockageTauri() {
     lireVoyage: id => invoke('lire_voyage', { id }),
     reglerDansLeSac: (id, dansLeSac, modifieLe) => invoke('regler_dans_le_sac', { id, dansLeSac, modifieLe }),
     etatsDesObjets: () => invoke('etats_des_objets'),
+    ajouterAuVoyage: ajout => invoke('ajouter_au_voyage', { ajout }),
+    retablirDansLeVoyage: ajout => invoke('retablir_dans_le_voyage', { ajout }),
+    reglerQuantite: (id, quantite, dansLeSac, modifieLe) =>
+      invoke('regler_quantite', { id, quantite, dansLeSac, modifieLe }),
+    renommerObjetDuVoyage: (id, nom, modifieLe) => invoke('renommer_objet_du_voyage', { id, nom, modifieLe }),
+    retirerDuVoyage: id => invoke('retirer_du_voyage', { id }),
+    ajouterALaBibliotheque: ajout => invoke('ajouter_a_la_bibliotheque', { ajout }),
     lireFiltre,
     ecrireFiltre,
   });

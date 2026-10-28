@@ -21,6 +21,11 @@ const AUTRES = [
   // Les écritures d'un voyage ou d'une préférence : elles ne touchent pas la bibliothèque.
   'creerVoyage',
   'reglerDansLeSac',
+  'ajouterAuVoyage',
+  'retablirDansLeVoyage',
+  'reglerQuantite',
+  'renommerObjetDuVoyage',
+  'retirerDuVoyage',
   'ecrireFiltre',
   // L'installation n'a lieu qu'au premier lancement, avant toute suppression ; le rétablissement est
   // « Annuler » lui-même.

@@ -17,6 +17,7 @@ export const ECRITURES_BIBLIOTHEQUE = Object.freeze([
   'supprimerObjet',
   'supprimerEtiquette',
   'supprimerGroupe',
+  'ajouterALaBibliotheque',
 ]);
 
 const dansTauri = () => typeof window.__TAURI_INTERNALS__?.invoke === 'function';

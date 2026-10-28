@@ -1,3 +1,4 @@
+mod ajustements;
 mod base;
 mod bibliotheque;
 mod edition;
@@ -7,6 +8,7 @@ mod etiquettes;
 mod suppressions;
 mod voyages;
 
+use ajustements::{AjoutALaBibliotheque, AjoutAuVoyage};
 use base::Base;
 use bibliotheque::{Bibliotheque, CategorieModele, Etiquette, GroupeEtiquettes, ObjetModele};
 use std::fs;
@@ -141,6 +143,50 @@ fn etats_des_objets(base: State<'_, Base>) -> Result<Vec<EtatObjet>, String> {
     base.etats_des_objets()
 }
 
+#[tauri::command]
+fn ajouter_au_voyage(base: State<'_, Base>, ajout: AjoutAuVoyage) -> Result<(), String> {
+    base.ajouter_au_voyage(&ajout)
+}
+
+#[tauri::command]
+fn retablir_dans_le_voyage(base: State<'_, Base>, ajout: AjoutAuVoyage) -> Result<(), String> {
+    base.retablir_dans_le_voyage(&ajout)
+}
+
+#[tauri::command]
+fn regler_quantite(
+    base: State<'_, Base>,
+    id: String,
+    quantite: i64,
+    dans_le_sac: i64,
+    modifie_le: String,
+) -> Result<(), String> {
+    base.regler_quantite(&id, quantite, dans_le_sac, &modifie_le)
+}
+
+#[tauri::command]
+fn renommer_objet_du_voyage(
+    base: State<'_, Base>,
+    id: String,
+    nom: String,
+    modifie_le: String,
+) -> Result<(), String> {
+    base.renommer_objet_du_voyage(&id, &nom, &modifie_le)
+}
+
+#[tauri::command]
+fn retirer_du_voyage(base: State<'_, Base>, id: String) -> Result<(), String> {
+    base.retirer_du_voyage(&id)
+}
+
+#[tauri::command]
+fn ajouter_a_la_bibliotheque(
+    base: State<'_, Base>,
+    ajout: AjoutALaBibliotheque,
+) -> Result<(), String> {
+    base.ajouter_a_la_bibliotheque(&ajout)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -169,7 +215,13 @@ pub fn run() {
             creer_voyage,
             lire_voyage,
             regler_dans_le_sac,
-            etats_des_objets
+            etats_des_objets,
+            ajouter_au_voyage,
+            retablir_dans_le_voyage,
+            regler_quantite,
+            renommer_objet_du_voyage,
+            retirer_du_voyage,
+            ajouter_a_la_bibliotheque
         ])
         .run(tauri::generate_context!())
         .expect("Baluchon n'a pas pu démarrer");
