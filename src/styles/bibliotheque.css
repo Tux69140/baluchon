@@ -184,3 +184,7 @@
 .alerte-haut .icone {
   color: var(--erreur);
 }
+
+.alerte-haut.message-succes .icone {
+  color: var(--succes);
+}

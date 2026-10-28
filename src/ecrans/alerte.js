@@ -10,18 +10,19 @@ import { iconeInterface } from './icones.js';
 // assistant « Nouveau voyage », Bibliothèque).
 export const DUREE_ALERTE = 6000;
 
+// Le message, posé en haut : une erreur (role alert) ou une réussite (role status, coche).
 // app : la racine de l'appli. La fenêtre modale du dessus (qui n'est pas en train de se fermer)
 // accueille le message, sinon il serait inerte derrière elle et ne serait pas lu ; elle peut être hors
 // de app (une question est posée dans document.body), d'où la recherche dans toute la page. signal :
 // la fin de l'écran, qui retire le message et sa minuterie.
-export function alerterEnHaut(app, texte, signal) {
+function poserEnHaut(app, signal, { classe, role, icone, texte }) {
   for (const ancienne of document.querySelectorAll('.alerte-haut')) ancienne.remove();
   const hote = [...document.querySelectorAll('dialog:modal:not([data-fermeture])')].at(-1) ?? app;
   const alerte = document.createElement('div');
-  alerte.className = 'message message-erreur alerte-haut';
+  alerte.className = `message ${classe} alerte-haut`;
   alerte.setAttribute('popover', 'manual');
-  alerte.setAttribute('role', 'alert');
-  alerte.innerHTML = `${iconeInterface('erreur')}<p>${echapper(texte)}</p>`;
+  alerte.setAttribute('role', role);
+  alerte.innerHTML = `${iconeInterface(icone)}<p>${echapper(texte)}</p>`;
   hote.append(alerte);
   alerte.showPopover();
   const minuterie = setTimeout(() => alerte.remove(), DUREE_ALERTE);
@@ -33,4 +34,14 @@ export function alerterEnHaut(app, texte, signal) {
     },
     { once: true },
   );
+}
+
+// Une écriture refusée.
+export function alerterEnHaut(app, texte, signal) {
+  poserEnHaut(app, signal, { classe: 'message-erreur', role: 'alert', icone: 'erreur', texte });
+}
+
+// Une réussite, à la même place (un objet ajouté au voyage).
+export function annoncerEnHaut(app, texte, signal) {
+  poserEnHaut(app, signal, { classe: 'message-succes', role: 'status', icone: 'coche', texte });
 }

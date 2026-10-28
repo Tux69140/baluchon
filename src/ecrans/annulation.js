@@ -146,8 +146,9 @@ export async function sansAnnuler(travail) {
 }
 
 // texte : ce qui vient d'être supprimé, en texte simple ; annuler() rétablit et rend une promesse.
-// app : la racine de l'appli, où dire un rétablissement refusé.
-export function montrerAnnulation({ t, app, texte, annuler }) {
+// app : la racine de l'appli, où dire un rétablissement refusé. voyage : l'id du voyage d'un retrait
+// d'objet (le bandeau de la bibliothèque n'en a pas).
+export function montrerAnnulation({ t, app, texte, annuler, voyage = null }) {
   retirerAnnulation();
   const el = document.createElement('div');
   el.className = 'bandeau-annuler';
@@ -161,7 +162,7 @@ export function montrerAnnulation({ t, app, texte, annuler }) {
   // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.
   el.addEventListener('animationend', () => delete el.dataset.entree, { once: true });
   const bouton = el.querySelector('button');
-  const bandeau = { el, bouton, fin: new AbortController(), retablit: false, occupations: 0 };
+  const bandeau = { el, bouton, voyage, fin: new AbortController(), retablit: false, occupations: 0 };
   programmerFin(bandeau, DUREE);
   courant = bandeau;
   // Toujours une promesse tenue, quoi qu'il arrive dans retablir : les lectures et écritures qui
@@ -175,7 +176,8 @@ export function montrerAnnulation({ t, app, texte, annuler }) {
 
 // Le stockage, de même forme, dont chaque écriture de la bibliothèque passe par la garde et retire le
 // bandeau une fois faite : refusée, rien n'a changé, et le bandeau reste, son « Annuler » toujours bon.
-// Le rétablissement et les écritures d'un voyage le laissent. Une lecture de la bibliothèque attend
+// Le bandeau d'un retrait du voyage ne part qu'à l'ajout d'un objet à ce voyage (l'objet retiré
+// pourrait y revenir autrement) : une écriture de la bibliothèque le laisse, et le rétablissement aussi. Une lecture de la bibliothèque attend
 // la fin d'un rétablissement en cours.
 export function surveillerEcritures(stockage) {
   const surveillees = ECRITURES_BIBLIOTHEQUE.map(nom => [
@@ -183,13 +185,18 @@ export function surveillerEcritures(stockage) {
     (...valeurs) =>
       sansAnnuler(async bandeau => {
         const resultat = await stockage[nom](...valeurs);
-        if (bandeau) retirer(bandeau);
+        if (bandeau && !bandeau.voyage) retirer(bandeau);
         return resultat;
       }),
   ]);
+  async function ajouterAuVoyage(ajout) {
+    const resultat = await stockage.ajouterAuVoyage(ajout);
+    if (courant?.voyage === ajout.objet.voyageId) retirerAnnulation();
+    return resultat;
+  }
   async function lireBibliotheque() {
     await retablissement;
     return stockage.lireBibliotheque();
   }
-  return Object.freeze({ ...stockage, ...Object.fromEntries(surveillees), lireBibliotheque });
+  return Object.freeze({ ...stockage, ...Object.fromEntries(surveillees), ajouterAuVoyage, lireBibliotheque });
 }
