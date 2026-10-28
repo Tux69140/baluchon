@@ -177,8 +177,9 @@ export function montrerAnnulation({ t, app, texte, annuler, voyage = null }) {
 // Le stockage, de même forme, dont chaque écriture de la bibliothèque passe par la garde et retire le
 // bandeau une fois faite : refusée, rien n'a changé, et le bandeau reste, son « Annuler » toujours bon.
 // Le bandeau d'un retrait du voyage ne part qu'à l'ajout d'un objet à ce voyage (l'objet retiré
-// pourrait y revenir autrement) : une écriture de la bibliothèque le laisse, et le rétablissement aussi. Une lecture de la bibliothèque attend
-// la fin d'un rétablissement en cours.
+// pourrait y revenir autrement) : une écriture de la bibliothèque le laisse, et le rétablissement
+// aussi. Un ajout au voyage, comme une lecture de la bibliothèque, attend la fin d'un rétablissement
+// en cours.
 export function surveillerEcritures(stockage) {
   const surveillees = ECRITURES_BIBLIOTHEQUE.map(nom => [
     nom,
@@ -190,6 +191,7 @@ export function surveillerEcritures(stockage) {
       }),
   ]);
   async function ajouterAuVoyage(ajout) {
+    await retablissement;
     const resultat = await stockage.ajouterAuVoyage(ajout);
     if (courant?.voyage === ajout.objet.voyageId) retirerAnnulation();
     return resultat;
