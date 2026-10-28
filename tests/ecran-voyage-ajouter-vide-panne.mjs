@@ -232,6 +232,9 @@ try {
       await capture(page, 'voyage-ajouter-rempli', format, theme);
       await page.click(`${AJOUT} [data-enregistrer]`);
       await partie(page, AJOUT);
+      // « Ajouter aussi à la bibliothèque ? » (captures de tests/ecran-voyage-ajout-bibliotheque.mjs) : « Non ».
+      await attendreQuestion(page);
+      await repondre(page, fr.ajustement.bibliotheque.non);
       await calme(page);
       await capture(page, 'voyage-ajouter-fait', format, theme);
       await fermerEssai(juge, cas, ouvert);

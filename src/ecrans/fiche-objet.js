@@ -133,7 +133,9 @@ function ajuster(b, cle) {
 // objet : celui à modifier, ou null pour un nouvel objet de categorie ; groupes : les étiquettes par
 // groupe (voir inclusion()). enregistrer(saisie) : l'écran prépare et écrit l'objet ; supprimer() : il
 // pose la question et le supprime, rend true une fois fait (src/ecrans/edition-modeles.js) ; absent
-// pour un objet neuf.
+// pour un objet neuf. prerempli, bouton (facultatifs, maquette de la phase 8) : la saisie de départ
+// d'un objet neuf (celle d'un objet ajouté au voyage, src/ecrans/ajout-bibliotheque.js), et le
+// libellé du bouton principal.
 export function ouvrirFicheObjet({
   t,
   langue,
@@ -142,6 +144,8 @@ export function ouvrirFicheObjet({
   groupes,
   enregistrer,
   supprimer,
+  prerempli = {},
+  bouton,
   surFermeture,
   signal,
   dans,
@@ -150,8 +154,8 @@ export function ouvrirFicheObjet({
     t,
     titre: objet ? objet.nom : t('modele.objet.nouveau'),
     sousTitre: remplir(t('modele.objet.dans'), { categorie: categorie.nom }),
-    bouton: objet ? t('modele.enregistrer') : t('modele.objet.ajouter'),
-    saisie: saisieDObjet(objet),
+    bouton: bouton ?? (objet ? t('modele.enregistrer') : t('modele.objet.ajouter')),
+    saisie: { ...saisieDObjet(objet), ...prerempli },
     valider: validerObjet,
     dessiner: (brouillon, codes) => vueCorps(t, langue, brouillon, codes, { categorie, groupes, supprimer }),
     texteAbandon: objet

@@ -1,7 +1,8 @@
 // Les gestes d'ajustement de l'écran d'un voyage, depuis la fiche d'un objet (spec de la phase 8,
 // docs/superpowers/specs/2026-10-28-phase-8-ajuster-design.md ; maquette validée docs/maquettes/ajuster/) :
 // corriger la quantité prévue (US-18), renommer, retirer avec son « Annuler » (US-21) ; et, depuis l'écran,
-// ajouter un objet (US-19, US-20). Rien de tout cela ne touche la bibliothèque. Les règles (bornes,
+// ajouter un objet (US-19, US-20), puis proposer de l'ajouter aussi à la bibliothèque. Rien d'autre ne
+// touche la bibliothèque. Les règles (bornes,
 // confirmation, ce qu'emporte un retrait) viennent du modèle (src/modele/ajustements.js) ; l'écran du
 // voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la file d'écriture, et les prête ici :
 // - contenu() : le voyage tel que l'écran le montre ;
@@ -12,6 +13,7 @@
 // - montrer(nouveau) : ce qu'une écriture attendue a fait, montré.
 import { remplir } from '../i18n/traduction.js';
 import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
+import { proposerBibliotheque } from './ajout-bibliotheque.js';
 import { alerterEnHaut } from './alerte.js';
 import { montrerAnnulation } from './annulation.js';
 import { demander } from './fenetre.js';
@@ -197,5 +199,24 @@ export function gestesDAjustement(ecran) {
       ajouter: ajout => ecran.attendre(() => stockage.ajouterAuVoyage(ajout)),
     });
 
-  return { regler, renommer, retirer, ajouter };
+  // « Ajouter aussi à la bibliothèque ? », après un ajout (l'objet écrit, src/ecrans/ajout-bibliotheque.js).
+  // Entré dans la bibliothèque, l'objet du voyage est lié à son modèle, et sa catégorie à celle créée depuis
+  // elle : l'écran garde ces liens comme la base, pour qu'« Annuler » un retrait les réécrive. Rend vrai si
+  // l'objet est entré.
+  async function proposer(objet) {
+    const categorie = ecran.contenu().categories.find(c => c.id === objet.categorieId);
+    const liens = await proposerBibliotheque({ t, langue, stockage, objet, categorie, signal, dans: app });
+    if (!liens || signal.aborted) return false;
+    const { objetModeleId, categorieModeleId } = liens;
+    const contenu = avecObjet(ecran.contenu(), objet.id, { modeleId: objetModeleId });
+    ecran.montrer({
+      ...contenu,
+      categories: contenu.categories.map(c =>
+        c.id === categorie.id && categorieModeleId ? { ...c, modeleId: categorieModeleId } : c,
+      ),
+    });
+    return true;
+  }
+
+  return { regler, renommer, retirer, ajouter, proposer };
 }

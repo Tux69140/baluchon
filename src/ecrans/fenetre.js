@@ -203,9 +203,10 @@ const classeBouton = (principal, danger) => {
 };
 
 // Fenêtre d'alerte à boutons nommés (confirmation, question à plusieurs issues). boutons : dans
-// l'ordre d'affichage, { cle, libelle, principal, danger } ; le focus va au premier, qui doit donc
+// l'ordre d'affichage, { cle, libelle, principal, danger, icone } ; le focus va au premier, qui doit donc
 // être le geste sans perte. danger : une suppression, en rouge et précédée de la corbeille, pour
-// qu'on ne la prenne pas pour une confirmation verte (maquette de la phase 6). contenu : du HTML
+// qu'on ne la prenne pas pour une confirmation verte (maquette de la phase 6). icone : un picto
+// d'interface devant le libellé (les livres de « Oui, l'ajouter » à la bibliothèque, phase 8). contenu : du HTML
 // déjà échappé par l'appelant, posé entre le texte et les boutons ; texteHtml : le texte déjà en HTML
 // (échappé par l'appelant, un nombre en gras), à la place de texte ; idTexte : l'identifiant de son
 // paragraphe (la question chiffrée d'une suppression a le sien) ; suite : d'autres paragraphes en HTML
@@ -235,8 +236,8 @@ export function demander({
       <p id="${idTexte}">${texteHtml}</p>${suite.map((p, i) => `<p id="${idTexte}-${i + 2}">${p}</p>`).join('')}${contenu}
       <div class="fenetre-pied">${boutons
         .map(
-          ({ cle, libelle, principal = false, danger = false }, rang) => `
-        <button type="button" class="bouton ${classeBouton(principal, danger)}" data-fermer data-cle="${echapper(cle)}"${rang === 0 ? ' autofocus' : ''}>${danger ? iconeInterface('supprimer') : ''}${echapper(libelle)}</button>`,
+          ({ cle, libelle, principal = false, danger = false, icone = danger ? 'supprimer' : '' }, rang) => `
+        <button type="button" class="bouton ${classeBouton(principal, danger)}" data-fermer data-cle="${echapper(cle)}"${rang === 0 ? ' autofocus' : ''}>${icone ? iconeInterface(icone) : ''}${echapper(libelle)}</button>`,
         )
         .join('')}
       </div>`,

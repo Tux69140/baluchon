@@ -170,6 +170,9 @@ try {
         vu(await lignesDe(page, 'c-toi')) === vu(voulu),
       `${cas} : ligne ${vu(vue)} ${vu(details)}, ordre ${vu(await lignesDe(page, 'c-toi'))} / ${vu(voulu)}`,
     );
+    // « Ajouter aussi à la bibliothèque ? » (tests/ecran-voyage-ajout-bibliotheque.mjs) : « Non » rend le focus.
+    await attendreQuestion(page);
+    await repondre(page, fr.ajustement.bibliotheque.non);
     await calme(page);
     juge.exige((await focusSur(page)) === id, `${cas} : focus sur ${await focusSur(page)}`);
     // Relu : toujours là, toujours fixé à la main.

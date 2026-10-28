@@ -67,7 +67,9 @@ function vueCorps(t, brouillon, erreurs, { groupes, supprimer }) {
 // categorie : celle à modifier, ou null pour une nouvelle ; nombreObjets : les siens, dits sous le
 // titre ; groupes : les étiquettes par groupe (voir inclusion()). enregistrer(saisie) : l'écran
 // prépare et écrit la catégorie ; supprimer() : il pose la question et la supprime, rend true une fois
-// fait (src/ecrans/edition-modeles.js) ; absent pour une catégorie neuve.
+// fait (src/ecrans/edition-modeles.js) ; absent pour une catégorie neuve. prerempli, bouton
+// (facultatifs, maquette de la phase 8) : la saisie de départ d'une catégorie neuve (celle d'une
+// catégorie du voyage, src/ecrans/ajout-bibliotheque.js), et le libellé du bouton principal.
 export function ouvrirFicheCategorie({
   t,
   langue,
@@ -76,6 +78,8 @@ export function ouvrirFicheCategorie({
   groupes,
   enregistrer,
   supprimer,
+  prerempli = {},
+  bouton,
   surFermeture,
   signal,
   dans,
@@ -84,8 +88,8 @@ export function ouvrirFicheCategorie({
     t,
     titre: categorie ? categorie.nom : t('modele.categorie.nouvelle'),
     sousTitre: categorie ? pluriel(t, 'bibliotheque.objets', nombreObjets, langue) : '',
-    bouton: categorie ? t('modele.enregistrer') : t('modele.categorie.creer'),
-    saisie: saisieDeCategorie(categorie),
+    bouton: bouton ?? (categorie ? t('modele.enregistrer') : t('modele.categorie.creer')),
+    saisie: { ...saisieDeCategorie(categorie), ...prerempli },
     valider: validerCategorie,
     dessiner: (brouillon, erreurs) => vueCorps(t, brouillon, erreurs, { groupes, supprimer }),
     texteAbandon: categorie

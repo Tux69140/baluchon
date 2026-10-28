@@ -293,8 +293,9 @@ function ouvrirListe(app, donnees, contexte) {
   }
 
   // Ajouté, l'objet apparaît à sa place, éclairé, et sa ligne prend le focus ; la liste se range ensuite
-  // comme après une coche (une catégorie bouclée qui reçoit un objet ne l'est plus). Abandonné, le focus
-  // revient à la commande touchée (ou à la plus proche).
+  // comme après une coche (une catégorie bouclée qui reçoit un objet ne l'est plus). Puis « Ajouter aussi à
+  // la bibliothèque ? » : quelle qu'en soit l'issue, le focus revient à sa ligne. Abandonné, le focus revient
+  // à la commande touchée (ou à la plus proche).
   async function ajouterUnObjet(id) {
     if (ajoutOuvert || relecture) return;
     ajoutOuvert = true;
@@ -314,6 +315,8 @@ function ouvrirListe(app, donnees, contexte) {
     );
     trouverCommande(main, 'fiche', objet.id)?.focus();
     relancerRepit();
+    await gestes.proposer(objet);
+    if (!parti()) trouverCommande(main, 'fiche', objet.id)?.focus();
   }
 
   main.addEventListener('click', evenement => {
