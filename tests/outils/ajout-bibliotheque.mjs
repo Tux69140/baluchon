@@ -1,13 +1,15 @@
 // Outils des tests d'écran « Ajouter aussi à la bibliothèque ? » de la phase 8
 // (tests/ecran-voyage-ajout-bibliotheque*.mjs) : le voyage d'essai et sa bibliothèque, ajouter un objet
-// jusqu'à la question, répondre « Oui », toucher les fiches de la bibliothèque, lire le message en haut.
+// jusqu'à la question, répondre « Oui », toucher les fiches de la bibliothèque, lire le message en haut,
+// vérifier que rien n'a été écrit.
 import { attendreQue, calme } from './attente.mjs';
-import { attendreQuestion, fr, repondre } from './ajuster.mjs';
+import { QUESTION, attendreQuestion, fr, repondre, vu } from './ajuster.mjs';
 import {
   AJOUT,
   CHOIX,
   choisir,
   creerCategorie,
+  focusSur,
   ouvrirChoix,
   partie,
   remplirEtAjouter,
@@ -129,4 +131,37 @@ export async function suivant(page) {
   await enregistrerModele(page);
   await attendreQue(page, () => document.querySelectorAll('dialog.fiche-modele').length === 1);
   await attendreOuverte(page);
+}
+
+// Après « Oui », la catégorie du voyage n'étant pas dans la bibliothèque : « Nouvelle catégorie », « Suivant »,
+// puis « Ajouter à la bibliothèque », une étiquette choisie à chaque fiche ; les fiches parties.
+export async function entrerAvecNouvelleCategorie(page) {
+  await oui(page);
+  await nouvelleCategorie(page);
+  await etiquette(page, 'e-pla');
+  await suivant(page);
+  await etiquette(page, 'e-pla');
+  await enregistrerModele(page);
+  await attendreQue(page, s => !document.querySelector(s), FICHE);
+  await calme(page);
+}
+
+// Les erreurs d'une panne simulée par le test ne sont pas des fautes de la page.
+export const sansErreurSimulee = ouvert =>
+  ouvert.erreurs.splice(0, ouvert.erreurs.length, ...ouvert.erreurs.filter(e => !e.includes('Panne simulée')));
+
+// Rien n'a été écrit dans la bibliothèque, l'objet du voyage n'est pas lié, et le focus est sur sa ligne.
+export async function rienEcrit(juge, cas, page, avant, objet) {
+  await attendreQue(page, s => !document.querySelector(s), `${QUESTION}, ${CHOIX}, ${FICHE}`);
+  await calme(page);
+  const stocke = await lireStockage(page);
+  const relu = stocke.objetsDuVoyage.find(o => o.id === objet?.id);
+  juge.exige(
+    vu(stocke.bibliotheque) === vu(avant.bibliotheque) &&
+      relu?.modeleId === null &&
+      vu(stocke.categoriesDuVoyage.map(c => c.modeleId)) ===
+        vu(stocke.categoriesDuVoyage.map(c => avant.categoriesDuVoyage.find(x => x.id === c.id)?.modeleId ?? null)),
+    `${cas} : bibliothèque ou liens touchés ${vu(relu)}`,
+  );
+  juge.exige((await focusSur(page)) === objet?.id, `${cas} : focus sur ${await focusSur(page)}`);
 }

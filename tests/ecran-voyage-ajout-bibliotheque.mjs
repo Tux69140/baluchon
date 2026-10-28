@@ -8,11 +8,9 @@
 // - catégorie propre au voyage : choisir une catégorie de la bibliothèque y range l'objet (la catégorie du
 //   voyage n'est pas liée) ; « Nouvelle catégorie » : la fiche de catégorie préremplie, « Suivant » sans rien
 //   écrire, puis catégorie et objet ensemble, et la catégorie du voyage liée ;
-// - abandonner à chaque étape n'écrit rien (Review Focus 5) ; la question ne se pose que après un ajout ;
-// - panne → fiche ouverte, rien d'écrit ; nouvel essai (double appui, écriture lente) → un seul objet ;
-// - captures claire et sombre (question, liste, fiches préremplies, message).
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+// - abandonner à chaque étape n'écrit rien (Review Focus 5) ; la question ne se pose qu'après un ajout.
+// La suite (liens gardés par l'écran, pannes, captures) : tests/ecran-voyage-ajout-bibliotheque-suite.mjs.
+import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import {
   ESSAI,
@@ -23,6 +21,7 @@ import {
   lireMessage,
   nouvelleCategorie,
   oui,
+  rienEcrit,
   suivant,
 } from './outils/ajout-bibliotheque.mjs';
 import { attendreQue, calme } from './outils/attente.mjs';
@@ -41,7 +40,7 @@ import {
 import { CHOIX, focusSur, lireChoix } from './outils/ajouter.mjs';
 import { fermerEssai } from './outils/bibliotheque.mjs';
 import { FICHE, attendreOuverte, lireFiche } from './outils/fiches.mjs';
-import { CAPTURES, NOMS_THEME, creerJuge, ecrireStockage, lireStockage, verifierCommandes } from './outils/page.mjs';
+import { RACINE, creerJuge, lireStockage } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 
 const m = fr.modele;
@@ -52,30 +51,12 @@ const PIEGE = 'Coton <i>&</i> "tige"';
 const CAT_PIEGE = 'Plongée <b>&</b> "apnée"';
 
 const ouvrirEssai = (options = {}) => ouvrirVoyage(navigateur, serveur.url, { donnees: ESSAI, ...options });
-const capture = (page, nom, format, theme) =>
-  page.screenshot({ path: join(CAPTURES, `${nom}-${format}-${NOMS_THEME[theme]}.png`) });
-const sansErreurSimulee = ouvert =>
-  ouvert.erreurs.splice(0, ouvert.erreurs.length, ...ouvert.erreurs.filter(e => !e.includes('Panne simulée')));
-
-// Rien n'a été écrit dans la bibliothèque, l'objet du voyage n'est pas lié, et le focus est sur sa ligne.
-async function rienEcrit(cas, page, avant, objet) {
-  await attendreQue(page, s => !document.querySelector(s), `${QUESTION}, ${CHOIX}, ${FICHE}`);
-  await calme(page);
-  const stocke = await lireStockage(page);
-  const relu = stocke.objetsDuVoyage.find(o => o.id === objet?.id);
-  juge.exige(
-    vu(stocke.bibliotheque) === vu(avant.bibliotheque) &&
-      relu?.modeleId === null &&
-      vu(stocke.categoriesDuVoyage.map(c => c.modeleId)) ===
-        vu(stocke.categoriesDuVoyage.map(c => avant.categoriesDuVoyage.find(x => x.id === c.id)?.modeleId ?? null)),
-    `${cas} : bibliothèque ou liens touchés ${vu(relu)}`,
-  );
-  juge.exige((await focusSur(page)) === objet?.id, `${cas} : focus sur ${await focusSur(page)}`);
-}
+// Le tracé des livres (Phosphor, « books », gras) : le picto de « Oui, l'ajouter » (maquette).
+const LIVRES = (await readFile(`${RACINE}/node_modules/@phosphor-icons/core/assets/bold/books-bold.svg`, 'utf8')).match(
+  / d="([^"]+)"/,
+)[1];
 
 try {
-  await mkdir(CAPTURES, { recursive: true });
-
   // « Non », ou la question fermée : la bibliothèque ne change pas, le focus revient à l'objet.
   {
     const cas = '« Non »';
@@ -96,12 +77,17 @@ try {
       QUESTION,
     );
     juge.exige(premier === b.non, `${cas} : focus de la question sur ${premier}`);
+    const picto = await page.evaluate(
+      s => [...document.querySelectorAll(`${s} .bouton-principal .icone path`)].map(p => p.getAttribute('d')),
+      QUESTION,
+    );
+    juge.exige(picto.includes(LIVRES), `${cas} : « ${b.oui} » sans les livres ${vu(picto)}`);
     await repondre(page, b.non);
-    await rienEcrit(cas, page, avant, objet);
+    await rienEcrit(juge, cas, page, avant, objet);
     // Fermée par Échap : de même.
     const autre = await ajouter(page, { nom: 'Masque', categorie: 'c-toi' });
     await page.keyboard.press('Escape');
-    await rienEcrit(`${cas} (Échap)`, page, avant, autre);
+    await rienEcrit(juge, `${cas} (Échap)`, page, avant, autre);
     await fermerEssai(juge, cas, ouvert);
   }
 
@@ -307,8 +293,8 @@ try {
     await fermerEssai(juge, cas, ouvert);
   }
 
-  // Abandonner à chaque étape n'écrit rien (Review Focus 5) : la liste, la fiche de catégorie, la fiche
-  // d'objet après « Suivant », la fiche d'objet modifiée puis abandonnée.
+  // Abandonner à chaque étape n'écrit rien (Review Focus 5) : la liste, la fiche de catégorie telle quelle
+  // et modifiée, la fiche d'objet après « Suivant », la fiche d'objet modifiée puis abandonnée.
   {
     const cas = 'abandon';
     const ouvert = await ouvrirEssai({ format: 'telephone-etroit' });
@@ -319,13 +305,22 @@ try {
     await oui(page);
     juge.exige((await lireChoix(page))?.titre === b.choixTitre, `${cas} : catégorie disparue, pas de liste`);
     await page.click(`${CHOIX} .fenetre-pied [data-fermer]`);
-    await rienEcrit(`${cas}, liste`, page, avant, objet);
+    await rienEcrit(juge, `${cas}, liste`, page, avant, objet);
     // La fiche de catégorie fermée telle quelle.
     objet = await ajouter(page, { nom: 'Bonnet', categorie: 'c-vet' });
     await oui(page);
     await nouvelleCategorie(page);
     await page.keyboard.press('Escape');
-    await rienEcrit(`${cas}, fiche de catégorie`, page, avant, objet);
+    await rienEcrit(juge, `${cas}, fiche de catégorie`, page, avant, objet);
+    // La fiche de catégorie modifiée : « Abandonner » après la question.
+    objet = await ajouter(page, { nom: 'Gants', categorie: 'c-vet' });
+    await oui(page);
+    await nouvelleCategorie(page);
+    await etiquette(page, 'e-mon');
+    await page.click(`${FICHE} .fenetre-pied [data-fermer]`);
+    await attendreQuestion(page);
+    await repondre(page, m.abandon.abandonner);
+    await rienEcrit(juge, `${cas}, fiche de catégorie modifiée`, page, avant, objet);
     // La fiche d'objet après « Suivant », fermée telle quelle.
     objet = await ajouter(page, { nom: 'Écharpe', categorie: 'c-vet' });
     await oui(page);
@@ -334,7 +329,7 @@ try {
     await suivant(page);
     juge.exige((await lireFiche(page))?.bouton === b.ajouter, `${cas} : pas de fiche d'objet après « Suivant »`);
     await page.click(`${FICHE} .fenetre-pied [data-fermer]`);
-    await rienEcrit(`${cas}, fiche d'objet après « Suivant »`, page, avant, objet);
+    await rienEcrit(juge, `${cas}, fiche d'objet après « Suivant »`, page, avant, objet);
     // La fiche d'objet modifiée : « Abandonner » après la question.
     objet = await ajouter(page, { nom: 'Savon', categorie: 'c-toi' });
     await oui(page);
@@ -342,7 +337,7 @@ try {
     await page.click(`${FICHE} .fenetre-pied [data-fermer]`);
     await attendreQuestion(page);
     await repondre(page, m.abandon.abandonner);
-    await rienEcrit(`${cas}, fiche d'objet modifiée`, page, avant, objet);
+    await rienEcrit(juge, `${cas}, fiche d'objet modifiée`, page, avant, objet);
     await fermerEssai(juge, cas, ouvert);
   }
 
@@ -367,86 +362,11 @@ try {
     );
     await fermerEssai(juge, cas, ouvert);
   }
-
-  // Panne : la fiche reste avec sa saisie, rien d'écrit ; nouvel essai en double appui, écriture lente : un
-  // seul objet et une seule catégorie.
-  {
-    const cas = 'panne puis nouvel essai';
-    const ouvert = await ouvrirEssai({ format: 'telephone-etroit' });
-    const { page } = ouvert;
-    const avant = await lireStockage(page);
-    const objet = await ajouter(page, { nom: 'Palmes', nouvelle: { nom: 'Plongée', couleur: 'lilas' } });
-    await oui(page);
-    await nouvelleCategorie(page);
-    await etiquette(page, 'e-pla');
-    await suivant(page);
-    await etiquette(page, 'e-pla');
-    await ecrireStockage(page, { ...(await lireStockage(page)), pannes: ['ajouterALaBibliotheque'] });
-    await page.click(`${FICHE} [data-enregistrer]`);
-    const message = await attendreQue(page, () => document.querySelector('.alerte-haut')?.textContent.trim());
-    await calme(page);
-    const fiche = await lireFiche(page);
-    const pendant = await lireStockage(page);
-    juge.exige(
-      message === fr.bibliotheque.erreurEnregistrement &&
-        fiche?.nom === 'Palmes' &&
-        vu(fiche.etiquettes) === vu(['Plage']) &&
-        vu(pendant.bibliotheque) === vu(avant.bibliotheque) &&
-        pendant.objetsDuVoyage.find(o => o.id === objet?.id)?.modeleId === null,
-      `${cas} : message « ${message} », fiche ${vu(fiche)}`,
-    );
-    await ecrireStockage(page, { ...pendant, pannes: [], lenteurs: ['ajouterALaBibliotheque'] });
-    await page.dblclick(`${FICHE} [data-enregistrer]`);
-    await attendreQue(page, () => typeof window.debloquerStockage === 'function');
-    await page.click(`${FICHE} [data-enregistrer]`, { force: true });
-    await ecrireStockage(page, { ...(await lireStockage(page)), lenteurs: [] });
-    await page.evaluate(() => window.debloquerStockage());
-    await attendreQue(page, s => !document.querySelector(s), FICHE);
-    await calme(page);
-    const stocke = await lireStockage(page);
-    juge.exige(
-      stocke.bibliotheque.objets.filter(o => o.nom === 'Palmes').length === 1 &&
-        stocke.bibliotheque.categories.filter(c => c.nom === 'Plongée').length === 1 &&
-        stocke.objetsDuVoyage.find(o => o.id === objet?.id)?.modeleId ===
-          stocke.bibliotheque.objets.find(o => o.nom === 'Palmes')?.id,
-      `${cas} : ${stocke.bibliotheque.objets.filter(o => o.nom === 'Palmes').length} « Palmes » stockés`,
-    );
-    sansErreurSimulee(ouvert);
-    await fermerEssai(juge, cas, ouvert);
-  }
-
-  // Captures : la question, la liste, la fiche de catégorie, la fiche d'objet, le message.
-  for (const theme of ['light', 'dark'])
-    for (const format of ['telephone-etroit', 'tablette-portrait', 'ordinateur']) {
-      const cas = `captures, ${format}, ${NOMS_THEME[theme]}`;
-      const ouvert = await ouvrirEssai({ format, theme });
-      const { page } = ouvert;
-      await ajouter(page, { nom: 'Palmes', nouvelle: { nom: 'Plongée', couleur: 'lilas' }, plus: 1 });
-      await capture(page, 'voyage-biblio-question', format, theme);
-      await oui(page);
-      await capture(page, 'voyage-biblio-liste', format, theme);
-      await verifierCommandes(page, juge, `${cas}, liste`);
-      await nouvelleCategorie(page);
-      await capture(page, 'voyage-biblio-categorie', format, theme);
-      await verifierCommandes(page, juge, `${cas}, fiche de catégorie`);
-      await etiquette(page, 'e-pla');
-      await suivant(page);
-      await capture(page, 'voyage-biblio-objet', format, theme);
-      await verifierCommandes(page, juge, `${cas}, fiche d'objet`);
-      await etiquette(page, 'e-pla');
-      await enregistrerModele(page);
-      await attendreQue(page, s => !document.querySelector(s), FICHE);
-      await attendreQue(page, () => document.querySelector('.alerte-haut.message-succes'));
-      await calme(page);
-      await capture(page, 'voyage-biblio-fait', format, theme);
-      await verifierCommandes(page, juge, `${cas}, message`);
-      await fermerEssai(juge, cas, ouvert);
-    }
 } finally {
   await navigateur.close();
   await serveur.fermer();
 }
 juge.conclure(
   'Ajouter aussi à la bibliothèque',
-  '« Non », catégorie connue, catégorie choisie ou neuve, abandon à chaque étape, objet venu de la bibliothèque, panne, captures',
+  '« Non », catégorie connue, catégorie choisie ou neuve, abandon à chaque étape, objet venu de la bibliothèque',
 );

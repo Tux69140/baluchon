@@ -2,9 +2,9 @@
 // docs/superpowers/specs/2026-10-28-phase-8-ajuster-design.md ; maquette validée docs/maquettes/ajuster/) :
 // corriger la quantité prévue (US-18), renommer, retirer avec son « Annuler » (US-21) ; et, depuis l'écran,
 // ajouter un objet (US-19, US-20), puis proposer de l'ajouter aussi à la bibliothèque. Rien d'autre ne
-// touche la bibliothèque. Les règles (bornes,
-// confirmation, ce qu'emporte un retrait) viennent du modèle (src/modele/ajustements.js) ; l'écran du
-// voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la file d'écriture, et les prête ici :
+// touche la bibliothèque. Les règles (bornes, confirmation, ce qu'emporte un retrait) viennent du modèle
+// (src/modele/ajustements.js) ; l'écran du voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la
+// file d'écriture, et les prête ici :
 // - contenu() : le voyage tel que l'écran le montre ;
 // - appliquer(nouveau, ecriture) : le changement montré aussitôt, l'écriture dans la file ; refusée, l'écran
 //   relit et le dit au bas de l'écran (la quantité, comme une coche) ;
@@ -201,12 +201,11 @@ export function gestesDAjustement(ecran) {
 
   // « Ajouter aussi à la bibliothèque ? », après un ajout (l'objet écrit, src/ecrans/ajout-bibliotheque.js).
   // Entré dans la bibliothèque, l'objet du voyage est lié à son modèle, et sa catégorie à celle créée depuis
-  // elle : l'écran garde ces liens comme la base, pour qu'« Annuler » un retrait les réécrive. Rend vrai si
-  // l'objet est entré.
+  // elle : l'écran garde ces liens comme la base, pour qu'« Annuler » un retrait les réécrive.
   async function proposer(objet) {
     const categorie = ecran.contenu().categories.find(c => c.id === objet.categorieId);
     const liens = await proposerBibliotheque({ t, langue, stockage, objet, categorie, signal, dans: app });
-    if (!liens || signal.aborted) return false;
+    if (!liens || signal.aborted) return;
     const { objetModeleId, categorieModeleId } = liens;
     const contenu = avecObjet(ecran.contenu(), objet.id, { modeleId: objetModeleId });
     ecran.montrer({
@@ -215,7 +214,6 @@ export function gestesDAjustement(ecran) {
         c.id === categorie.id && categorieModeleId ? { ...c, modeleId: categorieModeleId } : c,
       ),
     });
-    return true;
   }
 
   return { regler, renommer, retirer, ajouter, proposer };
