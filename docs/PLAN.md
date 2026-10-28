@@ -344,19 +344,19 @@ Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes 
 
 ---
 
-## Phase 14 : Deux panneaux et tous les formats d'écran
+## Phase 14 : Tous les formats d'écran
 
 **User stories** : US-36
 
 ### Ce qu'on livre
 
-Sur la tablette en paysage et sur l'ordinateur, la bibliothèque s'affiche à son tour en deux panneaux, comme la liste d'un voyage depuis la phase 3 : les catégories à gauche, les objets de la catégorie choisie à droite. Sur téléphone et tablette en portrait, tout reste en une colonne. On vérifie tous les écrans à chaque format.
+La disposition grand écran du voyage et de la Bibliothèque (trois colonnes ou tuiles, décisions du chef de projet du 2026-10-27) est livrée avec la phase 7. On vérifie ici tous les écrans à chaque format.
 
 ### Critères d'acceptation
 
 - [ ] À 393×873, 800×1280, 1280×800 et sur ordinateur, en clair comme en sombre, aucun écran ne défile de côté, rien ne passe sous les barres système et chaque commande fait au moins 44×44 px (critère de succès 8).
 - [ ] Tourner la tablette conserve la catégorie choisie et les coches.
-- [ ] Le contenu ne dépasse pas 1080 px de large sur ordinateur.
+- [ ] Le contenu ne dépasse pas 1544 px de large sur ordinateur (les trois colonnes).
 
 ## Bloquée par
 
