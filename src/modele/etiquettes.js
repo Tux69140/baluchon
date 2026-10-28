@@ -3,9 +3,8 @@
 // (« Ete » ≠ « Été »). Les étiquettes se comparent entre elles tous groupes confondus, les groupes
 // entre eux ; une étiquette peut porter le nom d'un groupe. Un élément renommé ne se compare pas à
 // lui-même. Le rangement des listes est `deplacerDansListe` (modeles.js).
-import { rangSuivant, refuser } from './modeles.js';
+import { nomVide, rangSuivant, refuser } from './modeles.js';
 
-const nomVide = nom => !String(nom ?? '').trim();
 // La forme comparée : nettoyée et en minuscules selon la langue de l'appli.
 const cle = (nom, langue) =>
   String(nom ?? '')

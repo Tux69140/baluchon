@@ -1,9 +1,7 @@
 // Ajuster un voyage déjà créé : ajouter un objet, régler sa quantité, le retirer, et préremplir les
 // fiches de la bibliothèque depuis ce qu'on vient d'ajouter (docs/PLAN.md, phase 8). Règles pures :
 // le stockage n'y est pour rien.
-import { BORNES_QUANTITE, bornerQuantite, rangSuivant, refuser } from './modeles.js';
-
-const nomVide = nom => !String(nom ?? '').trim();
+import { BORNES_QUANTITE, bornerQuantite, nomVide, rangSuivant, refuser } from './modeles.js';
 
 // Un nom seul, obligatoire : celui d'une catégorie neuve du voyage, ou le nouveau nom d'un objet du voyage.
 const validerNom = ({ nom }) => (nomVide(nom) ? { nom: 'nomManquant' } : {});

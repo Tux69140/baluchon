@@ -41,7 +41,8 @@ export const saisieDObjet = objet => ({
   note: objet?.note ?? '',
 });
 
-const nomVide = nom => !String(nom ?? '').trim();
+// Un nom vide ou fait de blancs : la seule définition (catégories, objets, étiquettes, ajustements).
+export const nomVide = nom => !String(nom ?? '').trim();
 
 // Les erreurs, rangées par champ ; un objet vide quand tout est bon (comme validerInformations).
 export function validerCategorie({ nom, selonEtiquettes, etiquettes }) {
