@@ -21,6 +21,22 @@ const VISIBLES =
   '#app h1, #app h2, #app h3, #app p, #app a, #app button, #app input, #app img, #app li, #app legend, #app label, #app output, #app dialog';
 const CLE = 'baluchon-essai';
 
+// Rapport de contraste WCAG entre deux couleurs « rgb(r, g, b) » (calculées par la page).
+export function contraste(a, b) {
+  const luminance = rgb => {
+    const [r, g, v] = rgb
+      .match(/[\d.]+/g)
+      .slice(0, 3)
+      .map(n => {
+        const c = Number(n) / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * v;
+  };
+  const [claire, sombre] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (claire + 0.05) / (sombre + 0.05);
+}
+
 export function creerJuge() {
   const fautes = [];
   return {

@@ -33,8 +33,6 @@
     column-gap: var(--e-xl);
     row-gap: var(--e-xs);
     align-items: start;
-    max-width: none;
-    margin: 0;
     padding: var(--e-lg) var(--e-xl) calc(var(--e-2xl) + 80px);
   }
 
@@ -42,12 +40,6 @@
   main.grand-format > .barre-haut {
     grid-column: 1 / -1;
     justify-self: start;
-  }
-
-  main.grand-format h1 {
-    font-size: var(--taille-ecran);
-    line-height: 1.15;
-    overflow-wrap: anywhere;
   }
 
   main.grand-format .gf-menu,
@@ -181,15 +173,6 @@
     background: var(--actif);
   }
 
-  main.grand-format .gf-tuile[data-attenuee] {
-    border-style: dashed;
-    background: transparent;
-  }
-
-  main.grand-format .gf-tuile[data-attenuee] .pave {
-    opacity: 0.55;
-  }
-
   main.grand-format .gf-tuile-texte {
     display: flex;
     flex-direction: column;
@@ -224,6 +207,12 @@
   main.grand-format .gf-tuile-nouvelle {
     border-style: dashed;
     color: var(--principal);
+  }
+
+  /* Le « + » dans un pavé sans couleur de catégorie : à l'encre du thème, pas à l'encre marine des
+     pavés colorés, qui disparaît sur le fond sombre (3:1 au moins pour un picto). */
+  main.grand-format .gf-tuile-nouvelle .pave {
+    color: var(--encre);
   }
 
   main.grand-format .gf-tuile-nouvelle .icone svg {

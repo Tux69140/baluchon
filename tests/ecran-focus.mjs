@@ -7,27 +7,11 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { demarrerServeur } from './outils/serveur.mjs';
-import { CAPTURES, FORMATS, NOMS_THEME, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
+import { CAPTURES, FORMATS, NOMS_THEME, attendreEcran, contraste, creerJuge, ouvrir } from './outils/page.mjs';
 
 const MAINTENANT = new Date('2026-10-06T10:00:00');
 const MINIMUM = 3;
 const VOISINS = ['--carte', '--fond', '--actif'];
-
-// Rapport de contraste WCAG entre deux couleurs « rgb(r, g, b) ».
-function contraste(a, b) {
-  const luminance = rgb => {
-    const [r, g, v] = rgb
-      .match(/[\d.]+/g)
-      .slice(0, 3)
-      .map(n => {
-        const c = Number(n) / 255;
-        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-      });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * v;
-  };
-  const [claire, sombre] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (claire + 0.05) / (sombre + 0.05);
-}
 
 // La couleur d'un jeton, telle que la page la résout dans son thème.
 const couleurs = (page, jetons) =>

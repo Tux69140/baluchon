@@ -5,7 +5,7 @@ import { echapper } from './html.js';
 import { paveCategorie } from './icones.js';
 
 // La marque d'une catégorie bouclée descendue sous le filtre « Reste à emballer » (voyage) : carte,
-// choix ou tuile, habillés par voyage.css et grand-format.css.
+// choix ou tuile, habillés par une seule règle de voyage.css.
 export const marqueAttenuee = oui => (oui ? ' data-attenuee' : '');
 
 // Une tuile du repli : le pavé, le nom, puis ce qu'en dit l'écran (infos : compte, « Bouclé ! »,

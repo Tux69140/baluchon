@@ -186,9 +186,12 @@
   transform: rotate(180deg);
 }
 
-/* Catégorie bouclée sous le filtre : descendue en bas, atténuée ; le tampon dit pourquoi. */
+/* Catégorie bouclée sous le filtre : descendue en bas, atténuée ; le tampon dit pourquoi. En carte au
+   téléphone, en carte du menu (trois colonnes) ou en tuile (repli) : ces deux dernières sous
+   main.grand-format, pour l'emporter sur leur habillage (grand-format.css, bord plein et fond de carte).
+   La choisie, définie après dans grand-format.css, garde son bord et son fond actif. */
 .categorie[data-attenuee],
-.choix[data-attenuee] {
+main.grand-format :is(.choix, .gf-tuile)[data-attenuee] {
   background: transparent;
   border-style: dashed;
 }

@@ -32,7 +32,9 @@ h3 {
   padding: var(--e-lg) var(--e-md) calc(var(--e-2xl) + 80px);
 }
 
-.ecran > h1 {
+/* Le titre de l'écran ; en grand format (grand-format.css), celui du bloc de gauche. */
+.ecran > h1,
+main.grand-format .gf-gauche > h1 {
   font-size: var(--taille-ecran);
   line-height: 1.15;
   overflow-wrap: anywhere;

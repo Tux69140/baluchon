@@ -1,9 +1,10 @@
 // Les gestes de l'écran d'un voyage sur tablette et ordinateur (maquette validée le 2026-10-27 ;
 // Review Focus de docs/superpowers/specs/2026-10-27-grand-ecran-design.md). En tuiles (tablette) et en
 // cartes (ordinateur) :
-// - filtre : Papiers, bouclée, descend en fin de menu, atténuée ; la choisir dit que ses objets sont
-//   masqués ; la dernière pièce de Toilette (horloge simulée) : pas de tampon à 900 ms, son tampon à
-//   1000 ms, puis la suivante non bouclée choisie une seconde plus tard (Review Focus 2) ;
+// - filtre : Papiers, bouclée, descend en fin de menu, atténuée (bord en pointillés, fond transparent ;
+//   choisie, elle garde son fond actif) ; la choisir dit que ses objets sont masqués ; la dernière
+//   pièce de Toilette (horloge simulée) : pas de tampon à 900 ms, son tampon à 1000 ms, puis la
+//   suivante non bouclée choisie une seconde plus tard (Review Focus 2) ;
 // - fiche fermée après que sa catégorie a cédé la place : le focus va à la tuile ou à la carte de
 //   cette catégorie ;
 // - trois colonnes : une coche ne ramène pas en haut la liste défilée ; témoin : une autre catégorie
@@ -39,6 +40,22 @@ const quantite = (page, id) =>
 const filtreAllume = page =>
   page.evaluate(() => document.querySelector('[data-action="filtre"]')?.getAttribute('aria-pressed'));
 const commandeVisible = focus => focus !== 'body' && !focus.endsWith('(invisible)');
+// L'aspect calculé des catégories atténuées du menu (spec, § 6 ; docs/DESIGN.md, 2026-10-24) : bord en
+// pointillés et fond transparent, sauf la choisie, qui garde son fond actif.
+const aspectAttenuees = page =>
+  page.evaluate(() => {
+    const sonde = document.createElement('span');
+    sonde.style.background = 'var(--actif)';
+    document.body.append(sonde);
+    const actif = getComputedStyle(sonde).backgroundColor;
+    sonde.remove();
+    return [...document.querySelectorAll('.gf-menu [data-attenuee]')].map(el => {
+      const s = getComputedStyle(el);
+      const fond = s.backgroundColor === actif ? 'actif' : s.backgroundColor;
+      return el.getAttribute('aria-current') === 'true' ? { choisie: fond } : { bord: s.borderTopStyle, fond };
+    });
+  });
+const ATTENUEE = { bord: 'dashed', fond: 'rgba(0, 0, 0, 0)' };
 
 try {
   for (const [format, doigt] of Object.entries(DEUX)) {
@@ -54,7 +71,13 @@ try {
           vu(filtre.attenuees) === vu([cat('v1', 'pap')]),
         `${format}, filtre : menu ${vu(filtre.menu)}, atténuées ${vu(filtre.attenuees)}`,
       );
+      await page.mouse.move(0, 0);
+      const aspect = await aspectAttenuees(page);
+      juge.exige(vu(aspect) === vu([ATTENUEE]), `${format}, filtre : aspect de Papiers ${vu(aspect)}`);
       await choisir(page, cat('v1', 'pap'));
+      await page.mouse.move(0, 0);
+      const choisie = await aspectAttenuees(page);
+      juge.exige(vu(choisie) === vu([{ choisie: 'actif' }]), `${format}, Papiers choisie : ${vu(choisie)}`);
       const papiers = await lire(page);
       juge.exige(
         papiers.titre === 'Papiers' && papiers.info === fr.voyage.categorieMasquee.other.replace('{n}', 2),

@@ -13,7 +13,8 @@
 //   catégories » remplace le menu par la liste ▲ ▼, « Terminé » le rend ;
 // - la catégorie choisie supprimée : la première restante l'est à sa place (Review Focus 2) ; un nom
 //   long et piégé reste du texte et ne déborde pas (Review Focus 3) ; le changement de disposition est
-//   essayé dans ecran-bibliotheque-grand-format-disposition.mjs.
+//   essayé dans ecran-bibliotheque-grand-format-disposition.mjs ;
+// - le « + » de « Nouvelle catégorie » à 3:1 au moins de son fond, en clair comme en sombre.
 // 4 formats × 2 thèmes : cibles de 44 px, rien sous 13 px, pas de défilement de côté, rien sous les
 // barres système, captures bibliotheque-grand-format-….
 import { mkdir } from 'node:fs/promises';
@@ -34,7 +35,7 @@ import {
   montrerCategorie,
   saisir,
 } from './outils/fiches.mjs';
-import { CAPTURES, NOMS_THEME, creerJuge, verifierBarres, verifierCommandes } from './outils/page.mjs';
+import { CAPTURES, NOMS_THEME, contraste, creerJuge, verifierBarres, verifierCommandes } from './outils/page.mjs';
 import {
   GRANDS,
   PIEGE,
@@ -158,7 +159,17 @@ async function verifierEtCapturer(ouvert, cas, nom) {
   await verifierBarres(page, juge, cas);
 }
 
-// Chaque format, chaque thème : la disposition, le menu, la liste de Vêtements, captures.
+// Le « + » de « Nouvelle catégorie » (tuile ou bouton) et le premier fond derrière lui, en remontant.
+const couleursDuPlus = page =>
+  page.evaluate(() => {
+    const svg = document.querySelector('#app .gf-menu [data-action="nouvelle-categorie"] svg');
+    let fond = svg?.parentElement;
+    while (fond && getComputedStyle(fond).backgroundColor === 'rgba(0, 0, 0, 0)') fond = fond.parentElement;
+    return svg && fond && { picto: getComputedStyle(svg).color, fond: getComputedStyle(fond).backgroundColor };
+  });
+
+// Chaque format, chaque thème : la disposition, le menu, la liste de Vêtements, le « + » de « Nouvelle
+// catégorie » à 3:1 au moins de son fond (un picto, WCAG 1.4.11), captures.
 async function essaiFormat(format, theme) {
   const cas = `${format}, ${NOMS_THEME[theme]}`;
   const ouvert = await ouvrirSur(format, { theme });
@@ -212,6 +223,11 @@ async function essaiFormat(format, theme) {
   }
   if (format === 'ordinateur') juge.exige(d.pistes === '320px 360px 800px', `${cas} : colonnes ${d.pistes}`);
   await verifierEtCapturer(ouvert, cas, `bibliotheque-grand-format-${format}-${NOMS_THEME[theme]}.png`);
+  const plus = await couleursDuPlus(page);
+  juge.exige(
+    plus && contraste(plus.picto, plus.fond) >= 3,
+    `${cas} : « + » de Nouvelle catégorie ${vu(plus)}, contraste ${plus && contraste(plus.picto, plus.fond).toFixed(2)}`,
+  );
   await fermer(cas, ouvert);
 }
 
