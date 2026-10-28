@@ -199,11 +199,11 @@ Supprimer une catégorie, un objet, un groupe ou une étiquette demande une conf
 
 ### Critères d'acceptation
 
-- [ ] Les chiffres annoncés correspondent exactement à ce qui est supprimé ou modifié.
-- [ ] « Annuler » dans les 10 secondes rétablit tout à l'identique, liens d'étiquettes compris.
-- [ ] Supprimer une étiquette ou un groupe qui laisserait un objet ou une catégorie sans aucune étiquette est refusé, et la fenêtre de refus mène à chacun d'eux.
-- [ ] Un voyage créé avant la suppression est inchangé.
-- [ ] Le bandeau a une place réservée et ne fait rien bouger à l'écran.
+- [x] Les chiffres annoncés correspondent exactement à ce qui est supprimé ou modifié.
+- [x] « Annuler » dans les 10 secondes rétablit tout à l'identique, liens d'étiquettes compris.
+- [x] Supprimer une étiquette ou un groupe qui laisserait un objet ou une catégorie sans aucune étiquette est refusé, et la fenêtre de refus mène à chacun d'eux.
+- [x] Un voyage créé avant la suppression est inchangé.
+- [x] Le bandeau a une place réservée et ne fait rien bouger à l'écran.
 
 ## Bloquée par
 
