@@ -5,9 +5,10 @@ import { BORNES_QUANTITE, bornerQuantite, rangSuivant, refuser } from './modeles
 
 const nomVide = nom => !String(nom ?? '').trim();
 
-export function validerNouvelleCategorie({ nom }) {
-  return nomVide(nom) ? { nom: 'nomManquant' } : {};
-}
+// Un nom seul, obligatoire : celui d'une catégorie neuve du voyage, ou le nouveau nom d'un objet du voyage.
+const validerNom = ({ nom }) => (nomVide(nom) ? { nom: 'nomManquant' } : {});
+export const validerNouvelleCategorie = validerNom;
+export const validerRenommage = validerNom;
 
 // `categorie` est l'id d'une catégorie du voyage, ou { nouvelle: { nom, icone, couleur } }.
 export function validerAjout({ nom, categorie }) {

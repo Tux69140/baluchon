@@ -90,7 +90,8 @@ function libelleCase(t, objet) {
   return remplir(t(`voyage.case.${objet.quantite === 1 ? 'cocher' : 'ajouter'}`), valeurs);
 }
 
-function vueObjet(t, objet, voyageurs) {
+// recent : l'objet vient d'être rendu par « Annuler », il s'éclaire (src/styles/bibliotheque.css).
+function vueObjet(t, objet, voyageurs, recent) {
   const etat = etatDansLeSac(objet);
   const entame = etat === 'entame';
   const quantite = entame ? `${objet.dansLeSac}<small> / ${objet.quantite}</small>` : `${objet.quantite}`;
@@ -103,7 +104,7 @@ function vueObjet(t, objet, voyageurs) {
   // Le nom du bouton reprend tout ce que la ligne montre, dans le même ordre.
   const nomDit = partage ? `${objet.nom}, ${partage}` : objet.nom;
   return `
-          <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}" data-flip="${echapper(objet.id)}">
+          <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}" data-flip="${echapper(objet.id)}"${recent === objet.id ? ' data-recent' : ''}>
             <button type="button" class="case" data-action="case" data-id="${echapper(objet.id)}" aria-label="${echapper(libelleCase(t, objet))}">
               <span class="case-boite" aria-hidden="true">${etat === 'plein' ? iconeInterface('coche') : ''}</span>
             </button>
@@ -116,9 +117,9 @@ function vueObjet(t, objet, voyageurs) {
 }
 
 // Une catégorie ouverte dont le filtre masque tout le dit en toutes lettres, plutôt que d'être vide.
-function vueLignes({ t, langue, voyageurs }, { objets }, nombre) {
+function vueLignes({ t, langue, voyageurs, recent }, { objets }, nombre) {
   if (!objets.length) return `<p class="ligne-info">${pluriel(t, 'voyage.categorieMasquee', nombre, langue)}</p>`;
-  return `<ul class="objets">${objets.map(o => vueObjet(t, o, voyageurs)).join('')}
+  return `<ul class="objets">${objets.map(o => vueObjet(t, o, voyageurs, recent)).join('')}
         </ul>`;
 }
 
@@ -201,10 +202,10 @@ function vueVide(t) {
 // colonne de cartes au téléphone ; le grand format si grandFormat (tablettes, ordinateur), en trois
 // colonnes si troisColonnes, sinon en repli. Un voyage vide reste en une colonne.
 // liste : les catégories du voyage et leurs pièces (listeParCategorie) ; poses : les tampons et le
-// bandeau qui viennent d'apparaître, animés une seule fois.
-export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, grandFormat, troisColonnes }) {
-  // Le nombre de voyageurs suit le contexte jusqu'aux lignes, qui en ont besoin pour « partagé ».
-  const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs };
+// bandeau qui viennent d'apparaître, animés une seule fois ; recent : l'id de l'objet à éclairer.
+export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, recent, grandFormat, troisColonnes }) {
+  // Le nombre de voyageurs et l'objet à éclairer suivent le contexte jusqu'aux lignes (« partagé »).
+  const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs, recent };
   const { t, langue } = contexte;
   // Le lien retour vient en tête, hors du voyage : en grand format, il est seul sur sa ligne.
   const lien = `

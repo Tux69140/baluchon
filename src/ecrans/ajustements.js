@@ -1,0 +1,181 @@
+// Les gestes d'ajustement de l'écran d'un voyage, depuis la fiche d'un objet (spec de la phase 8,
+// docs/superpowers/specs/2026-10-28-phase-8-ajuster-design.md ; maquette validée docs/maquettes/ajuster/) :
+// corriger la quantité prévue (US-18), renommer, retirer avec son « Annuler » (US-21). Rien de tout cela ne
+// touche la bibliothèque. Les règles (bornes, confirmation, ce qu'emporte un retrait) viennent du modèle
+// (src/modele/ajustements.js) ; l'écran du voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la
+// file d'écriture, et les prête ici :
+// - contenu() : le voyage tel que l'écran le montre ;
+// - appliquer(nouveau, ecriture) : le changement montré aussitôt, l'écriture dans la file ; refusée, l'écran
+//   relit et le dit au bas de l'écran (la quantité, comme une coche) ;
+// - attendre(ecriture) : l'écriture dans la file, après celles en cours, sans rien montrer avant elle
+//   (le renommage et le retrait : refusés, rien ne change) ;
+// - montrer(nouveau) : ce qu'une écriture attendue a fait, montré.
+import { remplir } from '../i18n/traduction.js';
+import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
+import { alerterEnHaut } from './alerte.js';
+import { montrerAnnulation } from './annulation.js';
+import { demander } from './fenetre.js';
+import { ouvrirFicheModele } from './fiche-modele.js';
+import { champNom } from './fiche-modele-vues.js';
+import { pluriel } from './format.js';
+import { echapper } from './html.js';
+
+// Le contenu du voyage où l'objet id a ces champs changés.
+export const avecObjet = (contenu, id, champs) => ({
+  ...contenu,
+  objets: contenu.objets.map(o => (o.id === id ? { ...o, ...champs } : o)),
+});
+
+// Une phrase en HTML : le texte échappé, son nombre {n} en gras (comme les questions chiffrées de la
+// phase 7, maquette docs/maquettes/ajuster/fiches.js).
+const NOMBRE = '{n}';
+const nombreEnGras = texte => echapper(texte).replace(NOMBRE, `<b>${NOMBRE}</b>`);
+
+// ecran : { t, langue, stockage, app (la racine de l'appli), signal (la fin de l'écran), contenu, appliquer,
+// attendre, montrer } (voir plus haut). Rend les gestes que la fiche déclenche.
+export function gestesDAjustement(ecran) {
+  const { t, langue, stockage, app, signal } = ecran;
+  const objetDe = id => ecran.contenu().objets.find(o => o.id === id);
+
+  // « Sortir une pièce du sac ? » : baisser la quantité prévue sous ce qui est déjà dans le sac
+  // (décision du chef de projet, 2026-10-28). Rend true pour « Prévoir ».
+  async function confirmerBaisse(objet, quantite) {
+    const reponse = await demander({
+      t,
+      titre: t('ajustement.baisse.titre'),
+      texteHtml: remplir(nombreEnGras(t('ajustement.baisse.texte')), {
+        n: objet.dansLeSac,
+        nom: echapper(objet.nom),
+        quantite,
+      }),
+      signal,
+      boutons: [
+        { cle: 'garder', libelle: remplir(t('ajustement.baisse.garder'), { n: objet.quantite }) },
+        { cle: 'prevoir', libelle: remplir(t('ajustement.baisse.prevoir'), { quantite }), principal: true },
+      ],
+    });
+    return reponse === 'prevoir';
+  }
+
+  // − ou + : chaque appui s'enregistre aussitôt et rend la quantité manuelle, définitivement. Jamais hors
+  // de ce que les boutons permettent (boutonsDeQuantite) ; le sac suit une quantité qui passe dessous.
+  async function regler(id, quantite) {
+    const objet = objetDe(id);
+    if (!objet) return;
+    const permis = boutonsDeQuantite(objet);
+    if (quantite < objet.quantite ? !permis.moins : !permis.plus) return;
+    if (reglageDeQuantite(objet, quantite).confirmer && !(await confirmerBaisse(objet, quantite))) return;
+    // Pendant la question, une relecture a pu changer l'objet : la quantité voulue partait de l'ancienne.
+    const actuel = objetDe(id);
+    if (signal.aborted || actuel?.quantite !== objet.quantite) return;
+    const { dansLeSac } = reglageDeQuantite(actuel, quantite);
+    const modifieLe = new Date().toISOString();
+    ecran.appliquer(avecObjet(ecran.contenu(), id, { quantite, dansLeSac, quantiteManuelle: true, modifieLe }), () =>
+      stockage.reglerQuantite(id, quantite, dansLeSac, modifieLe),
+    );
+  }
+
+  // « Renommer » : une fiche au nom seul, comme celles des étiquettes ; refusée, elle reste ouverte avec
+  // sa saisie et le message en haut (src/ecrans/fiche-modele.js). Ce voyage seulement.
+  function renommer(id) {
+    const objet = objetDe(id);
+    if (!objet) return;
+    ouvrirFicheModele({
+      t,
+      titre: t('ajustement.renommer.titre'),
+      sousTitre: t('ajustement.ajout.voyageSeulement'),
+      bouton: t('modele.enregistrer'),
+      classe: 'fiche-nom',
+      saisie: { nom: objet.nom },
+      valider: validerRenommage,
+      dessiner: (brouillon, erreurs) =>
+        champNom(t, brouillon.nom, erreurs.nom && t(`modele.objet.erreurs.${erreurs.nom}`), { entree: true }),
+      texteAbandon: remplir(t('ajustement.renommer.abandon'), { nom: objet.nom }),
+      async enregistrer({ nom }) {
+        const net = nom.trim();
+        const modifieLe = new Date().toISOString();
+        await ecran.attendre(() => stockage.renommerObjetDuVoyage(id, net, modifieLe));
+        if (!signal.aborted && objetDe(id)) ecran.montrer(avecObjet(ecran.contenu(), id, { nom: net, modifieLe }));
+      },
+      signal,
+      dans: app,
+    });
+  }
+
+  // La question avant de retirer : ce qui part avec l'objet (ses pièces, sa catégorie s'il est le dernier).
+  async function confirmerRetrait(objet) {
+    const { categorie } = extraitDuRetrait(ecran.contenu(), objet.id);
+    const suite = [];
+    if (objet.dansLeSac)
+      suite.push(pluriel(cle => nombreEnGras(t(cle)), 'ajustement.retrait.pieces', objet.dansLeSac, langue));
+    if (categorie)
+      suite.push(remplir(echapper(t('ajustement.retrait.derniere')), { categorie: echapper(categorie.nom) }));
+    const reponse = await demander({
+      t,
+      titre: remplir(t('ajustement.retrait.titre'), { nom: objet.nom }),
+      texte: t('ajustement.retrait.bibliotheque'),
+      idTexte: 'retrait-texte',
+      suite,
+      signal,
+      boutons: [
+        { cle: 'garder', libelle: t('ajustement.retrait.garder') },
+        { cle: 'retirer', libelle: t('ajustement.retrait.retirer'), danger: true },
+      ],
+    });
+    return reponse === 'retirer';
+  }
+
+  // « Annuler » : les mêmes lignes réécrites à l'identique, puis l'écran ouvert sur ce voyage le montre
+  // (événement « voyage-retabli ») ; depuis un autre écran, le voyage relu le montrera.
+  function proposerAnnulation(extrait) {
+    const { objet, categorie } = extrait;
+    const texte = categorie
+      ? remplir(t('ajustement.retrait.bandeauCategorie'), { nom: objet.nom, categorie: categorie.nom })
+      : remplir(t('ajustement.retrait.bandeau'), { nom: objet.nom });
+    montrerAnnulation({
+      t,
+      app,
+      texte,
+      voyage: objet.voyageId,
+      async annuler() {
+        await stockage.retablirDansLeVoyage(extrait);
+        const detail = { voyageId: objet.voyageId, objetId: objet.id, categorieId: objet.categorieId };
+        window.dispatchEvent(new CustomEvent('voyage-retabli', { detail }));
+      },
+    });
+  }
+
+  // « Retirer du voyage » : la question, puis une seule écriture, dans la file. Refusée, rien ne change et
+  // le message le dit, sans bandeau. Faite, l'objet (et sa catégorie devenue vide) quitte l'écran, la
+  // fiche se ferme, et le bandeau « Annuler » prend le relais pour 10 s. L'extrait est tiré du voyage au
+  // moment d'écrire, après les écritures d'avant : « Annuler » rend ce que la base gardait.
+  async function retirer(id) {
+    const objet = objetDe(id);
+    if (!objet || !(await confirmerRetrait(objet)) || signal.aborted) return;
+    let extrait;
+    try {
+      extrait = await ecran.attendre(async () => {
+        if (!objetDe(id)) return null;
+        const avant = extraitDuRetrait(ecran.contenu(), id);
+        await stockage.retirerDuVoyage(id);
+        return avant;
+      });
+    } catch (erreur) {
+      console.error(erreur);
+      if (!signal.aborted) alerterEnHaut(app, t('ajustement.retrait.erreur'), signal);
+      return;
+    }
+    if (!extrait) return;
+    if (!signal.aborted) {
+      const contenu = ecran.contenu();
+      ecran.montrer({
+        ...contenu,
+        categories: contenu.categories.filter(c => c.id !== extrait.categorie?.id),
+        objets: contenu.objets.filter(o => o.id !== id),
+      });
+    }
+    proposerAnnulation(extrait);
+  }
+
+  return { regler, renommer, retirer };
+}

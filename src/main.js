@@ -21,6 +21,7 @@ import './styles/fiche-modele.css';
 import './styles/etiquettes.css';
 import './styles/refus.css';
 import './styles/annulation.css';
+import './styles/ajustements.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';

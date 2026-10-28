@@ -48,7 +48,6 @@
     "note": "Note",
     "confirmerTitre": "Vider « {nom} » ?",
     "confirmerTexte": "Les {n} pièces repartent hors du sac.",
-    "regle": "{categorie} · {regle}",
     "ajuster": "Ajuster cet objet",
     "quantitePrevue": "Quantité prévue",
     "calculee": "calculée : {regle}",

@@ -9,10 +9,12 @@
 // Le déroulé d'une coche : l'objet change aussitôt à l'écran, sans que rien ne bouge ; l'écriture part
 // dans la file ; une seconde sans nouvel appui, la liste se range en glissant ; une catégorie qui vient
 // de boucler reçoit son tampon, puis se replie une seconde plus tard. La fiche d'un objet (fiche.js)
-// passe par le même chemin que la case.
+// passe par le même chemin que la case (appliquer), et ses ajustements (quantité prévue, renommer,
+// retirer et « Annuler », src/ecrans/ajustements.js) aussi.
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
+import { avecObjet, gestesDAjustement } from './ajustements.js';
 import { allerALaListe, suivreDisposition, trouverCommande } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import {
@@ -20,6 +22,7 @@ import {
   apresTampon,
   basculerCategorie,
   basculerFiltre,
+  categoriesAffichees,
   choisirCategorie,
   etatInitial,
 } from './rangement.js';
@@ -65,20 +68,27 @@ function ouvrirListe(app, donnees, contexte) {
   const fin = new AbortController();
   // La fiche ouverte : l'objet qu'elle montre et de quoi la repeindre.
   let fiche = null;
+  // L'objet que « Annuler » vient de rendre, éclairé au prochain dessin seulement.
+  let recent = null;
 
   // Chaque dessin suit la disposition du moment (src/ecrans/disposition.js) : tourner l'appareil ou
   // élargir la fenêtre redessine le même état (coches, catégorie choisie, filtre). Le focus d'une
   // commande qui n'est plus dessinée va à la ligne de son objet, sinon à sa catégorie, sinon au filtre.
   const { peindre, commandeProche } = suivreDisposition(main, {
-    dessin: disposition => vueVoyage(contexte, { contenu, liste, etat, poses, ...disposition }),
+    dessin: disposition => vueVoyage(contexte, { contenu, liste, etat, poses, recent, ...disposition }),
     choisie: () => etat.choisie,
     categorieDe: id => contenu.objets.find(o => o.id === id)?.categorieId,
     ligne: 'fiche',
     repli: 'filtre',
     apresPose() {
       poses = { tampons: new Set(), bandeau: false };
-      // Un objet disparu à la relecture ferme la fiche (repeindre(undefined)).
-      fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
+      recent = null;
+      // Un objet disparu (relecture, retrait) ferme la fiche (repeindre(undefined)).
+      const objet = contenu.objets.find(o => o.id === fiche?.id);
+      fiche?.repeindre(
+        objet,
+        contenu.categories.find(c => c.id === objet?.categorieId),
+      );
     },
     animation: GLISSEMENT,
     signal: fin.signal,
@@ -129,8 +139,8 @@ function ouvrirListe(app, donnees, contexte) {
     minuteries.alerte = setTimeout(() => alerte.remove(), DUREE_ALERTE);
   }
 
-  // L'écriture refusée : on revient à ce que le stockage garde réellement, et on le dit.
-  async function echec(erreur) {
+  // L'écriture refusée : on revient à ce que le stockage garde réellement, et on le dit (cle : le message).
+  async function echec(erreur, cle) {
     console.error(erreur);
     generation += 1;
     relecture = true;
@@ -152,30 +162,60 @@ function ouvrirListe(app, donnees, contexte) {
     }
     if (parti()) return;
     peindre();
-    alerter(t('voyage.erreurEnregistrement'));
+    alerter(t(cle));
   }
 
-  function enregistrer(id, dansLeSac) {
+  // Un nouveau contenu à l'écran, la liste figée jusqu'au répit. La catégorie choisie qui n'est plus là
+  // (son dernier objet retiré) laisse la place à la première qui reste.
+  function montrer(nouveau) {
+    contenu = nouveau;
+    liste = listeParCategorie(contenu);
+    if (!liste.some(c => c.categorie.id === etat.choisie))
+      etat = choisirCategorie(etat, categoriesAffichees(etat, liste)[0]?.categorie.id ?? null);
+    peindre();
+    relancerRepit();
+  }
+
+  // Le passage commun de tout changement, coche comprise : l'écran d'abord, la liste figée, puis
+  // l'écriture dans la file. Refusée, l'écran relit et le dit : la coche, ou une autre modification.
+  // Pendant la relecture qui suit un échec, rien ne change (rend false).
+  function appliquer(nouveau, ecriture, { coche = false } = {}) {
+    if (relecture) return false;
+    montrer(nouveau);
     const sienne = generation;
+    const message = coche ? 'voyage.erreurEnregistrement' : 'voyage.erreurModification';
     file = file
-      .then(() => sienne === generation && stockage.reglerDansLeSac(id, dansLeSac, new Date().toISOString()))
-      .catch(erreur => sienne === generation && echec(erreur))
+      .then(() => sienne === generation && ecriture())
+      .catch(erreur => sienne === generation && echec(erreur, message))
       // Un échec qui échoue lui-même ne doit pas bloquer la file pour toujours.
       .catch(erreur => console.error(erreur));
+    return true;
   }
 
-  // Le chemin commun de tout changement de pièces, case ou fiche : l'écran d'abord, la liste figée,
-  // puis la base. Pendant la relecture qui suit un échec, rien ne change.
+  // Une écriture qu'on attend avant de rien montrer (renommer, retirer) : dans la file, après celles en
+  // cours (et la relecture d'un échec) ; sa promesse rend son résultat ou son refus, sans bloquer la file.
+  function attendre(ecriture) {
+    const resultat = file.then(ecriture);
+    file = resultat.catch(() => {});
+    return resultat;
+  }
+
   function changer(id, dansLeSac) {
-    if (relecture) return;
-    contenu = { ...contenu, objets: contenu.objets.map(o => (o.id === id ? { ...o, dansLeSac } : o)) };
-    liste = listeParCategorie(contenu);
-    peindre();
+    const ecriture = () => stockage.reglerDansLeSac(id, dansLeSac, new Date().toISOString());
+    if (!appliquer(avecObjet(contenu, id, { dansLeSac }), ecriture, { coche: true })) return;
     const caseCochee = trouverCommande(main, 'case', id);
     if (caseCochee) caseCochee.dataset.pulse = '';
-    relancerRepit();
-    enregistrer(id, dansLeSac);
   }
+
+  const gestes = gestesDAjustement({
+    ...contexte,
+    app,
+    signal: fin.signal,
+    contenu: () => contenu,
+    appliquer,
+    attendre,
+    montrer,
+  });
 
   async function appuyerSurCase(id) {
     const objet = contenu.objets.find(o => o.id === id);
@@ -203,6 +243,9 @@ function ouvrirListe(app, donnees, contexte) {
         objet,
         categorie: contenu.categories.find(c => c.id === objet.categorieId),
         surChangement: valeur => changer(id, valeur),
+        surQuantite: quantite => gestes.regler(id, quantite),
+        surRenommer: () => gestes.renommer(id),
+        surRetirer: () => gestes.retirer(id),
         surFermeture: () => {
           fiche = null;
           commandeProche({ action: 'fiche', id })?.focus();
@@ -232,6 +275,34 @@ function ouvrirListe(app, donnees, contexte) {
       peindre({ glissement: true });
     }
   });
+  // « Annuler » d'un retrait (src/ecrans/ajustements.js), d'ici ou d'un autre écran puis revenu : l'objet
+  // rendu, relu, rejoint ce que l'écran montre (les coches en cours restent), sa catégorie choisie et
+  // dépliée, lui éclairé et amené dans la vue.
+  window.addEventListener(
+    'voyage-retabli',
+    async ({ detail: { voyageId, objetId, categorieId } }) => {
+      if (voyageId !== contenu.voyage.id || parti()) return;
+      let relu;
+      try {
+        relu = await stockage.lireVoyage(voyageId);
+      } catch (erreur) {
+        console.error(erreur);
+        return;
+      }
+      const objet = relu?.objets.find(o => o.id === objetId);
+      if (!objet || parti()) return;
+      contenu = {
+        ...contenu,
+        categories: relu.categories,
+        objets: [...contenu.objets.filter(o => o.id !== objetId), objet],
+      };
+      liste = listeParCategorie(contenu);
+      etat = { ...choisirCategorie(etat, categorieId), ouvertes: new Set([...etat.ouvertes, categorieId]) };
+      recent = objetId;
+      peindre({ enVue: `.objet[data-id="${CSS.escape(objetId)}"]` });
+    },
+    { signal: fin.signal },
+  );
   fin.signal.addEventListener('abort', arreter);
   const observateur = new MutationObserver(() => parti() && observateur.disconnect());
   observateur.observe(app, { childList: true });

@@ -1,7 +1,7 @@
 // Phase 3 (docs/PLAN.md) : la fiche d'un objet du voyage (US-15, US-16 ; maquette docs/maquettes/voyage/,
 // états « fiche » et « confirmation »).
-// - appui sur la ligne Repas (6 / 16) : fiche modale « Repas », ligne « Alimentation · 2 par jour et par
-//   personne », sortie « 6 », « sur 16 », note visible ;
+// - appui sur la ligne Repas (6 / 16) : fiche modale « Repas », ligne du haut « Alimentation » (la catégorie
+//   seule depuis la phase 8 : le calcul vit sous « Quantité prévue »), sortie « 6 », « sur 16 », note visible ;
 // - « + » : 7 dans la fiche, « 7 / 16 » sur la ligne derrière, 7 enregistrées ; « Tout dans le sac » :
 //   16, « + » et « Tout dans le sac » désactivés ; « Vider » : confirmation « Les 16 pièces repartent
 //   hors du sac. », puis 0, « − » et « Vider » désactivés ; avec une seule pièce, « Vider » ne demande rien ;
@@ -162,7 +162,7 @@ try {
       ouverte &&
         vue?.modale &&
         vue.titre === 'Repas' &&
-        vue.regle === 'Alimentation · 2 par jour et par personne' &&
+        vue.regle === 'Alimentation' &&
         vue.sortie === '6' &&
         vue.sur === remplir(fr.fiche.sur, { total: 16 }) &&
         vue.desactives === '' &&
@@ -232,9 +232,9 @@ try {
     const cafe = await fiche(page);
     juge.exige(
       cafe?.titre === 'Café soluble' &&
-        cafe.regle === 'Alimentation · 1 en tout' &&
+        cafe.regle === 'Alimentation' &&
         cafe.note === null &&
-        (await page.evaluate(() => document.querySelectorAll('dialog.fiche h3').length)) === 1,
+        (await page.evaluate(() => !document.querySelector('dialog.fiche #fiche-note'))),
       `Café soluble (sans note) : ${JSON.stringify(cafe)}`,
     );
     await page.touchscreen.tap(200, 20);

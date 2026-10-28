@@ -208,7 +208,8 @@ const classeBouton = (principal, danger) => {
 // qu'on ne la prenne pas pour une confirmation verte (maquette de la phase 6). contenu : du HTML
 // déjà échappé par l'appelant, posé entre le texte et les boutons ; texteHtml : le texte déjà en HTML
 // (échappé par l'appelant, un nombre en gras), à la place de texte ; idTexte : l'identifiant de son
-// paragraphe (la question chiffrée d'une suppression a le sien). La promesse rend la clé du bouton
+// paragraphe (la question chiffrée d'une suppression a le sien) ; suite : d'autres paragraphes en HTML
+// (échappés par l'appelant), lus avec lui (le retrait d'un objet du voyage). La promesse rend la clé du bouton
 // touché, ou null (Échap, retour système, écran parti), une fois la fenêtre effacée : l'écran
 // derrière reprend alors la main. signal (AbortSignal) : l'écran qui a posé la question s'en va ; la
 // fenêtre disparaît aussitôt et la réponse est null (sinon elle resterait par-dessus l'écran
@@ -219,6 +220,7 @@ export function demander({
   texte = '',
   texteHtml = echapper(texte),
   idTexte = 'texte-confirmation',
+  suite = [],
   contenu = '',
   boutons,
   signal,
@@ -230,7 +232,7 @@ export function demander({
     titre: echapper(titre),
     croix: false,
     contenu: `
-      <p id="${idTexte}">${texteHtml}</p>${contenu}
+      <p id="${idTexte}">${texteHtml}</p>${suite.map((p, i) => `<p id="${idTexte}-${i + 2}">${p}</p>`).join('')}${contenu}
       <div class="fenetre-pied">${boutons
         .map(
           ({ cle, libelle, principal = false, danger = false }, rang) => `
@@ -242,7 +244,7 @@ export function demander({
   const fenetre = gabarit.content.firstElementChild;
   fenetre.classList.add('confirmation');
   fenetre.setAttribute('role', 'alertdialog');
-  fenetre.setAttribute('aria-describedby', idTexte);
+  fenetre.setAttribute('aria-describedby', [idTexte, ...suite.map((_, i) => `${idTexte}-${i + 2}`)].join(' '));
   document.body.append(fenetre);
   return new Promise(resoudre => {
     let choisie = null;

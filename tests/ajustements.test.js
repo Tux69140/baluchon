@@ -10,6 +10,7 @@ import {
   saisieObjetPourLaBibliotheque,
   validerAjout,
   validerNouvelleCategorie,
+  validerRenommage,
 } from '../src/modele/ajustements.js';
 import { validerCategorie, validerObjet } from '../src/modele/modeles.js';
 
@@ -110,6 +111,9 @@ test('ajouter sans nom ou sans catégorie est refusé', () => {
   assert.deepEqual(validerAjout({ nom: 'a', categorie: { nouvelle: { nom: 'x' } } }), {});
   assert.deepEqual(validerNouvelleCategorie({ nom: ' ' }), { nom: 'nomManquant' });
   assert.deepEqual(validerNouvelleCategorie({ nom: 'x' }), {});
+  // Renommer un objet du voyage : le nom seul, obligatoire.
+  assert.deepEqual(validerRenommage({ nom: '  ' }), { nom: 'nomManquant' });
+  assert.deepEqual(validerRenommage({ nom: 'Bonnet de laine' }), {});
   assert.throws(() => preparerAjout({ nom: '', categorie: 'c1' }, contenu, contexte), {
     erreurs: { nom: 'nomManquant' },
   });
