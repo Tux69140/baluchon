@@ -94,7 +94,7 @@ const etat = page =>
 // entrée du menu est choisie à son tour (au téléphone, l'accordéon est lu tel qu'il est).
 async function objetsAffiches(page) {
   const lire = () =>
-    page.$$eval('.objet', objets =>
+    page.$$eval('.objet[data-id]', objets =>
       objets.map(o => [o.querySelector('.objet-nom').textContent, o.querySelector('.objet-quantite').textContent]),
     );
   const lignes = await lire();
