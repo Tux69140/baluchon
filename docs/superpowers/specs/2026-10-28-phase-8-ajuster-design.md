@@ -240,6 +240,34 @@ phase 3, sans la ligne « À acheter » (phase 9) :
 - Appareils : tablette SM-X210, ASUS (Android 7, 360 points de large), Xiaomi (Android 15), Debian.
 - Pas de dépendance nouvelle.
 
+## Maquettes validées (2026-10-28)
+
+`docs/maquettes/ajuster/`, validée sans changement. Choix qu'elle fixe en plus de ce document :
+
+- fiche de l'objet : la ligne du haut ne dit que la catégorie ; sous un trait, « Ajuster cet objet »
+  (« Quantité prévue », le calcul ou « fixée manuellement » en petit, − nombre +, puis « Renommer »
+  en bouton secondaire) ; « Retirer du voyage » en rouge, sous un second trait, au bas de la fiche,
+  comme « Supprimer » dans la bibliothèque ;
+- « Ajouter un objet » : bouton flottant au téléphone ; dernière ligne verte de la liste sur
+  tablette et ordinateur ; bouton sous la phrase de l'écran vide ;
+- fiche « Ajouter un objet » : « Dans ce voyage seulement : la bibliothèque ne change pas. », champ
+  Nom, champ Catégorie (pavé, nom, « 3 objets dans ce voyage » ou « Nouvelle, pour ce voyage »,
+  chevron) qui ouvre la liste, « Quantité / pour tout le voyage » avec saisie ; pied « Annuler » /
+  « + Ajouter » ;
+- listes de choix de catégorie (voyage et bibliothèque) : lignes de la fenêtre de refus de la
+  phase 7, la retenue sur fond actif avec une coche, « Nouvelle catégorie » en dernier avec un pavé
+  neutre et un + vert ; pied « Annuler » ;
+- « Nouvelle catégorie » (voyage) : « Pour ce voyage seulement : la bibliothèque ne change pas. »,
+  Nom, Picto et couleur ; pied « Annuler » / « Choisir » ;
+- fiches de la bibliothèque préremplies : titres « Nouvelle catégorie » / « Nouvel objet », boutons
+  « Suivant » et « Ajouter à la bibliothèque » ;
+- message de réussite vert, avec sa coche, en haut de l'écran : « « Palmes » est dans la
+  bibliothèque. » ;
+- questions : « Sortir une pièce du sac ? » (« Garder 2 » / « Prévoir 1 », vert) ; « Retirer … de ce
+  voyage ? » (« Garder » / « Retirer » rouge avec la corbeille) ; « Ajouter aussi … à la
+  bibliothèque ? » (« Non » / « Oui, l'ajouter » avec les livres) ;
+- bandeau « Annuler » de la phase 7, au-dessus du bouton flottant au téléphone.
+
 ## Suite des travaux
 
 1. Inscrire les décisions dans `docs/PRD.md` (« Écrans et gestes ») et renvoyer la phase 8 de
@@ -250,7 +278,8 @@ phase 3, sans la ligne « À acheter » (phase 9) :
    catégorie de la bibliothèque, fiches de la bibliothèque préremplies, fiche de l'objet avec
    « Ajuster cet objet » (calculée, fixée manuellement, nombre dans le sac qui suit), « Renommer »,
    confirmation de retrait (simple, avec pièces, dernier de sa catégorie), bandeau « Annuler ».
-   Faites le 2026-10-28, en attente de validation : servir la racine du dépôt
+   Faites le 2026-10-28, validées par le chef de projet le même jour sans changement (« je valide
+   les maquettes ») ; elles font foi pour tout ce qui se voit. Servir la racine du dépôt
    (`python3 -m http.server 8647 --bind 127.0.0.1`) et ouvrir `/docs/maquettes/ajuster/` (menu
    « Maquette » en haut à droite) ; `captures.mjs` (22 états, 5 formats, clair et sombre, dans
    `captures-travail/ajuster/`) et `gestes.mjs` se jugent au code de sortie.
