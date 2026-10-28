@@ -130,9 +130,10 @@ async function retablir(bandeau, { t, app, annuler }) {
 }
 
 // La garde, seule définition : travail(bandeau) (une écriture de la bibliothèque, ou une relecture
-// suivie d'une écriture) attend la fin d'un rétablissement en cours, puis court avec « Annuler »
-// inactif jusqu'à sa fin. Aucun rétablissement ne se glisse entre ce qu'il lit et ce qu'il écrit : une
-// suppression n'écrit jamais sur une lecture que « Annuler » aurait rendue périmée (résiduel N1).
+// suivie d'une écriture : une suppression, un retrait du voyage) attend la fin d'un rétablissement en
+// cours, puis court avec « Annuler » inactif jusqu'à sa fin. Aucun rétablissement ne se glisse entre ce
+// qu'il lit et ce qu'il écrit : rien ne s'écrit sur une lecture que « Annuler » aurait rendue périmée
+// (résiduel N1 de la phase 7 ; relecture finale de la phase 8, point 1).
 // bandeau : celui affiché au début, ou null.
 export async function sansAnnuler(travail) {
   await retablissement;

@@ -15,7 +15,7 @@ import { remplir } from '../i18n/traduction.js';
 import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
 import { proposerBibliotheque } from './ajout-bibliotheque.js';
 import { alerterEnHaut } from './alerte.js';
-import { montrerAnnulation } from './annulation.js';
+import { montrerAnnulation, sansAnnuler } from './annulation.js';
 import { demander } from './fenetre.js';
 import { ouvrirAjout } from './fiche-ajout.js';
 import { ouvrirFicheModele } from './fiche-modele.js';
@@ -154,19 +154,25 @@ export function gestesDAjustement(ecran) {
 
   // « Retirer du voyage » : la question, puis une seule écriture, dans la file. Refusée, rien ne change et
   // le message le dit, sans bandeau. Faite, l'objet (et sa catégorie devenue vide) quitte l'écran, la
-  // fiche se ferme, et le bandeau « Annuler » prend le relais pour 10 s. L'extrait est tiré du voyage au
-  // moment d'écrire, après les écritures d'avant : « Annuler » rend ce que la base gardait.
+  // fiche se ferme, et le bandeau « Annuler » prend le relais pour 10 s. Au moment d'écrire, après les
+  // écritures d'avant et sous la garde du bandeau (sansAnnuler : après un « Annuler » en cours, et
+  // « Annuler » inactif jusqu'à la fin), le voyage est relu : l'extrait vient de ce que la base garde,
+  // qu'un « Annuler » vient peut-être de changer sans que l'écran l'ait encore montré (relecture finale
+  // de la phase 8, point 1).
   async function retirer(id) {
     const objet = objetDe(id);
     if (!objet || !(await confirmerRetrait(objet)) || signal.aborted) return;
     let extrait;
     try {
-      extrait = await ecran.attendre(async () => {
-        if (!objetDe(id)) return null;
-        const avant = extraitDuRetrait(ecran.contenu(), id);
-        await stockage.retirerDuVoyage(id);
-        return avant;
-      });
+      extrait = await ecran.attendre(() =>
+        sansAnnuler(async () => {
+          const relu = await stockage.lireVoyage(objet.voyageId);
+          if (!relu?.objets.some(o => o.id === id)) return null;
+          const avant = extraitDuRetrait(relu, id);
+          await stockage.retirerDuVoyage(id);
+          return avant;
+        }),
+      );
     } catch (erreur) {
       console.error(erreur);
       if (!signal.aborted) alerterEnHaut(app, t('ajustement.retrait.erreur'), signal);
