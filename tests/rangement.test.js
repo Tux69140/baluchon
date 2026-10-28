@@ -220,3 +220,24 @@ test('sous le filtre, un objet rendu complet est masqué aussitôt', () => {
   assert.ok(rendu.masques.has('pull'));
   assert.deepEqual(objetsDe(rendu, liste(), 'vet'), ['pantalons']);
 });
+
+test('une catégorie rendue par « Annuler » est bouclée ou non selon ses pièces (relecture finale, point 8)', () => {
+  // Papiers (Pièce 2/2) disparue avec Pièce, puis rendue : elle est déjà bouclée, sans tampon à venir.
+  const sansPapiers = liste().filter(c => c.categorie.id !== 'pap');
+  const rendu = rendreObjet(etatInitial(sansPapiers, { filtre: false }), liste(), {
+    categorieId: 'pap',
+    objetId: 'piece',
+  });
+  assert.equal(rendu.bouclees.has('pap'), true);
+  // Une coche ailleurs : seule Toilette, qui vient de boucler, reçoit son tampon (témoin), pas Papiers.
+  const coche = liste({ creme: 1 });
+  assert.deepEqual(apresRepit(rendu, coche).nouvelles, ['toi']);
+  // Vêtements réduite à Pull 2/2 (bouclée), puis Pantalons 0/4 rendu : elle ne l'est plus.
+  const sansPantalons = liste().map(c =>
+    c.categorie.id === 'vet' ? { ...c, objets: c.objets.filter(o => o.id !== 'pantalons') } : c,
+  );
+  const etat = etatInitial(sansPantalons, { filtre: false });
+  assert.equal(etat.bouclees.has('vet'), true);
+  const rouvert = rendreObjet(etat, liste(), { categorieId: 'vet', objetId: 'pantalons' });
+  assert.equal(rouvert.bouclees.has('vet'), false);
+});
