@@ -1,20 +1,21 @@
 // Les gestes d'ajustement de l'écran d'un voyage, depuis la fiche d'un objet (spec de la phase 8,
 // docs/superpowers/specs/2026-10-28-phase-8-ajuster-design.md ; maquette validée docs/maquettes/ajuster/) :
-// corriger la quantité prévue (US-18), renommer, retirer avec son « Annuler » (US-21). Rien de tout cela ne
-// touche la bibliothèque. Les règles (bornes, confirmation, ce qu'emporte un retrait) viennent du modèle
+// corriger la quantité prévue (US-18), renommer, retirer avec son « Annuler » (US-21) ; et, depuis l'écran,
+// ajouter un objet (US-19, US-20). Rien de tout cela ne touche la bibliothèque. Les règles (bornes, confirmation, ce qu'emporte un retrait) viennent du modèle
 // (src/modele/ajustements.js) ; l'écran du voyage (src/ecrans/voyage.js) garde le contenu, le dessin et la
 // file d'écriture, et les prête ici :
 // - contenu() : le voyage tel que l'écran le montre ;
 // - appliquer(nouveau, ecriture) : le changement montré aussitôt, l'écriture dans la file ; refusée, l'écran
 //   relit et le dit au bas de l'écran (la quantité, comme une coche) ;
 // - attendre(ecriture) : l'écriture dans la file, après celles en cours, sans rien montrer avant elle
-//   (le renommage et le retrait : refusés, rien ne change) ;
+//   (le renommage, le retrait et l'ajout : refusés, rien ne change) ;
 // - montrer(nouveau) : ce qu'une écriture attendue a fait, montré.
 import { remplir } from '../i18n/traduction.js';
 import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
 import { alerterEnHaut } from './alerte.js';
 import { montrerAnnulation } from './annulation.js';
 import { demander } from './fenetre.js';
+import { ouvrirAjout } from './fiche-ajout.js';
 import { ouvrirFicheModele } from './fiche-modele.js';
 import { champNom } from './fiche-modele-vues.js';
 import { pluriel } from './format.js';
@@ -181,5 +182,20 @@ export function gestesDAjustement(ecran) {
     proposerAnnulation(extrait);
   }
 
-  return { regler, renommer, retirer };
+  // « Ajouter un objet », la fiche partie de la catégorie depuis (ou d'aucune) : une seule écriture, dans la
+  // file. Refusée, la fiche reste ouverte avec sa saisie ; faite, le stockage surveillé retire le bandeau
+  // d'un retrait de ce voyage (src/ecrans/annulation.js). Rend ce qui a été écrit ({ categorie, objet }),
+  // ou null : à l'écran de le montrer.
+  const ajouter = depuis =>
+    ouvrirAjout({
+      t,
+      langue,
+      contenu: ecran.contenu,
+      choisie: depuis,
+      signal,
+      dans: app,
+      ajouter: ajout => ecran.attendre(() => stockage.ajouterAuVoyage(ajout)),
+    });
+
+  return { regler, renommer, retirer, ajouter };
 }

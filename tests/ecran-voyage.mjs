@@ -111,7 +111,7 @@ const lire = page =>
         getComputedStyle(c.querySelector('.pave')).backgroundColor,
         c.querySelector('.tampon, .gf-tuile-boucle, .compte, .gf-tuile-compte')?.textContent.trim(),
       ]),
-      detail: [...document.querySelectorAll('.gf-liste .objet')].map(o => [
+      detail: [...document.querySelectorAll('.gf-liste .objet[data-id]')].map(o => [
         o.querySelector('.objet-nom').textContent,
         o.querySelector('.objet-quantite').textContent,
         o.dataset.etat,
@@ -133,7 +133,7 @@ const lire = page =>
       ]),
       // Chaque ligne a sa case et son bouton de fiche, tous deux nommés pour un lecteur d'écran.
       libelles: Object.fromEntries(
-        [...document.querySelectorAll('.objet')].map(o => [
+        [...document.querySelectorAll('.objet[data-id]')].map(o => [
           o.dataset.id,
           [
             o.querySelector('.case')?.getAttribute('aria-label'),

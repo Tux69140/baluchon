@@ -21,6 +21,7 @@ import { bornerQuantite, curseurApresLecture, lireNombre } from '../modele/model
 import { alerterEnHaut } from './alerte.js';
 import { demander, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { echapper } from './html.js';
+import { iconeInterface } from './icones.js';
 
 const ID_TITRE = 'fiche-modele-titre';
 const COMMANDES =
@@ -37,17 +38,17 @@ function selecteurDe(element) {
   return attributs.join('');
 }
 
-function vueFiche({ t, titre, bouton, classe }) {
+function vueFiche({ t, idTitre, titre, bouton, iconeBouton, classe }) {
   const gabarit = document.createElement('template');
   gabarit.innerHTML = vueFenetre({
     t,
-    idTitre: ID_TITRE,
+    idTitre,
     titre: echapper(titre),
     contenu: `
       <div class="fiche-corps"></div>
       <div class="fenetre-pied">
         <button type="button" class="bouton bouton-secondaire" data-fermer>${t('fenetre.annuler')}</button>
-        <button type="button" class="bouton bouton-principal" data-enregistrer>${echapper(bouton)}</button>
+        <button type="button" class="bouton bouton-principal" data-enregistrer>${iconeBouton ? iconeInterface(iconeBouton) : ''}${echapper(bouton)}</button>
       </div>`,
   });
   const fenetre = gabarit.content.firstElementChild;
@@ -70,12 +71,20 @@ function vueFiche({ t, titre, bouton, classe }) {
 // « Supprimer » sont inactifs. champInitial : le sélecteur d'un champ qui prend le focus à l'ouverture,
 // son texte sélectionné (« Renommer » d'un objet du voyage : on tape aussitôt le nouveau nom) ; sans lui,
 // c'est le titre.
+// Pour une fiche qui n'est pas celle d'un modèle (« Ajouter un objet » et « Nouvelle catégorie » d'un
+// voyage) : iconeBouton, le picto d'interface devant « Enregistrer » ; titreAbandon, la question de
+// l'abandon ; textePanne, le message d'une écriture refusée ; idTitre, celui du titre, distinct quand une
+// fiche s'ouvre sur une autre.
 export function ouvrirFicheModele({
   t,
   titre,
   sousTitre = '',
   bouton,
+  iconeBouton = '',
   classe = '',
+  idTitre = ID_TITRE,
+  titreAbandon = t('modele.abandon.titre'),
+  textePanne = t('bibliotheque.erreurEnregistrement'),
   saisie,
   valider,
   dessiner,
@@ -91,7 +100,7 @@ export function ouvrirFicheModele({
 }) {
   const brouillon = structuredClone(saisie);
   const depart = JSON.stringify(brouillon);
-  const fenetre = vueFiche({ t, titre, bouton, classe });
+  const fenetre = vueFiche({ t, idTitre, titre, bouton, iconeBouton, classe });
   const corps = fenetre.querySelector('.fiche-corps');
   const pied = fenetre.querySelector('.fenetre-pied');
   const boutonEnregistrer = pied.querySelector('[data-enregistrer]');
@@ -169,7 +178,7 @@ export function ouvrirFicheModele({
       console.error(erreur);
       enregistrement = false;
       boutonEnregistrer.removeAttribute('aria-disabled');
-      if (!signal.aborted && fenetre.isConnected) alerterEnHaut(dans, t('bibliotheque.erreurEnregistrement'), signal);
+      if (!signal.aborted && fenetre.isConnected) alerterEnHaut(dans, textePanne, signal);
       return;
     }
     // Enregistrée : plus rien ne s'y écrit, elle se ferme (enregistrement reste vrai jusqu'au bout).
@@ -204,7 +213,7 @@ export function ouvrirFicheModele({
     questionOuverte = true;
     demander({
       t,
-      titre: t('modele.abandon.titre'),
+      titre: titreAbandon,
       texte: texteAbandon,
       signal,
       boutons: [

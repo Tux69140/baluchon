@@ -10,7 +10,7 @@
 // dans la file ; une seconde sans nouvel appui, la liste se range en glissant ; une catégorie qui vient
 // de boucler reçoit son tampon, puis se replie une seconde plus tard. La fiche d'un objet (fiche.js)
 // passe par le même chemin que la case (appliquer), et ses ajustements (quantité prévue, renommer,
-// retirer et « Annuler », src/ecrans/ajustements.js) aussi.
+// retirer et « Annuler », src/ecrans/ajustements.js) aussi, comme « Ajouter un objet ».
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
@@ -72,6 +72,10 @@ function ouvrirListe(app, donnees, contexte) {
   // L'objet que « Annuler » vient de rendre ({ id, depuis }), éclairé jusqu'à la fin de son animation :
   // un dessin entre-temps (le rangement après le répit) la reprend où elle en était.
   let recent = null;
+  // Au téléphone, la dernière catégorie dépliée touchée (accordéon, case, fiche) : « Ajouter un objet »
+  // part d'elle si elle l'est encore. Une fiche d'ajout ouverte : un second appui n'en ouvre pas d'autre.
+  let derniere = null;
+  let ajoutOuvert = false;
 
   // Chaque dessin suit la disposition du moment (src/ecrans/disposition.js) : tourner l'appareil ou
   // élargir la fenêtre redessine le même état (coches, catégorie choisie, filtre). Le focus d'une
@@ -231,6 +235,7 @@ function ouvrirListe(app, donnees, contexte) {
   async function appuyerSurCase(id) {
     const objet = contenu.objets.find(o => o.id === id);
     if (!objet || relecture) return;
+    derniere = objet.categorieId;
     const { dansLeSac, confirmer: demander } = appuiSurCase(objet);
     if (demander) {
       const accord = await confirmerVider({ t, objet, signal: fin.signal });
@@ -243,10 +248,12 @@ function ouvrirListe(app, donnees, contexte) {
   }
 
   // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps, ou à la
-  // commande la plus proche si la ligne n'est plus dessinée (commandeProche).
+  // commande la plus proche si la ligne n'est plus dessinée (commandeProche) ; à « Ajouter un objet » de
+  // l'écran vide quand le retrait de cet objet a vidé le voyage.
   function ouvrirLaFiche(id) {
     const objet = contenu.objets.find(o => o.id === id);
     if (!objet || fiche) return;
+    derniere = objet.categorieId;
     fiche = {
       id,
       repeindre: ouvrirFiche({
@@ -259,12 +266,54 @@ function ouvrirListe(app, donnees, contexte) {
         surRetirer: () => gestes.retirer(id),
         surFermeture: () => {
           fiche = null;
-          commandeProche({ action: 'fiche', id })?.focus();
+          (commandeProche({ action: 'fiche', id }) ?? trouverCommande(main, 'ajouter'))?.focus();
         },
         signal: fin.signal,
         dans: app,
       }),
     };
+  }
+
+  // Un objet qui revient (« Annuler » d'un retrait) ou qui arrive (« Ajouter un objet ») : il prend aussitôt
+  // sa place dans sa catégorie, choisie et dépliée (rendreObjet), éclairé et amené dans la vue.
+  function montrerRendu(nouveau, { categorieId, objetId }) {
+    contenu = nouveau;
+    liste = listeParCategorie(contenu);
+    etat = rendreObjet(etat, liste, { categorieId, objetId });
+    recent = { id: objetId, depuis: performance.now() };
+    peindre({ enVue: `.objet[data-id="${CSS.escape(objetId)}"]` });
+  }
+
+  // La catégorie d'où part « Ajouter un objet » : celle de la ligne (grand format) ; sinon la dernière
+  // dépliée touchée si elle l'est encore, sinon la première affichée ; aucune dans un voyage vide.
+  function departDeLAjout(id) {
+    if (id) return id;
+    if (derniere && etat.ouvertes.has(derniere) && liste.some(c => c.categorie.id === derniere)) return derniere;
+    return categoriesAffichees(etat, liste)[0]?.categorie.id ?? null;
+  }
+
+  // Ajouté, l'objet apparaît à sa place, éclairé, et sa ligne prend le focus ; la liste se range ensuite
+  // comme après une coche (une catégorie bouclée qui reçoit un objet ne l'est plus). Abandonné, le focus
+  // revient à la commande touchée (ou à la plus proche).
+  async function ajouterUnObjet(id) {
+    if (ajoutOuvert || relecture) return;
+    ajoutOuvert = true;
+    const ecrit = await gestes.ajouter(departDeLAjout(id));
+    ajoutOuvert = false;
+    if (parti()) return;
+    if (!ecrit) return commandeProche({ action: 'ajouter', id })?.focus();
+    const { categorie, objet } = ecrit;
+    derniere = objet.categorieId;
+    montrerRendu(
+      {
+        ...contenu,
+        categories: categorie ? [...contenu.categories, categorie] : contenu.categories,
+        objets: [...contenu.objets, objet],
+      },
+      { categorieId: objet.categorieId, objetId: objet.id },
+    );
+    trouverCommande(main, 'fiche', objet.id)?.focus();
+    relancerRepit();
   }
 
   main.addEventListener('click', evenement => {
@@ -273,8 +322,10 @@ function ouvrirListe(app, donnees, contexte) {
     const { action, id } = commande.dataset;
     if (action === 'case') appuyerSurCase(id);
     else if (action === 'fiche') ouvrirLaFiche(id);
+    else if (action === 'ajouter') ajouterUnObjet(id);
     else if (action === 'accordeon') {
       etat = basculerCategorie(etat, id);
+      if (etat.ouvertes.has(id)) derniere = id;
       peindre();
     } else if (action === 'choisir') {
       etat = choisirCategorie(etat, id);
@@ -302,15 +353,10 @@ function ouvrirListe(app, donnees, contexte) {
       }
       const objet = relu?.objets.find(o => o.id === objetId);
       if (!objet || parti()) return;
-      contenu = {
-        ...contenu,
-        categories: relu.categories,
-        objets: [...contenu.objets.filter(o => o.id !== objetId), objet],
-      };
-      liste = listeParCategorie(contenu);
-      etat = rendreObjet(etat, liste, { categorieId, objetId });
-      recent = { id: objetId, depuis: performance.now() };
-      peindre({ enVue: `.objet[data-id="${CSS.escape(objetId)}"]` });
+      montrerRendu(
+        { ...contenu, categories: relu.categories, objets: [...contenu.objets.filter(o => o.id !== objetId), objet] },
+        { categorieId, objetId },
+      );
     },
     { signal: fin.signal },
   );

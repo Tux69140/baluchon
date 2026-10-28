@@ -18,12 +18,14 @@ export const message = (id, texte) =>
 const invalide = texte => (texte ? ' aria-invalid="true"' : '');
 
 // idAide : une aide écrite sous le champ, qui le décrit aussi ; entree : Entrée dans le champ vaut
-// « Enregistrer » (data-entree, lu par src/ecrans/fiche-modele.js), pour une fiche au nom seul.
-export const champNom = (t, valeur, erreur, { idAide = '', entree = false } = {}) => `
+// « Enregistrer » (data-entree, lu par src/ecrans/fiche-modele.js), pour une fiche au nom seul. id : celui
+// du champ, quand deux fiches sont ouvertes l'une sur l'autre (« Nouvelle catégorie » sur « Ajouter un
+// objet ») : chaque libellé doit nommer le champ de sa fiche.
+export const champNom = (t, valeur, erreur, { idAide = '', entree = false, id = 'f-nom' } = {}) => `
         <div class="champ">
-          <label for="f-nom">${t('modele.nom')}</label>
-          <input id="f-nom" data-texte="nom"${entree ? ' data-entree' : ''} value="${echapper(valeur)}" autocomplete="off" maxlength="60" aria-describedby="f-nom-erreur${idAide ? ` ${idAide}` : ''}"${invalide(erreur)} />
-          ${message('f-nom-erreur', erreur)}
+          <label for="${id}">${t('modele.nom')}</label>
+          <input id="${id}" data-texte="nom"${entree ? ' data-entree' : ''} value="${echapper(valeur)}" autocomplete="off" maxlength="60" aria-describedby="${id}-erreur${idAide ? ` ${idAide}` : ''}"${invalide(erreur)} />
+          ${message(`${id}-erreur`, erreur)}
         </div>`;
 
 // Choix exclusif en segments : de vrais boutons radio, dessinés côte à côte. options : [valeur,

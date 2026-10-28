@@ -51,3 +51,86 @@
 .objet[data-recent] > .objet-corps {
   animation-delay: var(--eclairage-ecoule, 0ms);
 }
+
+/* ---------- Fiche « Ajouter un objet » : la catégorie retenue ----------
+   Un champ qui ouvre une liste (src/ecrans/fiche-ajout.js) : pavé, nom, et ce qu'elle contient ; même
+   bord que les champs. Son texte est celui des lignes de la fenêtre de refus (refus.css). */
+.champ-titre {
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.champ-categorie {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--e-sm) var(--e-xs) var(--e-sm) var(--e-sm);
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-sm);
+  background: var(--carte);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.champ-categorie:hover {
+  background: var(--releve);
+}
+
+.champ-categorie .chevron {
+  display: inline-flex;
+  width: 32px;
+  justify-content: center;
+  color: var(--encre-douce);
+}
+
+.champ-categorie .chevron svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Choisir une catégorie (src/ecrans/choix-categorie.js) ----------
+   Les lignes de la fenêtre de refus (refus.css) ; la catégorie retenue porte une coche, jamais la
+   seule couleur. « Nouvelle catégorie », en dernier, a un pavé neutre et le vert des ajouts. */
+.choix-categorie .refus-ligne[aria-current='true'] {
+  background: var(--actif);
+}
+
+.choix-marque {
+  display: inline-flex;
+  flex: none;
+  width: 44px;
+  justify-content: center;
+  color: var(--principal);
+}
+
+.choix-marque svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pave-nouveau {
+  color: var(--principal);
+}
+
+.pave-nouveau svg {
+  width: 22px;
+  height: 22px;
+}
+
+.choix-nouvelle .refus-texte b {
+  color: var(--principal);
+}
+
+/* ---------- Écran vide : « Ajouter un objet » sous la phrase ---------- */
+.vide-voyage .bouton {
+  margin-top: var(--e-md);
+}
+
+/* Amenée dans la vue (objet ajouté, ou rendu par « Annuler »), une ligne s'arrête au-dessus du bouton
+   flottant plutôt que dessous. */
+.ecran-avec-flottant .objet {
+  scroll-margin-bottom: calc(var(--zone-bas) + var(--e-md) + 64px);
+}

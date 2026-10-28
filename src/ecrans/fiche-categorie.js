@@ -18,13 +18,15 @@ const texteErreur = (t, code) => code && t(`modele.categorie.erreurs.${code}`);
 const CONNUS = new Set(CATALOGUE.flatMap(({ pictos }) => pictos));
 const nomPicto = (t, cle) => (CONNUS.has(cle) ? t(`catalogue.pictos.${cle}.nom`) : '');
 
-function vueCorps(t, brouillon, erreurs, { groupes, supprimer }) {
+// Le picto et la couleur d'une catégorie : le pavé, le nom du picto, « Changer de picto » (data-action
+// « catalogue », voir actionCatalogue) et le nuancier. Partagé avec « Nouvelle catégorie » d'un voyage
+// (src/ecrans/fiche-ajout.js).
+export function vueApparence(t, brouillon) {
   const teinte = cle => {
     const choisie = brouillon.couleur === cle;
     return `<button type="button" class="teinte" role="radio" data-pose="couleur" data-valeur="${cle}" data-couleur="${cle}" aria-checked="${choisie}" aria-label="${t(`couleurs.${cle}`)}">${choisie ? iconeInterface('coche') : ''}</button>`;
   };
   return `
-        ${champNom(t, brouillon.nom, texteErreur(t, erreurs.nom))}
         <fieldset class="champ champ-sans-message">
           <legend>${t('modele.categorie.apparence')}</legend>
           <div class="apparence">
@@ -33,7 +35,28 @@ function vueCorps(t, brouillon, erreurs, { groupes, supprimer }) {
             <button type="button" class="bouton bouton-secondaire" data-action="catalogue">${t('modele.categorie.changerPicto')}</button>
           </div>
           <div class="nuancier" role="radiogroup" aria-label="${t('modele.categorie.couleur')}">${COULEURS.map(teinte).join('')}</div>
-        </fieldset>
+        </fieldset>`;
+}
+
+// L'action « catalogue » d'une fiche (src/ecrans/fiche-modele.js) : le catalogue s'ouvre par-dessus la
+// fiche ; une tuile touchée change le picto du brouillon.
+export const actionCatalogue =
+  ({ t, langue, signal, dans }) =>
+  async brouillon => {
+    const choisi = await ouvrirCatalogue({
+      t,
+      langue,
+      icone: brouillon.icone,
+      couleur: brouillon.couleur,
+      signal,
+      dans,
+    });
+    if (choisi) brouillon.icone = choisi;
+  };
+
+function vueCorps(t, brouillon, erreurs, { groupes, supprimer }) {
+  return `
+        ${champNom(t, brouillon.nom, texteErreur(t, erreurs.nom))}${vueApparence(t, brouillon)}
         ${inclusion(t, brouillon, texteErreur(t, erreurs.etiquettes), {
           genre: 'categorie',
           groupes,
@@ -70,20 +93,7 @@ export function ouvrirFicheCategorie({
       : t('modele.categorie.abandonNouvelle'),
     enregistrer,
     supprimer,
-    actions: {
-      // Le catalogue s'ouvre par-dessus la fiche ; une tuile touchée change le picto du brouillon.
-      async catalogue(brouillon) {
-        const choisi = await ouvrirCatalogue({
-          t,
-          langue,
-          icone: brouillon.icone,
-          couleur: brouillon.couleur,
-          signal,
-          dans,
-        });
-        if (choisi) brouillon.icone = choisi;
-      },
-    },
+    actions: { catalogue: actionCatalogue({ t, langue, signal, dans }) },
     surFermeture,
     signal,
     dans,

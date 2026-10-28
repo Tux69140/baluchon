@@ -1,7 +1,9 @@
 // Le HTML de l'écran d'un voyage (src/ecrans/voyage.js), d'après les maquettes validées le 2026-10-24
 // (docs/maquettes/voyage/) et le 2026-10-27 (docs/maquettes/grand-ecran/) : en-tête, progression,
 // filtre, cartes de catégorie (téléphone) ou grand format (le voyage, le menu des catégories en cartes
-// ou en tuiles, la liste de la choisie), lignes d'objet, voyage vide. Rien ne vit ici que du dessin :
+// ou en tuiles, la liste de la choisie), lignes d'objet, voyage vide ; « Ajouter un objet » (phase 8,
+// maquette docs/maquettes/ajuster/) : bouton flottant au téléphone, dernière ligne de la liste en grand
+// format, bouton de l'écran vide. Rien ne vit ici que du dessin :
 // l'ordre, les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les
 // pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
@@ -120,10 +122,25 @@ function vueObjet(t, objet, voyageurs, recent) {
           </li>`;
 }
 
+// La dernière ligne de la liste en grand format, comme dans la Bibliothèque : ajouter un objet à cette
+// catégorie-là.
+const vueLigneAjout = (t, categorieId) => `
+          <li class="objet objet-ajout">
+            <button type="button" class="objet-corps" data-action="ajouter" data-id="${echapper(categorieId)}">${iconeInterface('plus')}${t('voyage.ajouter')}</button>
+          </li>`;
+
 // Une catégorie ouverte dont le filtre masque tout le dit en toutes lettres, plutôt que d'être vide.
-function vueLignes({ t, langue, voyageurs, recent }, { objets }, nombre) {
-  if (!objets.length) return `<p class="ligne-info">${pluriel(t, 'voyage.categorieMasquee', nombre, langue)}</p>`;
-  return `<ul class="objets">${objets.map(o => vueObjet(t, o, voyageurs, recent)).join('')}
+// ajout : l'id de la catégorie dont la liste finit par « Ajouter un objet » (grand format).
+function vueLignes({ t, langue, voyageurs, recent }, { objets }, nombre, ajout = null) {
+  const fin = ajout ? vueLigneAjout(t, ajout) : '';
+  if (!objets.length) {
+    const info = `<p class="ligne-info">${pluriel(t, 'voyage.categorieMasquee', nombre, langue)}</p>`;
+    return fin
+      ? `${info}<ul class="objets">${fin}
+        </ul>`
+      : info;
+  }
+  return `<ul class="objets">${objets.map(o => vueObjet(t, o, voyageurs, recent)).join('')}${fin}
         </ul>`;
 }
 
@@ -187,20 +204,26 @@ function vueGrandFormat(contexte, { liste, etat, poses }, debut, troisColonnes) 
     menu,
     liste: {
       titre: echapper(choisie.categorie.nom),
-      lignes: vueLignes(contexte, choisie, toute(choisie).objets.length),
+      lignes: vueLignes(contexte, choisie, toute(choisie).objets.length, choisie.categorie.id),
     },
     troisColonnes,
   });
 }
 
+// « Nouveau voyage » ne crée jamais de voyage vide : celui-ci a perdu tous ses objets, on lui en rajoute.
 function vueVide(t) {
   return `
       <section class="vide-voyage">
         <img src="${mascotte}" alt="" width="88" height="88" />
         <h2>${t('voyage.vide.titre')}</h2>
         <p>${t('voyage.vide.texte')}</p>
+        <button type="button" class="bouton bouton-principal" data-action="ajouter">${iconeInterface('plus')}${t('voyage.ajouter')}</button>
       </section>`;
 }
+
+// Au téléphone, « Ajouter un objet » flotte en bas à droite ; l'écran lui garde sa place (ecran-avec-flottant).
+const vueFlottant = t => `
+      <button type="button" class="bouton bouton-principal bouton-flottant" data-action="ajouter">${iconeInterface('plus')}${t('voyage.ajouter')}</button>`;
 
 // Le contenu de l'écran et sa disposition (la classe de <main>, et colonnes, son data-colonnes) : une
 // colonne de cartes au téléphone ; le grand format si grandFormat (tablettes, ordinateur), en trois
@@ -228,10 +251,10 @@ export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, recen
     .map(c => vueCategorie(contexte, c, parId.get(c.categorie.id), etat, poses.tampons))
     .join('');
   return {
-    classe: 'ecran',
+    classe: 'ecran ecran-avec-flottant',
     html: `${lien}${debut}
       <div class="categories">${categories}
-      </div>`,
+      </div>${vueFlottant(t)}`,
   };
 }
 

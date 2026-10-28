@@ -230,7 +230,7 @@ export const lire = page =>
       titre: titre?.textContent.trim() ?? null,
       titreVisible: Boolean(rt && rt.width > 1 && rt.height > 1),
       titreTaille: titre && getComputedStyle(titre).fontSize,
-      objets: [...document.querySelectorAll('.gf-liste .objet')].map(o => o.dataset.id),
+      objets: [...document.querySelectorAll('.gf-liste .objet[data-id]')].map(o => o.dataset.id),
       info: document.querySelector('.gf-liste .ligne-info')?.textContent.trim() ?? null,
       hautListe: document.querySelector('.gf-liste') && haut(document.querySelector('.gf-liste')),
       hauteur: innerHeight,
