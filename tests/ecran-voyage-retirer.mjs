@@ -5,7 +5,8 @@
 // - retirer le dernier objet de la catégorie choisie (grand écran) emporte la catégorie, la première qui
 //   reste est choisie ; « Annuler » la rend à son rang, choisie, l'objet éclairé (Review Focus 3) ;
 // - retirer le dernier objet du voyage montre l'écran vide ; « Annuler » le rend ;
-// - « Annuler » touché depuis l'accueil rétablit le voyage, rouvert il montre l'objet (Review Focus 4) ;
+// - « Annuler » touché depuis l'accueil rétablit le voyage, sa carte suit, rouvert il montre l'objet
+//   (Review Focus 4 ; relecture finale, point 3) ;
 // - le bandeau s'en va au bout de 10 s (horloge simulée), le retrait reste ;
 // - panne de retirerDuVoyage : rien ne change, pas de bandeau, le message le dit ;
 // - double appui sur « Retirer » : un seul retrait ; pendant l'écriture, « Retirer du voyage » ne répond plus ;
@@ -48,6 +49,11 @@ const DERNIER = {
   ...DONNEES,
   objetsDuVoyage: DONNEES.objetsDuVoyage.filter(o => !['o-bro', 'o-gel'].includes(o.id)),
 };
+// v1 à venir : sa carte, à l'accueil, montre son avancement.
+const A_VENIR = {
+  ...DONNEES,
+  voyages: DONNEES.voyages.map(v => (v.id === 'v1' ? { ...v, depart: '2099-10-10', retour: '2099-10-13' } : v)),
+};
 const original = id => DONNEES.objetsDuVoyage.find(o => o.id === id);
 const categorieOriginale = id => DONNEES.categoriesDuVoyage.find(c => c.id === id);
 const bandeauVenu = page =>
@@ -64,6 +70,13 @@ async function retirer(page, id, reponse = r.retirer, options = {}) {
   await repondre(page, reponse, options);
   return question;
 }
+
+// Ce que dit la carte du voyage v1 à l'accueil : sa jauge et ses compteurs.
+const avancementV1 = page =>
+  page.evaluate(() => {
+    const p = document.querySelector('#app a.carte-voyage[href="#/voyage/v1"] .carte-progression');
+    return p && `${p.textContent.trim()} ${p.querySelector('.jauge')?.outerHTML ?? ''}`;
+  });
 
 // Le menu des catégories (grand format) : leurs ids dans l'ordre, et la choisie.
 const menu = page =>
@@ -186,19 +199,29 @@ try {
   // « Annuler » depuis l'accueil.
   {
     const cas = 'annuler depuis l’accueil';
-    const ouvert = await ouvrirEssai();
+    const ouvert = await ouvrirEssai({ donnees: A_VENIR });
     const { page } = ouvert;
     await retirer(page, 'o-pul');
     await bandeauVenu(page);
     await page.click('#app a.lien-retour');
     await attendreEcran(page, 'voyages');
     juge.exige((await texteBandeau(page)) === remplir(r.bandeau, { nom: 'Pull' }), `${cas} : bandeau perdu`);
+    const avancementRetire = await avancementV1(page);
     await page.click(`${BANDEAU} button`);
     const rendu = await attendreQue(page, () =>
       JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.some(o => o.id === 'o-pul'),
     );
     await calme(page);
     juge.exige(rendu && vu(await objetStocke(page, 'o-pul')) === vu(original('o-pul')), `${cas} : pas rétabli`);
+    // La carte du voyage suit le rétablissement : la même que l'accueil relu (témoin : elle a changé).
+    const avancementRendu = await avancementV1(page);
+    await page.reload();
+    await attendreEcran(page, 'voyages');
+    const avancementRelu = await avancementV1(page);
+    juge.exige(
+      avancementRendu === avancementRelu && avancementRendu !== avancementRetire,
+      `${cas} : carte « ${avancementRendu} », relue « ${avancementRelu} », après le retrait « ${avancementRetire} »`,
+    );
     await page.click('#app a.carte-voyage[href="#/voyage/v1"]');
     await attendreEcran(page, 'voyage');
     juge.exige((await ligne(page, 'o-pul'))?.nom === 'Pull', `${cas} : rouvert, Pull absent`);

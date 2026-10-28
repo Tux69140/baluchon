@@ -5,6 +5,7 @@ import { detailsVoyage } from './format.js';
 import { iconeInterface } from './icones.js';
 import { jauge } from './jauge.js';
 import { barreHaut, ouvrirMenu } from './menu.js';
+import { suivreFin } from './mode-rangement.js';
 import { lienRetour } from './retour.js';
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
@@ -48,13 +49,16 @@ function carte(voyage, { t, langue }, avancement) {
         </li>`;
 }
 
+// L'avancement que montre la carte d'un voyage de cette rubrique : aucun pour un voyage passé.
+const avancementDe = (rubrique, progressions, id) => (rubrique === 'passes' ? undefined : progressions.get(id));
+
 function vueListe(voyages, aujourdhui, progressions, contexte) {
   const classes = classerVoyages(voyages, aujourdhui);
   const rubriques = RUBRIQUES.filter(rubrique => classes[rubrique].length).map(
     rubrique => `
       <section class="rubrique" aria-labelledby="rubrique-${rubrique}">
         <h2 id="rubrique-${rubrique}">${contexte.t(`voyages.rubriques.${rubrique}`)}</h2>
-        <ul class="voyages">${classes[rubrique].map(v => carte(v, contexte, rubrique === 'passes' ? undefined : progressions.get(v.id))).join('')}
+        <ul class="voyages">${classes[rubrique].map(v => carte(v, contexte, avancementDe(rubrique, progressions, v.id))).join('')}
         </ul>
       </section>`,
   );
@@ -62,20 +66,46 @@ function vueListe(voyages, aujourdhui, progressions, contexte) {
       <a class="bouton bouton-principal bouton-flottant" href="#/nouveau-voyage">${iconeInterface('plus')}${contexte.t('voyages.nouveau')}</a>`;
 }
 
+// La progression est un plus : sans elle, la liste s'affiche quand même ; la panne reste au journal.
+const lireProgressions = async stockage =>
+  progressionParVoyage(
+    await stockage.etatsDesObjets().catch(erreur => {
+      console.error(erreur);
+      return [];
+    }),
+  );
+
+// « Annuler » d'un retrait touché d'ici (le bandeau suit d'un écran à l'autre, src/ecrans/annulation.js) :
+// la carte du voyage rendu relit son avancement (événement « voyage-retabli »), comme Nouveau voyage
+// relit la bibliothèque à « bibliotheque-retablie ». Rien d'autre ne bouge.
+function suivreRetablissements(app, { voyages, aujourdhui }, contexte) {
+  const { signal, parti } = suivreFin(app, app.firstElementChild);
+  window.addEventListener(
+    'voyage-retabli',
+    async ({ detail: { voyageId } }) => {
+      const progressions = await lireProgressions(contexte.stockage);
+      const classes = classerVoyages(voyages, aujourdhui);
+      const rubrique = RUBRIQUES.find(r => classes[r].some(v => v.id === voyageId));
+      const lien = app.querySelector(`a.carte-voyage[href="#/voyage/${CSS.escape(encodeURIComponent(voyageId))}"]`);
+      if (parti() || !rubrique || !lien) return;
+      lien.querySelector('.carte-progression')?.remove();
+      lien
+        .querySelector('.carte-voyage-details')
+        .insertAdjacentHTML('afterend', vueProgression(avancementDe(rubrique, progressions, voyageId), contexte.t));
+    },
+    { signal },
+  );
+}
+
 export const ecranVoyages = {
   nom: 'voyages',
   charger: async ({ stockage }) => ({
     voyages: await stockage.listerVoyages(),
-    // La progression est un plus : sans elle, la liste s'affiche quand même ; la panne reste au journal.
-    progressions: progressionParVoyage(
-      await stockage.etatsDesObjets().catch(erreur => {
-        console.error(erreur);
-        return [];
-      }),
-    ),
+    progressions: await lireProgressions(stockage),
     aujourdhui: dateDuJour(new Date()),
   }),
-  dessiner(app, { voyages, aujourdhui, progressions }, contexte) {
+  dessiner(app, donnees, contexte) {
+    const { voyages, aujourdhui, progressions } = donnees;
     app.innerHTML = `
     <main class="ecran${voyages.length ? ' ecran-avec-flottant' : ''}">${barreHaut(contexte)}
       <h1>${contexte.t('voyages.titre')}</h1>
@@ -84,6 +114,7 @@ export const ecranVoyages = {
     app
       .querySelector('[data-action="menu"]')
       .addEventListener('click', () => ouvrirMenu(contexte, { courant: 'voyages' }));
+    suivreRetablissements(app, donnees, contexte);
   },
 };
 
