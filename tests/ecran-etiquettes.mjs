@@ -42,7 +42,7 @@ const navigateur = await chromium.launch();
 const ouvrirEtiquettes = (format, options) => ouvrirLesEtiquettes(navigateur, serveur.url, format, options);
 const fermer = (cas, ouvert) => fermerEssai(juge, cas, ouvert);
 const QUESTION = 'dialog[role="alertdialog"]';
-const LARGES = new Set(['tablette-portrait', 'tablette-paysage', 'ordinateur']);
+const LARGES = new Set(['tablette-portrait', 'tablette-paysage', 'portable', 'ordinateur']);
 
 // Une étiquette et un groupe aux noms piégés (Review Focus 1), ajoutés à la bibliothèque de départ.
 const PIEGE = { etiquette: '<b>&"x', groupe: '<i>&"g' };

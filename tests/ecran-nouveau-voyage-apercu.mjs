@@ -213,8 +213,9 @@ try {
 
     await page.click('[data-action="creer"]');
     await attendreEcran(page, 'voyage');
-    // L'écran du voyage n'ouvre qu'une catégorie : les objets se lisent dans le stockage.
-    const noms = await page.$$eval('.categorie-nom b', n => n.map(x => x.textContent.trim()));
+    // L'écran du voyage n'ouvre qu'une catégorie : les objets se lisent dans le stockage. Les noms des
+    // catégories sont ceux des cartes (téléphone, trois colonnes) ou des tuiles (tablette).
+    const noms = await page.$$eval('.categorie-nom b, .gf-tuile-texte b', n => n.map(x => x.textContent.trim()));
     juge.exige(noms.includes('Camping'), `voyage créé : catégories ${noms}`);
     const stockage = await lireStockage(page);
     const [voyage] = stockage.voyages;

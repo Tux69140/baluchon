@@ -50,6 +50,6 @@ test('les deux panneaux ont disparu : plus de feuille, plus de condition sur lâ€
   ];
   for (const fichier of fichiers) {
     const texte = await readFile(new URL(`../${fichier}`, import.meta.url), 'utf8');
-    assert.doesNotMatch(texte, /orientation:\s*landscape|voyage-panneaux|DEUX_PANNEAUX/, fichier);
+    assert.doesNotMatch(texte, /orientation\s*:|voyage-panneaux|DEUX_PANNEAUX/, fichier);
   }
 });

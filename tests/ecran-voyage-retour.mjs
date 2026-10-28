@@ -10,18 +10,18 @@
 //   « Vider ») ne laisse aucune étape derrière lui : un seul retour quitte alors le voyage (témoin) ;
 // - sans animation, fiche fermée par « × » puis rouverte aussitôt, avant que son étape ne soit
 //   retirée : la nouvelle fiche reste ouverte, un retour la ferme, un second quitte le voyage ;
-// - en une colonne (téléphone) et en deux panneaux (tablette en paysage).
+// - au téléphone (accordéon) et sur tablette en paysage (tuiles).
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, attendreEcran, creerJuge, lireStockage, ouvrir } from './outils/page.mjs';
-import { DONNEES } from './outils/voyage-essai.mjs';
+import { DONNEES, montrerCategorie } from './outils/voyage-essai.mjs';
 
 const juge = creerJuge();
 const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
 
-// Le voyage ouvert depuis Mes voyages, Alimentation en vue (choisie à gauche en deux panneaux).
+// Le voyage ouvert depuis Mes voyages, Alimentation en vue (choisie dans le menu, sur tablette).
 async function ouvrirVoyage(format) {
   const ouvert = await ouvrir(navigateur, serveur.url, {
     taille: FORMATS[format],
@@ -31,10 +31,8 @@ async function ouvrirVoyage(format) {
   });
   await ouvert.page.click('a.carte-voyage[href="#/voyage/v1"]');
   await attendreEcran(ouvert.page, 'voyage');
-  if (format === 'tablette-paysage') {
-    await ouvert.page.click('.choix[data-id="c-ali"]');
-    await calme(ouvert.page);
-  }
+  await montrerCategorie(ouvert.page, 'c-ali');
+  await calme(ouvert.page);
   return ouvert;
 }
 
@@ -198,5 +196,5 @@ try {
 }
 juge.conclure(
   'Retour sur la liste d’un voyage',
-  'confirmation, fiche puis écran ; fiche seule ; case ; cinq autres fermetures sans étape fantôme ; fiche rouverte aussitôt ; une colonne et deux panneaux',
+  'confirmation, fiche puis écran ; fiche seule ; case ; cinq autres fermetures sans étape fantôme ; fiche rouverte aussitôt ; téléphone et tablette en paysage',
 );

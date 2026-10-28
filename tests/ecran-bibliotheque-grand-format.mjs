@@ -387,11 +387,20 @@ async function essaiChangementDeDisposition() {
     await calme(page);
     const v = await lire(page);
     const focus = await focusActuel(page);
-    const choisie = attendue === 'telephone' ? 'Alimentation' : v.choisie;
+    // Au téléphone, l'accordéon d'aujourd'hui ne déplie rien : la catégorie gardée est celle dont
+    // l'en-tête a le focus ; on la lit au lieu de la supposer.
+    const gardee =
+      attendue === 'telephone'
+        ? await page.evaluate(() => {
+            const tete = document.activeElement?.closest('[data-action="accordeon"]');
+            return { id: tete?.dataset.id, nom: tete?.querySelector('.categorie-nom b')?.textContent };
+          })
+        : null;
+    const choisie = gardee ? gardee.nom : v.choisie;
     juge.exige(
       (await disposition(page)) === attendue &&
         choisie === 'Alimentation' &&
-        focus.startsWith('choisir:') !== (attendue === 'telephone') &&
+        (gardee ? gardee.id && focus === `accordeon:${gardee.id}` : focus.startsWith('choisir:')) &&
         focus !== 'body' &&
         !focus.endsWith('(invisible)'),
       `${cas}, vers ${nom} : ${vu({ disposition: await disposition(page), choisie: v.choisie, focus })}`,

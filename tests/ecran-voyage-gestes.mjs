@@ -38,7 +38,7 @@ import {
   verifierBarres,
   verifierCommandes,
 } from './outils/page.mjs';
-import { DONNEES, avecPieces } from './outils/voyage-essai.mjs';
+import { DONNEES, avecPieces, montrerCategorie } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
@@ -433,10 +433,10 @@ try {
     await contexte.close();
   }
 
-  // Les états à voir, en une colonne, clair et sombre.
-  const UNE_COLONNE = { telephone: FORMATS.telephone, 'tablette-portrait': FORMATS['tablette-portrait'] };
+  // Les états à voir, au téléphone (accordéon) et sur tablette en portrait (tuiles), clair et sombre.
+  const DEUX_FORMATS = { telephone: FORMATS.telephone, 'tablette-portrait': FORMATS['tablette-portrait'] };
   for (const theme of ['light', 'dark']) {
-    for (const [format, taille] of Object.entries(UNE_COLONNE)) {
+    for (const [format, taille] of Object.entries(DEUX_FORMATS)) {
       const cas = etat => `${etat}, ${format}, ${NOMS_THEME[theme]}`;
       const capture = (page, etat) =>
         page.screenshot({ path: join(CAPTURES, `voyage-${etat}-${format}-${NOMS_THEME[theme]}.png`) });
@@ -461,12 +461,13 @@ try {
       await verifierBarres(boucle.page, juge, cas('sac bouclé'));
       await boucle.contexte.close();
 
-      // Tampon tout juste posé : l'horloge reste arrêtée avant le repli.
+      // Tampon tout juste posé (carte ou tuile de Toilette au centre) : l'horloge reste arrêtée avant le repli.
       const tampon = await ouvrirVoyage({ taille, theme });
+      await montrerCategorie(tampon.page, 'c-toi');
       await appuyer(tampon.page, 'o-den');
       await tampon.page.clock.runFor(1000);
       await tampon.page.evaluate(() =>
-        document.querySelector('.categorie[data-id="c-toi"]').scrollIntoView({ block: 'center' }),
+        document.querySelector('[data-id="c-toi"]:is(.categorie, .gf-tuile)').scrollIntoView({ block: 'center' }),
       );
       await attendreQue(tampon.page, () => !document.getAnimations().some(a => a.playState === 'running'));
       await verifierCommandes(tampon.page, juge, cas('tampon'));
@@ -476,6 +477,7 @@ try {
       // Panne : le message est jugé sous les barres système pendant ses six secondes.
       const panne = await ouvrirVoyage({ taille, theme });
       await ecrireStockage(panne.page, { ...(await lireStockage(panne.page)), pannes: ['reglerDansLeSac'] });
+      await montrerCategorie(panne.page, 'c-ali');
       await appuyer(panne.page, 'o-caf');
       await attendreQue(panne.page, () => document.querySelector('.alerte') !== null);
       await panne.page.clock.resume();

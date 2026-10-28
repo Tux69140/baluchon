@@ -90,15 +90,21 @@ const etat = page =>
     voyageurs: document.querySelector('.compteur-valeur')?.textContent.trim(),
   }));
 
-const objetsAffiches = page =>
-  page.evaluate(() =>
-    Object.fromEntries(
-      [...document.querySelectorAll('.objet')].map(o => [
-        o.querySelector('.objet-nom').textContent,
-        o.querySelector('.objet-quantite').textContent,
-      ]),
-    ),
-  );
+// Les objets du voyage et leur quantité. Sur tablette, une seule catégorie montre les siens : chaque
+// entrée du menu est choisie à son tour (au téléphone, l'accordéon est lu tel qu'il est).
+async function objetsAffiches(page) {
+  const lire = () =>
+    page.$$eval('.objet', objets =>
+      objets.map(o => [o.querySelector('.objet-nom').textContent, o.querySelector('.objet-quantite').textContent]),
+    );
+  const lignes = await lire();
+  for (const id of await page.$$eval('.gf-menu [data-action="choisir"]', l => l.map(b => b.dataset.id))) {
+    await page.click(`.gf-menu [data-action="choisir"][data-id="${id}"]`);
+    await calme(page);
+    lignes.push(...(await lire()));
+  }
+  return Object.fromEntries(lignes);
+}
 
 async function nouveauFormulaire(navigateur, url, options = {}) {
   const ouvert = await ouvrir(navigateur, url, {

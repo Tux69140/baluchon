@@ -21,7 +21,7 @@ import { attendreQue, calme } from './outils/attente.mjs';
 import { attendreQuestion, etapeAffichee, ligneObjet, question, repondre } from './outils/assistant.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, RACINE, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
-import { DONNEES as DONNEES_VOYAGE } from './outils/voyage-essai.mjs';
+import { DONNEES as DONNEES_VOYAGE, montrerCategorie } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const { abandon } = fr.nouveauVoyage;
@@ -179,7 +179,7 @@ async function essaiVoyage(format) {
   const { contexte, page, erreurs } = ouvert;
   await page.click('a.carte-voyage[href="#/voyage/v1"]');
   await attendreEcran(page, 'voyage');
-  if (format === 'tablette-paysage') await page.click('.choix[data-id="c-ali"]');
+  await montrerCategorie(page, 'c-ali');
   await page.click('.objet[data-id="o-rep"] .objet-corps');
   await attendreQue(page, () => document.querySelector('dialog.fiche[open]') !== null);
   await calme(page);

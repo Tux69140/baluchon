@@ -97,14 +97,32 @@ async function ouvrirAssistant(page, nom) {
 
 // Les catégories de l'aperçu de l'assistant, et celles de l'écran d'un voyage.
 const lireApercu = page => page.$$eval('.apercu-categorie .categorie-nom b', l => l.map(b => b.textContent.trim()));
-const lireVoyage = page =>
-  page.evaluate(() => ({
-    etiquettes: [...document.querySelectorAll('.etiquettes-voyage li')].map(li => li.textContent.trim()),
-    categories: [...document.querySelectorAll('#app section.categorie')].map(s => ({
-      nom: s.querySelector('.categorie-nom b')?.textContent.trim(),
-      objets: [...s.querySelectorAll('.objet-nom')].map(o => o.textContent.trim()).toSorted(),
-    })),
-  }));
+// Sur tablette, une seule catégorie montre ses objets : chaque entrée du menu est choisie à son tour,
+// pour lire les objets de toutes (au téléphone, l'accordéon d'aujourd'hui les montre déjà).
+async function lireVoyage(page) {
+  const etiquettes = await page.$$eval('.etiquettes-voyage li', l => l.map(li => li.textContent.trim()));
+  if (!(await page.$('.gf-menu')))
+    return {
+      etiquettes,
+      categories: await page.$$eval('#app section.categorie', sections =>
+        sections.map(s => ({
+          nom: s.querySelector('.categorie-nom b')?.textContent.trim(),
+          objets: [...s.querySelectorAll('.objet-nom')].map(o => o.textContent.trim()).toSorted(),
+        })),
+      ),
+    };
+  const categories = [];
+  for (const id of await page.$$eval('.gf-menu [data-action="choisir"]', l => l.map(b => b.dataset.id))) {
+    const entree = `.gf-menu [data-action="choisir"][data-id="${id}"]`;
+    await page.click(entree);
+    await calme(page);
+    categories.push({
+      nom: (await page.textContent(`${entree} b`)).trim(),
+      objets: await page.$$eval('.gf-liste .objet-nom', l => l.map(o => o.textContent.trim()).toSorted()),
+    });
+  }
+  return { etiquettes, categories };
+}
 
 // Avance l'assistant jusqu'à l'aperçu en pressant, dans chaque étape de groupe, les puces voulues
 // (cochees = null : toutes). Rend les noms de toutes les puces proposées en route.

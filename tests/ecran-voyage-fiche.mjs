@@ -40,7 +40,7 @@ import {
   verifierCommandes,
 } from './outils/page.mjs';
 import { verifierPiedQuestion } from './outils/assistant.mjs';
-import { DONNEES } from './outils/voyage-essai.mjs';
+import { DONNEES, montrerCategorie } from './outils/voyage-essai.mjs';
 
 const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const remplir = (texte, valeurs) => texte.replace(/\{(\w+)\}/g, (_, nom) => String(valeurs[nom]));
@@ -63,6 +63,7 @@ async function ouvrirVoyage({ taille = FORMATS.telephone, theme = 'light', horlo
 
 // attendreCalme : faux sous horloge arrêtée (calme() compte sur les images de la page).
 async function ouvrirFiche(page, id, { attendreCalme = true } = {}) {
+  await montrerCategorie(page, DONNEES.objetsDuVoyage.find(o => o.id === id).categorieId);
   await page.click(`.objet[data-id="${id}"] .objet-corps`);
   const ouverte = await attendreQue(page, () => document.querySelector('dialog.fiche[open]') !== null);
   if (attendreCalme) await calme(page);
@@ -405,10 +406,10 @@ try {
     await contexte.close();
   }
 
-  // La fiche et sa confirmation, en une colonne, clair et sombre.
-  const UNE_COLONNE = { telephone: FORMATS.telephone, 'tablette-portrait': FORMATS['tablette-portrait'] };
+  // La fiche et sa confirmation, au téléphone et sur tablette en portrait, clair et sombre.
+  const DEUX_FORMATS = { telephone: FORMATS.telephone, 'tablette-portrait': FORMATS['tablette-portrait'] };
   for (const theme of ['light', 'dark']) {
-    for (const [format, taille] of Object.entries(UNE_COLONNE)) {
+    for (const [format, taille] of Object.entries(DEUX_FORMATS)) {
       const cas = etat => `${etat}, ${format}, ${NOMS_THEME[theme]}`;
       const capture = (page, etat) =>
         page.screenshot({ path: join(CAPTURES, `${etat}-${format}-${NOMS_THEME[theme]}.png`) });

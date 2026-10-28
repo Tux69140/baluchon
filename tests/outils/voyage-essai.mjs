@@ -1,5 +1,5 @@
-// Le voyage d'essai des tests de l'écran d'un voyage (liste, gestes, et plus tard fiche et deux
-// panneaux) : un seul jeu de données, pour que chaque test parle des mêmes objets. Les catégories sont
+// Le voyage d'essai des tests de l'écran d'un voyage (liste, gestes, fiche, retour) : un seul jeu de données,
+// pour que chaque test parle des mêmes objets. Les catégories sont
 // rangées dans le désordre et un second voyage ne doit rien laisser paraître.
 // Papiers (ordre 0) est bouclée ; Repas en est à 6 pièces sur 16 et porte la seule note ; Café soluble
 // est le seul objet partagé ; Dentifrice est la dernière pièce de Toilette.
@@ -89,4 +89,13 @@ export const DONNEES = {
 export function avecPieces(pieces) {
   const nombre = o => (typeof pieces === 'function' ? pieces(o) : (pieces[o.id] ?? o.dansLeSac));
   return { ...DONNEES, objetsDuVoyage: DONNEES.objetsDuVoyage.map(o => ({ ...o, dansLeSac: nombre(o) })) };
+}
+
+// Sur tablette et ordinateur, une seule catégorie montre ses objets (la choisie du menu) : la choisir
+// avant d'y toucher. Au téléphone, l'accordéon d'aujourd'hui les montre déjà : rien à faire. Aucune
+// attente d'horloge ici, pour les tests qui la tiennent arrêtée.
+export async function montrerCategorie(page, id) {
+  const entree = `.gf-menu [data-action="choisir"][data-id="${id}"]`;
+  if (!(await page.$('.gf-menu')) || (await page.getAttribute(entree, 'aria-current')) === 'true') return;
+  await page.click(entree);
 }
