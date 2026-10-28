@@ -57,6 +57,27 @@ function vueFiche({ t, idTitre, titre, bouton, iconeBouton, classe }) {
   return fenetre;
 }
 
+// Une fiche ouverte par ouvrir({ garder, surFermeture }), attendue : sa promesse rend ce que son
+// enregistrement a gardé (garder(valeur)), ou null (abandonnée, ou l'écran parti avec signal, qui
+// l'emporte sans la fermer). La seule définition : « Ajouter un objet », « Nouvelle catégorie » d'un
+// voyage (src/ecrans/fiche-ajout.js) et « Ajouter aussi à la bibliothèque » (ajout-bibliotheque.js).
+export function attendreFiche(ouvrir, signal) {
+  return new Promise(resoudre => {
+    let retenu = null;
+    const partir = () => resoudre(null);
+    signal.addEventListener('abort', partir, { once: true });
+    ouvrir({
+      garder(valeur) {
+        retenu = valeur;
+      },
+      surFermeture() {
+        signal.removeEventListener('abort', partir);
+        resoudre(retenu);
+      },
+    });
+  });
+}
+
 // Ouvre la fiche dans dans (l'écran, pour qu'elle parte avec lui). titre, sousTitre, bouton,
 // texteAbandon : des textes (échappés ici). saisie : le brouillon de départ. valider(brouillon) : les
 // codes d'erreur par champ. dessiner(brouillon, erreurs) : le HTML du corps ; les erreurs ne sont

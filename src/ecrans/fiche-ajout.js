@@ -15,7 +15,7 @@ import { saisieDeCategorie } from '../modele/modeles.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { choisirCategorie, paveNouveau } from './choix-categorie.js';
 import { actionCatalogue, vueApparence } from './fiche-categorie.js';
-import { ouvrirFicheModele } from './fiche-modele.js';
+import { attendreFiche, ouvrirFicheModele } from './fiche-modele.js';
 import { champNom, compteur, message } from './fiche-modele-vues.js';
 import { pluriel } from './format.js';
 import { echapper } from './html.js';
@@ -57,37 +57,32 @@ function vueChampCategorie(t, langue, { nouvelle, rangee }, erreur) {
 // icone, couleur }, ou null (abandonnée, ou l'écran parti avec signal). Rien n'est écrit.
 function ouvrirNouvelleCategorie({ t, langue, initiale = null, signal, dans }) {
   const { nom, icone, couleur } = initiale ?? saisieDeCategorie(null);
-  return new Promise(resoudre => {
-    let choisie = null;
-    // L'écran parti emporte la fiche sans la fermer : la réponse est null.
-    const partir = () => resoudre(null);
-    signal.addEventListener('abort', partir, { once: true });
-    ouvrirFicheModele({
-      t,
-      titre: t('modele.categorie.nouvelle'),
-      sousTitre: t('ajustement.nouvelleCategorie.texte'),
-      bouton: t('ajustement.nouvelleCategorie.choisir'),
-      classe: 'fiche-nouvelle-categorie',
-      idTitre: 'nouvelle-categorie-titre',
-      saisie: { nom, icone, couleur },
-      valider: validerNouvelleCategorie,
-      dessiner: (b, erreurs) =>
-        champNom(t, b.nom, erreurs.nom && t(`modele.categorie.erreurs.${erreurs.nom}`), { id: ID_NOM_CATEGORIE }) +
-        vueApparence(t, b),
-      titreAbandon: t('ajustement.nouvelleCategorie.abandonTitre'),
-      texteAbandon: t('modele.categorie.abandonNouvelle'),
-      async enregistrer(b) {
-        choisie = { nom: b.nom.trim(), icone: b.icone, couleur: b.couleur };
-      },
-      actions: { catalogue: actionCatalogue({ t, langue, signal, dans }) },
-      surFermeture: () => {
-        signal.removeEventListener('abort', partir);
-        resoudre(choisie);
-      },
-      signal,
-      dans,
-    });
-  });
+  return attendreFiche(
+    ({ garder, surFermeture }) =>
+      ouvrirFicheModele({
+        t,
+        titre: t('modele.categorie.nouvelle'),
+        sousTitre: t('ajustement.nouvelleCategorie.texte'),
+        bouton: t('ajustement.nouvelleCategorie.choisir'),
+        classe: 'fiche-nouvelle-categorie',
+        idTitre: 'nouvelle-categorie-titre',
+        saisie: { nom, icone, couleur },
+        valider: validerNouvelleCategorie,
+        dessiner: (b, erreurs) =>
+          champNom(t, b.nom, erreurs.nom && t(`modele.categorie.erreurs.${erreurs.nom}`), { id: ID_NOM_CATEGORIE }) +
+          vueApparence(t, b),
+        titreAbandon: t('ajustement.nouvelleCategorie.abandonTitre'),
+        texteAbandon: t('modele.categorie.abandonNouvelle'),
+        async enregistrer(b) {
+          garder({ nom: b.nom.trim(), icone: b.icone, couleur: b.couleur });
+        },
+        actions: { catalogue: actionCatalogue({ t, langue, signal, dans }) },
+        surFermeture,
+        signal,
+        dans,
+      }),
+    signal,
+  );
 }
 
 // « Ajouter un objet ». contenu() : le voyage tel que l'écran le montre (ses catégories dans leur ordre) ;
@@ -108,21 +103,18 @@ export function ouvrirAjout({ t, langue, contenu, choisie = null, signal, dans, 
     const { nouvelle, rangee } = retenue(b);
     return validerAjout({ ...b, categorie: nouvelle || rangee ? b.categorie : null });
   };
-  return new Promise(resoudre => {
-    let ecrit = null;
-    // L'écran parti emporte la fiche sans la fermer : la réponse est null.
-    const partir = () => resoudre(null);
-    signal.addEventListener('abort', partir, { once: true });
-    ouvrirFicheModele({
-      t,
-      titre: t('ajustement.ajout.titre'),
-      sousTitre: t('ajustement.ajout.voyageSeulement'),
-      bouton: t('ajustement.ajout.ajouter'),
-      iconeBouton: 'plus',
-      classe: 'fiche-ajout',
-      saisie: { nom: '', categorie: choisie, quantite: 1 },
-      valider,
-      dessiner: (b, erreurs) => `
+  return attendreFiche(
+    ({ garder, surFermeture }) =>
+      ouvrirFicheModele({
+        t,
+        titre: t('ajustement.ajout.titre'),
+        sousTitre: t('ajustement.ajout.voyageSeulement'),
+        bouton: t('ajustement.ajout.ajouter'),
+        iconeBouton: 'plus',
+        classe: 'fiche-ajout',
+        saisie: { nom: '', categorie: choisie, quantite: 1 },
+        valider,
+        dessiner: (b, erreurs) => `
         ${champNom(t, b.nom, erreurs.nom && t(`modele.objet.erreurs.${erreurs.nom}`))}${vueChampCategorie(
           t,
           langue,
@@ -133,53 +125,51 @@ export function ouvrirAjout({ t, langue, contenu, choisie = null, signal, dans, 
           <span>${t('ajustement.ajout.quantite')}<small id="${ID_AIDE_QUANTITE}">${t('ajustement.ajout.pourToutLeVoyage')}</small></span>
           ${compteur(t, { cle: 'quantite', valeur: b.quantite, libelle: t('ajustement.ajout.quantite'), idMessage: ID_AIDE_QUANTITE, defaut: 1 })}
         </div>`,
-      titreAbandon: t('ajustement.ajout.abandon.titre'),
-      texteAbandon: t('ajustement.ajout.abandon.texte'),
-      textePanne: t('ajustement.ajout.erreur'),
-      async enregistrer(b) {
-        const tirage = b.categorie?.nouvelle ? [ids.categorie, ids.objet] : [ids.objet];
-        const ajout = preparerAjout(b, contenu(), {
-          nouvelId: () => tirage.shift(),
-          maintenant: new Date().toISOString(),
-        });
-        await ajouter(ajout);
-        ecrit = ajout;
-      },
-      actions: {
-        // La liste des catégories du voyage, dans son ordre, puis « Nouvelle catégorie ». De retour, le
-        // focus revient sur la ligne « Catégorie » (la fiche la redessine et le garde).
-        async categorie(b) {
-          const choix = await choisirCategorie({
-            t,
-            titre: t('ajustement.choix.titre'),
-            lignes: listeParCategorie(contenu()).map(({ categorie, objets }) => ({
-              ...categorie,
-              sousTitre: pluriel(t, 'ajustement.choix.objets', objets.length, langue),
-            })),
-            choisie: b.categorie?.nouvelle ? null : b.categorie,
-            nouvelle: t('ajustement.choix.pourCeVoyage'),
-            signal,
-            dans,
+        titreAbandon: t('ajustement.ajout.abandon.titre'),
+        texteAbandon: t('ajustement.ajout.abandon.texte'),
+        textePanne: t('ajustement.ajout.erreur'),
+        async enregistrer(b) {
+          const tirage = b.categorie?.nouvelle ? [ids.categorie, ids.objet] : [ids.objet];
+          const ajout = preparerAjout(b, contenu(), {
+            nouvelId: () => tirage.shift(),
+            maintenant: new Date().toISOString(),
           });
-          if (choix === 'nouvelle') {
-            const nouvelle = await ouvrirNouvelleCategorie({
+          await ajouter(ajout);
+          garder(ajout);
+        },
+        actions: {
+          // La liste des catégories du voyage, dans son ordre, puis « Nouvelle catégorie ». De retour, le
+          // focus revient sur la ligne « Catégorie » (la fiche la redessine et le garde).
+          async categorie(b) {
+            const choix = await choisirCategorie({
               t,
-              langue,
-              initiale: b.categorie?.nouvelle,
+              titre: t('ajustement.choix.titre'),
+              lignes: listeParCategorie(contenu()).map(({ categorie, objets }) => ({
+                ...categorie,
+                sousTitre: pluriel(t, 'ajustement.choix.objets', objets.length, langue),
+              })),
+              choisie: b.categorie?.nouvelle ? null : b.categorie,
+              nouvelle: t('ajustement.choix.pourCeVoyage'),
               signal,
               dans,
             });
-            if (nouvelle) b.categorie = { nouvelle };
-          } else if (choix) b.categorie = choix;
-          dans.querySelector('dialog.fiche-ajout [data-action="categorie"]')?.focus();
+            if (choix === 'nouvelle') {
+              const nouvelle = await ouvrirNouvelleCategorie({
+                t,
+                langue,
+                initiale: b.categorie?.nouvelle,
+                signal,
+                dans,
+              });
+              if (nouvelle) b.categorie = { nouvelle };
+            } else if (choix) b.categorie = choix;
+            dans.querySelector('dialog.fiche-ajout [data-action="categorie"]')?.focus();
+          },
         },
-      },
-      surFermeture: () => {
-        signal.removeEventListener('abort', partir);
-        resoudre(ecrit);
-      },
-      signal,
-      dans,
-    });
-  });
+        surFermeture,
+        signal,
+        dans,
+      }),
+    signal,
+  );
 }

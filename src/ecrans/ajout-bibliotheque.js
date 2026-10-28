@@ -22,30 +22,11 @@ import { sansAnnuler } from './annulation.js';
 import { choisirCategorie } from './choix-categorie.js';
 import { demander } from './fenetre.js';
 import { ouvrirFicheCategorie } from './fiche-categorie.js';
+import { attendreFiche } from './fiche-modele.js';
 import { ouvrirFicheObjet } from './fiche-objet.js';
 import { pluriel } from './format.js';
 
 const b = 'ajustement.bibliotheque';
-
-// Une fiche ouverte par ouvrir({ garder, surFermeture }), attendue : sa promesse rend ce que son
-// enregistrement a gardé (garder(valeur)), ou null (abandonnée, ou l'écran parti avec signal, qui
-// l'emporte sans la fermer).
-function attendreFiche(ouvrir, signal) {
-  return new Promise(resoudre => {
-    let retenu = null;
-    const partir = () => resoudre(null);
-    signal.addEventListener('abort', partir, { once: true });
-    ouvrir({
-      garder(valeur) {
-        retenu = valeur;
-      },
-      surFermeture() {
-        signal.removeEventListener('abort', partir);
-        resoudre(retenu);
-      },
-    });
-  });
-}
 
 // Où ranger l'objet dans la bibliothèque, la catégorie du voyage n'y étant pas : { existante } (une
 // catégorie choisie), { neuve } (la saisie de « Nouvelle catégorie », pas encore écrite), ou null.
