@@ -1,0 +1,144 @@
+/* Maquette de la phase 8 : ce qui n'existe pas encore dans les styles de l'appli (src/styles/). Les
+   fenêtres, fiches, lignes, pavés, compteurs, segments et listes sont ceux de l'appli ; la disposition
+   grand écran et le menu de la maquette, ceux de la maquette « grand écran ». */
+
+/* ---------- Fiche de l'objet : « Ajuster cet objet » ----------
+   Sous ce que la fiche montre déjà (dans le sac, note), un trait : ce qui suit change l'objet dans ce
+   voyage, et non ce qui est dans le sac. */
+.fiche-ajuster {
+  gap: var(--e-md);
+  padding-top: var(--e-lg);
+  border-top: 1px solid var(--separation);
+}
+
+.fiche-ajuster .ligne-reglage {
+  flex-wrap: wrap;
+}
+
+.fiche-ajuster .ligne-reglage > span:first-child {
+  font: 600 var(--taille-objet) / 1.3 var(--police);
+}
+
+.fiche-ajuster .ligne-reglage small {
+  font-weight: 400;
+}
+
+/* Le compteur de la quantité prévue, un cran sous celui du sac : le sac reste le geste du jour. */
+.fiche-ajuster .compteur {
+  gap: var(--e-sm);
+}
+
+.fiche-ajuster .ligne-reglage > span:first-child {
+  flex: 1 1 12em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fiche-ajuster .fiche-actions .bouton {
+  flex: 0 1 auto;
+}
+
+.fiche-voyage .zone-suppression {
+  margin-top: 0;
+}
+
+.fiche-ajuster .compteur output {
+  font-size: 24px;
+}
+
+.compteur .bouton-icone[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- Fiche « Ajouter un objet » : la catégorie retenue ----------
+   Un champ qui ouvre une liste : pavé, nom, et ce qu'elle contient ; même bord que les champs. */
+.champ-titre {
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.champ-categorie {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--e-sm) var(--e-xs) var(--e-sm) var(--e-sm);
+  border: 1.5px solid var(--contour);
+  border-radius: var(--r-sm);
+  background: var(--carte);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.champ-categorie:hover {
+  background: var(--releve);
+}
+
+.champ-categorie .chevron {
+  display: inline-flex;
+  width: 32px;
+  justify-content: center;
+  color: var(--encre-douce);
+}
+
+.champ-categorie .chevron svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Choisir une catégorie ----------
+   Les lignes de la fenêtre de refus (refus.css) ; la catégorie retenue porte une coche, jamais la
+   seule couleur. « Nouvelle catégorie », en dernier, a un pavé neutre et le vert des ajouts. */
+.choix-categorie .refus-ligne[aria-current='true'] {
+  background: var(--actif);
+}
+
+.choix-marque {
+  display: inline-flex;
+  flex: none;
+  width: 44px;
+  justify-content: center;
+  color: var(--principal);
+}
+
+.choix-marque svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pave-nouveau {
+  color: var(--principal);
+}
+
+.pave-nouveau svg {
+  width: 22px;
+  height: 22px;
+}
+
+.choix-nouvelle .refus-texte b {
+  color: var(--principal);
+}
+
+/* ---------- Questions ---------- */
+.question-texte {
+  display: grid;
+  gap: var(--e-sm);
+  padding: var(--e-sm) var(--retrait-fenetre) 0;
+}
+
+.confirmation .question-texte p {
+  margin: 0;
+}
+
+/* Réussite en haut de l'écran (la place des messages) : la coche en vert. */
+.alerte-haut.message-succes .icone {
+  color: var(--succes);
+}
+
+/* ---------- Écran vide : le bouton sous la phrase ---------- */
+.vide-voyage .bouton {
+  margin-top: var(--e-md);
+}

@@ -193,15 +193,17 @@ function fiche({ titre, sousTitre, bouton, initial, corps, valider, enregistrer,
 }
 
 // ---------- Catégorie ----------
-export function ficheCategorie({ categorie, surEnregistrer, panne, groupes = GROUPES, supprimer }) {
+// prerempli, bouton (facultatifs, maquette de la phase 8) : une catégorie neuve qui part de ces valeurs
+// (celles d'une catégorie du voyage), et le libellé du bouton principal.
+export function ficheCategorie({ categorie, surEnregistrer, panne, groupes = GROUPES, supprimer, prerempli, bouton }) {
   const initial = categorie
     ? { nom: categorie.nom, icone: categorie.icone, couleur: categorie.couleur, etiquettes: categorie.etiquettes.length ? [...categorie.etiquettes] : null }
-    : { nom: '', icone: 'suitcase-rolling', couleur: 'corail', etiquettes: null };
+    : { nom: '', icone: 'suitcase-rolling', couleur: 'corail', etiquettes: null, ...prerempli };
   const n = categorie?.objets.length;
   return fiche({
     titre: categorie ? echapper(categorie.nom) : 'Nouvelle catégorie',
     sousTitre: categorie ? `${n} objet${n > 1 ? 's' : ''}` : '',
-    bouton: categorie ? 'Enregistrer' : 'Créer la catégorie',
+    bouton: bouton ?? (categorie ? 'Enregistrer' : 'Créer la catégorie'),
     initial,
     nomPourAbandon: categorie ? `Ce que vous avez changé dans « ${echapper(categorie.nom)} » ne sera pas enregistré.` : 'La nouvelle catégorie ne sera pas créée.',
     panne,
@@ -280,14 +282,15 @@ function ouvrirCatalogue(b, apres) {
 export { ouvrirCatalogue };
 
 // ---------- Objet ----------
-export function ficheObjet({ objet, categorie, surEnregistrer, panne, groupes = GROUPES, supprimer }) {
+// prerempli, bouton (facultatifs, maquette de la phase 8) : comme pour ficheCategorie.
+export function ficheObjet({ objet, categorie, surEnregistrer, panne, groupes = GROUPES, supprimer, prerempli, bouton }) {
   const initial = objet
     ? { ...structuredClone(objet), etiquettes: objet.etiquettes.length ? [...objet.etiquettes] : null }
-    : { nom: '', regle: 'fixe', valeur: 1, plafond: null, parPersonne: true, consommable: false, etiquettes: null, note: '' };
+    : { nom: '', regle: 'fixe', valeur: 1, plafond: null, parPersonne: true, consommable: false, etiquettes: null, note: '', ...prerempli };
   return fiche({
     titre: objet ? echapper(objet.nom) : 'Nouvel objet',
     sousTitre: `Dans « ${echapper(categorie.nom)} »`,
-    bouton: objet ? 'Enregistrer' : 'Ajouter l’objet',
+    bouton: bouton ?? (objet ? 'Enregistrer' : 'Ajouter l’objet'),
     initial,
     nomPourAbandon: objet ? `Ce que vous avez changé dans « ${echapper(objet.nom)} » ne sera pas enregistré.` : 'Le nouvel objet ne sera pas ajouté.',
     panne,
