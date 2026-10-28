@@ -54,7 +54,12 @@ const SIMPLES = [
   ),
   'modele.objet.erreurs.categorieManquante',
 ];
-const PLURIELS = ['ajustement.retrait.pieces', 'ajustement.ajout.objetsDansCeVoyage', 'ajustement.choix.objets'];
+const PLURIELS = [
+  'ajustement.pieces',
+  'ajustement.retrait.pieces',
+  'ajustement.ajout.objetsDansCeVoyage',
+  'ajustement.choix.objets',
+];
 
 const textes = valeur => (typeof valeur === 'string' ? [valeur] : Object.values(valeur));
 
@@ -77,18 +82,20 @@ test('typographie : insécable après « et avant », avant : ; ? !, apostrophes
 test('les phrases de la maquette sont reprises', () => {
   const t = (cle, valeurs) => remplir(lire(cle), valeurs);
   assert.equal(t('fiche.calculee', { regle: '1 par jour' }), `calculée${NB}: 1 par jour`);
+  // « 2 pièces », un morceau à part : l'écran le met en gras dans la phrase (comme la phase 7).
+  const pieces = n => remplir(pluriel('ajustement.pieces', n), { n });
   assert.equal(
-    t('ajustement.baisse.texte', { nom: 'Bonnet', n: 2, quantite: 1 }),
+    t('ajustement.baisse.texte', { nom: 'Bonnet', compte: pieces(2), quantite: 1 }),
     `Les 2 pièces de «${NB}Bonnet${NB}» sont déjà dans le sac. En prévoir 1 en sort une.`,
   );
   assert.equal(t('ajustement.baisse.garder', { n: 2 }), 'Garder 2');
   assert.equal(t('ajustement.baisse.prevoir', { quantite: 1 }), 'Prévoir 1');
   assert.equal(
-    remplir(pluriel('ajustement.retrait.pieces', 1), { n: 1 }),
-    'Sa pièce déjà dans le sac sort de la liste.',
+    remplir(pluriel('ajustement.retrait.pieces', 1), { compte: pieces(1) }),
+    'Sa 1 pièce déjà dans le sac sort de la liste.',
   );
   assert.equal(
-    remplir(pluriel('ajustement.retrait.pieces', 3), { n: 3 }),
+    remplir(pluriel('ajustement.retrait.pieces', 3), { compte: pieces(3) }),
     'Ses 3 pièces déjà dans le sac sortent de la liste.',
   );
   assert.equal(t('ajustement.retrait.titre', { nom: 'Pull' }), `Retirer «${NB}Pull${NB}» de ce voyage${NB}?`);

@@ -67,7 +67,9 @@ function vueFiche({ t, titre, bouton, classe }) {
 // bouton [data-supprimer] du corps ; la fiche pose sa question et fait écrire l'écran, puis rend true
 // (la fiche se ferme, sans question d'abandon) ou false (elle reste avec sa saisie) ; une erreur levée
 // la laisse ouverte et le message de panne s'affiche en haut. Tant qu'il court, « Enregistrer » et
-// « Supprimer » sont inactifs.
+// « Supprimer » sont inactifs. champInitial : le sélecteur d'un champ qui prend le focus à l'ouverture,
+// son texte sélectionné (« Renommer » d'un objet du voyage : on tape aussitôt le nouveau nom) ; sans lui,
+// c'est le titre.
 export function ouvrirFicheModele({
   t,
   titre,
@@ -80,6 +82,7 @@ export function ouvrirFicheModele({
   texteAbandon,
   enregistrer,
   supprimer = null,
+  champInitial = null,
   ajuster = () => {},
   actions = {},
   surFermeture = () => {},
@@ -295,6 +298,10 @@ export function ouvrirFicheModele({
   });
   ombrer();
   // Le titre prend le focus : le lecteur d'écran dit d'abord ce qu'on modifie, et au doigt aucun
-  // clavier ne surgit.
-  fenetre.querySelector('h2').focus();
+  // clavier ne surgit. Sauf pour une fiche faite pour taper (champInitial).
+  const champ = champInitial && corps.querySelector(champInitial);
+  if (champ) {
+    champ.focus();
+    champ.select();
+  } else fenetre.querySelector('h2').focus();
 }

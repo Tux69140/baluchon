@@ -85,10 +85,11 @@ try {
     const { page } = ouvert;
     const bibliotheque = vu((await lireStockage(page)).bibliotheque);
     const question = await retirer(page, 'o-pan', r.garder);
-    const attendus = [r.bibliotheque, remplir(r.pieces.other, { n: 3 })];
+    const attendus = [r.bibliotheque, remplir(r.pieces.other, { compte: '3 pièces' })];
     juge.exige(
       question?.titre === remplir(r.titre, { nom: 'Pantalons' }) &&
         vu(question.textes) === vu(attendus) &&
+        vu(question.gras) === vu(['3 pièces']) &&
         vu(question.decrit) === vu(attendus) &&
         vu(question.boutons) === vu([r.garder, r.retirer]),
       `${cas} : question ${vu(question)}`,
@@ -119,7 +120,11 @@ try {
     );
     // Pull, une seule pièce dans le sac.
     const pull = await retirer(page, 'o-pul', r.garder);
-    juge.exige(vu(pull?.textes) === vu([r.bibliotheque, r.pieces.one]), `${cas} : question de Pull ${vu(pull)}`);
+    juge.exige(
+      vu(pull?.textes) === vu([r.bibliotheque, remplir(r.pieces.one, { compte: '1 pièce' })]) &&
+        vu(pull.gras) === vu(['1 pièce']),
+      `${cas} : question de Pull ${vu(pull)}`,
+    );
     await fermerEssai(juge, cas, ouvert);
   }
 
@@ -200,6 +205,68 @@ try {
     await fermerEssai(juge, cas, ouvert);
   }
 
+  // « Annuler » après le répit du retrait : l'objet rendu est aussitôt à sa place (non complets par nom,
+  // puis complets), éclairé ; touché avant la fin du répit, il reste éclairé après lui.
+  {
+    const cas = 'place et éclairage de l’objet rendu';
+    const ouvert = await ouvrirEssai({ horloge: true });
+    const { page } = ouvert;
+    const ordreVetements = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('#app .categorie[data-id="c-vet"] .objet')].map(li => li.dataset.id),
+      );
+    const avant = await ordreVetements();
+    await retirer(page, 'o-pan');
+    await bandeauVenu(page);
+    // L'horloge arrêtée, puis menée au-delà du répit du retrait.
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 10);
+    await page.clock.runFor(1100);
+    await page.click(`${BANDEAU} button`);
+    await attendreQue(page, () => document.querySelector('#app .objet[data-id="o-pan"]') !== null);
+    const apres = await ordreVetements();
+    juge.exige(
+      vu(apres) === vu(avant) && vu(avant) === vu(['o-pan', 'o-pul', 'o-pyj', 'o-sou', 'o-tsh', 'o-cha']),
+      `${cas} : ordre ${vu(apres)} au lieu de ${vu(avant)}`,
+    );
+    // Avant la fin du répit : l'éclairage survit au rangement qui suit.
+    await page.clock.resume();
+    await ouvrirFiche(page, 'o-pul');
+    await toucherFiche(page, 'retirer');
+    await attendreQuestion(page);
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 10);
+    await repondre(page, r.retirer);
+    await bandeauVenu(page);
+    await page.click(`${BANDEAU} button`);
+    await attendreQue(page, () => document.querySelector('#app .objet[data-id="o-pul"]') !== null);
+    await page.clock.runFor(1100);
+    juge.exige((await ligne(page, 'o-pul'))?.recent, `${cas} : éclairage coupé par le répit`);
+    // Témoin : l'éclairage finit par s'éteindre (fin de son animation).
+    await page.clock.resume();
+    const eteint = await attendreQue(page, () => !document.querySelector('#app [data-recent]'));
+    juge.exige(eteint, `${cas} : l'éclairage ne s'éteint pas`);
+    await fermerEssai(juge, cas, ouvert);
+  }
+
+  // Une coche, puis un retrait et « Annuler » : l'objet revient tel que la base le gardait (modifieLe compris).
+  {
+    const cas = 'annuler après une coche';
+    const ouvert = await ouvrirEssai();
+    const { page } = ouvert;
+    await page.click('#app .case[data-id="o-pan"]');
+    const coche = await attendreQue(page, () => {
+      const o = JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(x => x.id === 'o-pan');
+      return o.dansLeSac === 4 && o;
+    });
+    await calme(page);
+    await retirer(page, 'o-pan');
+    await bandeauVenu(page);
+    await page.click(`${BANDEAU} button`);
+    await attendreQue(page, () => document.querySelector('#app .objet[data-id="o-pan"]') !== null);
+    const rendu = await objetStocke(page, 'o-pan');
+    juge.exige(coche && vu(rendu) === vu(coche), `${cas} : ${vu(rendu)} au lieu de ${vu(coche)}`);
+    await fermerEssai(juge, cas, ouvert);
+  }
+
   // Les 10 s du bandeau.
   {
     const cas = 'dix secondes';
@@ -269,6 +336,9 @@ try {
     await attendreQue(page, () => typeof window.debloquerStockage === 'function');
     const pendant = await lireFiche(page);
     await toucherFiche(page, 'retirer', { force: true });
+    // Les autres gestes de la fiche ne comptent plus : une pièce de plus viserait un objet retiré.
+    await toucherFiche(page, 'plus', { force: true });
+    await toucherFiche(page, 'quantite-plus', { force: true });
     await calme(page);
     const secondeQuestion = await lireQuestion(page);
     const stocke = await lireStockage(page);
@@ -283,6 +353,7 @@ try {
     juge.exige(
       (await objetStocke(page, 'o-tsh')) === null &&
         (await page.$('.alerte-haut')) === null &&
+        (await page.$('.alerte')) === null &&
         (await lireStockage(page)).objetsDuVoyage.length === DONNEES.objetsDuVoyage.length - 1,
       `${cas} : après le retrait`,
     );

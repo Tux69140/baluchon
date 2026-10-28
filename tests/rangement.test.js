@@ -9,6 +9,7 @@ import {
   categoriesAffichees,
   choisirCategorie,
   etatInitial,
+  rendreObjet,
 } from '../src/ecrans/rangement.js';
 
 // Vêtements : Pantalons 0/4, Pull 2/2 ; Toilette : Crème 0/1, Brosse 2/2 ; Papiers : Pièce 2/2.
@@ -191,4 +192,31 @@ test('décochée entre le répit et le tampon : la catégorie ne se replie pas e
   assert.equal(final.ouvertes.has('vet'), true);
   assert.equal(final.enBas.has('vet'), false);
   assert.equal(final.choisie, 'vet');
+});
+
+test('un objet rendu par « Annuler » prend tout de suite sa place, sa catégorie choisie et dépliée', () => {
+  // Pantalons retiré, Vêtements repliée et Toilette choisie ; puis Pantalons revient.
+  const sans = liste().map(c =>
+    c.categorie.id === 'vet' ? { ...c, objets: c.objets.filter(o => o.id !== 'pantalons') } : c,
+  );
+  const etat = { ...choisirCategorie(etatInitial(sans, { filtre: false }), 'toi'), ouvertes: new Set(['toi']) };
+  const l = liste();
+  // Témoin : sans placement, l'objet apparu se met en queue.
+  assert.deepEqual(objetsDe(etat, l, 'vet'), ['pull', 'pantalons']);
+  const rendu = rendreObjet(etat, l, { categorieId: 'vet', objetId: 'pantalons' });
+  assert.deepEqual(objetsDe(rendu, l, 'vet'), ['pantalons', 'pull']);
+  assert.equal(rendu.choisie, 'vet');
+  assert.deepEqual([...rendu.ouvertes].sort(), ['toi', 'vet']);
+  // Le reste de la liste ne bouge pas : Toilette garde son ordre figé.
+  assert.deepEqual(rendu.ordre.get('toi'), etat.ordre.get('toi'));
+});
+
+test('sous le filtre, un objet rendu complet est masqué aussitôt', () => {
+  const sans = liste().map(c =>
+    c.categorie.id === 'vet' ? { ...c, objets: c.objets.filter(o => o.id !== 'pull') } : c,
+  );
+  const etat = etatInitial(sans, { filtre: true });
+  const rendu = rendreObjet(etat, liste(), { categorieId: 'vet', objetId: 'pull' });
+  assert.ok(rendu.masques.has('pull'));
+  assert.deepEqual(objetsDe(rendu, liste(), 'vet'), ['pantalons']);
 });

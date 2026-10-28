@@ -90,7 +90,11 @@ function libelleCase(t, objet) {
   return remplir(t(`voyage.case.${objet.quantite === 1 ? 'cocher' : 'ajouter'}`), valeurs);
 }
 
-// recent : l'objet vient d'être rendu par « Annuler », il s'éclaire (src/styles/bibliotheque.css).
+// recent : { id, ecoule } l'objet que « Annuler » vient de rendre s'éclaire (src/styles/bibliotheque.css) ;
+// redessiné pendant l'éclairage, il le reprend où il en était (ecoule, en ms ; src/styles/ajustements.css).
+const eclairage = (objet, recent) =>
+  recent?.id === objet.id ? ` data-recent style="--eclairage-ecoule: ${-Math.round(recent.ecoule)}ms"` : '';
+
 function vueObjet(t, objet, voyageurs, recent) {
   const etat = etatDansLeSac(objet);
   const entame = etat === 'entame';
@@ -104,7 +108,7 @@ function vueObjet(t, objet, voyageurs, recent) {
   // Le nom du bouton reprend tout ce que la ligne montre, dans le même ordre.
   const nomDit = partage ? `${objet.nom}, ${partage}` : objet.nom;
   return `
-          <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}" data-flip="${echapper(objet.id)}"${recent === objet.id ? ' data-recent' : ''}>
+          <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}" data-flip="${echapper(objet.id)}"${eclairage(objet, recent)}>
             <button type="button" class="case" data-action="case" data-id="${echapper(objet.id)}" aria-label="${echapper(libelleCase(t, objet))}">
               <span class="case-boite" aria-hidden="true">${etat === 'plein' ? iconeInterface('coche') : ''}</span>
             </button>
@@ -202,7 +206,7 @@ function vueVide(t) {
 // colonne de cartes au téléphone ; le grand format si grandFormat (tablettes, ordinateur), en trois
 // colonnes si troisColonnes, sinon en repli. Un voyage vide reste en une colonne.
 // liste : les catégories du voyage et leurs pièces (listeParCategorie) ; poses : les tampons et le
-// bandeau qui viennent d'apparaître, animés une seule fois ; recent : l'id de l'objet à éclairer.
+// bandeau qui viennent d'apparaître, animés une seule fois ; recent : l'objet à éclairer ({ id, ecoule }).
 export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, recent, grandFormat, troisColonnes }) {
   // Le nombre de voyageurs et l'objet à éclairer suivent le contexte jusqu'aux lignes (« partagé »).
   const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs, recent };

@@ -131,19 +131,23 @@ export function ouvrirFiche({
   }
 
   // « Retirer du voyage » : inactif jusqu'à la fin de la question et de l'écriture (un double appui ne
-  // retire qu'une fois) ; retiré, la fiche se ferme d'elle-même (repeindre).
+  // retire qu'une fois), et aucun autre geste de la fiche ne compte d'ici là (une pièce de plus viserait
+  // un objet retiré) ; retiré, la fiche se ferme d'elle-même (repeindre).
+  let retrait = false;
   async function retirer(bouton) {
+    retrait = true;
     bouton.setAttribute('aria-disabled', 'true');
     try {
       await surRetirer();
     } finally {
+      retrait = false;
       bouton.removeAttribute('aria-disabled');
     }
   }
 
   fenetre.addEventListener('click', async evenement => {
     const bouton = evenement.target.closest('[data-fiche], [data-supprimer]');
-    if (!bouton || bouton.getAttribute('aria-disabled') === 'true') return;
+    if (!bouton || retrait || bouton.getAttribute('aria-disabled') === 'true') return;
     if ('supprimer' in bouton.dataset) return retirer(bouton);
     const quoi = bouton.dataset.fiche;
     if (quoi === 'renommer') return surRenommer();

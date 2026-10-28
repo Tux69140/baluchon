@@ -44,3 +44,10 @@
 .fiche-voyage .zone-suppression {
   margin-top: 0;
 }
+
+/* ---------- L'objet rendu par « Annuler » ----------
+   Il s'éclaire (bibliotheque.css) ; redessiné pendant l'éclairage (rangement après la seconde de
+   répit), il le reprend où il en était plutôt que de repartir du début. */
+.objet[data-recent] > .objet-corps {
+  animation-delay: var(--eclairage-ecoule, 0ms);
+}

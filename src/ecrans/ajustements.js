@@ -26,10 +26,9 @@ export const avecObjet = (contenu, id, champs) => ({
   objets: contenu.objets.map(o => (o.id === id ? { ...o, ...champs } : o)),
 });
 
-// Une phrase en HTML : le texte échappé, son nombre {n} en gras (comme les questions chiffrées de la
-// phase 7, maquette docs/maquettes/ajuster/fiches.js).
-const NOMBRE = '{n}';
-const nombreEnGras = texte => echapper(texte).replace(NOMBRE, `<b>${NOMBRE}</b>`);
+// « 3 pièces », en gras dans la phrase qui l'accueille ({compte}), comme les questions chiffrées de la
+// phase 7 (src/ecrans/suppression-textes.js ; maquette docs/maquettes/ajuster/fiches.js).
+const comptePieces = (t, n, langue) => `<b>${echapper(pluriel(t, 'ajustement.pieces', n, langue))}</b>`;
 
 // ecran : { t, langue, stockage, app (la racine de l'appli), signal (la fin de l'écran), contenu, appliquer,
 // attendre, montrer } (voir plus haut). Rend les gestes que la fiche déclenche.
@@ -43,8 +42,8 @@ export function gestesDAjustement(ecran) {
     const reponse = await demander({
       t,
       titre: t('ajustement.baisse.titre'),
-      texteHtml: remplir(nombreEnGras(t('ajustement.baisse.texte')), {
-        n: objet.dansLeSac,
+      texteHtml: remplir(echapper(t('ajustement.baisse.texte')), {
+        compte: comptePieces(t, objet.dansLeSac, langue),
         nom: echapper(objet.nom),
         quantite,
       }),
@@ -86,6 +85,7 @@ export function gestesDAjustement(ecran) {
       sousTitre: t('ajustement.ajout.voyageSeulement'),
       bouton: t('modele.enregistrer'),
       classe: 'fiche-nom',
+      champInitial: '#f-nom',
       saisie: { nom: objet.nom },
       valider: validerRenommage,
       dessiner: (brouillon, erreurs) =>
@@ -107,7 +107,11 @@ export function gestesDAjustement(ecran) {
     const { categorie } = extraitDuRetrait(ecran.contenu(), objet.id);
     const suite = [];
     if (objet.dansLeSac)
-      suite.push(pluriel(cle => nombreEnGras(t(cle)), 'ajustement.retrait.pieces', objet.dansLeSac, langue));
+      suite.push(
+        remplir(echapper(pluriel(t, 'ajustement.retrait.pieces', objet.dansLeSac, langue)), {
+          compte: comptePieces(t, objet.dansLeSac, langue),
+        }),
+      );
     if (categorie)
       suite.push(remplir(echapper(t('ajustement.retrait.derniere')), { categorie: echapper(categorie.nom) }));
     const reponse = await demander({

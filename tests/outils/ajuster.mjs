@@ -83,6 +83,7 @@ export const lireQuestion = page =>
     return {
       titre: texte(d.querySelector('h2')),
       textes: [...d.querySelectorAll('p')].map(texte),
+      gras: [...d.querySelectorAll('p b')].map(texte),
       boutons: [...d.querySelectorAll('.fenetre-pied button')].map(texte),
       decrit: (d.getAttribute('aria-describedby') ?? '')
         .split(' ')

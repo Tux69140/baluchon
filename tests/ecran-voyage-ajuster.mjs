@@ -123,7 +123,8 @@ try {
     const question = await lireQuestion(page);
     juge.exige(
       question?.titre === b.titre &&
-        vu(question.textes) === vu([remplir(b.texte, { n: 2, nom: 'Brosse à dents', quantite: 1 })]) &&
+        vu(question.textes) === vu([remplir(b.texte, { compte: '2 pièces', nom: 'Brosse à dents', quantite: 1 })]) &&
+        vu(question.gras) === vu(['2 pièces']) &&
         vu(question.boutons) === vu([remplir(b.garder, { n: 2 }), remplir(b.prevoir, { quantite: 1 })]),
       `${cas} : question ${vu(question)}`,
     );
@@ -222,6 +223,9 @@ try {
         titre: document.querySelector(`${s} h2`)?.textContent.trim(),
         sousTitre: document.querySelector(`${s} .fiche-regle`)?.textContent.trim(),
         nom: document.querySelector(`${s} #f-nom`)?.value,
+        // Le champ prend le focus, son texte sélectionné : le clavier sort, on tape le nouveau nom.
+        focus: document.activeElement?.id,
+        selection: [document.activeElement?.selectionStart, document.activeElement?.selectionEnd],
         bouton: document.querySelector(`${s} .fenetre-pied .bouton-principal`)?.textContent.trim(),
       }),
       RENOMMER,
@@ -230,6 +234,8 @@ try {
       fiche.titre === fr.ajustement.renommer.titre &&
         fiche.sousTitre === fr.ajustement.ajout.voyageSeulement &&
         fiche.nom === 'Pull' &&
+        fiche.focus === 'f-nom' &&
+        vu(fiche.selection) === vu([0, 4]) &&
         fiche.bouton === fr.modele.enregistrer,
       `${cas} : fiche ${vu(fiche)}`,
     );
@@ -267,6 +273,21 @@ try {
         vu((await lireStockage(page)).bibliotheque) === bibliotheque,
       `${cas} : après ${vu(apres)}, ligne ${vu(ligneApres)}`,
     );
+    // Renommé, un objet reprend sa place alphabétique (après la seconde de répit, comme une coche).
+    await page.keyboard.press('Escape');
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
+    await ouvrirFiche(page, 'o-tsh');
+    await toucherFiche(page, 'renommer');
+    await attendreQue(page, s => document.querySelector(`${s}[open]`) !== null, RENOMMER);
+    await page.fill(`${RENOMMER} #f-nom`, 'Anorak');
+    await page.press(`${RENOMMER} #f-nom`, 'Enter');
+    await attendreQue(page, s => !document.querySelector(s), RENOMMER);
+    await page.keyboard.press('Escape');
+    const ordre = await attendreQue(page, () => {
+      const ids = [...document.querySelectorAll('#app .gf-liste .objet')].map(li => li.dataset.id);
+      return ids[0] === 'o-tsh' && ids;
+    });
+    juge.exige(ordre, `${cas} : « Anorak » n'a pas pris la première place`);
     // Les erreurs attendues sont celles de la panne simulée.
     ouvert.erreurs.splice(0, ouvert.erreurs.length, ...ouvert.erreurs.filter(e => !e.includes('Panne simulée')));
     await fermerEssai(juge, cas, ouvert);

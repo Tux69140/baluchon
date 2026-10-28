@@ -994,9 +994,13 @@
     "lilas": "Lilas"
   },
   "ajustement": {
+    "pieces": {
+      "one": "{n} pièce",
+      "other": "{n} pièces"
+    },
     "baisse": {
       "titre": "Sortir une pièce du sac ?",
-      "texte": "Les {n} pièces de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort une.",
+      "texte": "Les {compte} de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort une.",
       "garder": "Garder {n}",
       "prevoir": "Prévoir {quantite}"
     },
@@ -1004,8 +1008,8 @@
       "titre": "Retirer « {nom} » de ce voyage ?",
       "bibliotheque": "La bibliothèque ne change pas.",
       "pieces": {
-        "one": "Sa pièce déjà dans le sac sort de la liste.",
-        "other": "Ses {n} pièces déjà dans le sac sortent de la liste."
+        "one": "Sa {compte} déjà dans le sac sort de la liste.",
+        "other": "Ses {compte} déjà dans le sac sortent de la liste."
       },
       "derniere": "C’est le dernier objet de « {categorie} » : la catégorie disparaît aussi de ce voyage.",
       "garder": "Garder",

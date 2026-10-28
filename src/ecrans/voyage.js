@@ -25,6 +25,7 @@ import {
   categoriesAffichees,
   choisirCategorie,
   etatInitial,
+  rendreObjet,
 } from './rangement.js';
 import { vueAlerte, vueIntrouvable, vueVoyage } from './voyage-vues.js';
 
@@ -68,21 +69,29 @@ function ouvrirListe(app, donnees, contexte) {
   const fin = new AbortController();
   // La fiche ouverte : l'objet qu'elle montre et de quoi la repeindre.
   let fiche = null;
-  // L'objet que « Annuler » vient de rendre, éclairé au prochain dessin seulement.
+  // L'objet que « Annuler » vient de rendre ({ id, depuis }), éclairé jusqu'à la fin de son animation :
+  // un dessin entre-temps (le rangement après le répit) la reprend où elle en était.
   let recent = null;
 
   // Chaque dessin suit la disposition du moment (src/ecrans/disposition.js) : tourner l'appareil ou
   // élargir la fenêtre redessine le même état (coches, catégorie choisie, filtre). Le focus d'une
   // commande qui n'est plus dessinée va à la ligne de son objet, sinon à sa catégorie, sinon au filtre.
   const { peindre, commandeProche } = suivreDisposition(main, {
-    dessin: disposition => vueVoyage(contexte, { contenu, liste, etat, poses, recent, ...disposition }),
+    dessin: disposition =>
+      vueVoyage(contexte, {
+        contenu,
+        liste,
+        etat,
+        poses,
+        recent: recent && { id: recent.id, ecoule: performance.now() - recent.depuis },
+        ...disposition,
+      }),
     choisie: () => etat.choisie,
     categorieDe: id => contenu.objets.find(o => o.id === id)?.categorieId,
     ligne: 'fiche',
     repli: 'filtre',
     apresPose() {
       poses = { tampons: new Set(), bandeau: false };
-      recent = null;
       // Un objet disparu (relecture, retrait) ferme la fiche (repeindre(undefined)).
       const objet = contenu.objets.find(o => o.id === fiche?.id);
       fiche?.repeindre(
@@ -200,9 +209,11 @@ function ouvrirListe(app, donnees, contexte) {
     return resultat;
   }
 
+  // L'écran garde la même date que la base : « Annuler » un retrait réécrit l'objet tel qu'elle le gardait.
   function changer(id, dansLeSac) {
-    const ecriture = () => stockage.reglerDansLeSac(id, dansLeSac, new Date().toISOString());
-    if (!appliquer(avecObjet(contenu, id, { dansLeSac }), ecriture, { coche: true })) return;
+    const modifieLe = new Date().toISOString();
+    const ecriture = () => stockage.reglerDansLeSac(id, dansLeSac, modifieLe);
+    if (!appliquer(avecObjet(contenu, id, { dansLeSac, modifieLe }), ecriture, { coche: true })) return;
     const caseCochee = trouverCommande(main, 'case', id);
     if (caseCochee) caseCochee.dataset.pulse = '';
   }
@@ -297,9 +308,19 @@ function ouvrirListe(app, donnees, contexte) {
         objets: [...contenu.objets.filter(o => o.id !== objetId), objet],
       };
       liste = listeParCategorie(contenu);
-      etat = { ...choisirCategorie(etat, categorieId), ouvertes: new Set([...etat.ouvertes, categorieId]) };
-      recent = objetId;
+      etat = rendreObjet(etat, liste, { categorieId, objetId });
+      recent = { id: objetId, depuis: performance.now() };
       peindre({ enVue: `.objet[data-id="${CSS.escape(objetId)}"]` });
+    },
+    { signal: fin.signal },
+  );
+  // L'éclairage fini, l'objet redevient une ligne comme les autres.
+  main.addEventListener(
+    'animationend',
+    ({ animationName, target }) => {
+      if (animationName !== 'eclaire' || !recent) return;
+      recent = null;
+      target.closest('[data-recent]')?.removeAttribute('data-recent');
     },
     { signal: fin.signal },
   );

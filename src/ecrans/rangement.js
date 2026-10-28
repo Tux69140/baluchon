@@ -109,6 +109,29 @@ export function basculerCategorie(etat, categorieId) {
 
 export const choisirCategorie = (etat, categorieId) => ({ ...etat, choisie: categorieId });
 
+// Un objet rendu par « Annuler » (retrait du voyage) : il prend aussitôt sa place dans sa catégorie, sans
+// attendre de répit (aucun appui ne l'a déplacé sous le doigt), et se masque sous le filtre s'il est
+// complet ; sa catégorie est choisie et dépliée pour qu'on le voie. Le reste de la liste ne bouge pas.
+export function rendreObjet(etat, liste, { categorieId, objetId }) {
+  const objets = liste.find(c => c.categorie.id === categorieId)?.objets ?? [];
+  const objet = objets.find(o => o.id === objetId);
+  // Les autres gardent leur ordre figé ; lui se glisse devant le premier qui le suit dans l'ordre voulu.
+  const voulu = ordreDansLeSac(objets).map(o => o.id);
+  const suivants = voulu.slice(voulu.indexOf(objetId) + 1);
+  const figes = (etat.ordre.get(categorieId) ?? []).filter(id => id !== objetId && voulu.includes(id));
+  const rang = figes.findIndex(id => suivants.includes(id));
+  figes.splice(rang < 0 ? figes.length : rang, 0, objetId);
+  const masques = new Set(etat.masques);
+  if (etat.filtre && objet && estComplet(objet)) masques.add(objetId);
+  return {
+    ...etat,
+    ordre: new Map(etat.ordre).set(categorieId, figes),
+    masques,
+    choisie: categorieId,
+    ouvertes: new Set([...etat.ouvertes, categorieId]),
+  };
+}
+
 // Ce que l'écran dessine : les catégories dans l'ordre de la bibliothèque (celles du fond à la
 // fin), chacune avec ses objets dans l'ordre figé, les pièces à jour, sans les masqués.
 export function categoriesAffichees(etat, liste) {
