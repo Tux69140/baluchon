@@ -24,7 +24,7 @@
     },
     "vide": {
       "titre": "Rien à emballer pour l’instant",
-      "texte": "Aucun objet de la bibliothèque ne correspondait à ce voyage."
+      "texte": "Ce voyage ne contient plus aucun objet. Ajoutez-en ici."
     },
     "erreurEnregistrement": "La coche n’a pas pu être enregistrée. Réessayez.",
     "case": {
@@ -34,7 +34,9 @@
       "decocher": "{nom} : dans le sac. Décocher"
     },
     "ouvrirFiche": "{nom}, {quantite}. Ouvrir la fiche",
-    "avecNote": "une note"
+    "avecNote": "une note",
+    "ajouter": "Ajouter un objet",
+    "erreurModification": "La modification n’a pas pu être enregistrée. Réessayez."
   },
   "fiche": {
     "dansLeSac": "Dans le sac",
@@ -46,7 +48,15 @@
     "note": "Note",
     "confirmerTitre": "Vider « {nom} » ?",
     "confirmerTexte": "Les {n} pièces repartent hors du sac.",
-    "regle": "{categorie} · {regle}"
+    "regle": "{categorie} · {regle}",
+    "ajuster": "Ajuster cet objet",
+    "quantitePrevue": "Quantité prévue",
+    "calculee": "calculée : {regle}",
+    "fixeeManuellement": "fixée manuellement",
+    "quantiteMoins": "Quantité prévue : un de moins",
+    "quantitePlus": "Quantité prévue : un de plus",
+    "renommer": "Renommer",
+    "retirer": "Retirer du voyage"
   },
   "regle": {
     "fixe": "{valeur} en tout",
@@ -592,7 +602,8 @@
         "nomManquant": "Donnez un nom à cet objet.",
         "valeurManquante": "Indiquez une quantité, de 1 à 999.",
         "plafondManquant": "Indiquez un plafond, de 1 à 999, ou retirez-le.",
-        "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours inclus »."
+        "etiquettesManquantes": "Choisissez au moins une étiquette, ou « Toujours inclus ».",
+        "categorieManquante": "Choisissez une catégorie, ou créez-en une."
       },
       "supprimer": "Supprimer l’objet"
     },
@@ -982,5 +993,77 @@
     "ciel": "Ciel",
     "framboise": "Framboise",
     "lilas": "Lilas"
+  },
+  "ajustement": {
+    "baisse": {
+      "titre": "Sortir une pièce du sac ?",
+      "texte": "Les {n} pièces de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort une.",
+      "garder": "Garder {n}",
+      "prevoir": "Prévoir {quantite}"
+    },
+    "retrait": {
+      "titre": "Retirer « {nom} » de ce voyage ?",
+      "bibliotheque": "La bibliothèque ne change pas.",
+      "pieces": {
+        "one": "Sa pièce déjà dans le sac sort de la liste.",
+        "other": "Ses {n} pièces déjà dans le sac sortent de la liste."
+      },
+      "derniere": "C’est le dernier objet de « {categorie} » : la catégorie disparaît aussi de ce voyage.",
+      "garder": "Garder",
+      "retirer": "Retirer",
+      "bandeau": "« {nom} » retiré du voyage",
+      "bandeauCategorie": "« {nom} » et la catégorie « {categorie} » retirés du voyage",
+      "erreur": "Le retrait n’a pas pu être enregistré. Rien n’a changé ; réessayez."
+    },
+    "ajout": {
+      "titre": "Ajouter un objet",
+      "voyageSeulement": "Dans ce voyage seulement : la bibliothèque ne change pas.",
+      "categorie": "Catégorie",
+      "objetsDansCeVoyage": {
+        "one": "{n} objet dans ce voyage",
+        "other": "{n} objets dans ce voyage"
+      },
+      "nouvelleSousTitre": "Nouvelle, pour ce voyage",
+      "aChoisir": "À choisir",
+      "aChoisirAide": "ou créez-en une",
+      "quantite": "Quantité",
+      "pourToutLeVoyage": "pour tout le voyage",
+      "ajouter": "Ajouter",
+      "abandon": {
+        "titre": "Abandonner cet objet ?",
+        "texte": "Il ne sera pas ajouté au voyage."
+      },
+      "erreur": "L’objet n’a pas pu être ajouté. Votre saisie est gardée ; réessayez."
+    },
+    "choix": {
+      "titre": "Catégorie de l’objet",
+      "objets": {
+        "one": "{n} objet",
+        "other": "{n} objets"
+      },
+      "nouvelle": "Nouvelle catégorie",
+      "pourCeVoyage": "Pour ce voyage seulement"
+    },
+    "nouvelleCategorie": {
+      "texte": "Pour ce voyage seulement : la bibliothèque ne change pas.",
+      "choisir": "Choisir",
+      "abandonTitre": "Abandonner cette catégorie ?"
+    },
+    "renommer": {
+      "titre": "Renommer l’objet",
+      "abandon": "« {nom} » garde son nom."
+    },
+    "bibliotheque": {
+      "question": "Ajouter aussi « {nom} » à la bibliothèque ?",
+      "questionTexte": "Il pourra revenir dans vos prochains voyages : vous choisirez lesquels.",
+      "non": "Non",
+      "oui": "Oui, l’ajouter",
+      "choixTitre": "Dans quelle catégorie de la bibliothèque ?",
+      "choixTexte": "« {categorie} » n’existe que dans ce voyage. Choisissez où ranger « {nom} » dans la bibliothèque, ou créez-y une catégorie.",
+      "creer": "Créer « {categorie} » dans la bibliothèque",
+      "suivant": "Suivant",
+      "ajouter": "Ajouter à la bibliothèque",
+      "fait": "« {nom} » est dans la bibliothèque."
+    }
   }
 }
