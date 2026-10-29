@@ -222,10 +222,10 @@ Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité p
 
 ### Critères d'acceptation
 
-- [ ] Une quantité corrigée est marquée comme manuelle et le reste après la fermeture de l'appli.
-- [ ] « Ajouter aussi à la bibliothèque » crée l'objet modèle dans la catégorie correspondante ; « Non » ne touche pas la bibliothèque.
-- [ ] Une catégorie ponctuelle existe dans ce voyage seulement.
-- [ ] Retirer un objet ne touche pas la bibliothèque.
+- [x] Une quantité corrigée est marquée comme manuelle et le reste après la fermeture de l'appli.
+- [x] « Ajouter aussi à la bibliothèque » crée l'objet modèle dans la catégorie correspondante ; « Non » ne touche pas la bibliothèque.
+- [x] Une catégorie ponctuelle existe dans ce voyage seulement.
+- [x] Retirer un objet ne touche pas la bibliothèque.
 
 ## Bloquée par
 
