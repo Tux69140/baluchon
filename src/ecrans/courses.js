@@ -23,7 +23,9 @@ function ouvrirCourses(app, contenuInitial, contexte) {
   app.innerHTML = '<main class="ecran courses-ecran"></main>';
   const main = app.firstElementChild;
   let contenu = contenuInitial;
-  // Les objets tout acheté pendant leur seconde de répit, et leurs minuteries.
+  // Les objets tout achetés pendant leur seconde de répit : { minuterie, terminer }, terminer() montrant
+  // leur bandeau « Annuler ». Un répit coupé (l'écran quitté, la panne d'un autre objet) le montre aussitôt :
+  // un objet acheté ne part jamais sans lui (relecture finale de la phase 9, constat M2).
   const retenus = new Map();
   // La file d'écriture : une à la fois, dans l'ordre des appuis ; après un échec, celles d'avant
   // (génération dépassée) sont abandonnées et les appuis attendent la relecture.
@@ -66,7 +68,8 @@ function ouvrirCourses(app, contenuInitial, contexte) {
     console.error(erreur);
     generation += 1;
     relecture = true;
-    for (const minuterie of retenus.values()) clearTimeout(minuterie);
+    const coupes = [...retenus];
+    for (const [, { minuterie }] of coupes) clearTimeout(minuterie);
     retenus.clear();
     try {
       contenu = (await stockage.lireVoyage(contenu.voyage.id)) ?? contenu;
@@ -78,6 +81,11 @@ function ouvrirCourses(app, contenuInitial, contexte) {
     if (parti()) return;
     peindre();
     alerter(t('courses.erreurEnregistrement'));
+    // Ceux dont l'achat est bien écrit partent avec leur bandeau ; les autres restent, relus.
+    for (const [id, { terminer }] of coupes) {
+      const relu = contenu.objets.find(o => o.id === id);
+      if (relu && relu.achetes >= relu.quantite) terminer?.();
+    }
   }
 
   // L'écran d'abord, puis l'écriture dans la file ; rend false pendant la relecture d'un échec.
@@ -118,22 +126,21 @@ function ouvrirCourses(app, contenuInitial, contexte) {
     const avant = { aAcheter: objet.aAcheter, achetes: objet.achetes };
     const modifieLe = new Date().toISOString();
     const fini = achetes >= objet.quantite;
-    if (fini) retenus.set(id, null);
+    const retenu = { minuterie: null, terminer: null };
+    if (fini) retenus.set(id, retenu);
     const ecrit = appliquer(avecObjet(contenu, id, { achetes, modifieLe }), () =>
       stockage.reglerAchats(id, objet.aAcheter, achetes, modifieLe),
     );
     if (!ecrit) return retenus.delete(id);
     if (!fini) return;
-    retenus.set(
-      id,
-      setTimeout(() => {
-        if (parti() || !retenus.has(id)) return;
-        retenus.delete(id);
-        peindre();
-        const texte = remplir(pluriel(t, 'annulation.achete', objet.quantite, langue), { nom: objet.nom });
-        proposerAnnulation(objet, avant, texte);
-      }, REPIT),
-    );
+    const texte = remplir(pluriel(t, 'annulation.achete', objet.quantite, langue), { nom: objet.nom });
+    retenu.terminer = () => proposerAnnulation(objet, avant, texte);
+    retenu.minuterie = setTimeout(() => {
+      if (parti() || retenus.get(id) !== retenu) return;
+      retenus.delete(id);
+      peindre();
+      retenu.terminer();
+    }, REPIT);
   }
 
   // « À acheter » éteint depuis la fiche : l'objet quitte les Courses, le bandeau le rend.
@@ -187,17 +194,17 @@ function ouvrirCourses(app, contenuInitial, contexte) {
     { signal: fin.signal },
   );
 
-  // « Annuler » d'un achat, d'ici : l'objet relu revient dans la liste.
+  // « Annuler » d'un achat, d'ici : l'objet relu revient dans la liste. Lui seul change : les autres gardent
+  // ce que l'écran montre, écritures encore en file comprises (relecture finale de la phase 9, constat M1).
   window.addEventListener(
     'achat-retabli',
-    async ({ detail: { voyageId } }) => {
+    async ({ detail: { voyageId, objetId } }) => {
       if (voyageId !== contenu.voyage.id || parti()) return;
       try {
-        const relu = await stockage.lireVoyage(voyageId);
-        if (relu && !parti()) {
-          contenu = relu;
-          peindre();
-        }
+        const objet = (await stockage.lireVoyage(voyageId))?.objets.find(o => o.id === objetId);
+        if (!objet || parti() || !contenu.objets.some(o => o.id === objetId)) return;
+        contenu = avecObjet(contenu, objetId, { aAcheter: objet.aAcheter, achetes: objet.achetes });
+        peindre();
       } catch (erreur) {
         console.error(erreur);
       }
@@ -206,7 +213,11 @@ function ouvrirCourses(app, contenuInitial, contexte) {
   );
   fin.signal.addEventListener('abort', () => {
     clearTimeout(minuterieAlerte);
-    for (const minuterie of retenus.values()) clearTimeout(minuterie);
+    for (const { minuterie, terminer } of retenus.values()) {
+      clearTimeout(minuterie);
+      terminer?.();
+    }
+    retenus.clear();
   });
   const observateur = new MutationObserver(() => parti() && observateur.disconnect());
   observateur.observe(app, { childList: true });
