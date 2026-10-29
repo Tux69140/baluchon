@@ -1,0 +1,64 @@
+/* Les pièces à sortir du sac (phase 10 ; maquette validée le 2026-10-29, docs/maquettes/plans-changent/) :
+   un « ! » plein, au brun d'attention, à la place de la coche ; une pastille pleine, avec une icône et un
+   mot ; jamais la couleur seule (docs/DESIGN.md). Pleine, elle se distingue de la pastille « à acheter »,
+   claire, qui vit au même endroit. */
+.objet[data-etat='a-sortir'] .case-boite {
+  border-color: var(--attention);
+  background: var(--attention);
+  color: var(--sur-principal);
+}
+
+.signe-sortir,
+.marque-sortir {
+  font: 800 18px / 1 var(--police);
+}
+
+/* Retiré du voyage, ses pièces encore dans le sac : barré, comme un objet écarté de l'aperçu. */
+.objet[data-retire] .objet-nom {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.pastille-sortir {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 1px 8px;
+  border-radius: var(--r-plein);
+  background: var(--attention);
+  color: var(--sur-principal);
+  font: 700 var(--taille-mention) / 1.4 var(--police);
+  white-space: nowrap;
+}
+
+.pastille-sortir .icone svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Le « ! » d'une catégorie : dans l'en-tête de sa carte, dans le menu, dans sa tuile. */
+.marque-sortir {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--attention);
+  color: var(--sur-principal);
+  font-size: 16px;
+}
+
+.tuile-sortir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tuile-sortir .marque-sortir {
+  width: 20px;
+  height: 20px;
+  font-size: 13px;
+}

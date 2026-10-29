@@ -8,7 +8,7 @@
 // pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
 import { estAAcheter, resteAAcheter } from '../modele/courses.js';
-import { appuiSurCase, estComplet, etatDansLeSac, progression } from '../modele/sac.js';
+import { appuiSurCase, estComplet, estRetire, etatDansLeSac, piecesASortir, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
 import { colonnesGrandFormat, marqueAttenuee, tuileCategorie } from './grand-format-vues.js';
 import { echapper } from './html.js';
@@ -87,30 +87,46 @@ const estAttenuee = (etat, categorie) => etat.filtre && etat.enBas.has(categorie
 // cartes (tampon, compte), ou celles des tuiles, qui le disent en petit.
 const CARTE = { tampon: 'tampon', compte: 'compte' };
 const TUILE = { tampon: 'gf-tuile-boucle', compte: 'gf-tuile-compte' };
-function compteOuTampon(t, { categorie, objets }, etat, { classes = CARTE, poses = new Set() } = {}) {
+function compteOuTampon(t, { categorie, objets }, etat, { classes = CARTE, poses = new Set(), langue } = {}) {
   if (etat.bouclees.has(categorie.id))
     return `<span class="${classes.tampon}"${poses.has(categorie.id) ? ' data-pose' : ''}>${t('voyage.boucle')}</span>`;
-  return `<span class="${classes.compte}">${compte(t, progression(objets))}</span>`;
+  const leCompte = `<span class="${classes.compte}">${compte(t, progression(objets))}</span>`;
+  // Le « ! » devant le compte : des pièces attendent leur sortie du sac (phase 10) ; son nom dit combien
+  // d'objets il signale. Une catégorie qui en a n'est jamais bouclée (src/modele/sac.js).
+  const n = objets.filter(o => piecesASortir(o) > 0).length;
+  if (!n) return leCompte;
+  const marque = `<span class="marque-sortir" role="img" aria-label="${echapper(pluriel(t, 'voyage.marqueSortir', n, langue))}">!</span>`;
+  return classes === TUILE ? `<span class="tuile-sortir">${marque}${leCompte}</span>` : `${marque}${leCompte}`;
 }
 
 // Le nom de la case dit l'état et ce que fera l'appui (« Ajouter une pièce », « Vider »…).
-function libelleCase(t, objet) {
+function libelleCase(t, objet, langue) {
+  const aSortir = piecesASortir(objet);
+  if (aSortir) return remplir(pluriel(t, 'voyage.case.sortir', aSortir, langue), { nom: objet.nom });
   const valeurs = { nom: objet.nom, n: objet.dansLeSac, total: objet.quantite };
   if (estComplet(objet))
     return remplir(t(`voyage.case.${appuiSurCase(objet).confirmer ? 'vider' : 'decocher'}`), valeurs);
   return remplir(t(`voyage.case.${objet.quantite === 1 ? 'cocher' : 'ajouter'}`), valeurs);
 }
 
+// Dans la case : la coche d'un objet emballé, le « ! » de pièces à sortir ; rien sinon (le trait d'un
+// objet entamé est dessiné par voyage.css).
+const signeDeCase = etat =>
+  ({ plein: iconeInterface('coche'), 'a-sortir': '<span class="signe-sortir">!</span>' })[etat] ?? '';
+
 // recent : { id, ecoule } l'objet que « Annuler » vient de rendre s'éclaire (src/styles/bibliotheque.css) ;
 // redessiné pendant l'éclairage, il le reprend où il en était (ecoule, en ms ; src/styles/ajustements.css).
 const eclairage = (objet, recent) =>
   recent?.id === objet.id ? ` data-recent style="--eclairage-ecoule: ${-Math.round(recent.ecoule)}ms"` : '';
 
-function vueObjet(t, objet, voyageurs, recent) {
+function vueObjet({ t, langue }, objet, voyageurs, recent) {
   const etat = etatDansLeSac(objet);
   const entame = etat === 'entame';
-  const quantite = entame ? `${objet.dansLeSac}<small> / ${objet.quantite}</small>` : `${objet.quantite}`;
-  const quantiteDite = entame ? `${objet.dansLeSac} / ${objet.quantite}` : `${objet.quantite}`;
+  // Retiré, il n'attend plus que la sortie de ses pièces : plus de quantité prévue à montrer.
+  const retire = estRetire(objet);
+  let quantite = entame ? `${objet.dansLeSac}<small> / ${objet.quantite}</small>` : `${objet.quantite}`;
+  let quantiteDite = entame ? `${objet.dansLeSac} / ${objet.quantite}` : `${objet.quantite}`;
+  if (retire) [quantite, quantiteDite] = ['', t('voyage.retire')];
   const note = objet.note ? `, ${t('voyage.avecNote')}` : '';
   // « partagé » : la quantité vaut pour tout le groupe, pas par personne (docs/PRD.md, US-3) ; seul en
   // voyage, il n'y a personne avec qui partager, le mot ne dirait rien.
@@ -121,14 +137,19 @@ function vueObjet(t, objet, voyageurs, recent) {
   let achat = '';
   if (reste) achat = objet.achetes > 0 ? remplir(t('voyage.encoreAAcheter'), { n: reste }) : t('voyage.aAcheter');
   const pastille = achat && `<span class="pastille-achat">${iconeInterface('courses')}${achat}</span>`;
+  // Des pièces à sortir du sac (phase 10) : la pastille pleine, icône et mot.
+  const aSortir = piecesASortir(objet) ? pluriel(t, 'voyage.aSortir', piecesASortir(objet), langue) : '';
+  const sortir = aSortir && `<span class="pastille-sortir">${iconeInterface('sortir')}${aSortir}</span>`;
+  const mention = retire ? t('voyage.retire') : partage;
   const sous =
-    (partage || pastille) && `<span class="objet-sous">${partage ? `<span>${partage}</span>` : ''}${pastille}</span>`;
+    (mention || pastille || sortir) &&
+    `<span class="objet-sous">${mention ? `<span>${mention}</span>` : ''}${pastille}${sortir}</span>`;
   // Le nom du bouton reprend tout ce que la ligne montre, dans le même ordre.
-  const nomDit = [objet.nom, partage, achat].filter(Boolean).join(', ');
+  const nomDit = [objet.nom, retire ? '' : partage, achat, aSortir].filter(Boolean).join(', ');
   return `
-          <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}" data-flip="${echapper(objet.id)}"${eclairage(objet, recent)}>
-            <button type="button" class="case" data-action="case" data-id="${echapper(objet.id)}" aria-label="${echapper(libelleCase(t, objet))}">
-              <span class="case-boite" aria-hidden="true">${etat === 'plein' ? iconeInterface('coche') : ''}</span>
+          <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}"${retire ? ' data-retire' : ''} data-flip="${echapper(objet.id)}"${eclairage(objet, recent)}>
+            <button type="button" class="case" data-action="case" data-id="${echapper(objet.id)}" aria-label="${echapper(libelleCase(t, objet, langue))}">
+              <span class="case-boite" aria-hidden="true">${signeDeCase(etat)}</span>
             </button>
             <button type="button" class="objet-corps" data-action="fiche" data-id="${echapper(objet.id)}" aria-label="${echapper(remplir(t('voyage.ouvrirFiche'), { nom: nomDit, quantite: quantiteDite + note }))}">
               <span class="objet-texte"><span class="objet-nom">${echapper(objet.nom)}</span>${sous}</span>
@@ -156,12 +177,12 @@ function vueLignes({ t, langue, voyageurs, recent }, { objets }, nombre, ajout =
         </ul>`
       : info;
   }
-  return `<ul class="objets">${objets.map(o => vueObjet(t, o, voyageurs, recent)).join('')}${fin}
+  return `<ul class="objets">${objets.map(o => vueObjet({ t, langue }, o, voyageurs, recent)).join('')}${fin}
         </ul>`;
 }
 
 function vueCategorie(contexte, affichee, toute, etat, poses) {
-  const { t } = contexte;
+  const { t, langue } = contexte;
   const { categorie } = affichee;
   const ouverte = etat.ouvertes.has(categorie.id);
   return `
@@ -170,7 +191,7 @@ function vueCategorie(contexte, affichee, toute, etat, poses) {
           <button type="button" class="categorie-tete" data-action="accordeon" data-id="${echapper(categorie.id)}" aria-expanded="${ouverte}">
             ${paveCategorie(categorie)}
             <span class="categorie-nom"><b>${echapper(categorie.nom)}</b>${jauge(progression(toute.objets), true)}</span>
-            ${compteOuTampon(t, toute, etat, { poses })}
+            ${compteOuTampon(t, toute, etat, { poses, langue })}
             <span class="chevron" aria-hidden="true">${iconeInterface('deplier')}</span>
           </button>
         </h2>
@@ -179,14 +200,14 @@ function vueCategorie(contexte, affichee, toute, etat, poses) {
 }
 
 // Trois colonnes : dans le menu, une catégorie se choisit ; la choisie porte aria-current et sa flèche.
-function vueChoix({ t }, affichee, toute, etat, poses) {
+function vueChoix({ t, langue }, affichee, toute, etat, poses) {
   const { categorie } = affichee;
   return `
           <li data-flip="cat-${echapper(categorie.id)}">
             <button type="button" class="choix" data-action="choisir" data-id="${echapper(categorie.id)}" aria-current="${etat.choisie === categorie.id}"${marqueAttenuee(estAttenuee(etat, categorie))}>
               ${paveCategorie(categorie)}
               <span class="categorie-nom"><b>${echapper(categorie.nom)}</b>${jauge(progression(toute.objets), true)}</span>
-              ${compteOuTampon(t, toute, etat, { poses })}
+              ${compteOuTampon(t, toute, etat, { poses, langue })}
               <span class="chevron" aria-hidden="true">${iconeInterface('suivant')}</span>
             </button>
           </li>`;
@@ -194,10 +215,10 @@ function vueChoix({ t }, affichee, toute, etat, poses) {
 
 // Repli : la même chose en tuile compacte, pavé, nom, puis le compte ou « Bouclé ! » en petit. Les
 // tuiles passent à la ligne : sans glissement (data-flip), une tuile changerait de colonne d'un bond.
-const vueTuile = ({ t }, { categorie }, toute, etat) =>
+const vueTuile = ({ t, langue }, { categorie }, toute, etat) =>
   tuileCategorie(categorie, {
     choisie: etat.choisie,
-    infos: compteOuTampon(t, toute, etat, { classes: TUILE }),
+    infos: compteOuTampon(t, toute, etat, { classes: TUILE, langue }),
     attenuee: estAttenuee(etat, categorie),
   });
 

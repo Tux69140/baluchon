@@ -27,6 +27,7 @@ import suitcaseRolling from '@phosphor-icons/core/bold/suitcase-rolling-bold.svg
 import plusCircle from '@phosphor-icons/core/bold/plus-circle-bold.svg?raw';
 import arrowCounterClockwise from '@phosphor-icons/core/bold/arrow-counter-clockwise-bold.svg?raw';
 import shoppingCart from '@phosphor-icons/core/bold/shopping-cart-bold.svg?raw';
+import trayArrowUp from '@phosphor-icons/core/bold/tray-arrow-up-bold.svg?raw';
 import { svgPicto } from './pictos.js';
 import { echapper } from './html.js';
 
@@ -58,6 +59,7 @@ const INTERFACE = {
   nouveau: plusCircle,
   annuler: arrowCounterClockwise,
   courses: shoppingCart,
+  sortir: trayArrowUp,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.

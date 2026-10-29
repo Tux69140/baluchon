@@ -31,7 +31,11 @@
       "ajouter": "{nom} : {n} sur {total} dans le sac. Ajouter une pièce",
       "cocher": "{nom} : pas encore dans le sac. Cocher",
       "vider": "{nom} : dans le sac. Vider",
-      "decocher": "{nom} : dans le sac. Décocher"
+      "decocher": "{nom} : dans le sac. Décocher",
+      "sortir": {
+        "one": "{nom} : {n} pièce à sortir du sac. En sortir une",
+        "other": "{nom} : {n} pièces à sortir du sac. En sortir une"
+      }
     },
     "ouvrirFiche": "{nom}, {quantite}. Ouvrir la fiche",
     "avecNote": "une note",
@@ -40,6 +44,15 @@
     "coursesCompte": "Courses · {n}",
     "aAcheter": "à acheter",
     "encoreAAcheter": "encore {n} à acheter",
+    "aSortir": {
+      "one": "{n} à sortir du sac",
+      "other": "{n} à sortir du sac"
+    },
+    "retire": "retiré du voyage",
+    "marqueSortir": {
+      "one": "{n} objet avec des pièces à sortir du sac",
+      "other": "{n} objets avec des pièces à sortir du sac"
+    },
     "erreurModification": "La modification n’a pas pu être enregistrée. Réessayez."
   },
   "achat": {
