@@ -27,7 +27,7 @@ const parNom = (a, b) => a.nom.localeCompare(b.nom);
 // Le voyage est une copie indépendante de la bibliothèque : il ne garde du modèle que son
 // identifiant d'origine (modeleId). L'inclusion vient de l'aperçu (une seule définition) ; `ecartes`
 // porte les objets modèles que l'utilisateur a décochés dans l'aperçu. Les étiquettes choisies sont
-// copiées dans l'ordre des groupes. « À acheter » reprend « consommable » (écran Courses, phase 9).
+// copiées dans l'ordre des groupes.
 export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouvelId, maintenant }) {
   const erreurs = validerInformations(infos);
   if (Object.keys(erreurs).length)
@@ -42,53 +42,54 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouv
     voyageurs,
     modifieLe: maintenant,
   };
-  const etiquettes = etiquettesChoisies(bibliotheque, choisies).map(({ id, nom }, ordre) => ({
-    id: nouvelId(),
-    voyageId: voyage.id,
-    modeleId: id,
-    nom,
-    ordre,
-    modifieLe: maintenant,
-  }));
+  const ids = { nouvelId, maintenant };
+  const etiquettes = etiquettesChoisies(bibliotheque, choisies).map((etiquette, ordre) =>
+    copierEtiquette(etiquette, voyage.id, ordre, ids),
+  );
   const categories = [];
   const objets = [];
   for (const { categorie: modele, objets: lignes } of genererApercu(bibliotheque, infos, choisies)) {
     const retenus = lignes.filter(({ objet }) => !ecartes.has(objet.id));
     if (!retenus.length) continue;
-    const { nom, icone, couleur, ordre } = modele;
-    const categorie = {
-      id: nouvelId(),
-      voyageId: voyage.id,
-      modeleId: modele.id,
-      nom,
-      icone,
-      couleur,
-      ordre,
-      modifieLe: maintenant,
-    };
+    const categorie = copierCategorie(modele, voyage.id, ids);
     categories.push(categorie);
-    for (const { objet: o, quantite } of retenus)
-      objets.push({
-        id: nouvelId(),
-        voyageId: voyage.id,
-        categorieId: categorie.id,
-        modeleId: o.id,
-        nom: o.nom,
-        regle: o.regle,
-        valeur: o.valeur,
-        plafond: o.plafond,
-        parPersonne: o.parPersonne,
-        consommable: o.consommable,
-        quantite,
-        quantiteManuelle: false,
-        dansLeSac: 0,
-        aAcheter: o.consommable,
-        achetes: 0,
-        note: o.note,
-        modifieLe: maintenant,
-      });
+    for (const { objet, quantite } of retenus)
+      objets.push(copierObjet(objet, { voyageId: voyage.id, categorieId: categorie.id, quantite }, ids));
   }
   return { voyage, etiquettes, categories, objets };
+}
+
+// Une étiquette, une catégorie et un objet de la bibliothèque copiés dans un voyage : à la création
+// comme quand les plans changent (src/modele/changements.js). « À acheter » reprend « consommable »
+// (écran Courses, phase 9) ; rien n'est encore dans le sac ni acheté.
+export function copierEtiquette({ id, nom }, voyageId, ordre, { nouvelId, maintenant }) {
+  return { id: nouvelId(), voyageId, modeleId: id, nom, ordre, modifieLe: maintenant };
+}
+
+export function copierCategorie({ id, nom, icone, couleur, ordre }, voyageId, { nouvelId, maintenant }) {
+  return { id: nouvelId(), voyageId, modeleId: id, nom, icone, couleur, ordre, modifieLe: maintenant };
+}
+
+export function copierObjet(modele, { voyageId, categorieId, quantite }, { nouvelId, maintenant }) {
+  return {
+    id: nouvelId(),
+    voyageId,
+    categorieId,
+    modeleId: modele.id,
+    nom: modele.nom,
+    regle: modele.regle,
+    valeur: modele.valeur,
+    plafond: modele.plafond,
+    parPersonne: modele.parPersonne,
+    consommable: modele.consommable,
+    quantite,
+    quantiteManuelle: false,
+    dansLeSac: 0,
+    aAcheter: modele.consommable,
+    achetes: 0,
+    note: modele.note,
+    modifieLe: maintenant,
+  };
 }
 
 // La liste d'un voyage à l'écran : catégories dans l'ordre de la bibliothèque, objets par nom,
