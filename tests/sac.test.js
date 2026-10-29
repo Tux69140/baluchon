@@ -8,8 +8,10 @@ import {
   estBouclee,
   estComplet,
   estFini,
+  estRetire,
   etatDansLeSac,
   ordreDansLeSac,
+  piecesASortir,
   progression,
   progressionParVoyage,
   viderDemandeConfirmation,
@@ -17,7 +19,7 @@ import {
 
 const o = (dansLeSac, quantite, nom = 'Repas') => ({ nom, dansLeSac, quantite });
 
-test('un objet est complet quand le sac contient au moins la quantité', () => {
+test('un objet est complet quand le sac contient sa quantité, sans pièce de trop', () => {
   assert.equal(estComplet(o(16, 16)), true);
   assert.equal(estComplet(o(15, 16)), false);
 });
@@ -81,4 +83,57 @@ test('catégorie suivante non bouclée, en reprenant au début', () => {
   assert.equal(categorieSuivante(['pap', 'vet', 'toi', 'ali'], 'toi', bouclee), 'ali');
   assert.equal(categorieSuivante(['pap', 'vet', 'toi', 'ali'], 'ali', bouclee), 'vet');
   assert.equal(categorieSuivante(['pap', 'toi'], 'toi', bouclee), null);
+});
+
+// Phase 10 : une pièce de trop dans le sac (quantité baissée, objet retiré) attend sa sortie ; tant
+// qu'elle n'est pas sortie, l'objet n'est pas emballé (décisions du chef de projet, 2026-10-29).
+test('T-shirts 3 prévus, 4 dans le sac : une pièce à sortir, pas emballé', () => {
+  const tshirts = o(4, 3, 'T-shirts');
+  assert.equal(piecesASortir(tshirts), 1);
+  assert.equal(estComplet(tshirts), false);
+  assert.equal(etatDansLeSac(tshirts), 'a-sortir');
+  assert.equal(estRetire(tshirts), false);
+});
+
+test('un appui sur la case « ! » sort une pièce, sans confirmation, jusqu’à la quantité', () => {
+  assert.deepEqual(appuiSurCase(o(5, 3)), { dansLeSac: 4, confirmer: false });
+  assert.deepEqual(appuiSurCase(o(4, 3)), { dansLeSac: 3, confirmer: false });
+  assert.equal(estComplet(o(3, 3)), true);
+  // Témoin : sans pièce de trop, un objet plein se vide toujours, après confirmation.
+  assert.deepEqual(appuiSurCase(o(3, 3)), { dansLeSac: 0, confirmer: true });
+});
+
+test('un objet retiré qui attend sa sortie : quantité 0, toutes ses pièces à sortir', () => {
+  const chaussures = o(1, 0, 'Chaussures de marche');
+  assert.equal(estRetire(chaussures), true);
+  assert.equal(piecesASortir(chaussures), 1);
+  assert.equal(estComplet(chaussures), false);
+  assert.deepEqual(appuiSurCase(chaussures), { dansLeSac: 0, confirmer: false });
+  assert.equal(piecesASortir(o(2, 3)), 0);
+});
+
+test('une catégorie avec une pièce à sortir n’est pas bouclée, et l’objet reste en haut', () => {
+  const objets = [o(2, 2, 'Pull'), o(4, 3, 'T-shirts')];
+  assert.deepEqual(progression(objets), { faits: 1, total: 2 });
+  assert.equal(estBouclee(objets), false);
+  assert.deepEqual(
+    ordreDansLeSac(objets).map(x => x.nom),
+    ['T-shirts', 'Pull'],
+  );
+  assert.equal(estBouclee([o(2, 2, 'Pull'), o(3, 3, 'T-shirts')]), true);
+});
+
+test('les bornes de la fiche : un excédent ne fait que décroître', () => {
+  assert.equal(bornerDansLeSac(o(4, 3), 9), 4);
+  assert.equal(bornerDansLeSac(o(2, 3), 9), 3);
+  assert.equal(bornerDansLeSac(o(4, 3), -1), 0);
+});
+
+test('progression par voyage : un objet à sortir ne compte pas comme emballé', () => {
+  const parVoyage = progressionParVoyage([
+    { voyageId: 'v', quantite: 3, dansLeSac: 4 },
+    { voyageId: 'v', quantite: 0, dansLeSac: 1 },
+    { voyageId: 'v', quantite: 2, dansLeSac: 2 },
+  ]);
+  assert.deepEqual(parVoyage.get('v'), { faits: 1, total: 3 });
 });

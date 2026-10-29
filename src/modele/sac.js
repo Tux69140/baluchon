@@ -1,9 +1,17 @@
 // Le sac : compter les pièces, mesurer l'avancement, ordonner la liste (docs/PRD.md, « Écrans et
 // gestes », US-15, US-16, US-17 et US-40). Chaque règle n'est écrite qu'ici.
 
-// Complet : toutes les pièces demandées sont dans le sac (une quantité modifiée après coup peut
-// repasser un objet en incomplet, d'où « au moins » plutôt que « exactement »).
-export const estComplet = objet => objet.dansLeSac >= objet.quantite;
+// Des pièces de trop dans le sac attendent que l'utilisateur confirme les avoir sorties : quantité
+// baissée sous ce qui était emballé, ou objet retiré (quantité 0) avec des pièces dedans (décisions du
+// chef de projet, 2026-10-29, docs/superpowers/specs/2026-10-29-phase-10-plans-changent-design.md).
+export const piecesASortir = objet => Math.max(0, objet.dansLeSac - objet.quantite);
+
+// Un objet retiré du voyage n'y reste que le temps de sortir ses pièces du sac.
+export const estRetire = objet => objet.quantite === 0;
+
+// Complet (emballé) : exactement les pièces demandées. Une pièce de trop ne compte pas comme emballée :
+// tant qu'elle n'est pas sortie, ni la catégorie ni le sac ne sont bouclés.
+export const estComplet = objet => objet.dansLeSac === objet.quantite;
 
 // Des pièces comptées sur une quantité : celles du sac, ou celles achetées (src/modele/courses.js).
 export function etatDePieces(n, quantite) {
@@ -11,18 +19,22 @@ export function etatDePieces(n, quantite) {
   return n > 0 ? 'entame' : 'vide';
 }
 
-export const etatDansLeSac = objet => etatDePieces(objet.dansLeSac, objet.quantite);
+export const etatDansLeSac = objet =>
+  piecesASortir(objet) > 0 ? 'a-sortir' : etatDePieces(objet.dansLeSac, objet.quantite);
 
 // Un appui sur la case ajoute une pièce ; sur un objet plein, il vide tout, et l'écran demande
-// d'abord confirmation (sauf pour une seule pièce : rien à perdre).
+// d'abord confirmation (sauf pour une seule pièce : rien à perdre). Avec des pièces de trop, il en sort
+// une, comme un appui en met une.
 export function appuiSurCase(objet) {
+  if (piecesASortir(objet) > 0) return { dansLeSac: objet.dansLeSac - 1, confirmer: false };
   if (!estComplet(objet)) return { dansLeSac: objet.dansLeSac + 1, confirmer: false };
-  // Un objet complet a dansLeSac === quantite (la base interdit de dépasser), d'où la même règle.
   return { dansLeSac: 0, confirmer: viderDemandeConfirmation(objet) };
 }
 
+// Jamais au-delà de la quantité, sauf un excédent déjà là, qui ne fait que décroître (la même borne
+// que le stockage).
 export function bornerDansLeSac(objet, valeur) {
-  return Math.min(Math.max(Math.trunc(valeur), 0), objet.quantite);
+  return Math.min(Math.max(Math.trunc(valeur), 0), Math.max(objet.quantite, objet.dansLeSac));
 }
 
 export const viderDemandeConfirmation = objet => objet.dansLeSac > 1;
