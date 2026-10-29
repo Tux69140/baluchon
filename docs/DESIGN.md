@@ -60,7 +60,7 @@
 - **Approche** : intentionnel — le mouvement explique ce qui change et célèbre ce qui est fini.
 - **Easing** : enter(ease-out) exit(ease-in) move(ease-in-out) ; rebond léger pour le tampon.
 - **Duration** : micro(50-100ms) court(150-250ms) moyen(250-400ms) long(400-700ms)
-- **Gestes clés** : un objet coché reste barré environ 1 s puis glisse en bas de sa catégorie (moyen) ; plusieurs coches rapides ne déplacent la liste qu'une fois ; catégorie bouclée → tampon « Bouclé ! » posé avec un rebond (long) ; sac entier bouclé → bandeau avec la mascotte, « Sac bouclé ! », posé avec un rebond (long) ; accordéon (court) ; fiche de l'objet qui monte du bas au téléphone (court).
+- **Gestes clés** : un objet coché reste grisé (jamais rayé : on le croirait supprimé) environ 1 s puis glisse en bas de sa catégorie (moyen) ; plusieurs coches rapides ne déplacent la liste qu'une fois ; catégorie bouclée → tampon « Bouclé ! » posé avec un rebond (long) ; sac entier bouclé → bandeau avec la mascotte, « Sac bouclé ! », posé avec un rebond (long) ; accordéon (court) ; fiche de l'objet qui monte du bas au téléphone (court).
 - **Réduction** : si l'appareil demande moins d'animations, tout se pose sans mouvement (le tampon et le bandeau apparaissent fixes, l'objet change de place sans glisser).
 
 ## Decisions Log

@@ -348,10 +348,10 @@ main.grand-format :is(.choix, .gf-tuile)[data-attenuee] {
   font-size: var(--taille-mention);
 }
 
+/* Emballé : la case cochée et le nom en gris doux suffisent ; rayé, on le croyait supprimé (décision du chef
+   de projet, 2026-10-29). */
 .objet[data-etat='plein'] .objet-nom {
   color: var(--encre-douce);
-  text-decoration: line-through;
-  text-decoration-thickness: 1.5px;
 }
 
 .objet-quantite {
