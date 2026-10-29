@@ -31,14 +31,14 @@ export const AVEC_BIBLIOTHEQUE = {
 export const FLOTTANT = '#app .bouton-flottant[data-action="ajouter"]';
 const trie = objet => Object.fromEntries(Object.entries(objet).sort(([x], [y]) => x.localeCompare(y)));
 export const pareil = (x, y) => vu(trie(x)) === vu(trie(y));
-// Ce qu'un objet ajouté à la main porte (contraintes de la phase 8).
+// Ce qu'un objet ajouté à la main porte (contraintes de la phase 8) ; valeur 0 : il n'a jamais eu de formule.
 export const ajoute = (categorieId, nom, quantite) => ({
   voyageId: 'v1',
   categorieId,
   modeleId: null,
   nom,
   regle: 'fixe',
-  valeur: quantite,
+  valeur: 0,
   plafond: null,
   parPersonne: true,
   consommable: false,

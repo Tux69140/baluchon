@@ -1,7 +1,8 @@
 // `pnpm test:ecrans` : chaque test d'écran (tests/ecran-*.mjs), jugé au code de sortie ; un seul rouge suffit
 // à faire échouer l'ensemble. Ils tournent par paquets de PARALLELES (un navigateur chacun), les plus longs
 // d'abord ; la sortie d'un test s'affiche d'un bloc quand il finit. Un test rouge sous la charge est rejoué
-// seul une fois : vert seul, il est signalé comme instable ; rouge seul, il échoue.
+// seul une fois : vert seul, il est signalé comme instable ; rouge seul, il échoue (accord du chef de projet,
+// 2026-10-29 : « un test qui passe seul est ok pour moi »).
 import { spawn } from 'node:child_process';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus } from 'node:os';

@@ -112,8 +112,8 @@ export const choisirCategorie = (etat, categorieId) => ({ ...etat, choisie: cate
 // Un objet rendu par « Annuler » (retrait du voyage) : il prend aussitôt sa place dans sa catégorie, sans
 // attendre de répit (aucun appui ne l'a déplacé sous le doigt), et se masque sous le filtre s'il est
 // complet ; sa catégorie est choisie et dépliée pour qu'on le voie, et comptée bouclée ou non selon ses
-// pièces de maintenant (rendue complète, elle ne recevra pas de tampon à la coche suivante, ailleurs).
-// Le reste de la liste ne bouge pas.
+// pièces de maintenant (rendue complète, elle ne recevra pas de tampon à la coche suivante, ailleurs) ;
+// descendue au fond sous le filtre et plus bouclée, elle remonte à sa place. Le reste de la liste ne bouge pas.
 export function rendreObjet(etat, liste, { categorieId, objetId }) {
   const objets = liste.find(c => c.categorie.id === categorieId)?.objets ?? [];
   const objet = objets.find(o => o.id === objetId);
@@ -128,11 +128,14 @@ export function rendreObjet(etat, liste, { categorieId, objetId }) {
   const bouclee = new Set(etat.bouclees);
   if (estBouclee(objets)) bouclee.add(categorieId);
   else bouclee.delete(categorieId);
+  const enBas = new Set(etat.enBas);
+  if (!bouclee.has(categorieId)) enBas.delete(categorieId);
   return {
     ...etat,
     ordre: new Map(etat.ordre).set(categorieId, figes),
     masques,
     bouclees: bouclee,
+    enBas,
     choisie: categorieId,
     ouvertes: new Set([...etat.ouvertes, categorieId]),
   };

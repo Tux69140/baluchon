@@ -68,7 +68,7 @@ test('un objet ajouté est fixé manuellement et ne dit pas partagé', () => {
     modeleId: null,
     nom: 'Lampe',
     regle: 'fixe',
-    valeur: 3,
+    valeur: 0,
     plafond: null,
     parPersonne: true,
     consommable: false,
@@ -85,10 +85,13 @@ test('un objet ajouté est fixé manuellement et ne dit pas partagé', () => {
 test('seul un objet venu d’un calcul garde sa formule initiale, pas un objet ajouté à la main', () => {
   const { objet: ajoute } = preparerAjout({ nom: 'Lampe', categorie: 'c1', quantite: 3 }, contenu, contexte);
   assert.equal(aUneFormuleInitiale(ajoute), false);
-  assert.equal(aUneFormuleInitiale({ ...ajoute, regle: 'par_jour' }), true);
-  assert.equal(aUneFormuleInitiale({ ...ajoute, parPersonne: false }), true);
-  assert.equal(aUneFormuleInitiale({ ...ajoute, plafond: 2 }), true);
-  assert.equal(aUneFormuleInitiale({ ...ajoute, modeleId: 'm1' }), true);
+  // Mis ensuite dans la bibliothèque, il est lié à un modèle mais n'a toujours pas eu de formule.
+  assert.equal(aUneFormuleInitiale({ ...ajoute, modeleId: 'm1' }), false);
+  // Copié de la bibliothèque, « 1 par personne » sans plafond est bien une formule, lié ou non.
+  const brosse = { ...ajoute, valeur: 1, modeleId: 'm2' };
+  assert.equal(aUneFormuleInitiale(brosse), true);
+  assert.equal(aUneFormuleInitiale({ ...brosse, modeleId: null }), true);
+  assert.equal(aUneFormuleInitiale({ ...brosse, regle: 'par_jour', parPersonne: false, plafond: 2 }), true);
 });
 
 test('la quantité d’un objet ajouté vaut 1 par défaut et reste bornée', () => {

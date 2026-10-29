@@ -63,6 +63,8 @@ function ouvrirListe(app, donnees, contexte) {
   let file = Promise.resolve();
   let generation = 0;
   let relecture = false;
+  // Un changement touché pendant la relecture, qui ne s'écrit pas : le message de l'échec le dira aussi.
+  let perdu = false;
   // La fin de l'écran, quel que soit le chemin (retour système, lien, adresse, redessin) : dès que
   // ce main n'est plus dans la page, minuteries arrêtées, question en cours retirée, et plus rien ne
   // touche la page.
@@ -175,7 +177,8 @@ function ouvrirListe(app, donnees, contexte) {
     }
     if (parti()) return;
     peindre();
-    alerter(t(cle));
+    alerter(t(perdu ? 'voyage.erreurModification' : cle));
+    perdu = false;
   }
 
   // Un nouveau contenu à l'écran, la liste figée jusqu'au répit. La catégorie choisie qui n'est plus là
@@ -191,9 +194,12 @@ function ouvrirListe(app, donnees, contexte) {
 
   // Le passage commun de tout changement, coche comprise : l'écran d'abord, la liste figée, puis
   // l'écriture dans la file. Refusée, l'écran relit et le dit : la coche, ou une autre modification.
-  // Pendant la relecture qui suit un échec, rien ne change (rend false).
+  // Pendant la relecture qui suit un échec, rien ne change (rend false), et le message le dira.
   function appliquer(nouveau, ecriture, { coche = false } = {}) {
-    if (relecture) return false;
+    if (relecture) {
+      perdu = true;
+      return false;
+    }
     montrer(nouveau);
     const sienne = generation;
     const message = coche ? 'voyage.erreurEnregistrement' : 'voyage.erreurModification';

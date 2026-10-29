@@ -210,6 +210,7 @@ export function creerStockageNavigateur() {
       });
     },
     async lireVoyage(id) {
+      await lenteur(lire(), 'lireVoyage');
       const donnees = lire();
       panne(donnees, 'lireVoyage');
       const voyage = (donnees.voyages ?? []).find(v => v.id === id);

@@ -18,7 +18,8 @@ export function validerAjout({ nom, categorie }) {
 }
 
 // Un objet ajouté à la main est fixé : sa quantité est la sienne et n'est jamais recalculée
-// (quantiteManuelle). Il ne dit pas « partagé » (parPersonne vrai) et n'a pas de modèle.
+// (quantiteManuelle). Il ne dit pas « partagé » (parPersonne vrai) et n'a pas de modèle. Sa valeur 0, qu'aucun
+// modèle ne peut avoir (au moins 1), dit qu'il n'a jamais eu de formule (aUneFormuleInitiale).
 // Une catégorie neuve naît avec cet objet, à la fin du voyage : jamais vide.
 export function preparerAjout(saisie, { voyage, categories }, { nouvelId, maintenant }) {
   const erreurs = validerAjout(saisie);
@@ -45,7 +46,7 @@ export function preparerAjout(saisie, { voyage, categories }, { nouvelId, mainte
     modeleId: null,
     nom: saisie.nom.trim(),
     regle: 'fixe',
-    valeur: quantite,
+    valeur: 0,
     plafond: null,
     parPersonne: true,
     consommable: false,
@@ -67,9 +68,8 @@ export const boutonsDeQuantite = ({ quantite }) => ({
 });
 
 // Une quantité fixée manuellement rappelle la formule d'où elle venait, sauf pour un objet ajouté à la main
-// (preparerAjout : fixe, par personne, sans plafond ni modèle) : il n'a jamais eu de formule.
-export const aUneFormuleInitiale = ({ regle, parPersonne, plafond, modeleId }) =>
-  !(regle === 'fixe' && parPersonne && plafond === null && modeleId === null);
+// (preparerAjout, valeur 0) : il n'a jamais eu de formule, même mis ensuite dans la bibliothèque.
+export const aUneFormuleInitiale = ({ valeur }) => valeur > 0;
 
 // Baisser sous ce qui est déjà dans le sac demande une confirmation, puis le sac suit la quantité.
 export const reglageDeQuantite = (objet, quantite) => ({

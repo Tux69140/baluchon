@@ -241,3 +241,15 @@ test('une catégorie rendue par « Annuler » est bouclée ou non selon ses piè
   const rouvert = rendreObjet(etat, liste(), { categorieId: 'vet', objetId: 'pantalons' });
   assert.equal(rouvert.bouclees.has('vet'), false);
 });
+
+test('sous le filtre, une catégorie descendue en bas remonte quand « Annuler » lui rend un objet à emballer', () => {
+  // Vêtements réduite à Pull 2/2 : bouclée, au fond sous le filtre. Pantalons 0/4 rendu : elle remonte à
+  // sa place, Papiers (bouclée) reste au fond (témoin).
+  const sansPantalons = liste().map(c =>
+    c.categorie.id === 'vet' ? { ...c, objets: c.objets.filter(o => o.id !== 'pantalons') } : c,
+  );
+  const etat = etatInitial(sansPantalons, { filtre: true });
+  assert.deepEqual(noms(etat, sansPantalons), ['toi', 'vet', 'pap']);
+  const rendu = rendreObjet(etat, liste(), { categorieId: 'vet', objetId: 'pantalons' });
+  assert.deepEqual(noms(rendu, liste()), ['vet', 'toi', 'pap']);
+});

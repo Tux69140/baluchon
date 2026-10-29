@@ -4,12 +4,13 @@
 // - corriger la quantité la marque fixée manuellement et le reste à la relecture (critère du plan) ;
 // - baisser sous le sac demande « Sortir … du sac ? » à la fermeture de la fiche, pas avant ; « Garder » ne
 //   change rien, « Retirer » fait suivre le sac (un double appui ne baisse qu'une fois) ; témoin : sans pièce
-//   de trop, rien n'est demandé ;
+//   de trop, rien n'est demandé ; le sac part de ce que la fiche montre pendant l'attente ;
 // - − inactif à 1, + inactif à 999 ; une quantité calculée au-delà de 999 descend ;
 // - sous le filtre, un objet devenu complet en baissant sa quantité se masque comme après une coche ;
 // - renommer change le nom dans ce voyage, pas dans la bibliothèque ; un nom vide est refusé ; un nom
 //   piégé (<, &, ") se lit tel quel ; panne → la fiche reste ouverte avec sa saisie, message en haut ;
-// - panne de reglerQuantite → relecture et message au bas de l'écran ;
+// - panne de reglerQuantite → relecture et message au bas de l'écran ; un changement touché pendant la
+//   relecture d'une coche refusée est dit perdu lui aussi ;
 // - captures claire et sombre de la fiche aux formats, de la question et de « Renommer ».
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -213,6 +214,24 @@ try {
       (await lireQuestion(page)) === null && remonte.quantite === 8 && remonte.dansLeSac === 8,
       `${cas} : baisse remontée ${vu(remonte)}`,
     );
+    // Le sac part de ce que la fiche montre : Chaussettes −3 (5 sur 5), puis − du sac : 4 sur 5. Le sac ne
+    // dépasse plus la quantité voulue : elle s'écrit, et la fermeture ne demande rien.
+    await ouvrirFiche(page, 'o-cha');
+    for (let i = 0; i < 3; i++) await toucherFiche(page, 'quantite-moins');
+    await toucherFiche(page, 'moins');
+    await calme(page);
+    const sacBaisse = await lireFiche(page);
+    await page.keyboard.press('Escape');
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
+    const apresSac = await objetStocke(page, 'o-cha');
+    juge.exige(
+      sacBaisse?.sac === '4' &&
+        sacBaisse.quantite === '5' &&
+        (await lireQuestion(page)) === null &&
+        apresSac.quantite === 5 &&
+        apresSac.dansLeSac === 4,
+      `${cas} : − du sac sous une baisse en attente ${vu(sacBaisse)}, stocké ${vu(apresSac)}`,
+    );
     await fermerEssai(juge, cas, ouvert);
   }
 
@@ -363,6 +382,28 @@ try {
         vue.calcul === remplir(f.calculee, { regle: '2 par jour et par personne' }) &&
         (await ligne(page, 'o-rep'))?.quantite === '6 / 16',
       `${cas} : message « ${message} », ${vu(vue)}`,
+    );
+    await ouvert.contexte.close();
+  }
+
+  // Un changement touché pendant la relecture qui suit une coche refusée ne s'écrit pas : le message le dit
+  // pour tous deux (« La modification… »), pas seulement pour la coche.
+  {
+    const cas = 'changement pendant la relecture';
+    const ouvert = await ouvrirEssai();
+    const { page } = ouvert;
+    await ouvrirFiche(page, 'o-cha');
+    const donnees = await lireStockage(page);
+    await ecrireStockage(page, { ...donnees, pannes: ['reglerDansLeSac'], lenteurs: ['lireVoyage'] });
+    await toucherFiche(page, 'moins');
+    await attendreQue(page, () => typeof window.debloquerStockage === 'function');
+    await toucherFiche(page, 'quantite-plus');
+    await page.evaluate(() => window.debloquerStockage());
+    const message = await attendreQue(page, () => document.querySelector('.alerte[role="alert"]')?.textContent.trim());
+    const stocke = await objetStocke(page, 'o-cha');
+    juge.exige(
+      message === fr.voyage.erreurModification && stocke.quantite === 8 && stocke.dansLeSac === 8,
+      `${cas} : message « ${message} », stocké ${vu(stocke)}`,
     );
     await ouvert.contexte.close();
   }

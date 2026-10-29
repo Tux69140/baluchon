@@ -4,7 +4,7 @@
 // réels sont rejoués avec l'écran du voyage.
 // - une écriture de la bibliothèque ne retire que le bandeau de la bibliothèque ;
 // - ajouter au même voyage retire le bandeau du retrait, à un autre voyage le laisse ;
-// - rétablir dans le voyage ne retire rien ;
+// - rétablir dans le voyage ne retire rien ; « Annuler » ne répond plus pendant un ajout au voyage ;
 // - une suppression de la bibliothèque remplace le bandeau d'un retrait ;
 // - le message de réussite s'affiche en haut, puis s'efface.
 import { chromium } from 'playwright';
@@ -30,8 +30,10 @@ const resultats = await page.evaluate(async () => {
   const app = document.querySelector('#app') ?? document.body;
   const t = cle => cle;
   const factice = Object.fromEntries(ECRITURES_BIBLIOTHEQUE.map(nom => [nom, async () => {}]));
+  // enCours : un ajout qui ne finit qu'à la demande.
+  let enCours = null;
   Object.assign(factice, {
-    ajouterAuVoyage: async () => {},
+    ajouterAuVoyage: () => enCours ?? Promise.resolve(),
     retablirDansLeVoyage: async () => {},
     lireBibliotheque: async () => ({}),
   });
@@ -67,6 +69,19 @@ const resultats = await page.evaluate(async () => {
   await stockage.ajouterAuVoyage(ajout('v1'));
   sortie.bibliothequeSurvitAjout = affiche();
 
+  // Pendant un ajout à un autre voyage, « Annuler » ne répond plus ; l'ajout fini, si.
+  montrer('retrait', 'v2');
+  let finir;
+  enCours = new Promise(r => (finir = r));
+  const ajoutEnCours = stockage.ajouterAuVoyage(ajout('v1'));
+  await new Promise(r => setTimeout(r, 0));
+  const annuler = () => document.querySelector('.bandeau-annuler button')?.getAttribute('aria-disabled') ?? null;
+  sortie.annulerPendantAjout = annuler();
+  finir();
+  await ajoutEnCours;
+  enCours = null;
+  sortie.annulerApresAjout = annuler();
+
   annoncerEnHaut(app, 'Ajouté', new AbortController().signal);
   const message = document.querySelector('.message-succes.alerte-haut');
   sortie.message = message && {
@@ -86,6 +101,8 @@ egal('ajouter au même voyage retire le retrait', resultats.partMemeVoyage, null
 egal('une suppression remplace le retrait', resultats.remplace, 'suppression');
 egal('témoin : le bandeau de la bibliothèque part', resultats.temoin, null);
 egal('ajouter au voyage laisse le bandeau de la bibliothèque', resultats.bibliothequeSurvitAjout, 'suppression');
+egal('« Annuler » inactif pendant un ajout', resultats.annulerPendantAjout, 'true');
+egal('« Annuler » de nouveau actif après l’ajout', resultats.annulerApresAjout, null);
 egal('le message de réussite : en haut, role status, coche', resultats.message, {
   ouvert: true,
   role: 'status',

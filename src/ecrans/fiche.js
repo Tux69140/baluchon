@@ -202,13 +202,15 @@ export function ouvrirFiche({
     const quoi = bouton.dataset.fiche;
     if (quoi === 'renommer') return surRenommer();
     if (QUANTITE[quoi]) return changerQuantite(QUANTITE[quoi].pas);
-    if (quoi === 'vider' && viderDemandeConfirmation(actuel)) {
-      const accord = await confirmerVider({ t, objet: actuel, signal });
+    // Le sac part de ce que la fiche montre, une baisse en attente comprise.
+    const vu = montre();
+    if (quoi === 'vider' && viderDemandeConfirmation(vu)) {
+      const accord = await confirmerVider({ t, objet: vu, signal });
       if (!fenetre.isConnected) return;
       bouton.focus();
       if (!accord) return;
     }
-    surChangement(SAC[quoi].valeur(actuel));
+    surChangement(SAC[quoi].valeur(vu));
   });
 
   repeindre(objet);
