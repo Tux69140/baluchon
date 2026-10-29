@@ -5,10 +5,13 @@
 // repasser un objet en incomplet, d'où « au moins » plutôt que « exactement »).
 export const estComplet = objet => objet.dansLeSac >= objet.quantite;
 
-export function etatDansLeSac(objet) {
-  if (estComplet(objet)) return 'plein';
-  return objet.dansLeSac > 0 ? 'entame' : 'vide';
+// Des pièces comptées sur une quantité : celles du sac, ou celles achetées (src/modele/courses.js).
+export function etatDePieces(n, quantite) {
+  if (n >= quantite) return 'plein';
+  return n > 0 ? 'entame' : 'vide';
 }
+
+export const etatDansLeSac = objet => etatDePieces(objet.dansLeSac, objet.quantite);
 
 // Un appui sur la case ajoute une pièce ; sur un objet plein, il vide tout, et l'écran demande
 // d'abord confirmation (sauf pour une seule pièce : rien à perdre).
