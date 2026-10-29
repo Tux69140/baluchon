@@ -9,7 +9,7 @@
 import { remplir } from '../i18n/traduction.js';
 import { aUneFormuleInitiale, boutonsDeQuantite } from '../modele/ajustements.js';
 import { estAAcheter } from '../modele/courses.js';
-import { bornerDansLeSac, estComplet, viderDemandeConfirmation } from '../modele/sac.js';
+import { bornerDansLeSac, estComplet, estRetire, piecesASortir, viderDemandeConfirmation } from '../modele/sac.js';
 import { confirmer, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { zoneSuppression } from './fiche-modele-vues.js';
 import { decrireRegle, pluriel } from './format.js';
@@ -46,6 +46,7 @@ function vueFiche(t, objet) {
         <p class="fiche-regle"></p>
         <section class="fiche-bloc" aria-labelledby="fiche-sac">
           <h3 id="fiche-sac">${t('fiche.dansLeSac')}</h3>
+          <div class="sortir-rappel" role="status"><span class="marque-sortir" aria-hidden="true">!</span><p><b></b><span></span></p></div>
           <div class="compteur">
             <button type="button" class="bouton-icone" data-fiche="moins" aria-label="${t('fiche.moins')}">${iconeInterface('moins')}</button>
             <output aria-live="polite"></output>
@@ -53,6 +54,8 @@ function vueFiche(t, objet) {
             <span class="compteur-total"></span>
           </div>
           <div class="fiche-actions">
+            <button type="button" class="bouton bouton-principal" data-fiche="fait">${t('sortie.fait')}</button>
+            <button type="button" class="bouton bouton-secondaire" data-fiche="garder">${t('sortie.garder')}</button>
             <button type="button" class="bouton bouton-principal" data-fiche="tout">${iconeInterface('coche')}${t('fiche.tout')}</button>
             <button type="button" class="bouton bouton-secondaire" data-fiche="vider">${t('fiche.vider')}</button>
           </div>
@@ -83,7 +86,10 @@ function vueFiche(t, objet) {
 // « Tout dans le sac » au complet.
 const SAC = {
   moins: { valeur: objet => bornerDansLeSac(objet, objet.dansLeSac - 1), inactif: objet => objet.dansLeSac === 0 },
-  plus: { valeur: objet => bornerDansLeSac(objet, objet.dansLeSac + 1), inactif: estComplet },
+  plus: {
+    valeur: objet => bornerDansLeSac(objet, objet.dansLeSac + 1),
+    inactif: objet => objet.dansLeSac >= objet.quantite,
+  },
   tout: { valeur: objet => objet.quantite, inactif: estComplet },
   vider: { valeur: () => 0, inactif: objet => objet.dansLeSac === 0 },
 };
@@ -95,9 +101,11 @@ const QUANTITE = {
 const inactif = (quoi, objet) => (SAC[quoi] ?? QUANTITE[quoi])?.inactif(objet) ?? false;
 
 // Ouvre la fiche dans dans (l'écran du voyage, pour qu'elle parte avec lui). surChangement(valeur) : le
-// nouveau nombre de pièces dans le sac ; surQuantite(n) : la quantité prévue voulue ; surBaisse(n) : à la
-// fermeture, la question d'une quantité baissée sous ce qui est dans le sac (true : « Retirer », false :
-// « Garder », null : sans réponse, la fiche reste) ; surRenommer() ; surAAcheter() : l'interrupteur « À acheter » touché ;
+// nouveau nombre de pièces dans le sac ; surQuantite(n, { plusTard }) : la quantité prévue voulue (plusTard :
+// les pièces de trop restent dans le sac) ; surBaisse(n) : à la fermeture, la question d'une quantité baissée
+// sous ce qui est dans le sac ('garder', 'plus-tard', 'fait' ; null : sans réponse, la fiche reste) ;
+// surFait() : « C'est fait », les pièces de trop sorties ; surGarder() : « Le garder dans le voyage » (phase
+// 10) ; surRenommer() ; surAAcheter() : l'interrupteur « À acheter » touché ;
 // surRetirer() : rend une promesse, tenue quand la question et l'écriture sont finies (d'ici là, « Retirer
 // du voyage » ne répond plus) ; surFermeture : la fiche effacée ; signal : l'écran s'en va, la fiche
 // disparaît avec lui. Rend repeindre(objet, categorie), que l'écran appelle à chaque changement ; un objet
@@ -110,6 +118,8 @@ export function ouvrirFiche({
   surChangement,
   surQuantite,
   surBaisse,
+  surFait,
+  surGarder,
   surRenommer,
   surAAcheter,
   surRetirer,
@@ -155,6 +165,20 @@ export function ouvrirFiche({
         : t('fiche.aAcheterAide');
     for (const bouton of fenetre.querySelectorAll('[data-fiche]'))
       bouton.setAttribute('aria-disabled', String(inactif(bouton.dataset.fiche, vu)));
+    peindreSortie(vu);
+  }
+
+  // Des pièces de trop (phase 10) : le rappel, et « C'est fait » à la place de « Tout dans le sac » ; un
+  // objet retiré n'a plus rien à ajuster, seulement « Le garder dans le voyage » (src/styles/sortir.css).
+  function peindreSortie(vu) {
+    const n = piecesASortir(vu);
+    fenetre.toggleAttribute('data-sortir', n > 0);
+    fenetre.toggleAttribute('data-retire', estRetire(vu));
+    if (!n) return;
+    q('.sortir-rappel b').textContent = pluriel(t, 'voyage.aSortir', n, langue);
+    q('.sortir-rappel p span').textContent = estRetire(vu)
+      ? t('sortie.rappelRetire')
+      : remplir(pluriel(t, 'sortie.rappel', n, langue), { prevus: vu.quantite });
   }
 
   // Ce que l'écran a écrit ; une quantité en attente que le sac ne dépasse plus (vidé entre-temps) s'écrit.
@@ -182,15 +206,15 @@ export function ouvrirFiche({
     surQuantite(voulue);
   }
 
-  // Fermée avec une quantité en attente : la question ; « Retirer » l'écrit, « Garder » l'oublie, sans
-  // réponse la fiche reste. Sinon, elle se ferme.
+  // Fermée avec une quantité en attente : la question ; « C'est fait » et « Plus tard » l'écrivent, « Garder »
+  // l'oublie, sans réponse la fiche reste. Sinon, elle se ferme.
   async function demanderFermeture() {
     if (prevue === null) return fermer();
     const voulue = prevue;
     const reponse = await surBaisse(voulue);
     if (reponse === null || !fenetre.isConnected) return;
     prevue = null;
-    if (reponse) surQuantite(voulue);
+    if (reponse !== 'garder') surQuantite(voulue, { plusTard: reponse === 'plus-tard' });
     fermer();
   }
 
@@ -215,6 +239,8 @@ export function ouvrirFiche({
     if ('supprimer' in bouton.dataset) return retirer(bouton);
     const quoi = bouton.dataset.fiche;
     if (quoi === 'renommer') return surRenommer();
+    if (quoi === 'fait') return surFait();
+    if (quoi === 'garder') return surGarder();
     if (quoi === 'a-acheter') return surAAcheter();
     if (QUANTITE[quoi]) return changerQuantite(QUANTITE[quoi].pas);
     // Le sac part de ce que la fiche montre, une baisse en attente comprise.

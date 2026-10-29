@@ -2,6 +2,8 @@
 // fiches de la bibliothèque depuis ce qu'on vient d'ajouter (docs/PLAN.md, phase 8). Règles pures :
 // le stockage n'y est pour rien.
 import { BORNES_QUANTITE, bornerQuantite, nomVide, rangSuivant, refuser } from './modeles.js';
+import { joursEtNuits } from './periode.js';
+import { calculerQuantite } from './quantites.js';
 
 // Un nom seul, obligatoire : celui d'une catégorie neuve du voyage, ou le nouveau nom d'un objet du voyage.
 const validerNom = ({ nom }) => (nomVide(nom) ? { nom: 'nomManquant' } : {});
@@ -71,12 +73,25 @@ export const boutonsDeQuantite = ({ quantite }) => ({
 // (preparerAjout, valeur 0) : il n'a jamais eu de formule, même mis ensuite dans la bibliothèque.
 export const aUneFormuleInitiale = ({ valeur }) => valeur > 0;
 
-// Baisser sous ce qui est déjà dans le sac demande une confirmation, puis le sac suit la quantité.
-export const reglageDeQuantite = (objet, quantite) => ({
+// Baisser sous ce qui est déjà dans le sac demande une confirmation, puis le sac suit la quantité ; avec
+// « Plus tard » (phase 10), les pièces de trop restent dans le sac et attendent leur sortie.
+export const reglageDeQuantite = (objet, quantite, { plusTard = false } = {}) => ({
   quantite,
-  dansLeSac: Math.min(objet.dansLeSac, quantite),
+  dansLeSac: plusTard ? objet.dansLeSac : Math.min(objet.dansLeSac, quantite),
   confirmer: quantite < objet.dansLeSac,
 });
+
+// « Le garder dans le voyage », pour un objet retiré qui attend la sortie de ses pièces (phase 10) : la
+// quantité que donne sa formule pour ce voyage ; sans formule (ajouté à la main), ou si elle donne 0, ses
+// pièces dans le sac, fixées manuellement.
+export function quantiteGardee(objet, { depart, retour, voyageurs }) {
+  const calcul = aUneFormuleInitiale(objet)
+    ? calculerQuantite(objet, { ...joursEtNuits(depart, retour), voyageurs })
+    : 0;
+  return calcul > 0
+    ? { quantite: calcul, quantiteManuelle: false }
+    : { quantite: objet.dansLeSac, quantiteManuelle: true };
+}
 
 // Ce que « Annuler » réécrira : l'objet tel quel, et sa catégorie seulement si elle disparaît avec lui.
 export function extraitDuRetrait({ categories, objets }, objetId) {

@@ -39,6 +39,9 @@ import { DONNEES } from './outils/voyage-essai.mjs';
 
 const f = fr.fiche;
 const b = fr.ajustement.baisse;
+const s = fr.sortie;
+// La phrase de la phase 10 sous la question : « Plus tard » laisse la pièce signalée par un « ! ».
+const suite = n => b.suite[n > 1 ? 'other' : 'one'];
 const juge = creerJuge();
 const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
@@ -150,9 +153,9 @@ try {
     const question = await lireQuestion(page);
     juge.exige(
       question?.titre === titre(3) &&
-        vu(question.textes) === vu([texte(3, { compte: '8 pièces', nom: 'Chaussettes', quantite: 5 })]) &&
+        vu(question.textes) === vu([texte(3, { compte: '8 pièces', nom: 'Chaussettes', quantite: 5 }), suite(3)]) &&
         vu(question.gras) === vu(['8 pièces']) &&
-        vu(question.boutons) === vu([remplir(b.garder, { n: 8 }), remplir(b.retirer, { n: 3 })]),
+        vu(question.boutons) === vu([remplir(b.garder, { n: 8 }), s.plusTard, s.fait]),
       `${cas} : question ${vu(question)}`,
     );
     await capture(page, 'voyage-ajuster-baisse', 'tablette-paysage', 'light');
@@ -167,18 +170,18 @@ try {
         (await ligne(page, 'o-cha'))?.quantite === '8',
       `${cas} : « Garder 8 » ${vu(garde)} ${vu(await ligne(page, 'o-cha'))}`,
     );
-    // Brosse à dents, 2 sur 2 : un appui, la fermeture, « Retirer 1 » (double appui) écrit 1 sur 1.
+    // Brosse à dents, 2 sur 2 : un appui, la fermeture, « C’est fait » (double appui) écrit 1 sur 1.
     await ouvrirFiche(page, 'o-bro');
     await toucherFiche(page, 'quantite-moins');
     await fermerLaFiche();
     const une = await lireQuestion(page);
     juge.exige(
       une?.titre === titre(1) &&
-        vu(une.textes) === vu([texte(1, { compte: '2 pièces', nom: 'Brosse à dents', quantite: 1 })]) &&
-        vu(une.boutons) === vu([remplir(b.garder, { n: 2 }), remplir(b.retirer, { n: 1 })]),
+        vu(une.textes) === vu([texte(1, { compte: '2 pièces', nom: 'Brosse à dents', quantite: 1 }), suite(1)]) &&
+        vu(une.boutons) === vu([remplir(b.garder, { n: 2 }), s.plusTard, s.fait]),
       `${cas} : question d'une pièce ${vu(une)}`,
     );
-    await repondre(page, remplir(b.retirer, { n: 1 }), { double: true });
+    await repondre(page, s.fait, { double: true });
     const retire = await attendreQue(page, () => {
       const o = JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(x => x.id === 'o-bro');
       return o.quantite === 1 && o;
@@ -187,7 +190,7 @@ try {
     await calme(page);
     juge.exige(
       retire?.dansLeSac === 1 && retire.quantiteManuelle && (await lireQuestion(page)) === null,
-      `${cas} : « Retirer 1 » ${vu(retire)}`,
+      `${cas} : « C’est fait » ${vu(retire)}`,
     );
     // Rouverte : 1 sur 1, − inactif ; forcé, il ne fait rien.
     await ouvrirFiche(page, 'o-bro');

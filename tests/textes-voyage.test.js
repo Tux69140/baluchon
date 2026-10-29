@@ -1,5 +1,7 @@
 // Les textes de la phase 8 (ajuster un voyage) : repris de la maquette validée
-// (docs/maquettes/ajuster/) et rangés dans fr.json, seule source des textes.
+// (docs/maquettes/ajuster/) et rangés dans fr.json, seule source des textes. La phase 10 a remplacé
+// « Retirer N » et « … sort de la liste » par « Plus tard » et « C’est fait » (décision du chef de projet,
+// 2026-10-29 ; maquette docs/maquettes/plans-changent/).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -28,10 +30,19 @@ const SIMPLES = [
     'renommer',
     'retirer',
   ].map(c => `fiche.${c}`),
-  ...['titre', 'texte', 'garder', 'retirer'].map(c => `ajustement.baisse.${c}`),
-  ...['titre', 'bibliotheque', 'pieces', 'derniere', 'garder', 'retirer', 'bandeau', 'bandeauCategorie', 'erreur'].map(
-    c => `ajustement.retrait.${c}`,
-  ),
+  ...['titre', 'texte', 'garder', 'suite'].map(c => `ajustement.baisse.${c}`),
+  ...[
+    'titre',
+    'bibliotheque',
+    'sortir',
+    'derniere',
+    'garder',
+    'retirer',
+    'bandeau',
+    'bandeauCategorie',
+    'bandeauPlusieurs',
+    'erreur',
+  ].map(c => `ajustement.retrait.${c}`),
   ...[
     'titre',
     'voyageSeulement',
@@ -54,12 +65,21 @@ const SIMPLES = [
     c => `ajustement.bibliotheque.${c}`,
   ),
   'modele.objet.erreurs.categorieManquante',
+  ...['plusTard', 'fait', 'garder', 'texte', 'suite', 'ligne', 'ligneRetire', 'rappel', 'rappelRetire'].map(
+    c => `sortie.${c}`,
+  ),
+  ...['aSortir', 'retire', 'marqueSortir', 'case.sortir'].map(c => `voyage.${c}`),
 ];
 const PLURIELS = [
   'ajustement.pieces',
   'ajustement.baisse.titre',
   'ajustement.baisse.texte',
-  'ajustement.retrait.pieces',
+  'ajustement.baisse.suite',
+  'ajustement.retrait.sortir',
+  'ajustement.retrait.bandeauPlusieurs',
+  'sortie.ligne',
+  'sortie.rappel',
+  'voyage.aSortir',
   'ajustement.ajout.objetsDansCeVoyage',
   'ajustement.choix.objets',
 ];
@@ -102,15 +122,19 @@ test('les phrases de la maquette sont reprises', () => {
     `Les 8 pièces de «${NB}Chaussettes${NB}» sont déjà dans le sac. En prévoir 5 en sort 3.`,
   );
   assert.equal(t('ajustement.baisse.garder', { n: 2 }), 'Garder 2');
-  assert.equal(t('ajustement.baisse.retirer', { n: 1 }), 'Retirer 1');
   assert.equal(
-    remplir(pluriel('ajustement.retrait.pieces', 1), { compte: pieces(1) }),
-    'Sa 1 pièce déjà dans le sac sort de la liste.',
+    pluriel('ajustement.baisse.suite', 1),
+    `Sortez-la, puis touchez «${NB}C’est fait${NB}». «${NB}Plus tard${NB}»${NB}: elle reste signalée par un «${NB}!${NB}» dans la liste.`,
   );
   assert.equal(
-    remplir(pluriel('ajustement.retrait.pieces', 3), { compte: pieces(3) }),
-    'Ses 3 pièces déjà dans le sac sortent de la liste.',
+    remplir(pluriel('ajustement.retrait.sortir', 3), { compte: pieces(3) }),
+    `Ses 3 pièces sont dans le sac${NB}: sortez-les, puis touchez «${NB}C’est fait${NB}». «${NB}Plus tard${NB}»${NB}: il reste barré dans la liste, avec un «${NB}!${NB}», jusqu’à ce qu’elles soient sorties.`,
   );
+  assert.deepEqual(
+    [lire('sortie.plusTard'), lire('sortie.fait'), lire('sortie.garder')],
+    ['Plus tard', 'C’est fait', 'Le garder dans le voyage'],
+  );
+  assert.equal(remplir(pluriel('voyage.aSortir', 1), { n: 1 }), '1 à sortir du sac');
   assert.equal(t('ajustement.retrait.titre', { nom: 'Pull' }), `Retirer «${NB}Pull${NB}» de ce voyage${NB}?`);
   assert.equal(
     t('ajustement.retrait.bandeauCategorie', { nom: 'Palmes', categorie: 'Plongée' }),

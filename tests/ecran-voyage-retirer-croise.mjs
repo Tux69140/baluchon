@@ -11,6 +11,7 @@ import { chromium } from 'playwright';
 import {
   BANDEAU,
   attendreQuestion,
+  lireQuestion,
   fr,
   ligne,
   objetStocke,
@@ -40,12 +41,19 @@ const sansErreurSimulee = ouvert =>
   ouvert.erreurs.splice(0, ouvert.erreurs.length, ...ouvert.erreurs.filter(e => !e.includes('Panne simulée')));
 const changerStockage = async (page, champs) => ecrireStockage(page, { ...(await lireStockage(page)), ...champs });
 
+// Retirer tout de suite : « Retirer » pour un objet sans pièce dans le sac ; pour un objet emballé, la
+// question propose « Plus tard » et « C’est fait » (phase 10), et c’est « C’est fait » qui le retire.
+async function repondreRetrait(page, options = {}) {
+  const { boutons } = await lireQuestion(page);
+  await repondre(page, boutons.includes(r.retirer) ? r.retirer : fr.sortie.fait, options);
+}
+
 // « Retirer du voyage » depuis la fiche, puis « Retirer ».
 async function retirer(page, id) {
   await ouvrirFiche(page, id);
   await toucherFiche(page, 'retirer');
   await attendreQuestion(page);
-  await repondre(page, r.retirer);
+  await repondreRetrait(page);
 }
 
 // « Annuler » du bandeau affiché ; rend quand il est parti, l'objet id rétabli dans la base.

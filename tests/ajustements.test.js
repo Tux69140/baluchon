@@ -6,6 +6,7 @@ import {
   boutonsDeQuantite,
   extraitDuRetrait,
   preparerAjout,
+  quantiteGardee,
   reglageDeQuantite,
   saisieCategoriePourLaBibliotheque,
   saisieObjetPourLaBibliotheque,
@@ -182,4 +183,28 @@ test('les saisies préremplies passent la validation des fiches une fois une ét
   assert.deepEqual(c, { nom: 'c1', icone: 'tshirt', couleur: 'corail', selonEtiquettes: true, etiquettes: [] });
   assert.deepEqual(validerCategorie(c), { etiquettes: 'etiquettesManquantes' });
   assert.deepEqual(validerCategorie({ ...c, etiquettes: ['e1'] }), {});
+});
+
+// Phase 10 : « Plus tard » garde les pièces de trop dans le sac, jusqu'à ce qu'on confirme leur sortie.
+test('baisser avec « Plus tard » garde le sac tel quel', () => {
+  assert.deepEqual(reglageDeQuantite({ quantite: 4, dansLeSac: 4 }, 3, { plusTard: true }), {
+    quantite: 3,
+    dansLeSac: 4,
+    confirmer: true,
+  });
+});
+
+// « Le garder dans le voyage » (phase 10) : la quantité que donne sa formule pour ce voyage, sinon ses
+// pièces dans le sac, fixées manuellement.
+test('un objet retiré gardé reprend sa formule, ou ses pièces faute de formule', () => {
+  const voyage = { depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 };
+  const retire = objet('o1', 'c1', { quantite: 0, dansLeSac: 3, plafond: null });
+  assert.deepEqual(quantiteGardee(retire, voyage), { quantite: 8, quantiteManuelle: false });
+  const aLaMain = { ...retire, valeur: 0, regle: 'fixe', quantiteManuelle: true };
+  assert.deepEqual(quantiteGardee(aLaMain, voyage), { quantite: 3, quantiteManuelle: true });
+  const parNuit = { ...retire, regle: 'par_nuit' };
+  assert.deepEqual(quantiteGardee(parNuit, { ...voyage, retour: '2026-10-10' }), {
+    quantite: 3,
+    quantiteManuelle: true,
+  });
 });

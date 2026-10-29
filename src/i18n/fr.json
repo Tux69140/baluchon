@@ -33,8 +33,8 @@
       "vider": "{nom} : dans le sac. Vider",
       "decocher": "{nom} : dans le sac. Décocher",
       "sortir": {
-        "one": "{nom} : {n} pièce à sortir du sac. En sortir une",
-        "other": "{nom} : {n} pièces à sortir du sac. En sortir une"
+        "one": "{nom} : {n} pièce à sortir du sac. En sortir une",
+        "other": "{nom} : {n} pièces à sortir du sac. En sortir une"
       }
     },
     "ouvrirFiche": "{nom}, {quantite}. Ouvrir la fiche",
@@ -1080,20 +1080,27 @@
         "other": "Les {compte} de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort {n}."
       },
       "garder": "Garder {n}",
-      "retirer": "Retirer {n}"
+      "suite": {
+        "one": "Sortez-la, puis touchez « C’est fait ». « Plus tard » : elle reste signalée par un « ! » dans la liste.",
+        "other": "Sortez-les, puis touchez « C’est fait ». « Plus tard » : elles restent signalées par un « ! » dans la liste."
+      }
     },
     "retrait": {
       "titre": "Retirer « {nom} » de ce voyage ?",
       "bibliotheque": "La bibliothèque ne change pas.",
-      "pieces": {
-        "one": "Sa {compte} déjà dans le sac sort de la liste.",
-        "other": "Ses {compte} déjà dans le sac sortent de la liste."
+      "sortir": {
+        "one": "Sa {compte} est dans le sac : sortez-la, puis touchez « C’est fait ». « Plus tard » : il reste barré dans la liste, avec un « ! », jusqu’à ce qu’elle soit sortie.",
+        "other": "Ses {compte} sont dans le sac : sortez-les, puis touchez « C’est fait ». « Plus tard » : il reste barré dans la liste, avec un « ! », jusqu’à ce qu’elles soient sorties."
       },
       "derniere": "C’est le dernier objet de « {categorie} » : la catégorie disparaît aussi de ce voyage.",
       "garder": "Garder",
       "retirer": "Retirer",
       "bandeau": "« {nom} » retiré du voyage",
       "bandeauCategorie": "« {nom} » et la catégorie « {categorie} » retirés du voyage",
+      "bandeauPlusieurs": {
+        "one": "{n} objet retiré du voyage",
+        "other": "{n} objets retirés du voyage"
+      },
       "erreur": "Le retrait n’a pas pu être enregistré. Rien n’a changé ; réessayez."
     },
     "ajout": {
@@ -1146,5 +1153,25 @@
       "ajouter": "Ajouter à la bibliothèque",
       "fait": "« {nom} » est dans la bibliothèque."
     }
+  },
+  "sortie": {
+    "plusTard": "Plus tard",
+    "fait": "C’est fait",
+    "garder": "Le garder dans le voyage",
+    "texte": "Ces pièces sont dans le sac, mais le voyage ne les prévoit plus. Sortez-les, puis touchez « C’est fait ».",
+    "suite": "« Plus tard » : elles restent signalées par un « ! » dans la liste, jusqu’à ce que vous les sortiez.",
+    "ligne": {
+      "one": "{n} pièce · {categorie}",
+      "other": "{n} pièces · {categorie}"
+    },
+    "ligneRetire": {
+      "one": "{n} pièce · retiré du voyage",
+      "other": "{n} pièces · retiré du voyage"
+    },
+    "rappel": {
+      "one": "Le voyage n’en prévoit plus que {prevus}. Sortez-en une, puis touchez « C’est fait ».",
+      "other": "Le voyage n’en prévoit plus que {prevus}. Sortez-en {n}, puis touchez « C’est fait »."
+    },
+    "rappelRetire": "Retiré du voyage. Sortez-le du sac, puis touchez « C’est fait »."
   }
 }

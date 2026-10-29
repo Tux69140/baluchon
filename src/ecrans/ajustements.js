@@ -42,14 +42,15 @@ export function gestesDAjustement(ecran) {
   const objetDe = id => ecran.contenu().objets.find(o => o.id === id);
 
   // « Sortir … du sac ? », à la fermeture de la fiche qui a baissé la quantité prévue sous ce qui est déjà
-  // dans le sac (décisions du chef de projet, 2026-10-28 et 2026-10-29) : « Garder N » (la quantité écrite)
-  // ou « Retirer N » (les pièces qui sortent). Rend true pour « Retirer », false pour « Garder », null si la
-  // question est fermée sans réponse (la fiche reste ouverte).
+  // dans le sac (décisions du chef de projet, 2026-10-28 et 2026-10-29) : « Garder N » (la baisse annulée),
+  // « Plus tard » (les pièces de trop restent dans le sac, signalées par un « ! » : phase 10) ou « C'est
+  // fait » (elles sont sorties). Rend 'garder', 'plus-tard' ou 'fait' ; null si la question est fermée
+  // sans réponse (la fiche reste ouverte).
   async function confirmerBaisse(id, quantite) {
     const objet = objetDe(id);
-    if (!objet) return false;
+    if (!objet) return 'garder';
     const sortent = objet.dansLeSac - reglageDeQuantite(objet, quantite).dansLeSac;
-    const reponse = await demander({
+    return demander({
       t,
       titre: pluriel(t, 'ajustement.baisse.titre', sortent, langue),
       texteHtml: remplir(echapper(pluriel(t, 'ajustement.baisse.texte', sortent, langue)), {
@@ -57,23 +58,24 @@ export function gestesDAjustement(ecran) {
         nom: echapper(objet.nom),
         quantite,
       }),
+      suite: [echapper(pluriel(t, 'ajustement.baisse.suite', sortent, langue))],
       signal,
       boutons: [
         { cle: 'garder', libelle: remplir(t('ajustement.baisse.garder'), { n: objet.quantite }) },
-        { cle: 'retirer', libelle: remplir(t('ajustement.baisse.retirer'), { n: sortent }), principal: true },
+        { cle: 'plus-tard', libelle: t('sortie.plusTard') },
+        { cle: 'fait', libelle: t('sortie.fait'), principal: true },
       ],
     });
-    return reponse === null ? null : reponse === 'retirer';
   }
 
   // La quantité prévue s'enregistre et devient manuelle, définitivement ; le sac suit une quantité qui passe
-  // dessous (la fiche a déjà eu l'accord : confirmerBaisse). Jamais sous 1 ni, en montant, au-delà de ce que
-  // + permet (boutonsDeQuantite).
-  function regler(id, quantite) {
+  // dessous (la fiche a déjà eu l'accord : confirmerBaisse), sauf « Plus tard » (plusTard), où les pièces de
+  // trop attendent leur sortie. Jamais sous 1 ni, en montant, au-delà de ce que + permet (boutonsDeQuantite).
+  function regler(id, quantite, { plusTard = false } = {}) {
     const objet = objetDe(id);
     if (!objet || quantite === objet.quantite) return;
     if (quantite > objet.quantite ? !boutonsDeQuantite(objet).plus : quantite < BORNES_QUANTITE.min) return;
-    const { dansLeSac } = reglageDeQuantite(objet, quantite);
+    const { dansLeSac } = reglageDeQuantite(objet, quantite, { plusTard });
     const achetes = achetesApresQuantite(objet, quantite);
     const modifieLe = new Date().toISOString();
     ecran.appliquer(
@@ -122,72 +124,90 @@ export function gestesDAjustement(ecran) {
     });
   }
 
-  // La question avant de retirer : ce qui part avec l'objet (ses pièces, sa catégorie s'il est le dernier).
+  // La question avant de retirer : ce qui part avec l'objet (sa catégorie s'il est le dernier). Emballé, il
+  // a des pièces dans le sac : « C'est fait » (sorties, il part) ou « Plus tard » (il reste barré avec un
+  // « ! » jusqu'à leur sortie : phase 10). Rend 'retirer', 'fait', 'plus-tard', ou autre chose pour garder.
   async function confirmerRetrait(objet) {
     const { categorie } = extraitDuRetrait(ecran.contenu(), objet.id);
     const suite = [];
     if (objet.dansLeSac)
       suite.push(
-        remplir(echapper(pluriel(t, 'ajustement.retrait.pieces', objet.dansLeSac, langue)), {
+        remplir(echapper(pluriel(t, 'ajustement.retrait.sortir', objet.dansLeSac, langue)), {
           compte: comptePieces(t, objet.dansLeSac, langue),
         }),
       );
     if (categorie)
       suite.push(remplir(echapper(t('ajustement.retrait.derniere')), { categorie: echapper(categorie.nom) }));
-    const reponse = await demander({
+    const garder = { cle: 'garder', libelle: t('ajustement.retrait.garder') };
+    const boutons = objet.dansLeSac
+      ? [
+          garder,
+          { cle: 'plus-tard', libelle: t('sortie.plusTard') },
+          { cle: 'fait', libelle: t('sortie.fait'), danger: true },
+        ]
+      : [garder, { cle: 'retirer', libelle: t('ajustement.retrait.retirer'), danger: true }];
+    return demander({
       t,
       titre: remplir(t('ajustement.retrait.titre'), { nom: objet.nom }),
       texte: t('ajustement.retrait.bibliotheque'),
       idTexte: 'retrait-texte',
       suite,
       signal,
-      boutons: [
-        { cle: 'garder', libelle: t('ajustement.retrait.garder') },
-        { cle: 'retirer', libelle: t('ajustement.retrait.retirer'), danger: true },
-      ],
+      boutons,
     });
-    return reponse === 'retirer';
   }
 
-  // « Annuler » : les mêmes lignes réécrites à l'identique, puis l'écran ouvert sur ce voyage le montre
+  // « Annuler » : les mêmes lignes réécrites à l'identique, dans l'ordre inverse (la catégorie revient avec
+  // le dernier objet qui l'a emportée, avant les autres), puis l'écran ouvert sur ce voyage le montre
   // (événement « voyage-retabli ») ; depuis un autre écran, le voyage relu le montrera.
-  function proposerAnnulation(extrait) {
-    const { objet, categorie } = extrait;
-    const texte = categorie
-      ? remplir(t('ajustement.retrait.bandeauCategorie'), { nom: objet.nom, categorie: categorie.nom })
-      : remplir(t('ajustement.retrait.bandeau'), { nom: objet.nom });
+  function proposerAnnulation(extraits) {
+    const [{ objet, categorie }] = extraits;
+    let texte = remplir(t('ajustement.retrait.bandeau'), { nom: objet.nom });
+    if (extraits.length > 1) texte = pluriel(t, 'ajustement.retrait.bandeauPlusieurs', extraits.length, langue);
+    else if (categorie)
+      texte = remplir(t('ajustement.retrait.bandeauCategorie'), { nom: objet.nom, categorie: categorie.nom });
     montrerAnnulation({
       t,
       app,
       texte,
       voyage: objet.voyageId,
       async annuler() {
-        await stockage.retablirDansLeVoyage(extrait);
-        const detail = { voyageId: objet.voyageId, objetId: objet.id, categorieId: objet.categorieId };
-        window.dispatchEvent(new CustomEvent('voyage-retabli', { detail }));
+        for (const extrait of [...extraits].reverse()) await stockage.retablirDansLeVoyage(extrait);
+        for (const { objet: rendu } of extraits) {
+          const detail = { voyageId: rendu.voyageId, objetId: rendu.id, categorieId: rendu.categorieId };
+          window.dispatchEvent(new CustomEvent('voyage-retabli', { detail }));
+        }
       },
     });
   }
 
-  // « Retirer du voyage » : la question, puis une seule écriture, dans la file. Refusée, rien ne change et
-  // le message le dit, sans bandeau. Faite, l'objet (et sa catégorie devenue vide) quitte l'écran, la
-  // fiche se ferme, et le bandeau « Annuler » prend le relais pour 10 s. Au moment d'écrire, après les
-  // écritures d'avant et sous la garde du bandeau (sansAnnuler : après un « Annuler » en cours, et
-  // « Annuler » inactif jusqu'à la fin), le voyage est relu : l'extrait vient de ce que la base garde,
-  // qu'un « Annuler » vient peut-être de changer sans que l'écran l'ait encore montré (relecture finale
-  // de la phase 8, point 1).
-  async function retirer(id) {
-    const objet = objetDe(id);
-    if (!objet || !(await confirmerRetrait(objet)) || signal.aborted) return;
-    let extrait;
+  // Retirer des objets du voyage, sans question (elle a été posée, ou leurs pièces viennent d'être sorties) :
+  // une seule écriture dans la file. Refusée, rien ne change à l'écran et le message le dit, sans bandeau.
+  // Faite, les objets (et les catégories devenues vides) quittent l'écran, et le bandeau « Annuler » prend
+  // le relais pour 10 s. Au moment d'écrire, après les écritures d'avant et sous la garde du bandeau
+  // (sansAnnuler : après un « Annuler » en cours, et « Annuler » inactif jusqu'à la fin), le voyage est
+  // relu : les extraits viennent de ce que la base garde, qu'un « Annuler » vient peut-être de changer sans
+  // que l'écran l'ait encore montré (relecture finale de la phase 8, point 1). Un objet déjà parti (double
+  // appui) est ignoré.
+  async function retirerSansQuestion(ids) {
+    const voyageId = ecran.contenu().voyage.id;
+    let extraits;
     try {
-      extrait = await ecran.attendre(() =>
+      extraits = await ecran.attendre(() =>
         sansAnnuler(async () => {
-          const relu = await stockage.lireVoyage(objet.voyageId);
-          if (!relu?.objets.some(o => o.id === id)) return null;
-          const avant = extraitDuRetrait(relu, id);
-          await stockage.retirerDuVoyage(id);
-          return avant;
+          let relu = await stockage.lireVoyage(voyageId);
+          const faits = [];
+          for (const id of ids.filter(x => relu?.objets.some(o => o.id === x))) {
+            const extrait = extraitDuRetrait(relu, id);
+            await stockage.retirerDuVoyage(id);
+            faits.push(extrait);
+            relu = {
+              ...relu,
+              categories: relu.categories.filter(c => c.id !== extrait.categorie?.id),
+              objets: relu.objets.filter(o => o.id !== id),
+            };
+          }
+          return faits;
         }),
       );
     } catch (erreur) {
@@ -195,16 +215,33 @@ export function gestesDAjustement(ecran) {
       if (!signal.aborted) alerterEnHaut(app, t('ajustement.retrait.erreur'), signal);
       return;
     }
-    if (!extrait) return;
+    if (!extraits.length) return;
     if (!signal.aborted) {
+      const partis = new Set(extraits.map(e => e.objet.id));
+      const vides = new Set(extraits.map(e => e.categorie?.id).filter(Boolean));
       const contenu = ecran.contenu();
       ecran.montrer({
         ...contenu,
-        categories: contenu.categories.filter(c => c.id !== extrait.categorie?.id),
-        objets: contenu.objets.filter(o => o.id !== id),
+        categories: contenu.categories.filter(c => !vides.has(c.id)),
+        objets: contenu.objets.filter(o => !partis.has(o.id)),
       });
     }
-    proposerAnnulation(extrait);
+    proposerAnnulation(extraits);
+  }
+
+  // « Retirer du voyage » : la question, puis le retrait ; « Plus tard » laisse l'objet barré, ses pièces dans
+  // le sac, montré aussitôt et écrit dans la file (src/modele/sac.js, estRetire).
+  async function retirer(id) {
+    const objet = objetDe(id);
+    if (!objet) return;
+    const reponse = await confirmerRetrait(objet);
+    if (signal.aborted) return;
+    if (reponse === 'plus-tard') {
+      const modifieLe = new Date().toISOString();
+      ecran.appliquer(avecObjet(ecran.contenu(), id, { quantite: 0, achetes: 0, modifieLe }), () =>
+        stockage.marquerRetire(id, modifieLe),
+      );
+    } else if (reponse === 'retirer' || reponse === 'fait') await retirerSansQuestion([id]);
   }
 
   // « Ajouter un objet », la fiche partie de la catégorie depuis (ou d'aucune) : une seule écriture, dans la
@@ -239,5 +276,5 @@ export function gestesDAjustement(ecran) {
     });
   }
 
-  return { regler, basculerAAcheter, confirmerBaisse, renommer, retirer, ajouter, proposer };
+  return { regler, basculerAAcheter, confirmerBaisse, renommer, retirer, retirerSansQuestion, ajouter, proposer };
 }

@@ -61,13 +61,21 @@ const bandeauVenu = page =>
 const sansErreurSimulee = ouvert =>
   ouvert.erreurs.splice(0, ouvert.erreurs.length, ...ouvert.erreurs.filter(e => !e.includes('Panne simulée')));
 
+// Retirer tout de suite : « Retirer » pour un objet sans pièce dans le sac ; pour un objet emballé, la
+// question propose « Plus tard » et « C’est fait » (phase 10), et c’est « C’est fait » qui le retire.
+async function repondreRetrait(page, options = {}) {
+  const { boutons } = await lireQuestion(page);
+  await repondre(page, boutons.includes(r.retirer) ? r.retirer : fr.sortie.fait, options);
+}
+
 // « Retirer du voyage », puis la réponse ; rend la question lue.
 async function retirer(page, id, reponse = r.retirer, options = {}) {
   await ouvrirFiche(page, id);
   await toucherFiche(page, 'retirer');
   await attendreQuestion(page);
   const question = await lireQuestion(page);
-  await repondre(page, reponse, options);
+  if (reponse === r.retirer) await repondreRetrait(page, options);
+  else await repondre(page, reponse, options);
   return question;
 }
 
@@ -98,13 +106,13 @@ try {
     const { page } = ouvert;
     const bibliotheque = vu((await lireStockage(page)).bibliotheque);
     const question = await retirer(page, 'o-pan', r.garder);
-    const attendus = [r.bibliotheque, remplir(r.pieces.other, { compte: '3 pièces' })];
+    const attendus = [r.bibliotheque, remplir(r.sortir.other, { compte: '3 pièces' })];
     juge.exige(
       question?.titre === remplir(r.titre, { nom: 'Pantalons' }) &&
         vu(question.textes) === vu(attendus) &&
         vu(question.gras) === vu(['3 pièces']) &&
         vu(question.decrit) === vu(attendus) &&
-        vu(question.boutons) === vu([r.garder, r.retirer]),
+        vu(question.boutons) === vu([r.garder, fr.sortie.plusTard, fr.sortie.fait]),
       `${cas} : question ${vu(question)}`,
     );
     juge.exige(
@@ -113,7 +121,7 @@ try {
     );
     await toucherFiche(page, 'retirer');
     await attendreQuestion(page);
-    await repondre(page, r.retirer);
+    await repondreRetrait(page);
     await bandeauVenu(page);
     await attendreQue(page, s => !document.querySelector(s), FICHE);
     await calme(page);
@@ -134,7 +142,7 @@ try {
     // Pull, une seule pièce dans le sac.
     const pull = await retirer(page, 'o-pul', r.garder);
     juge.exige(
-      vu(pull?.textes) === vu([r.bibliotheque, remplir(r.pieces.one, { compte: '1 pièce' })]) &&
+      vu(pull?.textes) === vu([r.bibliotheque, remplir(r.sortir.one, { compte: '1 pièce' })]) &&
         vu(pull.gras) === vu(['1 pièce']),
       `${cas} : question de Pull ${vu(pull)}`,
     );
@@ -257,7 +265,7 @@ try {
     await toucherFiche(page, 'retirer');
     await attendreQuestion(page);
     await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 10);
-    await repondre(page, r.retirer);
+    await repondreRetrait(page);
     await bandeauVenu(page);
     await page.click(`${BANDEAU} button`);
     await attendreQue(page, () => document.querySelector('#app .objet[data-id="o-pul"]') !== null);
@@ -328,7 +336,7 @@ try {
     await ecrireStockage(page, { ...(await lireStockage(page)), pannes: ['retirerDuVoyage'] });
     await toucherFiche(page, 'retirer');
     await attendreQuestion(page);
-    await repondre(page, r.retirer);
+    await repondreRetrait(page);
     const message = await attendreQue(page, () => document.querySelector('.alerte-haut')?.textContent.trim());
     await calme(page);
     juge.exige(
@@ -355,7 +363,7 @@ try {
     await attendreQuestion(page);
     const question = await lireQuestion(page);
     juge.exige(vu(question?.textes) === vu([r.bibliotheque]), `${cas} : question de T-shirts ${vu(question)}`);
-    await repondre(page, r.retirer, { double: true });
+    await repondreRetrait(page, { double: true });
     await attendreQue(page, () => typeof window.debloquerStockage === 'function');
     const pendant = await lireFiche(page);
     await toucherFiche(page, 'retirer', { force: true });
@@ -400,7 +408,7 @@ try {
       await toucherFiche(page, 'retirer');
       await attendreQuestion(page);
       await capture(page, 'voyage-retirer', format, theme);
-      await repondre(page, r.retirer);
+      await repondreRetrait(page);
       await bandeauVenu(page);
       await attendreQue(page, s => !document.querySelector(s), FICHE);
       await calme(page);

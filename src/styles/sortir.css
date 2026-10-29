@@ -62,3 +62,45 @@
   height: 20px;
   font-size: 13px;
 }
+
+/* ---------- La fiche ---------- */
+.sortir-rappel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px var(--e-md);
+  border: 1.5px solid var(--attention);
+  border-radius: var(--r-md);
+  background: var(--fond-attention);
+}
+
+.sortir-rappel .marque-sortir {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.sortir-rappel p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  color: var(--encre);
+  font-size: var(--taille-libelle);
+}
+
+.sortir-rappel b {
+  font-size: var(--taille-objet);
+}
+
+/* Sans pièce de trop, ni rappel ni « C'est fait » ; « Le garder » n'est que pour un objet retiré. Avec des
+   pièces de trop, « Tout dans le sac » ne servirait à rien ; retiré, il n'y a plus rien à ajuster. */
+.fiche-voyage:not([data-sortir]) .sortir-rappel,
+.fiche-voyage:not([data-sortir]) [data-fiche='fait'],
+.fiche-voyage:not([data-retire]) [data-fiche='garder'],
+.fiche-voyage[data-sortir] [data-fiche='tout'],
+.fiche-voyage[data-retire] .compteur-total,
+.fiche-voyage[data-retire] [data-fiche='vider'],
+.fiche-voyage[data-retire] .fiche-ajuster,
+.fiche-voyage[data-retire] .zone-suppression {
+  display: none;
+}

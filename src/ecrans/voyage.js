@@ -12,12 +12,13 @@
 // passe par le même chemin que la case (appliquer), et ses ajustements (quantité prévue, renommer,
 // retirer et « Annuler », src/ecrans/ajustements.js) aussi, comme « Ajouter un objet ».
 import { achetesApresSac } from '../modele/courses.js';
-import { appuiSurCase } from '../modele/sac.js';
+import { appuiSurCase, estRetire } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
 import { avecObjet, gestesDAjustement } from './ajustements.js';
 import { allerALaListe, suivreDisposition, trouverCommande } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
+import { gestesDeSortie } from './sortie-du-sac.js';
 import {
   apresRepit,
   apresTampon,
@@ -242,6 +243,15 @@ function ouvrirListe(app, donnees, contexte) {
     attendre,
     montrer,
   });
+  const sortie = gestesDeSortie({ stockage, contenu: () => contenu, appliquer }, gestes);
+
+  // Le sac d'un objet réglé à la case ou à la fiche : la dernière pièce sortie d'un objet retiré le fait
+  // quitter le voyage (avec « Annuler »), plutôt que de le laisser vide et compté emballé (phase 10).
+  function reglerSac(id, dansLeSac) {
+    const objet = contenu.objets.find(o => o.id === id);
+    if (objet && estRetire(objet) && dansLeSac === 0) return sortie.faire([id]);
+    changer(id, dansLeSac);
+  }
 
   async function appuyerSurCase(id) {
     const objet = contenu.objets.find(o => o.id === id);
@@ -255,7 +265,7 @@ function ouvrirListe(app, donnees, contexte) {
       trouverCommande(main, 'case', id)?.focus();
       if (!accord) return;
     }
-    changer(id, dansLeSac);
+    reglerSac(id, dansLeSac);
   }
 
   // Fermée, la fiche rend le focus à la ligne de l'objet, où qu'elle soit passée entre-temps, ou à la
@@ -272,9 +282,11 @@ function ouvrirListe(app, donnees, contexte) {
         langue: contexte.langue,
         objet,
         categorie: contenu.categories.find(c => c.id === objet.categorieId),
-        surChangement: valeur => changer(id, valeur),
-        surQuantite: quantite => gestes.regler(id, quantite),
+        surChangement: valeur => reglerSac(id, valeur),
+        surQuantite: (quantite, options) => gestes.regler(id, quantite, options),
         surBaisse: quantite => gestes.confirmerBaisse(id, quantite),
+        surFait: () => sortie.faire([id]),
+        surGarder: () => sortie.garder(id),
         surRenommer: () => gestes.renommer(id),
         surAAcheter: () => gestes.basculerAAcheter(id),
         surRetirer: () => gestes.retirer(id),
