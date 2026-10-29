@@ -27,7 +27,7 @@ const SIMPLES = [
     'renommer',
     'retirer',
   ].map(c => `fiche.${c}`),
-  ...['titre', 'texte', 'garder', 'prevoir'].map(c => `ajustement.baisse.${c}`),
+  ...['titre', 'texte', 'garder', 'retirer'].map(c => `ajustement.baisse.${c}`),
   ...['titre', 'bibliotheque', 'pieces', 'derniere', 'garder', 'retirer', 'bandeau', 'bandeauCategorie', 'erreur'].map(
     c => `ajustement.retrait.${c}`,
   ),
@@ -89,7 +89,7 @@ test('les phrases de la maquette sont reprises', () => {
     `Les 2 pièces de «${NB}Bonnet${NB}» sont déjà dans le sac. En prévoir 1 en sort une.`,
   );
   assert.equal(t('ajustement.baisse.garder', { n: 2 }), 'Garder 2');
-  assert.equal(t('ajustement.baisse.prevoir', { quantite: 1 }), 'Prévoir 1');
+  assert.equal(t('ajustement.baisse.retirer', { n: 1 }), 'Retirer 1');
   assert.equal(
     remplir(pluriel('ajustement.retrait.pieces', 1), { compte: pieces(1) }),
     'Sa 1 pièce déjà dans le sac sort de la liste.',

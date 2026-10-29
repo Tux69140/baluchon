@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  aUneFormuleInitiale,
   boutonsDeQuantite,
   extraitDuRetrait,
   preparerAjout,
@@ -79,6 +80,15 @@ test('un objet ajouté est fixé manuellement et ne dit pas partagé', () => {
     note: '',
     modifieLe: contexte.maintenant,
   });
+});
+
+test('seul un objet venu d’un calcul garde sa formule initiale, pas un objet ajouté à la main', () => {
+  const { objet: ajoute } = preparerAjout({ nom: 'Lampe', categorie: 'c1', quantite: 3 }, contenu, contexte);
+  assert.equal(aUneFormuleInitiale(ajoute), false);
+  assert.equal(aUneFormuleInitiale({ ...ajoute, regle: 'par_jour' }), true);
+  assert.equal(aUneFormuleInitiale({ ...ajoute, parPersonne: false }), true);
+  assert.equal(aUneFormuleInitiale({ ...ajoute, plafond: 2 }), true);
+  assert.equal(aUneFormuleInitiale({ ...ajoute, modeleId: 'm1' }), true);
 });
 
 test('la quantité d’un objet ajouté vaut 1 par défaut et reste bornée', () => {

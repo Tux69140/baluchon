@@ -2,7 +2,7 @@
 // « Ajuster cet objet » dans la fiche d'un objet du voyage.
 // - la ligne du haut ne dit que la catégorie ; le calcul vit sous « Quantité prévue » ;
 // - corriger la quantité la marque fixée manuellement et le reste à la relecture (critère du plan) ;
-// - baisser sous le sac demande « Sortir une pièce du sac ? » ; « Garder 2 » ne change rien, « Prévoir 1 »
+// - baisser sous le sac demande « Sortir une pièce du sac ? » ; « Garder 2 » ne change rien, « Retirer 1 »
 //   fait suivre le sac (un double appui ne baisse qu'une fois) ; témoin : sans pièce de trop, rien n'est demandé ;
 // - − inactif à 1, + inactif à 999 ; une quantité calculée au-delà de 999 descend ;
 // - sous le filtre, un objet devenu complet en baissant sa quantité se masque comme après une coche ;
@@ -65,6 +65,7 @@ try {
         avant.ajuster === f.ajuster &&
         avant.quantite === '16' &&
         avant.calcul === remplir(f.calculee, { regle: '2 par jour et par personne' }) &&
+        avant.initialement === '' &&
         avant.retirer === f.retirer &&
         avant.desactives === '',
       `${cas} : fiche de Repas ${vu(avant)}`,
@@ -82,6 +83,7 @@ try {
     juge.exige(
       apres?.quantite === '17' &&
         apres.calcul === f.fixeeManuellement &&
+        apres.initialement === remplir(f.initialement, { regle: '2 par jour et par personne' }) &&
         apres.sur === remplir(f.sur, { total: 17 }) &&
         apres.sac === '6' &&
         (await ligne(page, 'o-rep'))?.quantite === '6 / 17' &&
@@ -98,7 +100,7 @@ try {
     await fermerEssai(juge, cas, ouvert);
   }
 
-  // Baisser sous ce qui est dans le sac : la question, « Garder 2 », puis « Prévoir 1 » (double appui).
+  // Baisser sous ce qui est dans le sac : la question, « Garder 2 », puis « Retirer 1 » (double appui).
   {
     const cas = 'baisser sous le sac';
     const ouvert = await ouvrirEssai({ format: 'tablette-paysage' });
@@ -125,7 +127,7 @@ try {
       question?.titre === b.titre &&
         vu(question.textes) === vu([remplir(b.texte, { compte: '2 pièces', nom: 'Brosse à dents', quantite: 1 })]) &&
         vu(question.gras) === vu(['2 pièces']) &&
-        vu(question.boutons) === vu([remplir(b.garder, { n: 2 }), remplir(b.prevoir, { quantite: 1 })]),
+        vu(question.boutons) === vu([remplir(b.garder, { n: 2 }), remplir(b.retirer, { n: 1 })]),
       `${cas} : question ${vu(question)}`,
     );
     await capture(page, 'voyage-ajuster-baisse', 'tablette-paysage', 'light');
@@ -139,7 +141,7 @@ try {
     );
     await toucherFiche(page, 'quantite-moins');
     await attendreQuestion(page);
-    await repondre(page, remplir(b.prevoir, { quantite: 1 }), { double: true });
+    await repondre(page, remplir(b.retirer, { n: 1 }), { double: true });
     const prevu = await attendreQue(page, () => {
       const o = JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(x => x.id === 'o-bro');
       return o.quantite === 1 && o;
@@ -154,7 +156,7 @@ try {
         vuePrevue.sur === remplir(f.sur, { total: 1 }) &&
         vuePrevue.desactives === 'plus,tout,quantite-moins' &&
         (await lireQuestion(page)) === null,
-      `${cas} : « Prévoir 1 » ${vu(prevu)} ${vu(vuePrevue)}`,
+      `${cas} : « Retirer 1 » ${vu(prevu)} ${vu(vuePrevue)}`,
     );
     // − inactif à 1 : forcé, il ne fait rien.
     await toucherFiche(page, 'quantite-moins', { force: true });

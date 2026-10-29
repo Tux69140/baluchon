@@ -66,6 +66,11 @@ export const boutonsDeQuantite = ({ quantite }) => ({
   plus: quantite < BORNES_QUANTITE.max,
 });
 
+// Une quantité fixée manuellement rappelle la formule d'où elle venait, sauf pour un objet ajouté à la main
+// (preparerAjout : fixe, par personne, sans plafond ni modèle) : il n'a jamais eu de formule.
+export const aUneFormuleInitiale = ({ regle, parPersonne, plafond, modeleId }) =>
+  !(regle === 'fixe' && parPersonne && plafond === null && modeleId === null);
+
 // Baisser sous ce qui est déjà dans le sac demande une confirmation, puis le sac suit la quantité.
 export const reglageDeQuantite = (objet, quantite) => ({
   quantite,

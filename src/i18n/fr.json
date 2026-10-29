@@ -52,6 +52,7 @@
     "quantitePrevue": "Quantité prévue",
     "calculee": "calculée : {regle}",
     "fixeeManuellement": "fixée manuellement",
+    "initialement": "initialement : {regle}",
     "quantiteMoins": "Quantité prévue : un de moins",
     "quantitePlus": "Quantité prévue : un de plus",
     "renommer": "Renommer",
@@ -1002,7 +1003,7 @@
       "titre": "Sortir une pièce du sac ?",
       "texte": "Les {compte} de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort une.",
       "garder": "Garder {n}",
-      "prevoir": "Prévoir {quantite}"
+      "retirer": "Retirer {n}"
     },
     "retrait": {
       "titre": "Retirer « {nom} » de ce voyage ?",

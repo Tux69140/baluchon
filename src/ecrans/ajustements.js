@@ -40,7 +40,8 @@ export function gestesDAjustement(ecran) {
   const objetDe = id => ecran.contenu().objets.find(o => o.id === id);
 
   // « Sortir une pièce du sac ? » : baisser la quantité prévue sous ce qui est déjà dans le sac
-  // (décision du chef de projet, 2026-10-28). Rend true pour « Prévoir ».
+  // (décision du chef de projet, 2026-10-28). Rend true pour « Retirer N », N les pièces qui sortent du sac
+  // (libellé voulu par le chef de projet, 2026-10-29).
   async function confirmerBaisse(objet, quantite) {
     const reponse = await demander({
       t,
@@ -53,10 +54,16 @@ export function gestesDAjustement(ecran) {
       signal,
       boutons: [
         { cle: 'garder', libelle: remplir(t('ajustement.baisse.garder'), { n: objet.quantite }) },
-        { cle: 'prevoir', libelle: remplir(t('ajustement.baisse.prevoir'), { quantite }), principal: true },
+        {
+          cle: 'retirer',
+          libelle: remplir(t('ajustement.baisse.retirer'), {
+            n: objet.dansLeSac - Math.min(objet.dansLeSac, quantite),
+          }),
+          principal: true,
+        },
       ],
     });
-    return reponse === 'prevoir';
+    return reponse === 'retirer';
   }
 
   // − ou + : chaque appui s'enregistre aussitôt et rend la quantité manuelle, définitivement. Jamais hors

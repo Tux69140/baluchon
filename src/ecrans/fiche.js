@@ -7,7 +7,7 @@
 // ailleurs, c'est une fenêtre centrée (src/styles/fiche.css). Elle ne garde rien elle-même : chaque geste
 // repart vers l'écran du voyage, qui l'enregistre et la repeint.
 import { remplir } from '../i18n/traduction.js';
-import { boutonsDeQuantite } from '../modele/ajustements.js';
+import { aUneFormuleInitiale, boutonsDeQuantite } from '../modele/ajustements.js';
 import { bornerDansLeSac, estComplet, viderDemandeConfirmation } from '../modele/sac.js';
 import { confirmer, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { zoneSuppression } from './fiche-modele-vues.js';
@@ -59,7 +59,7 @@ function vueFiche(t, objet) {
         <section class="fiche-bloc fiche-ajuster" aria-labelledby="fiche-ajuster">
           <h3 id="fiche-ajuster">${t('fiche.ajuster')}</h3>
           <div class="ligne-reglage">
-            <span>${t('fiche.quantitePrevue')}<small data-calcul></small></span>
+            <span>${t('fiche.quantitePrevue')}<small data-calcul></small><small data-initialement></small></span>
             <span class="compteur">
               <button type="button" class="bouton-icone" data-fiche="quantite-moins" aria-label="${t('fiche.quantiteMoins')}">${iconeInterface('moins')}</button>
               <output aria-live="polite" aria-label="${t('fiche.quantitePrevue')}"></output>
@@ -123,9 +123,12 @@ export function ouvrirFiche({
     q('.compteur output').textContent = actuel.dansLeSac;
     q('.compteur-total').textContent = remplir(t('fiche.sur'), { total: actuel.quantite });
     q('.fiche-ajuster output').textContent = actuel.quantite;
+    const regle = decrireRegle(t, actuel);
     q('[data-calcul]').textContent = actuel.quantiteManuelle
       ? t('fiche.fixeeManuellement')
-      : remplir(t('fiche.calculee'), { regle: decrireRegle(t, actuel) });
+      : remplir(t('fiche.calculee'), { regle });
+    q('[data-initialement]').textContent =
+      actuel.quantiteManuelle && aUneFormuleInitiale(actuel) ? remplir(t('fiche.initialement'), { regle }) : '';
     for (const bouton of fenetre.querySelectorAll('[data-fiche]'))
       bouton.setAttribute('aria-disabled', String(inactif(bouton.dataset.fiche, actuel)));
   }
