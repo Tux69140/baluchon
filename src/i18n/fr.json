@@ -1010,8 +1010,14 @@
       "other": "{n} pièces"
     },
     "baisse": {
-      "titre": "Sortir une pièce du sac ?",
-      "texte": "Les {compte} de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort une.",
+      "titre": {
+        "one": "Sortir une pièce du sac ?",
+        "other": "Sortir {n} pièces du sac ?"
+      },
+      "texte": {
+        "one": "Les {compte} de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort une.",
+        "other": "Les {compte} de « {nom} » sont déjà dans le sac. En prévoir {quantite} en sort {n}."
+      },
       "garder": "Garder {n}",
       "retirer": "Retirer {n}"
     },

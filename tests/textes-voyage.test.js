@@ -57,6 +57,8 @@ const SIMPLES = [
 ];
 const PLURIELS = [
   'ajustement.pieces',
+  'ajustement.baisse.titre',
+  'ajustement.baisse.texte',
   'ajustement.retrait.pieces',
   'ajustement.ajout.objetsDansCeVoyage',
   'ajustement.choix.objets',
@@ -87,9 +89,17 @@ test('les phrases de la maquette sont reprises', () => {
   assert.equal(t('fiche.fixeeAvecFormule', { regle: '2 / jour' }), 'fixée manuellement · initialement 2 / jour');
   // « 2 pièces », un morceau à part : l'écran le met en gras dans la phrase (comme la phase 7).
   const pieces = n => remplir(pluriel('ajustement.pieces', n), { n });
+  // La question vient à la fermeture de la fiche : elle compte les pièces qui sortent (2026-10-29).
+  const baisse = (cle, n, valeurs) => remplir(pluriel(`ajustement.baisse.${cle}`, n), { n, ...valeurs });
+  assert.equal(baisse('titre', 1), `Sortir une pièce du sac${NB}?`);
+  assert.equal(baisse('titre', 3), `Sortir 3 pièces du sac${NB}?`);
   assert.equal(
-    t('ajustement.baisse.texte', { nom: 'Bonnet', compte: pieces(2), quantite: 1 }),
+    baisse('texte', 1, { nom: 'Bonnet', compte: pieces(2), quantite: 1 }),
     `Les 2 pièces de «${NB}Bonnet${NB}» sont déjà dans le sac. En prévoir 1 en sort une.`,
+  );
+  assert.equal(
+    baisse('texte', 3, { nom: 'Chaussettes', compte: pieces(8), quantite: 5 }),
+    `Les 8 pièces de «${NB}Chaussettes${NB}» sont déjà dans le sac. En prévoir 5 en sort 3.`,
   );
   assert.equal(t('ajustement.baisse.garder', { n: 2 }), 'Garder 2');
   assert.equal(t('ajustement.baisse.retirer', { n: 1 }), 'Retirer 1');

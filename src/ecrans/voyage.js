@@ -262,6 +262,7 @@ function ouvrirListe(app, donnees, contexte) {
         categorie: contenu.categories.find(c => c.id === objet.categorieId),
         surChangement: valeur => changer(id, valeur),
         surQuantite: quantite => gestes.regler(id, quantite),
+        surBaisse: quantite => gestes.confirmerBaisse(id, quantite),
         surRenommer: () => gestes.renommer(id),
         surRetirer: () => gestes.retirer(id),
         surFermeture: () => {

@@ -90,7 +90,9 @@ const QUANTITE = {
 const inactif = (quoi, objet) => (SAC[quoi] ?? QUANTITE[quoi])?.inactif(objet) ?? false;
 
 // Ouvre la fiche dans dans (l'écran du voyage, pour qu'elle parte avec lui). surChangement(valeur) : le
-// nouveau nombre de pièces dans le sac ; surQuantite(n) : la quantité prévue voulue ; surRenommer() ;
+// nouveau nombre de pièces dans le sac ; surQuantite(n) : la quantité prévue voulue ; surBaisse(n) : à la
+// fermeture, la question d'une quantité baissée sous ce qui est dans le sac (true : « Retirer », false :
+// « Garder », null : sans réponse, la fiche reste) ; surRenommer() ;
 // surRetirer() : rend une promesse, tenue quand la question et l'écriture sont finies (d'ici là, « Retirer
 // du voyage » ne répond plus) ; surFermeture : la fiche effacée ; signal : l'écran s'en va, la fiche
 // disparaît avec lui. Rend repeindre(objet, categorie), que l'écran appelle à chaque changement ; un objet
@@ -101,6 +103,7 @@ export function ouvrirFiche({
   categorie,
   surChangement,
   surQuantite,
+  surBaisse,
   surRenommer,
   surRetirer,
   surFermeture,
@@ -113,24 +116,68 @@ export function ouvrirFiche({
   fenetre.classList.add('fiche', 'fiche-voyage');
   const q = selecteur => fenetre.querySelector(selecteur);
   let actuel = objet;
+  let sienne = categorie;
   let fermer = null;
+  // La quantité prévue baissée sous ce qui est dans le sac, pas encore écrite : la fiche la montre, et la
+  // question vient à sa fermeture (demande du chef de projet, 2026-10-29). null : rien en attente.
+  let prevue = null;
+  const montre = () =>
+    prevue === null
+      ? actuel
+      : { ...actuel, quantite: prevue, dansLeSac: Math.min(actuel.dansLeSac, prevue), quantiteManuelle: true };
 
-  function repeindre(nouveau, sienne = categorie) {
-    if (!nouveau) return fermer?.();
-    actuel = nouveau;
-    q('h2').textContent = actuel.nom;
+  function peindre() {
+    const vu = montre();
+    q('h2').textContent = vu.nom;
     q('.fiche-regle').textContent = sienne?.nom ?? '';
-    q('.compteur output').textContent = actuel.dansLeSac;
-    q('.compteur-total').textContent = remplir(t('fiche.sur'), { total: actuel.quantite });
-    q('.fiche-ajuster output').textContent = actuel.quantite;
-    let calcul = remplir(t('fiche.calculee'), { regle: decrireRegle(t, actuel) });
-    if (actuel.quantiteManuelle)
-      calcul = aUneFormuleInitiale(actuel)
-        ? remplir(t('fiche.fixeeAvecFormule'), { regle: decrireRegle(t, actuel, { bref: true }) })
+    q('.compteur output').textContent = vu.dansLeSac;
+    q('.compteur-total').textContent = remplir(t('fiche.sur'), { total: vu.quantite });
+    q('.fiche-ajuster output').textContent = vu.quantite;
+    let calcul = remplir(t('fiche.calculee'), { regle: decrireRegle(t, vu) });
+    if (vu.quantiteManuelle)
+      calcul = aUneFormuleInitiale(vu)
+        ? remplir(t('fiche.fixeeAvecFormule'), { regle: decrireRegle(t, vu, { bref: true }) })
         : t('fiche.fixeeManuellement');
     q('[data-calcul]').textContent = calcul;
     for (const bouton of fenetre.querySelectorAll('[data-fiche]'))
-      bouton.setAttribute('aria-disabled', String(inactif(bouton.dataset.fiche, actuel)));
+      bouton.setAttribute('aria-disabled', String(inactif(bouton.dataset.fiche, vu)));
+  }
+
+  // Ce que l'écran a écrit ; une quantité en attente que le sac ne dépasse plus (vidé entre-temps) s'écrit.
+  function repeindre(nouveau, laSienne = categorie) {
+    if (!nouveau) return fermer?.();
+    actuel = nouveau;
+    sienne = laSienne;
+    if (prevue !== null && prevue >= actuel.dansLeSac) {
+      const voulue = prevue;
+      prevue = null;
+      if (voulue !== actuel.quantite) surQuantite(voulue);
+    }
+    peindre();
+  }
+
+  // − ou + : sous ce qui est dans le sac, la quantité attend la fermeture ; sinon elle s'écrit aussitôt.
+  function changerQuantite(pas) {
+    const voulue = montre().quantite + pas;
+    if (voulue < actuel.dansLeSac) {
+      prevue = voulue;
+      return peindre();
+    }
+    prevue = null;
+    if (voulue === actuel.quantite) return peindre();
+    surQuantite(voulue);
+  }
+
+  // Fermée avec une quantité en attente : la question ; « Retirer » l'écrit, « Garder » l'oublie, sans
+  // réponse la fiche reste. Sinon, elle se ferme.
+  async function demanderFermeture() {
+    if (prevue === null) return fermer();
+    const voulue = prevue;
+    const reponse = await surBaisse(voulue);
+    if (reponse === null || !fenetre.isConnected) return;
+    prevue = null;
+    if (reponse) surQuantite(voulue);
+    fermer();
   }
 
   // « Retirer du voyage » : inactif jusqu'à la fin de la question et de l'écriture (un double appui ne
@@ -154,7 +201,7 @@ export function ouvrirFiche({
     if ('supprimer' in bouton.dataset) return retirer(bouton);
     const quoi = bouton.dataset.fiche;
     if (quoi === 'renommer') return surRenommer();
-    if (QUANTITE[quoi]) return surQuantite(actuel.quantite + QUANTITE[quoi].pas);
+    if (QUANTITE[quoi]) return changerQuantite(QUANTITE[quoi].pas);
     if (quoi === 'vider' && viderDemandeConfirmation(actuel)) {
       const accord = await confirmerVider({ t, objet: actuel, signal });
       if (!fenetre.isConnected) return;
@@ -171,6 +218,7 @@ export function ouvrirFiche({
   fermer = ouvrirFenetre(fenetre, {
     fermerSurVoile: true,
     fermerAuRetour: true,
+    surGeste: demanderFermeture,
     surFermeture: () => {
       signal.removeEventListener('abort', effacer);
       effacer();

@@ -2,8 +2,9 @@
 // « Ajuster cet objet » dans la fiche d'un objet du voyage.
 // - la ligne du haut ne dit que la catégorie ; le calcul vit sous « Quantité prévue » ;
 // - corriger la quantité la marque fixée manuellement et le reste à la relecture (critère du plan) ;
-// - baisser sous le sac demande « Sortir une pièce du sac ? » ; « Garder 2 » ne change rien, « Retirer 1 »
-//   fait suivre le sac (un double appui ne baisse qu'une fois) ; témoin : sans pièce de trop, rien n'est demandé ;
+// - baisser sous le sac demande « Sortir … du sac ? » à la fermeture de la fiche, pas avant ; « Garder » ne
+//   change rien, « Retirer » fait suivre le sac (un double appui ne baisse qu'une fois) ; témoin : sans pièce
+//   de trop, rien n'est demandé ;
 // - − inactif à 1, + inactif à 999 ; une quantité calculée au-delà de 999 descend ;
 // - sous le filtre, un objet devenu complet en baissant sa quantité se masque comme après une coche ;
 // - renommer change le nom dans ce voyage, pas dans la bibliothèque ; un nom vide est refusé ; un nom
@@ -101,70 +102,116 @@ try {
     await fermerEssai(juge, cas, ouvert);
   }
 
-  // Baisser sous ce qui est dans le sac : la question, « Garder 2 », puis « Retirer 1 » (double appui).
+  // Baisser sous ce qui est dans le sac : aucune question pendant les appuis sur −, la fiche montre ce qui est
+  // prévu sans rien écrire ; la question vient une fois, à la fermeture, et compte les pièces qui sortent
+  // (demande du chef de projet, 2026-10-29). « Garder N » ne change rien ; « Retirer N » (double appui) écrit.
   {
     const cas = 'baisser sous le sac';
     const ouvert = await ouvrirEssai({ format: 'tablette-paysage' });
     const { page } = ouvert;
-    // Témoin : Pyjama, 1 pièce sur 2 : baisser à 1 ne demande rien.
+    const titre = n => remplir(n > 1 ? b.titre.other : b.titre.one, { n });
+    const texte = (n, valeurs) => remplir(n > 1 ? b.texte.other : b.texte.one, { n, ...valeurs });
+    const fermerLaFiche = async () => {
+      await page.keyboard.press('Escape');
+      await attendreQuestion(page);
+    };
+    // Témoin : Pyjama, 1 pièce sur 2 : baisser à 1 ne demande rien, ni tout de suite ni à la fermeture.
     await ouvrirFiche(page, 'o-pyj');
     await toucherFiche(page, 'quantite-moins');
     const pyjama = await attendreQue(page, () => {
       const o = JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(x => x.id === 'o-pyj');
       return o.quantite === 1 && o;
     });
+    await page.keyboard.press('Escape');
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
     juge.exige(
       pyjama?.dansLeSac === 1 && pyjama.quantiteManuelle && (await lireQuestion(page)) === null,
       `${cas} : Pyjama sans question ${vu(pyjama)}, question ${vu(await lireQuestion(page))}`,
     );
-    await page.keyboard.press('Escape');
-    await attendreQue(page, s => !document.querySelector(s), FICHE);
-    // Brosse à dents, 2 sur 2.
-    await ouvrirFiche(page, 'o-bro');
-    await toucherFiche(page, 'quantite-moins');
-    await attendreQuestion(page);
+    // Chaussettes, 8 sur 8 : trois appuis sur −, aucune question, rien d'écrit, la fiche montre 5 sur 5.
+    await ouvrirFiche(page, 'o-cha');
+    for (let i = 0; i < 3; i++) await toucherFiche(page, 'quantite-moins');
+    await calme(page);
+    const pendant = await lireFiche(page);
+    const avant = await objetStocke(page, 'o-cha');
+    juge.exige(
+      (await lireQuestion(page)) === null &&
+        pendant?.quantite === '5' &&
+        pendant.sac === '5' &&
+        pendant.sur === remplir(f.sur, { total: 5 }) &&
+        avant.quantite === 8 &&
+        avant.dansLeSac === 8 &&
+        !avant.quantiteManuelle,
+      `${cas} : pendant les appuis ${vu(pendant)}, stocké ${vu(avant)}`,
+    );
+    // À la fermeture, la question : 3 pièces sortent.
+    await fermerLaFiche();
     const question = await lireQuestion(page);
     juge.exige(
-      question?.titre === b.titre &&
-        vu(question.textes) === vu([remplir(b.texte, { compte: '2 pièces', nom: 'Brosse à dents', quantite: 1 })]) &&
-        vu(question.gras) === vu(['2 pièces']) &&
-        vu(question.boutons) === vu([remplir(b.garder, { n: 2 }), remplir(b.retirer, { n: 1 })]),
+      question?.titre === titre(3) &&
+        vu(question.textes) === vu([texte(3, { compte: '8 pièces', nom: 'Chaussettes', quantite: 5 })]) &&
+        vu(question.gras) === vu(['8 pièces']) &&
+        vu(question.boutons) === vu([remplir(b.garder, { n: 8 }), remplir(b.retirer, { n: 3 })]),
       `${cas} : question ${vu(question)}`,
     );
     await capture(page, 'voyage-ajuster-baisse', 'tablette-paysage', 'light');
-    await repondre(page, remplir(b.garder, { n: 2 }));
-    await calme(page);
-    const garde = await objetStocke(page, 'o-bro');
-    const vueGarde = await lireFiche(page);
+    // « Garder 8 » : rien ne change, la fiche se ferme.
+    await repondre(page, remplir(b.garder, { n: 8 }));
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
+    const garde = await objetStocke(page, 'o-cha');
     juge.exige(
-      garde.quantite === 2 && garde.dansLeSac === 2 && !garde.quantiteManuelle && vueGarde?.quantite === '2',
-      `${cas} : « Garder 2 » ${vu(garde)} ${vu(vueGarde)}`,
+      garde.quantite === 8 &&
+        garde.dansLeSac === 8 &&
+        !garde.quantiteManuelle &&
+        (await ligne(page, 'o-cha'))?.quantite === '8',
+      `${cas} : « Garder 8 » ${vu(garde)} ${vu(await ligne(page, 'o-cha'))}`,
     );
+    // Brosse à dents, 2 sur 2 : un appui, la fermeture, « Retirer 1 » (double appui) écrit 1 sur 1.
+    await ouvrirFiche(page, 'o-bro');
     await toucherFiche(page, 'quantite-moins');
-    await attendreQuestion(page);
+    await fermerLaFiche();
+    const une = await lireQuestion(page);
+    juge.exige(
+      une?.titre === titre(1) &&
+        vu(une.textes) === vu([texte(1, { compte: '2 pièces', nom: 'Brosse à dents', quantite: 1 })]) &&
+        vu(une.boutons) === vu([remplir(b.garder, { n: 2 }), remplir(b.retirer, { n: 1 })]),
+      `${cas} : question d'une pièce ${vu(une)}`,
+    );
     await repondre(page, remplir(b.retirer, { n: 1 }), { double: true });
-    const prevu = await attendreQue(page, () => {
+    const retire = await attendreQue(page, () => {
       const o = JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(x => x.id === 'o-bro');
       return o.quantite === 1 && o;
     });
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
     await calme(page);
-    const vuePrevue = await lireFiche(page);
     juge.exige(
-      prevu?.dansLeSac === 1 &&
-        prevu.quantiteManuelle &&
-        vuePrevue?.quantite === '1' &&
-        vuePrevue.sac === '1' &&
-        vuePrevue.sur === remplir(f.sur, { total: 1 }) &&
-        vuePrevue.desactives === 'plus,tout,quantite-moins' &&
-        (await lireQuestion(page)) === null,
-      `${cas} : « Retirer 1 » ${vu(prevu)} ${vu(vuePrevue)}`,
+      retire?.dansLeSac === 1 && retire.quantiteManuelle && (await lireQuestion(page)) === null,
+      `${cas} : « Retirer 1 » ${vu(retire)}`,
     );
-    // − inactif à 1 : forcé, il ne fait rien.
+    // Rouverte : 1 sur 1, − inactif ; forcé, il ne fait rien.
+    await ouvrirFiche(page, 'o-bro');
+    const rouverte = await lireFiche(page);
     await toucherFiche(page, 'quantite-moins', { force: true });
     await calme(page);
     juge.exige(
-      (await objetStocke(page, 'o-bro')).quantite === 1 && (await lireQuestion(page)) === null,
-      `${cas} : − inactif à 1 a agi`,
+      rouverte?.quantite === '1' &&
+        rouverte.desactives === 'plus,tout,quantite-moins' &&
+        (await objetStocke(page, 'o-bro')).quantite === 1 &&
+        (await lireQuestion(page)) === null,
+      `${cas} : rouverte ${vu(rouverte)}`,
+    );
+    // Une baisse remontée avant la fermeture ne demande rien : Chaussettes −, +, fermée.
+    await page.keyboard.press('Escape');
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
+    await ouvrirFiche(page, 'o-cha');
+    await toucherFiche(page, 'quantite-moins');
+    await toucherFiche(page, 'quantite-plus');
+    await page.keyboard.press('Escape');
+    await attendreQue(page, s => !document.querySelector(s), FICHE);
+    const remonte = await objetStocke(page, 'o-cha');
+    juge.exige(
+      (await lireQuestion(page)) === null && remonte.quantite === 8 && remonte.dansLeSac === 8,
+      `${cas} : baisse remontée ${vu(remonte)}`,
     );
     await fermerEssai(juge, cas, ouvert);
   }

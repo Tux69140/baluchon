@@ -13,6 +13,7 @@
 // - montrer(nouveau) : ce qu'une écriture attendue a fait, montré.
 import { remplir } from '../i18n/traduction.js';
 import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
+import { BORNES_QUANTITE } from '../modele/modeles.js';
 import { proposerBibliotheque } from './ajout-bibliotheque.js';
 import { alerterEnHaut } from './alerte.js';
 import { montrerAnnulation, sansAnnuler } from './annulation.js';
@@ -39,14 +40,18 @@ export function gestesDAjustement(ecran) {
   const { t, langue, stockage, app, signal } = ecran;
   const objetDe = id => ecran.contenu().objets.find(o => o.id === id);
 
-  // « Sortir une pièce du sac ? » : baisser la quantité prévue sous ce qui est déjà dans le sac
-  // (décision du chef de projet, 2026-10-28). Rend true pour « Retirer N », N les pièces qui sortent du sac
-  // (libellé voulu par le chef de projet, 2026-10-29).
-  async function confirmerBaisse(objet, quantite) {
+  // « Sortir … du sac ? », à la fermeture de la fiche qui a baissé la quantité prévue sous ce qui est déjà
+  // dans le sac (décisions du chef de projet, 2026-10-28 et 2026-10-29) : « Garder N » (la quantité écrite)
+  // ou « Retirer N » (les pièces qui sortent). Rend true pour « Retirer », false pour « Garder », null si la
+  // question est fermée sans réponse (la fiche reste ouverte).
+  async function confirmerBaisse(id, quantite) {
+    const objet = objetDe(id);
+    if (!objet) return false;
+    const sortent = objet.dansLeSac - reglageDeQuantite(objet, quantite).dansLeSac;
     const reponse = await demander({
       t,
-      titre: t('ajustement.baisse.titre'),
-      texteHtml: remplir(echapper(t('ajustement.baisse.texte')), {
+      titre: pluriel(t, 'ajustement.baisse.titre', sortent, langue),
+      texteHtml: remplir(echapper(pluriel(t, 'ajustement.baisse.texte', sortent, langue)), {
         compte: comptePieces(t, objet.dansLeSac, langue),
         nom: echapper(objet.nom),
         quantite,
@@ -54,30 +59,20 @@ export function gestesDAjustement(ecran) {
       signal,
       boutons: [
         { cle: 'garder', libelle: remplir(t('ajustement.baisse.garder'), { n: objet.quantite }) },
-        {
-          cle: 'retirer',
-          libelle: remplir(t('ajustement.baisse.retirer'), {
-            n: objet.dansLeSac - Math.min(objet.dansLeSac, quantite),
-          }),
-          principal: true,
-        },
+        { cle: 'retirer', libelle: remplir(t('ajustement.baisse.retirer'), { n: sortent }), principal: true },
       ],
     });
-    return reponse === 'retirer';
+    return reponse === null ? null : reponse === 'retirer';
   }
 
-  // − ou + : chaque appui s'enregistre aussitôt et rend la quantité manuelle, définitivement. Jamais hors
-  // de ce que les boutons permettent (boutonsDeQuantite) ; le sac suit une quantité qui passe dessous.
-  async function regler(id, quantite) {
+  // La quantité prévue s'enregistre et devient manuelle, définitivement ; le sac suit une quantité qui passe
+  // dessous (la fiche a déjà eu l'accord : confirmerBaisse). Jamais sous 1 ni, en montant, au-delà de ce que
+  // + permet (boutonsDeQuantite).
+  function regler(id, quantite) {
     const objet = objetDe(id);
-    if (!objet) return;
-    const permis = boutonsDeQuantite(objet);
-    if (quantite < objet.quantite ? !permis.moins : !permis.plus) return;
-    if (reglageDeQuantite(objet, quantite).confirmer && !(await confirmerBaisse(objet, quantite))) return;
-    // Pendant la question, une relecture a pu changer l'objet : la quantité voulue partait de l'ancienne.
-    const actuel = objetDe(id);
-    if (signal.aborted || actuel?.quantite !== objet.quantite) return;
-    const { dansLeSac } = reglageDeQuantite(actuel, quantite);
+    if (!objet || quantite === objet.quantite) return;
+    if (quantite > objet.quantite ? !boutonsDeQuantite(objet).plus : quantite < BORNES_QUANTITE.min) return;
+    const { dansLeSac } = reglageDeQuantite(objet, quantite);
     const modifieLe = new Date().toISOString();
     ecran.appliquer(avecObjet(ecran.contenu(), id, { quantite, dansLeSac, quantiteManuelle: true, modifieLe }), () =>
       stockage.reglerQuantite(id, quantite, dansLeSac, modifieLe),
@@ -229,5 +224,5 @@ export function gestesDAjustement(ecran) {
     });
   }
 
-  return { regler, renommer, retirer, ajouter, proposer };
+  return { regler, confirmerBaisse, renommer, retirer, ajouter, proposer };
 }
