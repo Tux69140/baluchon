@@ -313,6 +313,12 @@ main.grand-format :is(.choix, .gf-tuile)[data-attenuee] {
   background: var(--releve);
 }
 
+/* Le cadre du focus (rendu à la ligne quand sa fiche se ferme) se pose à l'intérieur : dehors, la carte le
+   coupait et les lignes voisines le recouvraient. */
+.objet-corps:focus-visible {
+  outline-offset: -3px;
+}
+
 .objet-texte {
   display: flex;
   flex: 1;
