@@ -59,7 +59,8 @@ const vueInformations = t => `
 // La rangée d'étapes, le corps (Informations, et le panneau des autres étapes) et le pied. Sur
 // tablette et ordinateur, dans une fenêtre modale par-dessus Mes voyages ; au téléphone, en écran
 // plein avec le lien « Mes voyages » (décision du chef de projet, 2026-10-07).
-export function vueAssistant(t, { enFenetre }) {
+// retour : le lien du haut au téléphone (src/ecrans/retour.js ; par défaut, Mes voyages).
+export function vueAssistant(t, { enFenetre, retour }) {
   const contenu = `
       <nav class="etapes" aria-label="${t('nouveauVoyage.etapes')}"></nav>
       <form class="formulaire" novalidate>
@@ -71,7 +72,7 @@ export function vueAssistant(t, { enFenetre }) {
   if (enFenetre) return vueFenetre({ t, idTitre: ID_TITRE, titre: t('nouveauVoyage.titre'), contenu });
   return `
     <main class="ecran assistant assistant-plein">
-      ${lienRetour(t)}
+      ${lienRetour(t, retour)}
       <h1 id="${ID_TITRE}" tabindex="-1">${t('nouveauVoyage.titre')}</h1>${contenu}
     </main>`;
 }
