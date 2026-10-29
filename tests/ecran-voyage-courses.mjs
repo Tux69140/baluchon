@@ -12,16 +12,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
-import {
-  FICHE,
-  fr,
-  ligne,
-  ouvrirFiche,
-  ouvrirVoyage,
-  remplir,
-  toucherFiche,
-  vu,
-} from './outils/ajuster.mjs';
+import { FICHE, fr, ligne, ouvrirFiche, ouvrirVoyage, remplir, toucherFiche, vu } from './outils/ajuster.mjs';
 import { fermerEssai } from './outils/bibliotheque.mjs';
 import { CAPTURES, NOMS_THEME, creerJuge, verifierCommandes } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
