@@ -26,7 +26,7 @@ Décisions durables qui s'appliquent à toutes les phases :
     - `voyage` (nom, destination, départ, retour, voyageurs) ;
     - `etiquette_du_voyage` (identifiant d'origine, nom copié) ;
     - `categorie_du_voyage` (nom, icône, couleur, ordre copiés) ;
-    - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité ; l'objet est coché quand il atteint la quantité —, à_acheter, acheté, note copiée).
+    - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité ; l'objet est coché quand il atteint la quantité —, à_acheter, achetés — nombre de pièces achetées, de 0 à la quantité (décision du chef de projet, 2026-10-29) —, note copiée).
   - Méta : version du schéma, langue de la bibliothèque de départ, bibliothèque de départ installée.
   - Le thème et le filtre « Reste à emballer » de chaque voyage sont des réglages de l'appareil, hors base et hors sauvegarde.
 - **Modèles clés** : Bibliothèque, GroupeEtiquettes, Etiquette, CategorieModele, ObjetModele, Voyage, CategorieDuVoyage, ObjetDuVoyage, Sauvegarde.
@@ -240,7 +240,7 @@ Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité p
 
 ### Ce qu'on livre
 
-À la création d'un voyage, les objets consommables sont marqués « à acheter » ; la marque se pose ou se retire sur n'importe quel objet, depuis sa fiche. L'écran Courses rassemble ces objets par catégorie, avec leurs quantités. Un objet indiqué acheté perd sa marque « à acheter », mais reste à mettre dans le sac.
+À la création d'un voyage, les objets consommables sont marqués « à acheter » ; la marque se pose ou se retire sur n'importe quel objet, depuis sa fiche. L'écran Courses rassemble ces objets par catégorie, avec leurs quantités. On y note les pièces achetées, comme dans le sac (« 6 / 16 ») ; un objet entièrement acheté quitte l'écran, avec un « Annuler » de 10 s, perd sa marque « à acheter », mais reste à mettre dans le sac (décisions du chef de projet, 2026-10-29). Maquette validée le 2026-10-29 ; conception détaillée : `docs/superpowers/specs/2026-10-29-phase-9-courses-design.md`.
 
 ### Critères d'acceptation
 
