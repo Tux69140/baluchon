@@ -148,8 +148,17 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetDuVoyage> {
     })
 }
 
-// Les insertions d'une catégorie et d'un objet du voyage, partagées avec ajustements.rs : un objet
-// ajouté ou rétabli s'écrit exactement comme à la création du voyage.
+// Les insertions d'une étiquette, d'une catégorie et d'un objet du voyage, partagées avec
+// ajustements.rs et modification.rs : ce qui est ajouté ou rétabli s'écrit comme à la création.
+pub(crate) fn inserer_etiquette(tx: &Transaction, e: &EtiquetteDuVoyage) -> Result<(), String> {
+    tx.execute(
+        &format!("INSERT INTO etiquette_du_voyage ({COLONNES_ETIQUETTE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"),
+        params![e.id, e.voyage_id, e.modele_id, e.nom, e.ordre, e.modifie_le],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
 pub(crate) fn inserer_categorie(tx: &Transaction, c: &CategorieDuVoyage) -> Result<(), String> {
     tx.execute(
         &format!("INSERT INTO categorie_du_voyage ({COLONNES_CATEGORIE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"),
@@ -218,11 +227,7 @@ impl Base {
         )
         .map_err(en_texte)?;
         for e in &contenu.etiquettes {
-            tx.execute(
-                &format!("INSERT INTO etiquette_du_voyage ({COLONNES_ETIQUETTE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"),
-                params![e.id, e.voyage_id, e.modele_id, e.nom, e.ordre, e.modifie_le],
-            )
-            .map_err(en_texte)?;
+            inserer_etiquette(&tx, e)?;
         }
         for c in &contenu.categories {
             inserer_categorie(&tx, c)?;

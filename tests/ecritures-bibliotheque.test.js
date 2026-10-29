@@ -27,6 +27,9 @@ const AUTRES = [
   'reglerQuantite',
   'renommerObjetDuVoyage',
   'retirerDuVoyage',
+  'modifierVoyage',
+  'marquerRetire',
+  'garderDansLeVoyage',
   'ecrireFiltre',
   // L'installation n'a lieu qu'au premier lancement, avant toute suppression ; le rétablissement est
   // « Annuler » lui-même.

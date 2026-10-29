@@ -165,5 +165,90 @@
         "modifieLe": "2026-10-06T08:00:00.000Z"
       }
     ]
+  },
+  "modification": {
+    "voyage": {
+      "id": "v-vercors",
+      "nom": "Vercors",
+      "destination": "Autrans",
+      "depart": "2026-10-10",
+      "retour": "2026-10-13",
+      "voyageurs": 3,
+      "modifieLe": "2026-10-29T10:00:00.000Z"
+    },
+    "etiquettes": [
+      {
+        "id": "ev-camping",
+        "voyageId": "v-vercors",
+        "modeleId": "et-camping",
+        "nom": "Camping",
+        "ordre": 0,
+        "modifieLe": "2026-10-29T10:00:00.000Z"
+      },
+      {
+        "id": "ev-pluie",
+        "voyageId": "v-vercors",
+        "modeleId": "et-pluie",
+        "nom": "Pluie",
+        "ordre": 1,
+        "modifieLe": "2026-10-29T10:00:00.000Z"
+      }
+    ],
+    "categoriesAjoutees": [
+      {
+        "id": "cv-camping",
+        "voyageId": "v-vercors",
+        "modeleId": "cm-camping",
+        "nom": "Camping",
+        "icone": "tent",
+        "couleur": "pomme",
+        "ordre": 3,
+        "modifieLe": "2026-10-29T10:00:00.000Z"
+      }
+    ],
+    "objetsAjoutes": [
+      {
+        "id": "ov-gaz",
+        "voyageId": "v-vercors",
+        "categorieId": "cv-camping",
+        "modeleId": "om-gaz",
+        "nom": "Cartouches de gaz",
+        "regle": "par_nuit",
+        "valeur": 1,
+        "plafond": null,
+        "parPersonne": false,
+        "consommable": true,
+        "quantite": 3,
+        "quantiteManuelle": false,
+        "dansLeSac": 0,
+        "aAcheter": true,
+        "achetes": 0,
+        "note": "",
+        "modifieLe": "2026-10-29T10:00:00.000Z"
+      }
+    ],
+    "objetsModifies": [
+      {
+        "id": "ov-repas",
+        "voyageId": "v-vercors",
+        "categorieId": "cv-alimentation",
+        "modeleId": null,
+        "nom": "Repas",
+        "regle": "par_jour",
+        "valeur": 2,
+        "plafond": null,
+        "parPersonne": true,
+        "consommable": true,
+        "quantite": 24,
+        "quantiteManuelle": false,
+        "dansLeSac": 0,
+        "aAcheter": true,
+        "achetes": 0,
+        "note": "Midi et soir.",
+        "modifieLe": "2026-10-29T10:00:00.000Z"
+      }
+    ],
+    "objetsRetires": ["ov-tshirts"],
+    "categoriesRetirees": ["cv-vetements"]
   }
 }

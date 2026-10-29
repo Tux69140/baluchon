@@ -7,6 +7,7 @@ import contrat from './contrat/stockage.json' with { type: 'json' };
 import fr from '../src/i18n/fr.json' with { type: 'json' };
 import { construireBibliotheque } from '../src/modele/bibliotheque.js';
 import { nouvelId } from '../src/modele/identifiant.js';
+import { appliquerChangements, calculerChangements } from '../src/modele/changements.js';
 import { genererVoyage } from '../src/modele/voyage.js';
 
 const champs = objet => Object.keys(objet).sort();
@@ -33,4 +34,28 @@ test('le voyage généré a les champs attendus par la base', () => {
   for (const e of contenu.etiquettes) assert.deepEqual(champs(e), champs(contrat.voyage.etiquettes[0]));
   for (const c of contenu.categories) assert.deepEqual(champs(c), champs(contrat.voyage.categories[0]));
   for (const o of contenu.objets) assert.deepEqual(champs(o), champs(contrat.voyage.objets[0]));
+});
+
+test('la modification calculée par le modèle a les champs attendus par la base', () => {
+  const contenu = genererVoyage(
+    bibliotheque,
+    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 },
+    { choisies: new Set(), ecartes: new Set() },
+    { nouvelId, maintenant: 'x' },
+  );
+  const entree = {
+    contenu,
+    bibliotheque,
+    infos: { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 3 },
+    choisies: new Set(),
+  };
+  const changements = calculerChangements(entree);
+  const acceptes = new Set(changements.flatMap(c => c.lignes).map(l => l.cle));
+  assert.ok(acceptes.size > 0);
+  const { modification } = appliquerChangements({ ...entree, changements, acceptes }, { nouvelId, maintenant: 'x' });
+  assert.deepEqual(champs(modification), champs(contrat.modification));
+  assert.deepEqual(champs(modification.voyage), champs(contrat.modification.voyage));
+  assert.ok(modification.objetsModifies.length > 0);
+  for (const o of modification.objetsModifies)
+    assert.deepEqual(champs(o), champs(contrat.modification.objetsModifies[0]));
 });

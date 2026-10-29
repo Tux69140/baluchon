@@ -6,12 +6,14 @@ mod edition;
 #[cfg(test)]
 mod essais;
 mod etiquettes;
+mod modification;
 mod suppressions;
 mod voyages;
 
 use ajustements::{AjoutALaBibliotheque, AjoutAuVoyage};
 use base::Base;
 use bibliotheque::{Bibliotheque, CategorieModele, Etiquette, GroupeEtiquettes, ObjetModele};
+use modification::ModificationDuVoyage;
 use std::fs;
 use tauri::{AppHandle, Manager, State};
 use voyages::{EtatObjet, Voyage, VoyageComplet};
@@ -201,6 +203,30 @@ fn ajouter_a_la_bibliotheque(
     base.ajouter_a_la_bibliotheque(&ajout)
 }
 
+#[tauri::command]
+fn modifier_voyage(
+    base: State<'_, Base>,
+    modification: ModificationDuVoyage,
+) -> Result<(), String> {
+    base.modifier_voyage(&modification)
+}
+
+#[tauri::command]
+fn marquer_retire(base: State<'_, Base>, id: String, modifie_le: String) -> Result<(), String> {
+    base.marquer_retire(&id, &modifie_le)
+}
+
+#[tauri::command]
+fn garder_dans_le_voyage(
+    base: State<'_, Base>,
+    id: String,
+    quantite: i64,
+    quantite_manuelle: bool,
+    modifie_le: String,
+) -> Result<(), String> {
+    base.garder_dans_le_voyage(&id, quantite, quantite_manuelle, &modifie_le)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -236,7 +262,10 @@ pub fn run() {
             regler_quantite,
             renommer_objet_du_voyage,
             retirer_du_voyage,
-            ajouter_a_la_bibliotheque
+            ajouter_a_la_bibliotheque,
+            modifier_voyage,
+            marquer_retire,
+            garder_dans_le_voyage
         ])
         .run(tauri::generate_context!())
         .expect("Baluchon n'a pas pu démarrer");

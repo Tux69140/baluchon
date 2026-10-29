@@ -3,6 +3,7 @@
 // vérifie aussi tests/contrat.test.js côté modèle : les deux côtés parlent la même forme.
 use crate::base::Base;
 use crate::bibliotheque::Bibliotheque;
+use crate::modification::ModificationDuVoyage;
 use crate::voyages::VoyageComplet;
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -40,6 +41,7 @@ pub fn base_jetable() -> (Dossier, Base) {
 pub struct Contrat {
     pub bibliotheque: Bibliotheque,
     pub voyage: VoyageComplet,
+    pub modification: ModificationDuVoyage,
 }
 
 pub fn contrat() -> Contrat {

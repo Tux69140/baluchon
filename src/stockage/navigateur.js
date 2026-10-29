@@ -17,6 +17,7 @@ import {
   verifierSac,
 } from './navigateur-outils.js';
 import { ajustementsNavigateur } from './navigateur-voyages.js';
+import { modificationNavigateur } from './navigateur-modification.js';
 
 // La base relit par rang puis par ordre de création ; le tri est stable, comme ORDER BY ordre, rowid.
 const trierParOrdre = liste => [...liste].sort((a, b) => a.ordre - b.ordre);
@@ -249,6 +250,7 @@ export function creerStockageNavigateur() {
       }));
     },
     ...ajustementsNavigateur,
+    ...modificationNavigateur,
     lireFiltre,
     ecrireFiltre,
   });
