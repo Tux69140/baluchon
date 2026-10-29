@@ -42,6 +42,31 @@
     "encoreAAcheter": "encore {n} à acheter",
     "erreurModification": "La modification n’a pas pu être enregistrée. Réessayez."
   },
+  "courses": {
+    "titre": "Courses",
+    "compte": {
+      "one": "{n} objet à acheter",
+      "other": "{n} objets à acheter"
+    },
+    "case": {
+      "cocher": "{nom} : pas encore acheté. Cocher",
+      "ajouter": "{nom} : {n} sur {total} achetés. Ajouter une pièce",
+      "achete": "{nom} : acheté"
+    },
+    "ouvrirFiche": "{nom}, {quantite}. Ouvrir la fiche",
+    "vide": {
+      "rien": {
+        "titre": "Rien à acheter",
+        "texte": "Aucun objet de ce voyage n’est marqué « à acheter ». La marque se pose depuis la fiche d’un objet, dans la liste du voyage."
+      },
+      "faites": {
+        "titre": "Courses faites !",
+        "texte": "Tout ce qu’il fallait acheter est acheté. Il reste à le mettre dans le sac."
+      }
+    },
+    "retourVoyage": "Retour au voyage",
+    "erreurEnregistrement": "L’achat n’a pas pu être enregistré. Réessayez."
+  },
   "fiche": {
     "dansLeSac": "Dans le sac",
     "sur": "sur {total}",
@@ -540,6 +565,11 @@
     "fermer": "Fermer"
   },
   "annulation": {
+    "achete": {
+      "one": "{nom} : acheté",
+      "other": "{nom} : achetés ({n})"
+    },
+    "plusAAcheter": "{nom} : plus à acheter",
     "objet": "Objet « {nom} » supprimé",
     "categorie": {
       "one": "Catégorie « {nom} » et {n} objet supprimés",

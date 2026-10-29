@@ -146,10 +146,11 @@ export async function sansAnnuler(travail) {
   }
 }
 
-// texte : ce qui vient d'être supprimé, en texte simple ; annuler() rétablit et rend une promesse.
+// texte : ce qui vient d'être supprimé (ou acheté, dans les Courses), en texte simple ; annuler() rétablit et
+// rend une promesse. icone : le picto du bandeau (la corbeille, ou le chariot des Courses).
 // app : la racine de l'appli, où dire un rétablissement refusé. voyage : l'id du voyage d'un retrait
 // d'objet (le bandeau de la bibliothèque n'en a pas).
-export function montrerAnnulation({ t, app, texte, annuler, voyage = null }) {
+export function montrerAnnulation({ t, app, texte, annuler, voyage = null, icone = 'supprimer' }) {
   retirerAnnulation();
   const el = document.createElement('div');
   el.className = 'bandeau-annuler';
@@ -157,7 +158,7 @@ export function montrerAnnulation({ t, app, texte, annuler, voyage = null }) {
   el.setAttribute('role', 'status');
   el.dataset.entree = '';
   el.innerHTML = `
-    ${iconeInterface('supprimer')}
+    ${iconeInterface(icone)}
     <p>${echapper(texte)}</p>
     <button type="button" class="bandeau-action">${iconeInterface('annuler')}${echapper(t('annulation.annuler'))}</button>`;
   // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.

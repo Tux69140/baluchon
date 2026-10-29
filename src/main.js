@@ -31,6 +31,7 @@ import { construireBibliotheque } from './modele/bibliotheque.js';
 import { nouvelId } from './modele/identifiant.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
 import { ecranVoyage } from './ecrans/voyage.js';
+import { ecranCourses } from './ecrans/courses.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
 import { ecranReglages } from './ecrans/reglages.js';
 import { ecranBibliotheque } from './ecrans/bibliotheque.js';
@@ -51,6 +52,7 @@ const ACCUEIL = '#/voyages';
 const ECRANS = [
   { motif: /^#\/voyages$/, ecran: ecranVoyages },
   { motif: /^#\/voyage\/([\w%-]+)$/, ecran: ecranVoyage },
+  { motif: /^#\/voyage\/([\w%-]+)\/courses$/, ecran: ecranCourses },
   { motif: /^#\/nouveau-voyage$/, ecran: ecranNouveauVoyage },
   { motif: /^#\/reglages$/, ecran: ecranReglages },
   { motif: /^#\/bibliotheque$/, ecran: ecranBibliotheque },

@@ -38,7 +38,7 @@ const GLISSEMENT = { duration: 320, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' };
 
 // Une adresse mal formée (« %E0%A4%A ») ne désigne aucun voyage : elle est dite introuvable, comme
 // un voyage supprimé, plutôt que de passer pour une panne de lecture.
-function lireIdentifiant(parametre) {
+export function lireIdentifiant(parametre) {
   try {
     return decodeURIComponent(parametre);
   } catch {
@@ -374,6 +374,25 @@ function ouvrirListe(app, donnees, contexte) {
         { ...contenu, categories: relu.categories, objets: [...contenu.objets.filter(o => o.id !== objetId), objet] },
         { categorieId, objetId },
       );
+    },
+    { signal: fin.signal },
+  );
+  // « Annuler » d'un achat des Courses (src/ecrans/courses.js) touché une fois revenu ici : la marque et les
+  // pièces achetées relues reviennent sur la ligne.
+  window.addEventListener(
+    'achat-retabli',
+    async ({ detail: { voyageId, objetId } }) => {
+      if (voyageId !== contenu.voyage.id || parti()) return;
+      let relu;
+      try {
+        relu = await stockage.lireVoyage(voyageId);
+      } catch (erreur) {
+        console.error(erreur);
+        return;
+      }
+      const objet = relu?.objets.find(o => o.id === objetId);
+      if (!objet || parti() || !contenu.objets.some(o => o.id === objetId)) return;
+      montrer(avecObjet(contenu, objetId, { aAcheter: objet.aAcheter, achetes: objet.achetes }));
     },
     { signal: fin.signal },
   );
