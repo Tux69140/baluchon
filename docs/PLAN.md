@@ -244,10 +244,10 @@ Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité p
 
 ### Critères d'acceptation
 
-- [ ] L'écran Courses liste tous les consommables du voyage avec leurs quantités, sans aucune saisie (critère de succès 4).
-- [ ] La marque « à acheter » est une pastille avec un mot et une icône, jamais une couleur seule.
-- [ ] Un objet acheté reste non coché dans la liste du voyage.
-- [ ] Un voyage sans rien à acheter affiche un écran Courses vide explicite.
+- [x] L'écran Courses liste tous les consommables du voyage avec leurs quantités, sans aucune saisie (critère de succès 4).
+- [x] La marque « à acheter » est une pastille avec un mot et une icône, jamais une couleur seule.
+- [x] Un objet acheté reste non coché dans la liste du voyage.
+- [x] Un voyage sans rien à acheter affiche un écran Courses vide explicite.
 
 ## Bloquée par
 
