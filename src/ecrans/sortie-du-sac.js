@@ -76,10 +76,10 @@ export function gestesDeSortie(ecran, { retirerSansQuestion }) {
   function garder(id) {
     const objet = objetDe(id);
     if (!objet || !estRetire(objet)) return;
-    const { quantite, quantiteManuelle } = quantiteGardee(objet, ecran.contenu().voyage);
+    const { quantite, quantiteManuelle, achetes } = quantiteGardee(objet, ecran.contenu().voyage);
     const modifieLe = new Date().toISOString();
-    ecran.appliquer(avecObjet(ecran.contenu(), id, { quantite, quantiteManuelle, modifieLe }), () =>
-      stockage.garderDansLeVoyage(id, quantite, quantiteManuelle, modifieLe),
+    ecran.appliquer(avecObjet(ecran.contenu(), id, { quantite, quantiteManuelle, achetes, modifieLe }), () =>
+      stockage.garderDansLeVoyage(id, quantite, quantiteManuelle, achetes, modifieLe),
     );
   }
 

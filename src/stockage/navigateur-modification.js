@@ -66,14 +66,15 @@ export const modificationNavigateur = {
       objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, quantite: 0, achetes: 0, modifieLe } : o)),
     });
   },
-  async garderDansLeVoyage(id, quantite, quantiteManuelle, modifieLe) {
+  async garderDansLeVoyage(id, quantite, quantiteManuelle, achetes, modifieLe) {
     const donnees = await ecritureDe('garderDansLeVoyage');
     const objets = donnees.objetsDuVoyage ?? [];
     if (!Number.isInteger(quantite) || quantite < 1) throw refus('La quantité prévue est au moins de 1.');
     if (!objets.some(o => o.id === id)) throw refus('Objet introuvable.');
+    verifierAchetes(achetes, quantite);
     ecrire({
       ...donnees,
-      objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, quantite, quantiteManuelle, modifieLe } : o)),
+      objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, quantite, quantiteManuelle, achetes, modifieLe } : o)),
     });
   },
 };

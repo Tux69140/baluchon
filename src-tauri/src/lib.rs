@@ -222,9 +222,10 @@ fn garder_dans_le_voyage(
     id: String,
     quantite: i64,
     quantite_manuelle: bool,
+    achetes: i64,
     modifie_le: String,
 ) -> Result<(), String> {
-    base.garder_dans_le_voyage(&id, quantite, quantite_manuelle, &modifie_le)
+    base.garder_dans_le_voyage(&id, quantite, quantite_manuelle, achetes, &modifie_le)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

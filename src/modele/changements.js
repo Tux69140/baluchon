@@ -3,7 +3,7 @@
 // lignes acceptées. Décisions du chef de projet du 2026-10-29 ;
 // docs/superpowers/specs/2026-10-29-phase-10-plans-changent-design.md. Règles pures.
 import { aUneFormuleInitiale } from './ajustements.js';
-import { achetesApresQuantite } from './courses.js';
+import { achetesApresQuantite, achetesApresSac } from './courses.js';
 import { etiquettesChoisies, genererApercu, parOrdre } from './inclusion.js';
 import { refuser } from './modeles.js';
 import { joursEtNuits } from './periode.js';
@@ -141,7 +141,12 @@ function objetApres(ligne, maintenant) {
   if (ligne.genre === 'sortie')
     return objet.dansLeSac > 0 ? { ...objet, quantite: 0, achetes: 0, modifieLe: maintenant } : null;
   const quantite = ligne.apres;
-  const change = { ...objet, quantite, achetes: achetesApresQuantite(objet, quantite), modifieLe: maintenant };
+  // Un objet qui revient, tout entier dans le sac, compte comme acheté (règle de la phase 9).
+  const achetes =
+    ligne.genre === 'retour'
+      ? achetesApresSac({ ...objet, quantite }, objet.dansLeSac)
+      : achetesApresQuantite(objet, quantite);
+  const change = { ...objet, quantite, achetes, modifieLe: maintenant };
   return ligne.genre === 'manuelle' ? { ...change, quantiteManuelle: false } : change;
 }
 
@@ -190,10 +195,12 @@ export function appliquerChangements(entree, ids) {
       );
     }
   // Une catégorie que les retraits ont vidée disparaît, comme avec « Retirer du voyage ».
+  // Une catégorie qui reçoit un objet ajouté reste (une étiquette remplacée par une autre).
   const partis = new Set(modification.objetsRetires);
   const touchees = new Set(contenu.objets.filter(o => partis.has(o.id)).map(o => o.categorieId));
+  const recoivent = new Set(modification.objetsAjoutes.map(o => o.categorieId));
   modification.categoriesRetirees = [...touchees].filter(
-    id => !contenu.objets.some(o => o.categorieId === id && !partis.has(o.id)),
+    id => !recoivent.has(id) && !contenu.objets.some(o => o.categorieId === id && !partis.has(o.id)),
   );
   const nomDe = id => contenu.categories.find(c => c.id === id)?.nom;
   const aSortir = modification.objetsModifies

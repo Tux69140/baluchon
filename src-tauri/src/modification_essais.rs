@@ -73,9 +73,12 @@ fn garder_dans_le_voyage_rend_une_quantite_et_garde_le_sac() {
     let (_dossier, base, _avant) = base_avec_voyage();
     base.marquer_retire("ov-tshirts", MAINTENANT).unwrap();
     assert!(base
-        .garder_dans_le_voyage("ov-tshirts", 0, false, MAINTENANT)
+        .garder_dans_le_voyage("ov-tshirts", 0, false, 0, MAINTENANT)
         .is_err());
-    base.garder_dans_le_voyage("ov-tshirts", 8, false, MAINTENANT)
+    assert!(base
+        .garder_dans_le_voyage("ov-tshirts", 3, true, 4, MAINTENANT)
+        .is_err());
+    base.garder_dans_le_voyage("ov-tshirts", 3, true, 3, MAINTENANT)
         .unwrap();
     let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
     let tshirts = relu.objets.iter().find(|o| o.id == "ov-tshirts").unwrap();
@@ -83,8 +86,9 @@ fn garder_dans_le_voyage_rend_une_quantite_et_garde_le_sac() {
         (
             tshirts.quantite,
             tshirts.dans_le_sac,
-            tshirts.quantite_manuelle
+            tshirts.quantite_manuelle,
+            tshirts.achetes
         ),
-        (8, 3, false)
+        (3, 3, true, 3)
     );
 }

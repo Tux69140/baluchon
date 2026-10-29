@@ -251,12 +251,14 @@ try {
     const premiere = (await lire(page)).objets[0];
     await page.focus('.lien-retour');
     const suite = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 9; i++) {
       await page.keyboard.press('Tab');
       suite.push(await focusActuel(page));
     }
-    // La puce « Courses » (phase 9) suit le filtre.
+    // « Modifier le voyage » (phase 10), sous les étiquettes, vient avant le filtre ; la puce « Courses »
+    // (phase 9) suit le filtre.
     const attendue = [
+      'modifier:',
       'filtre:',
       'courses:',
       ...['vet', 'toi', 'ali', 'pap', 'cam'].map(c => `choisir:${cat('v1', c)}`),

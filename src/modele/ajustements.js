@@ -2,6 +2,7 @@
 // fiches de la bibliothèque depuis ce qu'on vient d'ajouter (docs/PLAN.md, phase 8). Règles pures :
 // le stockage n'y est pour rien.
 import { BORNES_QUANTITE, bornerQuantite, nomVide, rangSuivant, refuser } from './modeles.js';
+import { achetesApresSac } from './courses.js';
 import { joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
 
@@ -83,14 +84,15 @@ export const reglageDeQuantite = (objet, quantite, { plusTard = false } = {}) =>
 
 // « Le garder dans le voyage », pour un objet retiré qui attend la sortie de ses pièces (phase 10) : la
 // quantité que donne sa formule pour ce voyage ; sans formule (ajouté à la main), ou si elle donne 0, ses
-// pièces dans le sac, fixées manuellement.
+// pièces dans le sac, fixées manuellement ; et les pièces achetées qui vont avec.
 export function quantiteGardee(objet, { depart, retour, voyageurs }) {
   const calcul = aUneFormuleInitiale(objet)
     ? calculerQuantite(objet, { ...joursEtNuits(depart, retour), voyageurs })
     : 0;
-  return calcul > 0
-    ? { quantite: calcul, quantiteManuelle: false }
-    : { quantite: objet.dansLeSac, quantiteManuelle: true };
+  const reprise =
+    calcul > 0 ? { quantite: calcul, quantiteManuelle: false } : { quantite: objet.dansLeSac, quantiteManuelle: true };
+  // Tout entier dans le sac, un objet à acheter compte comme acheté (règle de la phase 9).
+  return { ...reprise, achetes: achetesApresSac({ ...objet, quantite: reprise.quantite }, objet.dansLeSac) };
 }
 
 // Ce que « Annuler » réécrira : l'objet tel quel, et sa catégorie seulement si elle disparaît avec lui.

@@ -77,8 +77,9 @@ test('marquer retiré garde le sac et vide la quantité ; sans pièce, refusé',
 test('garder dans le voyage rend une quantité et garde le sac', async () => {
   const stockage = await stockageAvecVoyage();
   await stockage.marquerRetire('ov-tshirts', MAINTENANT);
-  await assert.rejects(stockage.garderDansLeVoyage('ov-tshirts', 0, false, MAINTENANT));
-  await stockage.garderDansLeVoyage('ov-tshirts', 8, false, MAINTENANT);
+  await assert.rejects(stockage.garderDansLeVoyage('ov-tshirts', 0, false, 0, MAINTENANT));
+  await assert.rejects(stockage.garderDansLeVoyage('ov-tshirts', 3, true, 4, MAINTENANT));
+  await stockage.garderDansLeVoyage('ov-tshirts', 3, true, 3, MAINTENANT);
   const tshirts = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-tshirts');
-  assert.deepEqual([tshirts.quantite, tshirts.dansLeSac, tshirts.quantiteManuelle], [8, 3, false]);
+  assert.deepEqual([tshirts.quantite, tshirts.dansLeSac, tshirts.quantiteManuelle, tshirts.achetes], [3, 3, true, 3]);
 });

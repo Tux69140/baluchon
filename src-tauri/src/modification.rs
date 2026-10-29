@@ -173,23 +173,28 @@ impl Base {
         une_ligne(modifiees, "Aucune pièce de cet objet n'est dans le sac.")
     }
 
-    // « Le garder dans le voyage » : il reprend une quantité, ses pièces restent dans le sac.
+    // « Le garder dans le voyage » : il reprend une quantité, ses pièces restent dans le sac ; tout entier
+    // dans le sac, un objet à acheter compte comme acheté (le modèle donne les pièces achetées).
     pub fn garder_dans_le_voyage(
         &self,
         id: &str,
         quantite: i64,
         quantite_manuelle: bool,
+        achetes: i64,
         modifie_le: &str,
     ) -> Result<(), String> {
         if quantite < 1 {
             return Err(refus("La quantité prévue est au moins de 1."));
         }
+        if achetes < 0 || achetes > quantite {
+            return Err(crate::courses::ACHATS_HORS_BORNES.to_owned());
+        }
         let modifiees = self
             .connexion()?
             .execute(
-                "UPDATE objet_du_voyage SET quantite = ?2, quantite_manuelle = ?3, modifie_le = ?4
+                "UPDATE objet_du_voyage SET quantite = ?2, quantite_manuelle = ?3, achetes = ?4, modifie_le = ?5
                  WHERE id = ?1",
-                params![id, quantite, quantite_manuelle, modifie_le],
+                params![id, quantite, quantite_manuelle, achetes, modifie_le],
             )
             .map_err(en_texte)?;
         une_ligne(modifiees, "Objet introuvable.")

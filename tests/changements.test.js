@@ -308,3 +308,38 @@ test('une quantité fixée manuellement ne figure pas quand ni dates ni voyageur
   assert.equal(ligne(changer(contenu, infos(), ['e-rando', 'e-pluie']), 'Pull'), undefined);
   assert.equal(ligne(changer(contenu, infos({ voyageurs: 3 }), ['e-rando']), 'Pull').genre, 'manuelle');
 });
+
+// Relecture finale, défaut 1 : remplacer une étiquette par une autre dans une même catégorie. L'objet qui
+// sort (rien dans le sac) et celui qui entre partagent la catégorie : elle ne doit pas être retirée.
+test('échanger deux étiquettes dans une même catégorie ne retire pas la catégorie qui reçoit un objet', () => {
+  const biblio = bibliotheque();
+  biblio.categories.push(categorie('c-meteo', 'Météo', 3));
+  biblio.objets.push(
+    objet('o-casquette', 'c-meteo', 'Casquette', 'fixe', 1, { etiquettes: ['e-rando'] }),
+    objet('o-parapluie', 'c-meteo', 'Parapluie', 'fixe', 1, { etiquettes: ['e-pluie'] }),
+  );
+  const contenu = genererVoyage(
+    biblio,
+    infos(),
+    { choisies: new Set(['e-rando']), ecartes: new Set() },
+    { nouvelId: compteur('v'), maintenant: 'avant' },
+  );
+  const meteo = contenu.categories.find(c => c.nom === 'Météo');
+  const { modification } = appliquer(contenu, infos(), ['e-pluie'], ch => lignes(ch).map(l => l.cle), biblio);
+  assert.deepEqual(modification.categoriesRetirees, []);
+  assert.equal(modification.objetsAjoutes.find(o => o.nom === 'Parapluie').categorieId, meteo.id);
+});
+
+// Relecture finale, défaut 2 : un objet à acheter qui revient avec toutes ses pièces dans le sac compte
+// comme acheté (règle de la phase 9) : il ne retourne pas dans les Courses.
+test('un objet retiré qui revient, tout entier dans le sac, compte comme acheté', () => {
+  const contenu = retoucher(creer({ choisies: ['e-camping'] }), 'Cartouches de gaz', {
+    quantite: 0,
+    dansLeSac: 3,
+    achetes: 0,
+  });
+  const sansCamping = { ...contenu, etiquettes: [] };
+  const { modification } = appliquer(sansCamping, infos(), ['e-camping']);
+  const gaz = modifie(modification, 'Cartouches de gaz');
+  assert.deepEqual([gaz.quantite, gaz.dansLeSac, gaz.achetes], [3, 3, 3]);
+});

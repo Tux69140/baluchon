@@ -199,12 +199,14 @@ test('baisser avec « Plus tard » garde le sac tel quel', () => {
 test('un objet retiré gardé reprend sa formule, ou ses pièces faute de formule', () => {
   const voyage = { depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 };
   const retire = objet('o1', 'c1', { quantite: 0, dansLeSac: 3, plafond: null });
-  assert.deepEqual(quantiteGardee(retire, voyage), { quantite: 8, quantiteManuelle: false });
+  assert.deepEqual(quantiteGardee(retire, voyage), { quantite: 8, quantiteManuelle: false, achetes: 0 });
+  // Relecture finale, défaut 2 : tout entier dans le sac, un objet à acheter compte comme acheté.
   const aLaMain = { ...retire, valeur: 0, regle: 'fixe', quantiteManuelle: true };
-  assert.deepEqual(quantiteGardee(aLaMain, voyage), { quantite: 3, quantiteManuelle: true });
+  assert.deepEqual(quantiteGardee(aLaMain, voyage), { quantite: 3, quantiteManuelle: true, achetes: 3 });
   const parNuit = { ...retire, regle: 'par_nuit' };
   assert.deepEqual(quantiteGardee(parNuit, { ...voyage, retour: '2026-10-10' }), {
     quantite: 3,
     quantiteManuelle: true,
+    achetes: 3,
   });
 });

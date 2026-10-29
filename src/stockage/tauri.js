@@ -37,8 +37,8 @@ export function creerStockageTauri() {
     ajouterALaBibliotheque: ajout => invoke('ajouter_a_la_bibliotheque', { ajout }),
     modifierVoyage: modification => invoke('modifier_voyage', { modification }),
     marquerRetire: (id, modifieLe) => invoke('marquer_retire', { id, modifieLe }),
-    garderDansLeVoyage: (id, quantite, quantiteManuelle, modifieLe) =>
-      invoke('garder_dans_le_voyage', { id, quantite, quantiteManuelle, modifieLe }),
+    garderDansLeVoyage: (id, quantite, quantiteManuelle, achetes, modifieLe) =>
+      invoke('garder_dans_le_voyage', { id, quantite, quantiteManuelle, achetes, modifieLe }),
     lireFiltre,
     ecrireFiltre,
   });
