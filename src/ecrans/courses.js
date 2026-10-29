@@ -8,6 +8,7 @@ import { bornerAchetes, listeDesCourses } from '../modele/courses.js';
 import { avecObjet } from './ajustements.js';
 import { DUREE_ALERTE } from './alerte.js';
 import { montrerAnnulation } from './annulation.js';
+import { ouvrirFicheAchat } from './fiche-achat.js';
 import { trouverCommande } from './disposition.js';
 import { pluriel } from './format.js';
 import { lireIdentifiant } from './voyage.js';
@@ -30,6 +31,8 @@ function ouvrirCourses(app, contenuInitial, contexte) {
   let generation = 0;
   let relecture = false;
   let minuterieAlerte = null;
+  // La fiche d'achat ouverte : l'objet qu'elle montre et de quoi la repeindre.
+  let fiche = null;
   const fin = new AbortController();
   const parti = () => {
     if (!fin.signal.aborted && !main.isConnected) fin.abort();
@@ -41,6 +44,7 @@ function ouvrirCourses(app, contenuInitial, contexte) {
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
     main.innerHTML = vueCourses(contexte, { contenu, liste: listeDesCourses(contenu, new Set(retenus.keys())) });
+    fiche?.repeindre(contenu.objets.find(o => o.id === fiche.id));
     if (!cle) return;
     const cible =
       trouverCommande(main, cle.action, cle.id) ??
@@ -132,6 +136,40 @@ function ouvrirCourses(app, contenuInitial, contexte) {
     );
   }
 
+  // « À acheter » éteint depuis la fiche : l'objet quitte les Courses, le bandeau le rend.
+  function eteindre(id) {
+    const objet = contenu.objets.find(o => o.id === id);
+    if (!objet) return;
+    const avant = { aAcheter: objet.aAcheter, achetes: objet.achetes };
+    const modifieLe = new Date().toISOString();
+    const ecrit = appliquer(avecObjet(contenu, id, { aAcheter: false, modifieLe }), () =>
+      stockage.reglerAchats(id, false, objet.achetes, modifieLe),
+    );
+    if (ecrit) proposerAnnulation(objet, avant, remplir(t('annulation.plusAAcheter'), { nom: objet.nom }));
+  }
+
+  // Fermée, la fiche rend le focus à la ligne de l'objet, ou au lien retour si elle est partie.
+  function ouvrirLaFiche(id) {
+    const objet = contenu.objets.find(o => o.id === id);
+    if (!objet || fiche || retenus.has(id)) return;
+    fiche = {
+      id,
+      repeindre: ouvrirFicheAchat({
+        t,
+        objet,
+        categorie: contenu.categories.find(c => c.id === objet.categorieId),
+        surAchetes: n => changerAchetes(id, n),
+        surAAcheter: () => eteindre(id),
+        surFermeture: () => {
+          fiche = null;
+          (trouverCommande(main, 'fiche-achat', id) ?? trouverCommande(main, 'retour'))?.focus();
+        },
+        signal: fin.signal,
+        dans: app,
+      }),
+    };
+  }
+
   main.addEventListener(
     'click',
     evenement => {
@@ -144,6 +182,7 @@ function ouvrirCourses(app, contenuInitial, contexte) {
       }
       const objet = contenu.objets.find(o => o.id === id);
       if (action === 'case-achat' && objet) changerAchetes(id, objet.achetes + 1);
+      if (action === 'fiche-achat') ouvrirLaFiche(id);
     },
     { signal: fin.signal },
   );

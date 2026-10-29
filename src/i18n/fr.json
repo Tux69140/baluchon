@@ -42,6 +42,14 @@
     "encoreAAcheter": "encore {n} à acheter",
     "erreurModification": "La modification n’a pas pu être enregistrée. Réessayez."
   },
+  "achat": {
+    "titre": "Acheté",
+    "sur": "sur {total}",
+    "moins": "Une pièce achetée de moins",
+    "plus": "Une pièce achetée de plus",
+    "tout": "Tout acheté",
+    "aAcheterAide": "l’éteindre retire l’objet des Courses"
+  },
   "courses": {
     "titre": "Courses",
     "compte": {

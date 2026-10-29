@@ -14,7 +14,16 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { BANDEAU, fr, objetStocke, ouvrirVoyage, remplir, vu } from './outils/ajuster.mjs';
-import { TOUS_FORMATS, fermerEssai } from './outils/bibliotheque.mjs';
+import { fermerEssai } from './outils/bibliotheque.mjs';
+import {
+  attendreStocke,
+  avecMarques,
+  caseDe,
+  lireCourses,
+  objetsVus,
+  ouvrirCourses as ouvrirCoursesSur,
+  texteBandeau,
+} from './outils/courses.mjs';
 import {
   CAPTURES,
   NOMS_THEME,
@@ -22,7 +31,6 @@ import {
   creerJuge,
   ecrireStockage,
   lireStockage,
-  ouvrir,
   verifierCommandes,
 } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -35,70 +43,7 @@ const navigateur = await chromium.launch();
 const capture = (page, nom, format, theme) =>
   page.screenshot({ path: join(CAPTURES, `${nom}-${format}-${NOMS_THEME[theme]}.png`) });
 const PIEGE = 'Café <b>moulu</b> & "fort"';
-
-// Marqués : Dentifrice (Toilette, 1), Café soluble (Alimentation, 1), Repas (Alimentation, 16, 6 achetés).
-// marques : d'autres objets ou d'autres champs, { id: champs }.
-const avecMarques = (marques = {}) => {
-  const tous = { 'o-den': {}, 'o-caf': {}, 'o-rep': { achetes: 6 }, ...marques };
-  return {
-    ...DONNEES,
-    objetsDuVoyage: DONNEES.objetsDuVoyage.map(o => (o.id in tous ? { ...o, aAcheter: true, ...tous[o.id] } : o)),
-  };
-};
-
-async function ouvrirCourses({ format = 'telephone', theme = 'light', donnees = avecMarques(), voyageId = 'v1' } = {}) {
-  const { taille, ecran, tactile } = TOUS_FORMATS[format];
-  const ouvert = await ouvrir(navigateur, serveur.url, {
-    taille,
-    ecran,
-    tactile,
-    theme,
-    donnees,
-    adresse: `#/voyage/${voyageId}/courses`,
-  });
-  ouvert.page.setDefaultTimeout(5000);
-  await attendreEcran(ouvert.page, 'courses');
-  return ouvert;
-}
-
-// Ce que montre l'écran Courses.
-const lireCourses = page =>
-  page.evaluate(() => {
-    const texte = el => el?.textContent.replace(/[ \t\r\n]+/g, ' ').trim() ?? null;
-    const main = document.querySelector('#app main');
-    return {
-      titre: texte(main.querySelector('h1')),
-      icone: Boolean(main.querySelector('h1 svg')),
-      details: texte(main.querySelector('.courses-details')),
-      vide: texte(main.querySelector('.courses-vide h2')),
-      cartes: [...main.querySelectorAll('.courses-categorie')].map(carte => ({
-        nom: texte(carte.querySelector('.categorie-nom')),
-        objets: [...carte.querySelectorAll('.objet')].map(li => ({
-          id: li.dataset.id,
-          nom: li.querySelector('.objet-nom').textContent,
-          balises: li.querySelectorAll('.objet-nom *').length,
-          quantite: texte(li.querySelector('.objet-quantite')),
-          etat: li.dataset.etat,
-        })),
-      })),
-    };
-  });
-const objetsVus = vue => vue.cartes.flatMap(carte => carte.objets);
-const texteBandeau = page =>
-  page.evaluate(s => {
-    const b = document.querySelector(s);
-    return b?.matches(':popover-open') ? { texte: b.querySelector('p').textContent, chariot: b.innerHTML } : null;
-  }, BANDEAU);
-const attendreStocke = (page, id, condition) =>
-  attendreQue(
-    page,
-    ([id, c]) => {
-      const o = JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(x => x.id === id);
-      return new Function('o', `return ${c}`)(o) && o;
-    },
-    [id, condition],
-  );
-const caseDe = id => `#app .objet[data-id="${id}"] .case`;
+const ouvrirCourses = options => ouvrirCoursesSur(navigateur, serveur.url, options);
 
 try {
   await mkdir(CAPTURES, { recursive: true });
