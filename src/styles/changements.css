@@ -1,0 +1,118 @@
+/* « Modifier le voyage » (phase 10 ; maquette validée le 2026-10-29, docs/maquettes/plans-changent/) : le
+   bouton de l'en-tête du voyage, le pied de l'assistant au téléphone, et l'étape « Changements », qui
+   reprend l'aperçu (assistant-apercu.css). */
+.voyage-modifier {
+  margin-top: var(--e-md);
+}
+
+.voyage-modifier .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- L'assistant en mode « modifier » ----------
+   Au téléphone, « Voir les changements » est plus long que « Voir l'aperçu » : il prend la place qu'il
+   lui faut, sur une ligne, et « Suivant » le reste. */
+@media (max-width: 599px) {
+  .assistant-modifier .assistant-pied .formulaire-actions > * {
+    flex: 1 0 auto;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Le récapitulatif ---------- */
+.recap-modifs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--e-xs) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recap-modifs li {
+  padding: 2px 10px;
+  border-radius: var(--r-plein);
+  background: var(--actif);
+  color: var(--encre);
+  font: 600 var(--taille-mention) / 1.5 var(--police);
+}
+
+.recap-tete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: var(--e-sm) var(--e-md);
+}
+
+/* Les lignes : celles de l'aperçu, séparées d'un trait, la quantité fixée à la main comprise. */
+.recap-categorie .objets > li + li {
+  border-top: 1px solid var(--separation);
+}
+
+.recap-categorie li + li .apercu-objet {
+  border-top: 0;
+}
+
+/* Refusé, c'est le changement qui se barre, pas l'objet : il reste dans le voyage. */
+.recap-ligne[data-coche='vide'] .objet-nom {
+  color: var(--encre);
+  text-decoration: none;
+}
+
+.recap-valeur {
+  flex: none;
+  font: 600 var(--taille-objet) var(--police);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.recap-fleche {
+  display: inline-block;
+  margin: 0 5px;
+  color: var(--encre-douce);
+}
+
+.recap-ligne[data-coche='vide'] .recap-valeur {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.recap-ligne .objet-sous {
+  margin-top: 2px;
+}
+
+.recap-ligne-fixe {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  min-height: 56px;
+  padding: 6px var(--e-md) 6px 0;
+}
+
+/* À la place de la case : le crayon d'une quantité fixée à la main, centré comme une case. */
+.recap-signe {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  color: var(--encre-douce);
+}
+
+.recap-signe svg {
+  width: 20px;
+  height: 20px;
+}
+
+.recap-segments {
+  max-width: 380px;
+  margin: 0 var(--e-md) 12px 56px;
+}
+
+.recap-segments .segment span {
+  min-height: 44px;
+}

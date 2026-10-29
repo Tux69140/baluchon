@@ -1173,5 +1173,62 @@
       "other": "Le voyage n’en prévoit plus que {prevus}. Sortez-en {n}, puis touchez « C’est fait »."
     },
     "rappelRetire": "Retiré du voyage. Sortez-le du sac, puis touchez « C’est fait »."
+  },
+  "modifierVoyage": {
+    "bouton": "Modifier le voyage",
+    "titre": "Modifier le voyage",
+    "etape": "Changements",
+    "voir": "Voir les changements",
+    "appliquer": "Appliquer les changements",
+    "abandon": {
+      "titre": "Abandonner ces changements ?",
+      "texte": "Les changements de ce voyage ne seront pas enregistrés."
+    },
+    "erreur": "Les changements n’ont pas pu être enregistrés. Rien n’a changé ; réessayez.",
+    "compte": {
+      "one": "{n} changement à appliquer sur {total}",
+      "other": "{n} changements à appliquer sur {total}"
+    },
+    "aide": "Cochez les changements à appliquer : ce qui n’est pas coché reste tel quel. Rien n’est enregistré avant « Appliquer les changements ».",
+    "ceQuiChange": "Ce qui change",
+    "modifs": {
+      "jours": {
+        "one": "{n} jour au lieu de {avant}",
+        "other": "{n} jours au lieu de {avant}"
+      },
+      "datesDecalees": "Dates décalées",
+      "voyageurs": {
+        "one": "{n} voyageur au lieu de {avant}",
+        "other": "{n} voyageurs au lieu de {avant}"
+      },
+      "ajoutee": "+ {nom}",
+      "retiree": "− {nom}"
+    },
+    "ligne": {
+      "encoreAMettre": "encore {n} à mettre",
+      "toutDansLeSac": "déjà tout dans le sac",
+      "resteA": "reste à {n}",
+      "nouveauPour": "nouveau · pour « {etiquette} »",
+      "nouveau": "nouveau",
+      "pasAjoute": "ne sera pas ajouté",
+      "etiquetteRetiree": "« {etiquette} » retirée",
+      "plusPrevu": "plus aucune pièce prévue",
+      "resteDansLeVoyage": "{raison} · reste dans le voyage",
+      "seraRetire": "{raison} · sera retiré",
+      "revient": "revient dans le voyage",
+      "resteRetire": "reste retiré du voyage",
+      "manuelle": "fixée manuellement : {avant} · le calcul donne {apres}",
+      "garder": "Garder {n}",
+      "recalculer": "Recalculer : {n}",
+      "quantiteDe": "{nom} : quantité"
+    },
+    "case": {
+      "quantite": "{nom} : {avant} → {apres}",
+      "entree": "{nom} : ajouter {apres}",
+      "sortie": "{nom} : retirer du voyage",
+      "retour": "{nom} : le garder, {apres}",
+      "applique": "{quoi}, sera appliqué",
+      "pasApplique": "{quoi}, ne sera pas appliqué"
+    }
   }
 }

@@ -18,7 +18,7 @@ import { DUREE_ALERTE } from './alerte.js';
 import { avecObjet, gestesDAjustement } from './ajustements.js';
 import { allerALaListe, suivreDisposition, trouverCommande } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
-import { gestesDeSortie } from './sortie-du-sac.js';
+import { gestesDeSortie, sortieAnnoncee } from './sortie-du-sac.js';
 import {
   apresRepit,
   apresTampon,
@@ -422,6 +422,9 @@ function ouvrirListe(app, donnees, contexte) {
   const observateur = new MutationObserver(() => parti() && observateur.disconnect());
   observateur.observe(app, { childList: true });
   peindre();
+  // Revenu de « Modifier le voyage » avec des pièces à sortir : la question, une fois pour toutes.
+  const aSortir = sortieAnnoncee(contenu.voyage.id);
+  if (aSortir) sortie.demander({ t, langue: contexte.langue, objets: aSortir, signal: fin.signal });
 }
 
 export const ecranVoyage = {

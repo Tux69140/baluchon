@@ -286,3 +286,25 @@ test('des informations invalides sont refusées', () => {
   const contenu = creer();
   assert.throws(() => appliquer(contenu, infos({ retour: '2026-10-09' }), []));
 });
+
+// Ce que dit la ligne (maquette validée) : « nouveau · pour « Pluie » », « « Randonnée » retirée » ; une
+// sortie due aux dates n'a pas d'étiquette à nommer.
+test('chaque entrée ou sortie nomme l’étiquette qui la cause', () => {
+  const contenu = creer({ choisies: ['e-rando'] });
+  const changements = changer(contenu, infos(), ['e-pluie']);
+  assert.equal(ligne(changements, 'Poncho').raison, 'Pluie');
+  assert.equal(ligne(changements, 'Chaussures de marche').raison, 'Randonnée');
+  const camping = changer(creer(), infos(), ['e-camping']);
+  assert.equal(ligne(camping, 'Lampe frontale').raison, 'Camping');
+  const long = creer({ i: infos({ retour: '2026-10-11' }), choisies: ['e-camping'] });
+  assert.equal(ligne(changer(long, infos({ retour: '2026-10-10' }), ['e-camping']), 'Cartouches de gaz').raison, null);
+});
+
+// Trouvé par le test d'écran : une quantité fixée manuellement n'est proposée que si le calcul change
+// (dates ou voyageurs), pas à chaque modification (une étiquette, le nom).
+test('une quantité fixée manuellement ne figure pas quand ni dates ni voyageurs ne changent', () => {
+  const contenu = retoucher(creer({ choisies: ['e-rando'] }), 'Pull', { quantite: 5, quantiteManuelle: true });
+  assert.deepEqual(changer(contenu, infos({ nom: 'Autre' }), ['e-rando']), []);
+  assert.equal(ligne(changer(contenu, infos(), ['e-rando', 'e-pluie']), 'Pull'), undefined);
+  assert.equal(ligne(changer(contenu, infos({ voyageurs: 3 }), ['e-rando']), 'Pull').genre, 'manuelle');
+});

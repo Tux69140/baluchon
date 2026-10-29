@@ -7,10 +7,10 @@
 // d'abord s'il faut l'abandonner. L'état (étapes, choix) vit dans src/ecrans/assistant.js, le dessin dans
 // src/ecrans/assistant-vues.js.
 //
-// mode : { t (les textes, en partie remplacés : facultatif), infos (mutées par la saisie), etat (celui de
+// mode : { t (les textes, en partie remplacés : facultatif), classe (posée sur l'assistant : facultatif), infos (mutées par la saisie), etat (celui de
 // creerAssistant), bibliotheque, aujourdhui, retour (le lien du haut au téléphone : facultatif), fond(app),
-// saisieCommencee(infos, etat), quitter({ enFenetre }), terminer(outils) → adresse ou null,
-// apresTerminer() (facultatif), derniere: { vue(outils) → HTML, grise(outils), entrer(outils) → suite ou
+// saisieCommencee(infos, etat), quitter({ enFenetre }), terminer(outils) → adresse ou null, allerA(adresse)
+// (facultatif : par défaut, l'adresse remplace celle de l'assistant), derniere: { vue(outils) → HTML, grise(outils), entrer(outils) → suite ou
 // 'terminer' ou null, clic(cible, outils) → true si pris en charge } } ; outils : voir plus bas.
 import { VOYAGEURS, validerInformations } from '../modele/voyage.js';
 import { allerA, basculerEtiquette, etapesDe, reprendreEtapes } from './assistant.js';
@@ -66,6 +66,7 @@ export function ouvrirAssistant(app, contexte, mode) {
   } else app.innerHTML = vueAssistant(t, { enFenetre, retour: mode.retour });
   const racine = app.querySelector(enFenetre ? 'dialog' : 'main');
   racine.classList.add('assistant');
+  if (mode.classe) racine.classList.add(mode.classe);
   const element = selecteur => racine.querySelector(selecteur);
   const [rangee, formulaire, corps, panneau, pied] = [
     '.etapes',
@@ -326,8 +327,7 @@ export function ouvrirAssistant(app, contexte, mode) {
       }
       fini = true;
       await suivreGarde();
-      await remplacerAdresse(adresse);
-      mode.apresTerminer?.();
+      await (mode.allerA ?? remplacerAdresse)(adresse);
     } catch (erreur) {
       console.error(erreur);
       if (!fin.signal.aborted) alerter(t('nouveauVoyage.erreurs.enregistrement'));
@@ -422,6 +422,9 @@ export function ouvrirAssistant(app, contexte, mode) {
   for (const zone of [corps, element('.calendrier')]) tailles.observe(zone);
   fin.signal.addEventListener('abort', () => tailles.disconnect());
 
+  // Les champs reprennent les informations du mode (vides à la création, celles du voyage à modifier).
+  element('#nom').value = infos.nom;
+  element('#destination').value = infos.destination;
   rafraichirInfos();
   peindreEtape({ focus: false });
 

@@ -26,6 +26,18 @@ const inclus = (bibliotheque, infos, choisies) =>
     ),
   );
 
+// L'étiquette ajoutée (ou retirée) qui fait entrer (ou sortir) un objet modèle : la première, dans
+// l'ordre des groupes, parmi les siennes et celles de sa catégorie ; null si ce sont les dates (une
+// quantité tombée à 0, ou revenue).
+function raisonDe(bibliotheque, modeleId, changees) {
+  const modele = bibliotheque.objets.find(o => o.id === modeleId);
+  const categorie = bibliotheque.categories.find(c => c.id === modele?.categorieId);
+  const siennes = new Set([...(modele?.etiquettes ?? []), ...(categorie?.etiquettes ?? [])]);
+  return etiquettesChoisies(bibliotheque, changees).find(e => siennes.has(e.id))?.nom ?? null;
+}
+
+const difference = (a, b) => new Set([...a].filter(x => !b.has(x)));
+
 const recalculer = (objet, { depart, retour, voyageurs }) =>
   calculerQuantite(objet, { ...joursEtNuits(depart, retour), voyageurs });
 
@@ -33,8 +45,11 @@ const recalculer = (objet, { depart, retour, voyageurs }) =>
 // jamais la bibliothèque entière (un objet décoché à la création, ou ajouté depuis à la bibliothèque,
 // n'est pas proposé tant qu'on ne touche pas à une étiquette qui le concerne).
 function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
-  const avant = inclus(bibliotheque, contenu.voyage, choisiesDuVoyage(bibliotheque, contenu.etiquettes));
+  const choisiesAvant = choisiesDuVoyage(bibliotheque, contenu.etiquettes);
+  const avant = inclus(bibliotheque, contenu.voyage, choisiesAvant);
   const apres = inclus(bibliotheque, infos, choisies);
+  const ajoutees = difference(choisies, choisiesAvant);
+  const retirees = difference(choisiesAvant, choisies);
   const modeles = new Set(bibliotheque.objets.map(o => o.id));
   const parModele = new Map(contenu.objets.filter(o => o.modeleId).map(o => [o.modeleId, o]));
   const lignes = [];
@@ -49,23 +64,35 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
       // copiée, ou celle de la bibliothèque si la sienne donne 0.
       if (connu && apres.has(objet.modeleId) && !avant.has(objet.modeleId)) {
         const quantite = recalculer(objet, infos) || apres.get(objet.modeleId).quantite;
-        ajouter('retour', objet.nom, 0, quantite, true, { cle, objet });
+        ajouter('retour', objet.nom, 0, quantite, true, {
+          cle,
+          objet,
+          raison: raisonDe(bibliotheque, objet.modeleId, ajoutees),
+        });
       }
       continue;
     }
     if (connu && avant.has(objet.modeleId) && !apres.has(objet.modeleId)) {
-      ajouter('sortie', objet.nom, objet.quantite, 0, false, { cle, objet });
+      const raison = raisonDe(bibliotheque, objet.modeleId, retirees);
+      ajouter('sortie', objet.nom, objet.quantite, 0, false, { cle, objet, raison });
       continue;
     }
     if (!aUneFormuleInitiale(objet)) continue;
     const calcul = recalculer(objet, infos);
     if (calcul === 0 || calcul === objet.quantite) continue;
-    if (objet.quantiteManuelle) ajouter('manuelle', objet.nom, objet.quantite, calcul, false, { cle, objet });
-    else ajouter('quantite', objet.nom, objet.quantite, calcul, true, { cle, objet });
+    // Une quantité fixée manuellement n'est reproposée que si le calcul lui-même change (dates, voyageurs).
+    if (objet.quantiteManuelle) {
+      if (calcul !== recalculer(objet, contenu.voyage))
+        ajouter('manuelle', objet.nom, objet.quantite, calcul, false, { cle, objet });
+    } else ajouter('quantite', objet.nom, objet.quantite, calcul, true, { cle, objet });
   }
   for (const [id, { modele, quantite }] of apres)
     if (!avant.has(id) && !parModele.has(id))
-      ajouter('entree', modele.nom, 0, quantite, true, { cle: `entree:${id}`, modele });
+      ajouter('entree', modele.nom, 0, quantite, true, {
+        cle: `entree:${id}`,
+        modele,
+        raison: raisonDe(bibliotheque, id, ajoutees),
+      });
   return lignes;
 }
 
