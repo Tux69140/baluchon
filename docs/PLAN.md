@@ -26,7 +26,7 @@ Décisions durables qui s'appliquent à toutes les phases :
     - `voyage` (nom, destination, départ, retour, voyageurs) ;
     - `etiquette_du_voyage` (identifiant d'origine, nom copié) ;
     - `categorie_du_voyage` (nom, icône, couleur, ordre copiés) ;
-    - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité ; l'objet est coché quand il atteint la quantité —, à_acheter, achetés — nombre de pièces achetées, de 0 à la quantité (décision du chef de projet, 2026-10-29) —, note copiée).
+    - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité, ou au-delà tant que des pièces de trop attendent leur sortie (décision du chef de projet, 2026-10-29) ; l'objet est coché quand il atteint la quantité sans la dépasser —, à_acheter, achetés — nombre de pièces achetées, de 0 à la quantité (décision du chef de projet, 2026-10-29) —, note copiée).
   - Méta : version du schéma, langue de la bibliothèque de départ, bibliothèque de départ installée.
   - Le thème et le filtre « Reste à emballer » de chaque voyage sont des réglages de l'appareil, hors base et hors sauvegarde.
 - **Modèles clés** : Bibliothèque, GroupeEtiquettes, Etiquette, CategorieModele, ObjetModele, Voyage, CategorieDuVoyage, ObjetDuVoyage, Sauvegarde.
@@ -261,14 +261,15 @@ Dans la fiche d'un objet du voyage, les boutons − / + corrigent la quantité p
 
 ### Ce qu'on livre
 
-On modifie les dates ou le nombre de voyageurs d'un voyage, et les quantités calculées se mettent à jour, avec un message demandant que faire pour celles corrigées à la main. Ajouter une étiquette à un voyage ouvre un aperçu des objets de la bibliothèque qui entreraient alors ; on y décoche ce qu'on ne veut pas. Retirer une étiquette ne supprime aucun objet par défaut mais demande à l'utilisateur quoi faire, retirer ou non les objets liés.
+On modifie les dates ou le nombre de voyageurs d'un voyage, et les quantités calculées se mettent à jour, avec un message demandant que faire pour celles corrigées à la main. Ajouter une étiquette à un voyage ouvre un aperçu des objets de la bibliothèque qui entreraient alors ; on y décoche ce qu'on ne veut pas. Retirer une étiquette ne supprime aucun objet par défaut mais demande à l'utilisateur quoi faire, retirer ou non les objets liés. Une pièce de trop dans le sac se sort sur confirmation, tout de suite ou plus tard, signalée d'ici là par un « ! » (décisions du chef de projet, 2026-10-29). Maquette validée le 2026-10-29 ; conception détaillée : `docs/superpowers/specs/2026-10-29-phase-10-plans-changent-design.md`.
 
 ### Critères d'acceptation
 
-- [ ] Passer de 2 à 3 voyageurs fait passer « Repas » de 16 à 24, mais une quantité manuelle ne bouge pas.
+- [ ] Passer de 2 à 3 voyageurs propose « Repas : 16 → 24 » ; une quantité fixée manuellement est gardée par défaut et ne change que si l'on choisit « Recalculer ».
 - [ ] L'aperçu d'ajout ne propose aucun objet déjà présent dans le voyage.
 - [ ] Les objets ajoutés par l'étiquette prennent les quantités calculées pour ce voyage.
-- [ ] Après le retrait d'une étiquette, tous les objets et leurs coches restent.
+- [ ] Après le retrait d'une étiquette, sans autre choix, tous les objets et leurs coches restent.
+- [ ] Une pièce de trop dans le sac est signalée par un « ! » et « N à sortir du sac » tant que sa sortie n'est pas confirmée, et le sac n'est pas « bouclé ».
 
 ## Bloquée par
 

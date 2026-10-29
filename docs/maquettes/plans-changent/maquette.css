@@ -1,0 +1,251 @@
+/* Maquette de la phase 10 : ce que la phase ajoute aux styles de l'appli. */
+
+/* ---------- « Modifier le voyage », dans l'en-tête du voyage ---------- */
+.voyage-modifier {
+  margin-top: var(--e-md);
+}
+
+.voyage-modifier .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Les pièces à sortir du sac ----------
+   Un « ! » plein, au brun d'attention, à la place de la coche ; une pastille pleine, avec une icône et un
+   mot ; jamais la couleur seule (docs/DESIGN.md). Pleine, elle se distingue de la pastille « à acheter »,
+   claire, qui vit au même endroit. */
+.objet[data-sortir] .case-boite,
+.sortir-rappel .marque-sortir {
+  border-color: var(--attention);
+  background: var(--attention);
+  color: var(--sur-principal);
+}
+
+.signe-sortir,
+.marque-sortir {
+  font: 800 18px / 1 var(--police);
+}
+
+/* Retiré du voyage, ses pièces encore dans le sac : barré, comme un objet écarté de l'aperçu. */
+.objet[data-retire] .objet-nom {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.pastille-sortir {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 1px 8px;
+  border-radius: var(--r-plein);
+  background: var(--attention);
+  color: var(--sur-principal);
+  font: 700 var(--taille-mention) / 1.4 var(--police);
+  white-space: nowrap;
+}
+
+.pastille-sortir .icone svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Le « ! » d'une catégorie : dans l'en-tête de sa carte, dans le menu, dans sa tuile. */
+.marque-sortir {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--attention);
+  color: var(--sur-principal);
+  font-size: 16px;
+}
+
+.tuile-sortir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tuile-sortir .marque-sortir {
+  width: 20px;
+  height: 20px;
+  font-size: 13px;
+}
+
+/* ---------- La fiche ---------- */
+.sortir-rappel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px var(--e-md);
+  border: 1.5px solid var(--attention);
+  border-radius: var(--r-md);
+  background: var(--fond-attention);
+}
+
+.sortir-rappel .marque-sortir {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.sortir-rappel p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  color: var(--encre);
+  font-size: var(--taille-libelle);
+}
+
+.sortir-rappel b {
+  font-size: var(--taille-objet);
+}
+
+.fiche-voyage[data-sortir] [data-fiche='tout'],
+.fiche-voyage[data-retire] .compteur-total,
+.fiche-voyage[data-retire] [data-fiche='vider'],
+.fiche-voyage[data-retire] .fiche-ajuster,
+.fiche-voyage[data-retire] .zone-suppression {
+  display: none;
+}
+
+/* ---------- L'assistant en mode « modifier » ----------
+   Au téléphone, « Voir les changements » est plus long que « Voir l'aperçu » : il prend la place qu'il
+   lui faut, sur une ligne, et « Suivant » le reste. */
+@media (max-width: 599px) {
+  .assistant-modifier .assistant-pied .formulaire-actions > * {
+    flex: 1 0 auto;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Le récapitulatif ---------- */
+.recap-modifs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--e-xs) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recap-modifs li {
+  padding: 2px 10px;
+  border-radius: var(--r-plein);
+  background: var(--actif);
+  color: var(--encre);
+  font: 600 var(--taille-mention) / 1.5 var(--police);
+}
+
+.recap-tete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: var(--e-sm) var(--e-md);
+}
+
+/* Les lignes : celles de l'aperçu, séparées d'un trait, la quantité fixée à la main comprise. */
+.recap-categorie .objets > li + li {
+  border-top: 1px solid var(--separation);
+}
+
+.recap-categorie li + li .apercu-objet {
+  border-top: 0;
+}
+
+/* Refusé, c'est le changement qui se barre, pas l'objet : il reste dans le voyage. */
+.recap-ligne[data-coche='vide'] .objet-nom {
+  color: var(--encre);
+  text-decoration: none;
+}
+
+.recap-valeur {
+  flex: none;
+  font: 600 var(--taille-objet) var(--police);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.recap-fleche {
+  display: inline-block;
+  margin: 0 5px;
+  color: var(--encre-douce);
+}
+
+.recap-ligne[data-coche='vide'] .recap-valeur {
+  color: var(--encre-douce);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.recap-ligne .objet-sous {
+  margin-top: 2px;
+}
+
+.recap-ligne-fixe {
+  display: flex;
+  align-items: center;
+  gap: var(--e-sm);
+  min-height: 56px;
+  padding: 6px var(--e-md) 6px 0;
+}
+
+/* À la place de la case : le crayon d'une quantité fixée à la main, centré comme une case. */
+.recap-signe {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  color: var(--encre-douce);
+}
+
+.recap-signe svg {
+  width: 20px;
+  height: 20px;
+}
+
+.recap-segments {
+  max-width: 380px;
+  margin: 0 var(--e-md) 12px 56px;
+}
+
+.recap-segments .segment span {
+  min-height: 44px;
+}
+
+/* ---------- Liste des états (absente avec ?capture) ---------- */
+.maquette-etats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-xs) var(--e-md);
+  max-width: var(--largeur-max);
+  margin: var(--e-2xl) auto var(--e-lg);
+  padding: var(--e-md);
+  border: 1px dashed var(--contour);
+  border-radius: var(--r-md);
+  font-size: var(--taille-libelle);
+}
+
+main.grand-format ~ .maquette-etats {
+  grid-column: 1 / -1;
+}
+
+.maquette-etats b {
+  flex-basis: 100%;
+}
+
+.maquette-etats a {
+  color: var(--info);
+}
+
+.maquette-etats a[aria-current] {
+  color: var(--encre);
+  font-weight: 700;
+}
