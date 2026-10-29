@@ -29,7 +29,7 @@ fn objet_a_la_main(id: &str, categorie_id: &str) -> ObjetDuVoyage {
         quantite_manuelle: true,
         dans_le_sac: 0,
         a_acheter: false,
-        achete: false,
+        achetes: 0,
         note: String::new(),
         modifie_le: MAINTENANT.into(),
     }
@@ -138,7 +138,7 @@ fn regler_la_quantite_la_rend_manuelle_et_survit_a_la_fermeture() {
         .unwrap();
     Base::ouvrir(&chemin)
         .unwrap()
-        .regler_quantite("ov-tshirts", 5, 2, MAINTENANT)
+        .regler_quantite("ov-tshirts", 5, 2, 0, MAINTENANT)
         .unwrap();
     let relu = Base::ouvrir(&chemin)
         .unwrap()
@@ -158,22 +158,37 @@ fn regler_la_quantite_la_rend_manuelle_et_survit_a_la_fermeture() {
 fn regler_la_quantite_refuse_zero_et_un_sac_trop_plein() {
     let (_dossier, base, avant) = base_avec_voyage();
     assert!(base
-        .regler_quantite("ov-tshirts", 0, 0, MAINTENANT)
+        .regler_quantite("ov-tshirts", 0, 0, 0, MAINTENANT)
         .is_err());
     assert!(base
-        .regler_quantite("ov-tshirts", 4, 5, MAINTENANT)
+        .regler_quantite("ov-tshirts", 4, 5, 0, MAINTENANT)
         .is_err());
     assert!(base
-        .regler_quantite("ov-tshirts", 4, -1, MAINTENANT)
+        .regler_quantite("ov-tshirts", 4, -1, 0, MAINTENANT)
         .is_err());
-    assert!(base.regler_quantite("inconnu", 4, 0, MAINTENANT).is_err());
+    assert!(base
+        .regler_quantite("inconnu", 4, 0, 0, MAINTENANT)
+        .is_err());
     assert_eq!(base.lire_voyage("v-vercors").unwrap().unwrap(), avant);
+}
+
+#[test]
+fn regler_quantite_refuse_des_pieces_achetees_au_dela() {
+    let (_dossier, base, _) = base_avec_voyage();
+    assert!(base
+        .regler_quantite("ov-repas", 4, 0, 5, MAINTENANT)
+        .is_err());
+    base.regler_quantite("ov-repas", 4, 0, 4, MAINTENANT)
+        .unwrap();
+    let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
+    let repas = relu.objets.iter().find(|o| o.id == "ov-repas").unwrap();
+    assert_eq!((repas.quantite, repas.achetes), (4, 4));
 }
 
 #[test]
 fn regler_au_dela_de_999_est_permis() {
     let (_dossier, base, _) = base_avec_voyage();
-    base.regler_quantite("ov-tshirts", 1500, 0, MAINTENANT)
+    base.regler_quantite("ov-tshirts", 1500, 0, 0, MAINTENANT)
         .unwrap();
     let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
     assert_eq!(relu.objets[0].quantite, 1500);

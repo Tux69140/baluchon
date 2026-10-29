@@ -59,7 +59,8 @@ pub struct ObjetDuVoyage {
     pub quantite_manuelle: bool,
     pub dans_le_sac: i64,
     pub a_acheter: bool,
-    pub achete: bool,
+    // Les pièces achetées, de 0 à la quantité (phase 9), comptées comme celles du sac.
+    pub achetes: i64,
     pub note: String,
     pub modifie_le: String,
 }
@@ -86,7 +87,7 @@ const COLONNES_ETIQUETTE: &str = "id, voyage_id, modele_id, nom, ordre, modifie_
 const COLONNES_CATEGORIE: &str = "id, voyage_id, modele_id, nom, icone, couleur, ordre, modifie_le";
 const COLONNES_OBJET: &str =
     "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
-    consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achete, note, modifie_le";
+    consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achetes, note, modifie_le";
 
 fn voyage_depuis(r: &Row<'_>) -> rusqlite::Result<Voyage> {
     Ok(Voyage {
@@ -140,7 +141,7 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetDuVoyage> {
         quantite_manuelle: r.get(11)?,
         dans_le_sac: r.get(12)?,
         a_acheter: r.get(13)?,
-        achete: r.get(14)?,
+        achetes: r.get(14)?,
         note: r.get(15)?,
         modifie_le: r.get(16)?,
     })
@@ -178,7 +179,7 @@ pub(crate) fn inserer_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), S
             o.quantite_manuelle,
             o.dans_le_sac,
             o.a_acheter,
-            o.achete,
+            o.achetes,
             o.note,
             o.modifie_le
         ],
@@ -233,18 +234,20 @@ impl Base {
     }
 
     // La base refuse toute valeur hors de 0..=quantité (contrainte de la table) ; aucune ligne
-    // modifiée veut dire objet inconnu.
+    // modifiée veut dire objet inconnu. Les pièces achetées s'écrivent avec : un objet à acheter mis en
+    // entier dans le sac compte comme acheté (règle du modèle, src/modele/courses.js).
     pub fn regler_dans_le_sac(
         &self,
         id: &str,
         dans_le_sac: i64,
+        achetes: i64,
         modifie_le: &str,
     ) -> Result<(), String> {
         let modifiees = self
             .connexion()?
             .execute(
-                "UPDATE objet_du_voyage SET dans_le_sac = ?2, modifie_le = ?3 WHERE id = ?1",
-                params![id, dans_le_sac, modifie_le],
+                "UPDATE objet_du_voyage SET dans_le_sac = ?2, achetes = ?3, modifie_le = ?4 WHERE id = ?1",
+                params![id, dans_le_sac, achetes, modifie_le],
             )
             .map_err(en_texte)?;
         if modifiees == 0 {
@@ -420,7 +423,7 @@ mod tests {
             .unwrap();
         Base::ouvrir(&chemin)
             .unwrap()
-            .regler_dans_le_sac(&id, 1, "2026-10-24T10:00:00.000Z")
+            .regler_dans_le_sac(&id, 1, 0, "2026-10-24T10:00:00.000Z")
             .unwrap();
         let relu = Base::ouvrir(&chemin)
             .unwrap()
@@ -431,17 +434,29 @@ mod tests {
         assert_eq!(relu.objets[0].modifie_le, "2026-10-24T10:00:00.000Z");
     }
 
+    // Mis en entier dans le sac, un objet à acheter compte comme acheté : les deux s'écrivent ensemble.
+    #[test]
+    fn regler_dans_le_sac_ecrit_aussi_les_pieces_achetees() {
+        let (_dossier, base) = base_jetable();
+        base.creer_voyage(&contrat().voyage).unwrap();
+        base.regler_dans_le_sac("ov-repas", 16, 16, "x").unwrap();
+        let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
+        let repas = relu.objets.iter().find(|o| o.id == "ov-repas").unwrap();
+        assert_eq!((repas.dans_le_sac, repas.achetes), (16, 16));
+        assert!(base.regler_dans_le_sac("ov-repas", 0, 17, "x").is_err());
+    }
+
     #[test]
     fn regler_dans_le_sac_refuse_hors_bornes_et_objet_inconnu() {
         let (_dossier, base) = base_jetable();
         let contenu = contrat().voyage;
         let objet = contenu.objets[0].clone();
         base.creer_voyage(&contenu).unwrap();
-        assert!(base.regler_dans_le_sac(&objet.id, -1, "x").is_err());
+        assert!(base.regler_dans_le_sac(&objet.id, -1, 0, "x").is_err());
         assert!(base
-            .regler_dans_le_sac(&objet.id, objet.quantite + 1, "x")
+            .regler_dans_le_sac(&objet.id, objet.quantite + 1, 0, "x")
             .is_err());
-        assert!(base.regler_dans_le_sac("inconnu", 0, "x").is_err());
+        assert!(base.regler_dans_le_sac("inconnu", 0, 0, "x").is_err());
         let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
         assert_eq!(relu.objets[0].dans_le_sac, objet.dans_le_sac);
         assert_eq!(relu.objets[0].modifie_le, objet.modifie_le);

@@ -84,6 +84,7 @@ impl Base {
         id: &str,
         quantite: i64,
         dans_le_sac: i64,
+        achetes: i64,
         modifie_le: &str,
     ) -> Result<(), String> {
         if quantite < 1 {
@@ -92,12 +93,15 @@ impl Base {
         if dans_le_sac < 0 || dans_le_sac > quantite {
             return Err("Les pièces dans le sac dépassent la quantité prévue.".to_owned());
         }
+        if achetes < 0 || achetes > quantite {
+            return Err(crate::courses::ACHATS_HORS_BORNES.to_owned());
+        }
         let modifiees = self
             .connexion()?
             .execute(
-                "UPDATE objet_du_voyage SET quantite = ?2, dans_le_sac = ?3, quantite_manuelle = 1,
-                   modifie_le = ?4 WHERE id = ?1",
-                params![id, quantite, dans_le_sac, modifie_le],
+                "UPDATE objet_du_voyage SET quantite = ?2, dans_le_sac = ?3, achetes = ?4,
+                   quantite_manuelle = 1, modifie_le = ?5 WHERE id = ?1",
+                params![id, quantite, dans_le_sac, achetes, modifie_le],
             )
             .map_err(en_texte)?;
         if modifiees == 0 {

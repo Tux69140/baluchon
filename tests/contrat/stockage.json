@@ -141,7 +141,7 @@
         "quantiteManuelle": false,
         "dansLeSac": 3,
         "aAcheter": false,
-        "achete": false,
+        "achetes": 0,
         "note": "",
         "modifieLe": "2026-10-06T08:00:00.000Z"
       },
@@ -160,7 +160,7 @@
         "quantiteManuelle": false,
         "dansLeSac": 0,
         "aAcheter": true,
-        "achete": false,
+        "achetes": 0,
         "note": "Midi et soir.",
         "modifieLe": "2026-10-06T08:00:00.000Z"
       }

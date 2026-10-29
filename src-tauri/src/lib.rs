@@ -1,6 +1,7 @@
 mod ajustements;
 mod base;
 mod bibliotheque;
+mod courses;
 mod edition;
 #[cfg(test)]
 mod essais;
@@ -133,9 +134,21 @@ fn regler_dans_le_sac(
     base: State<'_, Base>,
     id: String,
     dans_le_sac: i64,
+    achetes: i64,
     modifie_le: String,
 ) -> Result<(), String> {
-    base.regler_dans_le_sac(&id, dans_le_sac, &modifie_le)
+    base.regler_dans_le_sac(&id, dans_le_sac, achetes, &modifie_le)
+}
+
+#[tauri::command]
+fn regler_achats(
+    base: State<'_, Base>,
+    id: String,
+    a_acheter: bool,
+    achetes: i64,
+    modifie_le: String,
+) -> Result<(), String> {
+    base.regler_achats(&id, a_acheter, achetes, &modifie_le)
 }
 
 #[tauri::command]
@@ -159,9 +172,10 @@ fn regler_quantite(
     id: String,
     quantite: i64,
     dans_le_sac: i64,
+    achetes: i64,
     modifie_le: String,
 ) -> Result<(), String> {
-    base.regler_quantite(&id, quantite, dans_le_sac, &modifie_le)
+    base.regler_quantite(&id, quantite, dans_le_sac, achetes, &modifie_le)
 }
 
 #[tauri::command]
@@ -215,6 +229,7 @@ pub fn run() {
             creer_voyage,
             lire_voyage,
             regler_dans_le_sac,
+            regler_achats,
             etats_des_objets,
             ajouter_au_voyage,
             retablir_dans_le_voyage,

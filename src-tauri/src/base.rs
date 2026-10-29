@@ -6,11 +6,12 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: [&str; 4] = [
+const MIGRATIONS: [&str; 5] = [
     include_str!("../migrations/001_initial.sql"),
     include_str!("../migrations/002_bibliotheque_et_voyages.sql"),
     include_str!("../migrations/003_dans_le_sac_en_pieces.sql"),
     include_str!("../migrations/004_etiquettes.sql"),
+    include_str!("../migrations/005_achats_en_pieces.sql"),
 ];
 
 pub struct Base(Mutex<Connection>);
@@ -239,7 +240,7 @@ mod tests {
                 .unwrap();
         }
         let base = Base::ouvrir(&chemin).unwrap();
-        assert_eq!(version(&base), 4);
+        assert_eq!(version(&base), MIGRATIONS.len() as i64);
         let bibliotheque = base.lire_bibliotheque().unwrap();
         assert_eq!(bibliotheque.categories.len(), 1);
         assert_eq!(bibliotheque.objets.len(), 1);
@@ -250,5 +251,60 @@ mod tests {
         let voyage = base.lire_voyage("v1").unwrap().unwrap();
         assert_eq!(voyage.voyage.nom, "Vercors");
         assert!(voyage.etiquettes.is_empty());
+    }
+
+    // Phase 9 : « acheté » devient un nombre de pièces. Un objet coché acheté, ou marqué « à acheter » et
+    // déjà tout entier dans le sac, l'est en entier ; les autres n'ont rien d'acheté.
+    #[test]
+    fn la_migration_005_compte_les_pieces_achetees() {
+        let dossier = Dossier::nouveau();
+        let chemin = dossier.chemin.join("phase8.sqlite3");
+        {
+            let connexion = Connection::open(&chemin).unwrap();
+            connexion
+                .execute_batch("PRAGMA foreign_keys = ON;")
+                .unwrap();
+            for (indice, sql) in MIGRATIONS[0..4].iter().enumerate() {
+                connexion.execute_batch(sql).unwrap();
+                connexion
+                    .execute(
+                        "INSERT INTO schema_migrations (version) VALUES (?1)",
+                        [indice as i64 + 1],
+                    )
+                    .unwrap();
+            }
+            connexion
+                .execute_batch(
+                    "INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
+                       VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 2, 'x');
+                     INSERT INTO categorie_du_voyage (id, voyage_id, nom, icone, couleur, ordre, modifie_le)
+                       VALUES ('c1', 'v1', 'Repas', 'i', 'c', 0, 'x');
+                     INSERT INTO objet_du_voyage (id, voyage_id, categorie_id, nom, regle, valeur,
+                       par_personne, consommable, quantite, dans_le_sac, a_acheter, achete, modifie_le)
+                       VALUES ('plein', 'v1', 'c1', 'Pain', 'fixe', 4, 0, 1, 4, 4, 1, 0, 'x'),
+                              ('vide', 'v1', 'c1', 'Café', 'fixe', 2, 0, 1, 2, 0, 1, 0, 'x'),
+                              ('coche', 'v1', 'c1', 'Thé', 'fixe', 3, 0, 1, 3, 1, 1, 1, 'x'),
+                              ('sans', 'v1', 'c1', 'Pull', 'fixe', 2, 0, 0, 2, 2, 0, 0, 'x');",
+                )
+                .unwrap();
+        }
+        let base = Base::ouvrir(&chemin).unwrap();
+        assert_eq!(version(&base), 5);
+        let voyage = base.lire_voyage("v1").unwrap().unwrap();
+        let mut achats: Vec<_> = voyage
+            .objets
+            .iter()
+            .map(|o| (o.id.as_str(), o.achetes, o.dans_le_sac))
+            .collect();
+        achats.sort();
+        assert_eq!(
+            achats,
+            vec![
+                ("coche", 3, 1),
+                ("plein", 4, 4),
+                ("sans", 0, 2),
+                ("vide", 0, 0)
+            ]
+        );
     }
 }
