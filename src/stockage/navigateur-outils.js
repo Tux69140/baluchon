@@ -59,3 +59,10 @@ export function verifierAchetes(achetes, quantite) {
   if (!Number.isInteger(achetes) || achetes < 0 || achetes > quantite)
     throw new Error('Les pièces achetées dépassent la quantité prévue.');
 }
+
+// Même borne que la base (verifier_sac, src-tauri/src/ajustements.rs) : de 0 à la quantité prévue, ou
+// jusqu'à ce qui est déjà dans le sac quand des pièces de trop attendent leur sortie (phase 10).
+export function verifierSac(objet, quantite, dansLeSac) {
+  if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > Math.max(quantite, objet.dansLeSac))
+    throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
+}

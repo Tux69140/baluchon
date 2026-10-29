@@ -268,3 +268,24 @@ test('une panne simulée de retirerDuVoyage ne change rien', async () => {
   await assert.rejects(stockage.retirerDuVoyage('ov-tshirts'), /Panne simulée/);
   assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);
 });
+
+// Phase 10 : une pièce de trop dans le sac attend sa sortie ; elle ne fait que décroître.
+test('régler la quantité garde un excédent déjà là, sans en créer', async () => {
+  const stockage = await stockageAvecVoyage();
+  await stockage.reglerQuantite('ov-tshirts', 2, 3, 0, MAINTENANT);
+  const relu = await stockage.lireVoyage('v-vercors');
+  const objet = relu.objets.find(o => o.id === 'ov-tshirts');
+  assert.deepEqual([objet.quantite, objet.dansLeSac], [2, 3]);
+  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 2, 4, 0, MAINTENANT));
+});
+
+test('régler le sac refuse de créer un excédent, mais le laisse décroître', async () => {
+  const stockage = await stockageAvecVoyage();
+  await stockage.reglerDansLeSac('ov-tshirts', 8, 0, MAINTENANT);
+  await assert.rejects(stockage.reglerDansLeSac('ov-tshirts', 9, 0, MAINTENANT));
+  await stockage.reglerQuantite('ov-tshirts', 6, 8, 0, MAINTENANT);
+  await stockage.reglerDansLeSac('ov-tshirts', 7, 0, MAINTENANT);
+  await assert.rejects(stockage.reglerDansLeSac('ov-tshirts', 8, 0, MAINTENANT));
+  const objet = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-tshirts');
+  assert.deepEqual([objet.quantite, objet.dansLeSac], [6, 7]);
+});

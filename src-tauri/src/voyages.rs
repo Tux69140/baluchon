@@ -1,6 +1,7 @@
 // Les voyages : liste, création et lecture d'un voyage complet. Un voyage est une copie
 // indépendante de la bibliothèque (docs/PLAN.md, « Schéma ») ; il est créé en une seule opération,
 // qui n'écrit rien si une seule ligne est refusée.
+use crate::ajustements::verifier_sac;
 use crate::base::{en_texte, lire_lignes, Base};
 use rusqlite::{params, OptionalExtension, Row, Transaction};
 use serde::{Deserialize, Serialize};
@@ -233,9 +234,9 @@ impl Base {
         tx.commit().map_err(en_texte)
     }
 
-    // La base refuse toute valeur hors de 0..=quantité (contrainte de la table) ; aucune ligne
-    // modifiée veut dire objet inconnu. Les pièces achetées s'écrivent avec : un objet à acheter mis en
-    // entier dans le sac compte comme acheté (règle du modèle, src/modele/courses.js).
+    // Le sac reste dans ses bornes (verifier_sac : un excédent ne fait que décroître). Les pièces
+    // achetées s'écrivent avec : un objet à acheter mis en entier dans le sac compte comme acheté
+    // (règle du modèle, src/modele/courses.js).
     pub fn regler_dans_le_sac(
         &self,
         id: &str,
@@ -243,16 +244,14 @@ impl Base {
         achetes: i64,
         modifie_le: &str,
     ) -> Result<(), String> {
-        let modifiees = self
-            .connexion()?
+        let connexion = self.connexion()?;
+        verifier_sac(&connexion, id, None, dans_le_sac)?;
+        connexion
             .execute(
                 "UPDATE objet_du_voyage SET dans_le_sac = ?2, achetes = ?3, modifie_le = ?4 WHERE id = ?1",
                 params![id, dans_le_sac, achetes, modifie_le],
             )
             .map_err(en_texte)?;
-        if modifiees == 0 {
-            return Err("Objet introuvable.".to_owned());
-        }
         Ok(())
     }
 

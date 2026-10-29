@@ -5,7 +5,7 @@ use crate::base::{en_texte, Base};
 use crate::bibliotheque::{CategorieModele, ObjetModele};
 use crate::edition::{ecrire_categorie, ecrire_objet};
 use crate::voyages::{inserer_categorie, inserer_objet, CategorieDuVoyage, ObjetDuVoyage};
-use rusqlite::{params, OptionalExtension, Transaction};
+use rusqlite::{params, Connection, OptionalExtension, Transaction};
 use serde::Deserialize;
 
 // L'objet à écrire, avec sa catégorie quand elle est neuve : une catégorie ne naît que de son premier objet.
@@ -29,6 +29,32 @@ pub struct AjoutALaBibliotheque {
 
 fn objet_inconnu() -> String {
     "Objet introuvable.".to_owned()
+}
+
+pub(crate) const SAC_HORS_BORNES: &str = "Les pièces dans le sac dépassent la quantité prévue.";
+
+// La borne du sac, commune à toutes les écritures (phase 10) : de 0 à la quantité prévue, ou jusqu'à
+// ce qui est déjà dans le sac quand des pièces de trop attendent leur sortie — un excédent ne fait que
+// décroître. `quantite` : la nouvelle quantité prévue, ou celle de la base si elle ne change pas.
+pub(crate) fn verifier_sac(
+    connexion: &Connection,
+    id: &str,
+    quantite: Option<i64>,
+    dans_le_sac: i64,
+) -> Result<(), String> {
+    let (quantite_lue, deja): (i64, i64) = connexion
+        .query_row(
+            "SELECT quantite, dans_le_sac FROM objet_du_voyage WHERE id = ?1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()
+        .map_err(en_texte)?
+        .ok_or_else(objet_inconnu)?;
+    if dans_le_sac < 0 || dans_le_sac > quantite.unwrap_or(quantite_lue).max(deja) {
+        return Err(SAC_HORS_BORNES.to_owned());
+    }
+    Ok(())
 }
 
 // La catégorie neuve doit appartenir au voyage de l'objet et être celle qu'il nomme ; sans catégorie
@@ -77,8 +103,8 @@ impl Base {
         self.ecrire_ajout(ajout)
     }
 
-    // Un réglage à la main est définitif : la quantité n'est plus jamais recalculée. La contrainte de la
-    // table refuse déjà un sac hors de 0..=quantité, mais on le dit ici pour que le message soit clair.
+    // Un réglage à la main est définitif : la quantité n'est plus jamais recalculée. Le sac garde ses
+    // pièces de trop quand on remet leur sortie à plus tard (verifier_sac).
     pub fn regler_quantite(
         &self,
         id: &str,
@@ -90,14 +116,12 @@ impl Base {
         if quantite < 1 {
             return Err("La quantité prévue est au moins de 1.".to_owned());
         }
-        if dans_le_sac < 0 || dans_le_sac > quantite {
-            return Err("Les pièces dans le sac dépassent la quantité prévue.".to_owned());
-        }
         if achetes < 0 || achetes > quantite {
             return Err(crate::courses::ACHATS_HORS_BORNES.to_owned());
         }
-        let modifiees = self
-            .connexion()?
+        let connexion = self.connexion()?;
+        verifier_sac(&connexion, id, Some(quantite), dans_le_sac)?;
+        let modifiees = connexion
             .execute(
                 "UPDATE objet_du_voyage SET quantite = ?2, dans_le_sac = ?3, achetes = ?4,
                    quantite_manuelle = 1, modifie_le = ?5 WHERE id = ?1",

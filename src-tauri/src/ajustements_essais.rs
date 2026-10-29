@@ -367,3 +367,35 @@ fn ajouter_a_la_bibliotheque_refuse_un_objet_du_voyage_inconnu_sans_rien_ecrire(
     assert_eq!(base.lire_bibliotheque().unwrap(), avant);
     assert_eq!(base.lire_voyage("v-vercors").unwrap(), voyage_avant);
 }
+
+// Phase 10 : « Plus tard » après une baisse garde les pièces de trop ; on ne peut pas en ajouter.
+#[test]
+fn regler_quantite_garde_un_excedent_deja_la() {
+    let (_dossier, base, _avant) = base_avec_voyage();
+    base.regler_quantite("ov-tshirts", 2, 3, 0, MAINTENANT)
+        .unwrap();
+    let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
+    assert_eq!(
+        (relu.objets[0].quantite, relu.objets[0].dans_le_sac),
+        (2, 3)
+    );
+    assert!(base
+        .regler_quantite("ov-tshirts", 2, 4, 0, MAINTENANT)
+        .is_err());
+}
+
+// Phase 10 : un excédent ne fait que décroître ; sans excédent, le sac reste borné par la quantité.
+#[test]
+fn regler_dans_le_sac_refuse_de_creer_un_excedent() {
+    let (_dossier, base, _avant) = base_avec_voyage();
+    base.regler_dans_le_sac("ov-tshirts", 8, 0, "x").unwrap();
+    assert!(base.regler_dans_le_sac("ov-tshirts", 9, 0, "x").is_err());
+    base.regler_quantite("ov-tshirts", 6, 8, 0, "x").unwrap();
+    base.regler_dans_le_sac("ov-tshirts", 7, 0, "x").unwrap();
+    assert!(base.regler_dans_le_sac("ov-tshirts", 8, 0, "x").is_err());
+    let relu = base.lire_voyage("v-vercors").unwrap().unwrap();
+    assert_eq!(
+        (relu.objets[0].quantite, relu.objets[0].dans_le_sac),
+        (6, 7)
+    );
+}

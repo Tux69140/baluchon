@@ -14,6 +14,7 @@ import {
   remplacerOuAjouter,
   ecritureDe,
   verifierAchetes,
+  verifierSac,
 } from './navigateur-outils.js';
 import { ajustementsNavigateur } from './navigateur-voyages.js';
 
@@ -231,10 +232,7 @@ export function creerStockageNavigateur() {
       const objets = donnees.objetsDuVoyage ?? [];
       const objet = objets.find(o => o.id === id);
       if (!objet) throw new Error(`Objet inconnu : ${id}`);
-      // Même refus que la base : un nombre entier de pièces, de 0 à la quantité de l’objet.
-      if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > objet.quantite) {
-        throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
-      }
+      verifierSac(objet, objet.quantite, dansLeSac);
       verifierAchetes(achetes, objet.quantite);
       ecrire({
         ...donnees,

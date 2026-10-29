@@ -6,12 +6,13 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: [&str; 5] = [
+const MIGRATIONS: [&str; 6] = [
     include_str!("../migrations/001_initial.sql"),
     include_str!("../migrations/002_bibliotheque_et_voyages.sql"),
     include_str!("../migrations/003_dans_le_sac_en_pieces.sql"),
     include_str!("../migrations/004_etiquettes.sql"),
     include_str!("../migrations/005_achats_en_pieces.sql"),
+    include_str!("../migrations/006_pieces_a_sortir.sql"),
 ];
 
 pub struct Base(Mutex<Connection>);
@@ -289,7 +290,7 @@ mod tests {
                 .unwrap();
         }
         let base = Base::ouvrir(&chemin).unwrap();
-        assert_eq!(version(&base), 5);
+        assert_eq!(version(&base), MIGRATIONS.len() as i64);
         let voyage = base.lire_voyage("v1").unwrap().unwrap();
         let mut achats: Vec<_> = voyage
             .objets
@@ -306,5 +307,62 @@ mod tests {
                 ("vide", 0, 0)
             ]
         );
+    }
+
+    // Phase 10 : une pièce de trop dans le sac attend sa sortie (dans_le_sac > quantite) ; la table ne
+    // l'interdit plus. Les achats restent bornés par la quantité.
+    #[test]
+    fn la_migration_006_garde_les_objets_et_permet_un_excedent() {
+        let dossier = Dossier::nouveau();
+        let chemin = dossier.chemin.join("phase9.sqlite3");
+        {
+            let connexion = Connection::open(&chemin).unwrap();
+            connexion
+                .execute_batch("PRAGMA foreign_keys = ON;")
+                .unwrap();
+            for (indice, sql) in MIGRATIONS[0..5].iter().enumerate() {
+                connexion.execute_batch(sql).unwrap();
+                connexion
+                    .execute(
+                        "INSERT INTO schema_migrations (version) VALUES (?1)",
+                        [indice as i64 + 1],
+                    )
+                    .unwrap();
+            }
+            connexion
+                .execute_batch(
+                    "INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
+                       VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 2, 'x');
+                     INSERT INTO categorie_du_voyage (id, voyage_id, nom, icone, couleur, ordre, modifie_le)
+                       VALUES ('c1', 'v1', 'Vêtements', 'i', 'c', 0, 'x');
+                     INSERT INTO objet_du_voyage (id, voyage_id, categorie_id, nom, regle, valeur,
+                       par_personne, consommable, quantite, dans_le_sac, a_acheter, achetes, modifie_le)
+                       VALUES ('o1', 'v1', 'c1', 'T-shirts', 'fixe', 4, 0, 1, 4, 4, 1, 2, 'x');",
+                )
+                .unwrap();
+        }
+        let base = Base::ouvrir(&chemin).unwrap();
+        assert_eq!(version(&base), 6);
+        let objet = base.lire_voyage("v1").unwrap().unwrap().objets.remove(0);
+        assert_eq!(
+            (objet.quantite, objet.dans_le_sac, objet.achetes),
+            (4, 4, 2)
+        );
+        let connexion = base.connexion().unwrap();
+        connexion
+            .execute(
+                "UPDATE objet_du_voyage SET quantite = 3 WHERE id = 'o1'",
+                [],
+            )
+            .unwrap();
+        assert!(connexion
+            .execute("UPDATE objet_du_voyage SET achetes = 4 WHERE id = 'o1'", [])
+            .is_err());
+        assert!(connexion
+            .execute(
+                "UPDATE objet_du_voyage SET dans_le_sac = -1 WHERE id = 'o1'",
+                []
+            )
+            .is_err());
     }
 }

@@ -8,6 +8,7 @@ import {
   verifierEtiquettes,
   remplacerOuAjouter,
   verifierAchetes,
+  verifierSac,
 } from './navigateur-outils.js';
 
 const objetsDe = donnees => donnees.objetsDuVoyage ?? [];
@@ -58,9 +59,9 @@ export const ajustementsNavigateur = {
   async reglerQuantite(id, quantite, dansLeSac, achetes, modifieLe) {
     const donnees = await ecritureDe('reglerQuantite');
     if (!Number.isInteger(quantite) || quantite < 1) throw new Error(`Quantité prévue refusée : ${quantite}`);
-    if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > quantite) {
-      throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
-    }
+    const objet = objetsDe(donnees).find(o => o.id === id);
+    if (!objet) throw objetInconnu(id);
+    verifierSac(objet, quantite, dansLeSac);
     verifierAchetes(achetes, quantite);
     modifierObjet(donnees, id, o => ({ ...o, quantite, dansLeSac, achetes, quantiteManuelle: true, modifieLe }));
   },
