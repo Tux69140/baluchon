@@ -8,10 +8,11 @@
 // repart vers l'écran du voyage, qui l'enregistre et la repeint.
 import { remplir } from '../i18n/traduction.js';
 import { aUneFormuleInitiale, boutonsDeQuantite } from '../modele/ajustements.js';
+import { estAAcheter } from '../modele/courses.js';
 import { bornerDansLeSac, estComplet, viderDemandeConfirmation } from '../modele/sac.js';
 import { confirmer, ouvrirFenetre, vueFenetre } from './fenetre.js';
 import { zoneSuppression } from './fiche-modele-vues.js';
-import { decrireRegle } from './format.js';
+import { decrireRegle, pluriel } from './format.js';
 import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
 
@@ -66,6 +67,10 @@ function vueFiche(t, objet) {
               <button type="button" class="bouton-icone" data-fiche="quantite-plus" aria-label="${t('fiche.quantitePlus')}">${iconeInterface('plus')}</button>
             </span>
           </div>
+          <div class="ligne-reglage">
+            <span>${t('fiche.aAcheter')}<small data-achats></small></span>
+            <button type="button" class="interrupteur" role="switch" data-fiche="a-acheter" aria-label="${t('fiche.aAcheter')}"></button>
+          </div>
           <div class="fiche-actions">
             <button type="button" class="bouton bouton-secondaire" data-fiche="renommer">${iconeInterface('modifier')}${t('fiche.renommer')}</button>
           </div>
@@ -92,19 +97,21 @@ const inactif = (quoi, objet) => (SAC[quoi] ?? QUANTITE[quoi])?.inactif(objet) ?
 // Ouvre la fiche dans dans (l'écran du voyage, pour qu'elle parte avec lui). surChangement(valeur) : le
 // nouveau nombre de pièces dans le sac ; surQuantite(n) : la quantité prévue voulue ; surBaisse(n) : à la
 // fermeture, la question d'une quantité baissée sous ce qui est dans le sac (true : « Retirer », false :
-// « Garder », null : sans réponse, la fiche reste) ; surRenommer() ;
+// « Garder », null : sans réponse, la fiche reste) ; surRenommer() ; surAAcheter() : l'interrupteur « À acheter » touché ;
 // surRetirer() : rend une promesse, tenue quand la question et l'écriture sont finies (d'ici là, « Retirer
 // du voyage » ne répond plus) ; surFermeture : la fiche effacée ; signal : l'écran s'en va, la fiche
 // disparaît avec lui. Rend repeindre(objet, categorie), que l'écran appelle à chaque changement ; un objet
 // qui n'existe plus (relu après une panne, retiré) ferme la fiche.
 export function ouvrirFiche({
   t,
+  langue,
   objet,
   categorie,
   surChangement,
   surQuantite,
   surBaisse,
   surRenommer,
+  surAAcheter,
   surRetirer,
   surFermeture,
   signal,
@@ -139,6 +146,13 @@ export function ouvrirFiche({
         ? remplir(t('fiche.fixeeAvecFormule'), { regle: decrireRegle(t, vu, { bref: true }) })
         : t('fiche.fixeeManuellement');
     q('[data-calcul]').textContent = calcul;
+    // « À acheter » (phase 9) : allumé tant qu'il reste à acheter ; après un achat partiel, où on en est.
+    const aAcheter = estAAcheter(vu);
+    q('[data-fiche="a-acheter"]').setAttribute('aria-checked', String(aAcheter));
+    q('[data-achats]').textContent =
+      aAcheter && vu.achetes > 0
+        ? remplir(pluriel(t, 'fiche.achetesSur', vu.achetes, langue), { total: vu.quantite })
+        : t('fiche.aAcheterAide');
     for (const bouton of fenetre.querySelectorAll('[data-fiche]'))
       bouton.setAttribute('aria-disabled', String(inactif(bouton.dataset.fiche, vu)));
   }
@@ -201,6 +215,7 @@ export function ouvrirFiche({
     if ('supprimer' in bouton.dataset) return retirer(bouton);
     const quoi = bouton.dataset.fiche;
     if (quoi === 'renommer') return surRenommer();
+    if (quoi === 'a-acheter') return surAAcheter();
     if (QUANTITE[quoi]) return changerQuantite(QUANTITE[quoi].pas);
     // Le sac part de ce que la fiche montre, une baisse en attente comprise.
     const vu = montre();

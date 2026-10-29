@@ -1,0 +1,20 @@
+/* Les Courses (phase 9), d'après la maquette validée le 2026-10-29 (docs/maquettes/courses/). */
+
+/* La marque « à acheter » sous le nom d'un objet du voyage : une pastille avec un mot et une icône,
+   jamais la couleur seule (docs/DESIGN.md, « Jamais la couleur seule »). */
+.pastille-achat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 1px 8px;
+  border-radius: var(--r-plein);
+  background: var(--fond-attention);
+  color: var(--attention);
+  font: 600 var(--taille-mention) / 1.4 var(--police);
+  white-space: nowrap;
+}
+
+.pastille-achat .icone svg {
+  width: 13px;
+  height: 13px;
+}

@@ -36,6 +36,10 @@
     "ouvrirFiche": "{nom}, {quantite}. Ouvrir la fiche",
     "avecNote": "une note",
     "ajouter": "Ajouter un objet",
+    "courses": "Courses",
+    "coursesCompte": "Courses · {n}",
+    "aAcheter": "à acheter",
+    "encoreAAcheter": "encore {n} à acheter",
     "erreurModification": "La modification n’a pas pu être enregistrée. Réessayez."
   },
   "fiche": {
@@ -56,6 +60,12 @@
     "quantiteMoins": "Quantité prévue : un de moins",
     "quantitePlus": "Quantité prévue : un de plus",
     "renommer": "Renommer",
+    "aAcheter": "À acheter",
+    "aAcheterAide": "apparaît dans les Courses",
+    "achetesSur": {
+      "one": "{n} acheté sur {total}",
+      "other": "{n} achetés sur {total}"
+    },
     "retirer": "Retirer du voyage"
   },
   "regle": {

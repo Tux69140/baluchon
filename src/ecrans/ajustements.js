@@ -12,7 +12,7 @@
 //   (le renommage, le retrait et l'ajout : refusés, rien ne change) ;
 // - montrer(nouveau) : ce qu'une écriture attendue a fait, montré.
 import { remplir } from '../i18n/traduction.js';
-import { achetesApresQuantite } from '../modele/courses.js';
+import { achetesApresQuantite, basculerAAcheter as basculer } from '../modele/courses.js';
 import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
 import { BORNES_QUANTITE } from '../modele/modeles.js';
 import { proposerBibliotheque } from './ajout-bibliotheque.js';
@@ -79,6 +79,18 @@ export function gestesDAjustement(ecran) {
     ecran.appliquer(
       avecObjet(ecran.contenu(), id, { quantite, dansLeSac, achetes, quantiteManuelle: true, modifieLe }),
       () => stockage.reglerQuantite(id, quantite, dansLeSac, achetes, modifieLe),
+    );
+  }
+
+  // L'interrupteur « À acheter » de la fiche (phase 9) : montré aussitôt, écrit dans la file. Pas de bandeau
+  // « Annuler » ici : le rallumer, au même endroit, rattrape l'erreur (choix de la conception).
+  function basculerAAcheter(id) {
+    const objet = objetDe(id);
+    if (!objet) return;
+    const { aAcheter, achetes } = basculer(objet);
+    const modifieLe = new Date().toISOString();
+    ecran.appliquer(avecObjet(ecran.contenu(), id, { aAcheter, achetes, modifieLe }), () =>
+      stockage.reglerAchats(id, aAcheter, achetes, modifieLe),
     );
   }
 
@@ -227,5 +239,5 @@ export function gestesDAjustement(ecran) {
     });
   }
 
-  return { regler, confirmerBaisse, renommer, retirer, ajouter, proposer };
+  return { regler, basculerAAcheter, confirmerBaisse, renommer, retirer, ajouter, proposer };
 }

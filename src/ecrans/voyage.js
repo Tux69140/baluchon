@@ -269,12 +269,14 @@ function ouvrirListe(app, donnees, contexte) {
       id,
       repeindre: ouvrirFiche({
         t,
+        langue: contexte.langue,
         objet,
         categorie: contenu.categories.find(c => c.id === objet.categorieId),
         surChangement: valeur => changer(id, valeur),
         surQuantite: quantite => gestes.regler(id, quantite),
         surBaisse: quantite => gestes.confirmerBaisse(id, quantite),
         surRenommer: () => gestes.renommer(id),
+        surAAcheter: () => gestes.basculerAAcheter(id),
         surRetirer: () => gestes.retirer(id),
         surFermeture: () => {
           fiche = null;

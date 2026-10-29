@@ -7,6 +7,7 @@
 // l'ordre, les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les
 // pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
+import { estAAcheter, resteAAcheter } from '../modele/courses.js';
 import { appuiSurCase, estComplet, etatDansLeSac, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
 import { colonnesGrandFormat, marqueAttenuee, tuileCategorie } from './grand-format-vues.js';
@@ -41,11 +42,19 @@ function vueProgression(t, objets, { sacBoucle, pose }) {
       </div>`;
 }
 
-function vueOutils(t, langue, etat) {
+// « Courses · N » (phase 9) : N objets restent à acheter ; sans rien à acheter, la puce mène à l'écran vide.
+function vuePuceCourses(t, { voyage, objets }) {
+  const n = objets.filter(estAAcheter).length;
+  const texte = n ? remplir(t('voyage.coursesCompte'), { n }) : t('voyage.courses');
+  return `<a class="puce" href="#/voyage/${encodeURIComponent(voyage.id)}/courses" data-action="courses">${iconeInterface('courses')}${texte}</a>`;
+}
+
+function vueOutils(t, langue, etat, contenu) {
   const masques = etat.filtre && etat.masques.size;
   return `
       <div class="outils">
         <button type="button" class="puce" data-action="filtre" aria-pressed="${etat.filtre}">${iconeInterface('filtre')}${t('voyage.filtre')}</button>
+        ${vuePuceCourses(t, contenu)}
       </div>${masques ? `\n      <p class="masques">${pluriel(t, 'voyage.masques', masques, langue)}</p>` : ''}`;
 }
 
@@ -106,9 +115,16 @@ function vueObjet(t, objet, voyageurs, recent) {
   // « partagé » : la quantité vaut pour tout le groupe, pas par personne (docs/PRD.md, US-3) ; seul en
   // voyage, il n'y a personne avec qui partager, le mot ne dirait rien.
   const partage = objet.parPersonne || voyageurs < 2 ? '' : t('voyage.partage');
-  const sous = partage && `<span class="objet-sous"><span>${partage}</span></span>`;
+  // La marque « à acheter » : un mot et une icône, jamais la couleur seule (docs/DESIGN.md) ; après un achat
+  // partiel, ce qui reste (phase 9).
+  const reste = resteAAcheter(objet);
+  let achat = '';
+  if (reste) achat = objet.achetes > 0 ? remplir(t('voyage.encoreAAcheter'), { n: reste }) : t('voyage.aAcheter');
+  const pastille = achat && `<span class="pastille-achat">${iconeInterface('courses')}${achat}</span>`;
+  const sous =
+    (partage || pastille) && `<span class="objet-sous">${partage ? `<span>${partage}</span>` : ''}${pastille}</span>`;
   // Le nom du bouton reprend tout ce que la ligne montre, dans le même ordre.
-  const nomDit = partage ? `${objet.nom}, ${partage}` : objet.nom;
+  const nomDit = [objet.nom, partage, achat].filter(Boolean).join(', ');
   return `
           <li class="objet" data-id="${echapper(objet.id)}" data-etat="${etat}" data-flip="${echapper(objet.id)}"${eclairage(objet, recent)}>
             <button type="button" class="case" data-action="case" data-id="${echapper(objet.id)}" aria-label="${echapper(libelleCase(t, objet))}">
@@ -239,7 +255,7 @@ export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, recen
       ${lienRetour(t)}`;
   const entete = vueEntete(contexte, contenu.voyage, contenu.etiquettes);
   if (!contenu.objets.length) return { classe: 'ecran', html: lien + entete + vueVide(t) };
-  const debut = `${entete}${vueProgression(t, contenu.objets, { sacBoucle: etat.sacBoucle, pose: poses.bandeau })}${vueOutils(t, langue, etat)}`;
+  const debut = `${entete}${vueProgression(t, contenu.objets, { sacBoucle: etat.sacBoucle, pose: poses.bandeau })}${vueOutils(t, langue, etat, contenu)}`;
   if (grandFormat)
     return {
       classe: 'grand-format',
