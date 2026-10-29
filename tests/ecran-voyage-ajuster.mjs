@@ -65,7 +65,6 @@ try {
         avant.ajuster === f.ajuster &&
         avant.quantite === '16' &&
         avant.calcul === remplir(f.calculee, { regle: '2 par jour et par personne' }) &&
-        avant.initialement === '' &&
         avant.retirer === f.retirer &&
         avant.desactives === '',
       `${cas} : fiche de Repas ${vu(avant)}`,
@@ -82,8 +81,7 @@ try {
     });
     juge.exige(
       apres?.quantite === '17' &&
-        apres.calcul === f.fixeeManuellement &&
-        apres.initialement === remplir(f.initialement, { regle: '2 par jour et par personne' }) &&
+        apres.calcul === remplir(f.fixeeAvecFormule, { regle: '2 / jour / personne' }) &&
         apres.sur === remplir(f.sur, { total: 17 }) &&
         apres.sac === '6' &&
         (await ligne(page, 'o-rep'))?.quantite === '6 / 17' &&
@@ -96,7 +94,10 @@ try {
     await calme(page);
     await ouvrirFiche(page, 'o-rep');
     const relue = await lireFiche(page);
-    juge.exige(relue?.quantite === '17' && relue.calcul === f.fixeeManuellement, `${cas} : après relance ${vu(relue)}`);
+    juge.exige(
+      relue?.quantite === '17' && relue.calcul === remplir(f.fixeeAvecFormule, { regle: '2 / jour / personne' }),
+      `${cas} : après relance ${vu(relue)}`,
+    );
     await fermerEssai(juge, cas, ouvert);
   }
 
@@ -312,7 +313,7 @@ try {
     juge.exige(
       message === fr.voyage.erreurModification &&
         vue?.quantite === '16' &&
-        vue.calcul !== f.fixeeManuellement &&
+        vue.calcul === remplir(f.calculee, { regle: '2 par jour et par personne' }) &&
         (await ligne(page, 'o-rep'))?.quantite === '6 / 16',
       `${cas} : message « ${message} », ${vu(vue)}`,
     );

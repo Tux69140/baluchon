@@ -52,7 +52,7 @@
     "quantitePrevue": "Quantité prévue",
     "calculee": "calculée : {regle}",
     "fixeeManuellement": "fixée manuellement",
-    "initialement": "initialement : {regle}",
+    "fixeeAvecFormule": "fixée manuellement · initialement {regle}",
     "quantiteMoins": "Quantité prévue : un de moins",
     "quantitePlus": "Quantité prévue : un de plus",
     "renommer": "Renommer",
@@ -67,6 +67,16 @@
     "parNuitParPersonne": "{valeur} par nuit et par personne",
     "plafond": "{regle}, au plus {plafond}",
     "plafondParPersonne": "{regle}, au plus {plafond} par personne"
+  },
+  "regleBreve": {
+    "fixe": "{valeur} en tout",
+    "fixeParPersonne": "{valeur} / personne",
+    "parJour": "{valeur} / jour",
+    "parJourParPersonne": "{valeur} / jour / personne",
+    "parNuit": "{valeur} / nuit",
+    "parNuitParPersonne": "{valeur} / nuit / personne",
+    "plafond": "{regle}, au plus {plafond}",
+    "plafondParPersonne": "{regle}, au plus {plafond} / personne"
   },
   "voyages": {
     "titre": "Mes voyages",

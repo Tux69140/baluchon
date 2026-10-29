@@ -40,11 +40,13 @@ export const detailsVoyage = (t, voyage, langue) =>
   });
 
 // « 2 par jour et par personne, au plus 5 par personne » : la règle de quantité d'un objet, dite en
-// toutes lettres sur la fiche. Le plafond reprend « par personne » seulement si la règle le dit.
-export function decrireRegle(t, objet) {
+// toutes lettres sur la fiche. Le plafond reprend « par personne » seulement si la règle le dit. bref : « 2 /
+// jour / personne », pour tenir sur une ligne (la formule d'origine d'une quantité fixée manuellement).
+export function decrireRegle(t, objet, { bref = false } = {}) {
+  const famille = bref ? 'regleBreve' : 'regle';
   const base = { fixe: 'fixe', par_jour: 'parJour', par_nuit: 'parNuit' }[objet.regle];
   const suffixe = objet.parPersonne ? 'ParPersonne' : '';
-  const regle = remplir(t(`regle.${base}${suffixe}`), { valeur: objet.valeur });
+  const regle = remplir(t(`${famille}.${base}${suffixe}`), { valeur: objet.valeur });
   if (objet.plafond === null) return regle;
-  return remplir(t(`regle.plafond${suffixe}`), { regle, plafond: objet.plafond });
+  return remplir(t(`${famille}.plafond${suffixe}`), { regle, plafond: objet.plafond });
 }

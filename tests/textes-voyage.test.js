@@ -22,6 +22,7 @@ const SIMPLES = [
     'quantitePrevue',
     'calculee',
     'fixeeManuellement',
+    'fixeeAvecFormule',
     'quantiteMoins',
     'quantitePlus',
     'renommer',
@@ -82,6 +83,8 @@ test('typographie : insécable après « et avant », avant : ; ? !, apostrophes
 test('les phrases de la maquette sont reprises', () => {
   const t = (cle, valeurs) => remplir(lire(cle), valeurs);
   assert.equal(t('fiche.calculee', { regle: '1 par jour' }), `calculée${NB}: 1 par jour`);
+  // La formule d'origine, en bref, sur la même ligne (décision du chef de projet, 2026-10-29).
+  assert.equal(t('fiche.fixeeAvecFormule', { regle: '2 / jour' }), 'fixée manuellement · initialement 2 / jour');
   // « 2 pièces », un morceau à part : l'écran le met en gras dans la phrase (comme la phase 7).
   const pieces = n => remplir(pluriel('ajustement.pieces', n), { n });
   assert.equal(

@@ -59,7 +59,6 @@ export const lireFiche = page =>
       ajuster: texte(d.querySelector('.fiche-ajuster h3')),
       quantite: texte(d.querySelector('.fiche-ajuster output')),
       calcul: texte(d.querySelector('.fiche-ajuster [data-calcul]')),
-      initialement: texte(d.querySelector('.fiche-ajuster [data-initialement]')),
       retirer: texte(d.querySelector('[data-supprimer]')),
       desactives: [...d.querySelectorAll('[aria-disabled="true"]')]
         .map(b => b.dataset.fiche ?? ('supprimer' in b.dataset ? 'retirer' : b.tagName))

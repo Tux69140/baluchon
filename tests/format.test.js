@@ -64,3 +64,13 @@ test('une règle se décrit en toutes lettres', () => {
   assert.equal(r('par_jour', 1, true, 5), '1 par jour et par personne, au plus 5 par personne');
   assert.equal(r('par_nuit', 1, false, 3), '1 par nuit, au plus 3');
 });
+
+test('une règle se décrit aussi en bref, pour tenir sur une ligne (« 1 / nuit / personne »)', () => {
+  const r = (regle, valeur, parPersonne, plafond = null) =>
+    decrireRegle(t, { regle, valeur, parPersonne, plafond }, { bref: true });
+  assert.equal(r('par_jour', 2, true), '2 / jour / personne');
+  assert.equal(r('fixe', 1, false), '1 en tout');
+  assert.equal(r('fixe', 3, true), '3 / personne');
+  assert.equal(r('par_nuit', 1, true, 1), '1 / nuit / personne, au plus 1 / personne');
+  assert.equal(r('par_nuit', 1, false, 3), '1 / nuit, au plus 3');
+});
