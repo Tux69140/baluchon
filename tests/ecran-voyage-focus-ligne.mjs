@@ -1,6 +1,6 @@
-// Le cadre du focus d'une ligne d'objet (rendu à la ligne quand sa fiche se ferme) tient en entier dans la
-// carte de la liste : ni coupé par son bord, ni recouvert par les lignes voisines (remarque du chef de projet,
-// 2026-10-29, sur ordinateur). Téléphone (accordéon) et ordinateur (trois colonnes).
+// Le cadre du focus d'une ligne d'objet (rendu à la ligne quand sa fiche se ferme) entoure toute la ligne, case
+// comprise, de l'intérieur et aux coins arrondis : ni coupé par la carte, ni recouvert par les lignes voisines,
+// ni posé sur le seul nom (remarques du chef de projet, 2026-10-29, sur ordinateur). Téléphone (accordéon) et ordinateur (trois colonnes).
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { ouvrirFiche, ouvrirVoyage, vu } from './outils/ajuster.mjs';
@@ -26,25 +26,24 @@ try {
       const el = document.activeElement;
       const ligne = document.querySelector(`#app .objet[data-id="${CSS.escape(id)}"]`);
       if (!el?.matches(':focus-visible') || !ligne.contains(el)) return { focus: el?.className ?? null };
-      const style = getComputedStyle(el);
-      const marge = parseFloat(style.outlineOffset) + parseFloat(style.outlineWidth);
-      const r = el.getBoundingClientRect();
-      const l = ligne.getBoundingClientRect();
+      // Le cadre entoure toute la ligne (case comprise), à l'intérieur : la ligne le porte, pas le bouton.
+      const style = getComputedStyle(ligne);
       return {
         dedans:
-          r.left - marge >= l.left &&
-          r.right + marge <= l.right &&
-          r.top - marge >= l.top &&
-          r.bottom + marge <= l.bottom,
-        cadre: [r.left - marge, r.top - marge, r.right + marge, r.bottom + marge].map(Math.round),
-        ligne: [l.left, l.top, l.right, l.bottom].map(Math.round),
+          style.outlineStyle === 'solid' &&
+          parseFloat(style.outlineWidth) >= 3 &&
+          parseFloat(style.outlineOffset) + parseFloat(style.outlineWidth) <= 0 &&
+          parseFloat(style.borderTopLeftRadius) > 0 &&
+          getComputedStyle(el).outlineStyle === 'none',
+        ligne: [style.outlineStyle, style.outlineWidth, style.outlineOffset, style.borderTopLeftRadius],
+        bouton: getComputedStyle(el).outlineStyle,
       };
     }, id);
-    juge.exige(cadre.dedans === true, `${cas} : le cadre du focus déborde de la ligne ${vu(cadre)}`);
+    juge.exige(cadre.dedans === true, `${cas} : le cadre du focus n'entoure pas la ligne de l'intérieur ${vu(cadre)}`);
     await fermerEssai(juge, cas, ouvert);
   }
 } finally {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure('Focus d’une ligne d’objet', 'cadre entier dans la ligne, au téléphone et à l’ordinateur');
+juge.conclure('Focus d’une ligne d’objet', 'cadre autour de toute la ligne, au téléphone et à l’ordinateur');

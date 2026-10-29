@@ -313,10 +313,17 @@ main.grand-format :is(.choix, .gf-tuile)[data-attenuee] {
   background: var(--releve);
 }
 
-/* Le cadre du focus (rendu à la ligne quand sa fiche se ferme) se pose à l'intérieur : dehors, la carte le
-   coupait et les lignes voisines le recouvraient. */
+/* Le cadre du focus du nom (rendu à la ligne quand sa fiche se ferme) entoure toute la ligne, case comprise,
+   de l'intérieur et aux coins arrondis : posé sur le bouton, la carte le coupait et les lignes voisines le
+   recouvraient (remarques du chef de projet, 2026-10-29). */
 .objet-corps:focus-visible {
-  outline-offset: -3px;
+  outline: none;
+}
+
+.objet:has(> .objet-corps:focus-visible) {
+  border-radius: var(--r-md);
+  outline: 3px solid var(--encre);
+  outline-offset: -6px;
 }
 
 .objet-texte {
