@@ -265,11 +265,11 @@ On modifie les dates ou le nombre de voyageurs d'un voyage, et les quantités ca
 
 ### Critères d'acceptation
 
-- [ ] Passer de 2 à 3 voyageurs propose « Repas : 16 → 24 » ; une quantité fixée manuellement est gardée par défaut et ne change que si l'on choisit « Recalculer ».
-- [ ] L'aperçu d'ajout ne propose aucun objet déjà présent dans le voyage.
-- [ ] Les objets ajoutés par l'étiquette prennent les quantités calculées pour ce voyage.
-- [ ] Après le retrait d'une étiquette, sans autre choix, tous les objets et leurs coches restent.
-- [ ] Une pièce de trop dans le sac est signalée par un « ! » et « N à sortir du sac » tant que sa sortie n'est pas confirmée, et le sac n'est pas « bouclé ».
+- [x] Passer de 2 à 3 voyageurs propose « Repas : 16 → 24 » ; une quantité fixée manuellement est gardée par défaut et ne change que si l'on choisit « Recalculer ».
+- [x] L'aperçu d'ajout ne propose aucun objet déjà présent dans le voyage.
+- [x] Les objets ajoutés par l'étiquette prennent les quantités calculées pour ce voyage.
+- [x] Après le retrait d'une étiquette, sans autre choix, tous les objets et leurs coches restent.
+- [x] Une pièce de trop dans le sac est signalée par un « ! » et « N à sortir du sac » tant que sa sortie n'est pas confirmée, et le sac n'est pas « bouclé ».
 
 ## Bloquée par
 
