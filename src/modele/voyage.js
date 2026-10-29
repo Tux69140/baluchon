@@ -83,7 +83,7 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouv
         quantiteManuelle: false,
         dansLeSac: 0,
         aAcheter: o.consommable,
-        achete: false,
+        achetes: 0,
         note: o.note,
         modifieLe: maintenant,
       });

@@ -71,7 +71,7 @@ test('une panne simulée fait échouer la création sans rien écrire', async ()
 test('régler les pièces dans le sac se relit, change la date et apparaît dans les états', async () => {
   const stockage = creerStockageNavigateur();
   await stockage.creerVoyage(contrat.voyage);
-  await stockage.reglerDansLeSac('ov-repas', 6, '2026-10-24T09:00:00.000Z');
+  await stockage.reglerDansLeSac('ov-repas', 6, 0, '2026-10-24T09:00:00.000Z');
   const objet = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-repas');
   assert.equal(objet.dansLeSac, 6);
   assert.equal(objet.modifieLe, '2026-10-24T09:00:00.000Z');
@@ -83,13 +83,23 @@ test('régler les pièces dans le sac se relit, change la date et apparaît dans
   assert.equal(etats.length, contrat.voyage.objets.length);
 });
 
+test('régler le sac écrit aussi les pièces achetées, dans leurs bornes', async () => {
+  const stockage = creerStockageNavigateur();
+  await stockage.creerVoyage(contrat.voyage);
+  await stockage.reglerDansLeSac('ov-repas', 16, 16, 'x');
+  const objet = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-repas');
+  assert.deepEqual([objet.dansLeSac, objet.achetes], [16, 16]);
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 0, 17, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 0, -1, 'x'));
+});
+
 test('régler un objet inconnu ou hors bornes est refusé et ne change rien', async () => {
   const stockage = creerStockageNavigateur();
   await stockage.creerVoyage(contrat.voyage);
-  await assert.rejects(stockage.reglerDansLeSac('inconnu', 1, 'x'));
-  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 17, 'x'));
-  await assert.rejects(stockage.reglerDansLeSac('ov-repas', -1, 'x'));
-  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 1.5, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('inconnu', 1, 0, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 17, 0, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', -1, 0, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 1.5, 0, 'x'));
   assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);
 });
 
@@ -98,7 +108,7 @@ test('une panne simulée fait échouer le réglage ou la lecture des états', as
   await stockage.creerVoyage(contrat.voyage);
   const donnees = JSON.parse(localStorage.getItem('baluchon-essai'));
   localStorage.setItem('baluchon-essai', JSON.stringify({ ...donnees, pannes: ['reglerDansLeSac', 'etatsDesObjets'] }));
-  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 6, 'x'));
+  await assert.rejects(stockage.reglerDansLeSac('ov-repas', 6, 0, 'x'));
   await assert.rejects(stockage.etatsDesObjets());
   localStorage.setItem('baluchon-essai', JSON.stringify(donnees));
   assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);

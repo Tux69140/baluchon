@@ -54,7 +54,7 @@ export function preparerAjout(saisie, { voyage, categories }, { nouvelId, mainte
     quantiteManuelle: true,
     dansLeSac: 0,
     aAcheter: false,
-    achete: false,
+    achetes: 0,
     note: '',
     modifieLe: maintenant,
   };

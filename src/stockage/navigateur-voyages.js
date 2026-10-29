@@ -1,7 +1,14 @@
 // Les ajustements d'un voyage dans la variante navigateur du stockage (tests d'écran) : mêmes refus et
 // même résultat que la base (src-tauri/src/ajustements.rs). Chaque écriture calcule son résultat entier
 // avant d'écrire : refusée, elle ne laisse rien.
-import { ecrire, ecritureDe, bibliothequeDe, verifierEtiquettes, remplacerOuAjouter } from './navigateur-outils.js';
+import {
+  ecrire,
+  ecritureDe,
+  bibliothequeDe,
+  verifierEtiquettes,
+  remplacerOuAjouter,
+  verifierAchetes,
+} from './navigateur-outils.js';
 
 const objetsDe = donnees => donnees.objetsDuVoyage ?? [];
 const categoriesDe = donnees => donnees.categoriesDuVoyage ?? [];
@@ -48,13 +55,22 @@ function modifierObjet(donnees, id, changer) {
 export const ajustementsNavigateur = {
   ajouterAuVoyage: ajout => ecrireAjout('ajouterAuVoyage', ajout),
   retablirDansLeVoyage: ajout => ecrireAjout('retablirDansLeVoyage', ajout),
-  async reglerQuantite(id, quantite, dansLeSac, modifieLe) {
+  async reglerQuantite(id, quantite, dansLeSac, achetes, modifieLe) {
     const donnees = await ecritureDe('reglerQuantite');
     if (!Number.isInteger(quantite) || quantite < 1) throw new Error(`Quantité prévue refusée : ${quantite}`);
     if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > quantite) {
       throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
     }
-    modifierObjet(donnees, id, o => ({ ...o, quantite, dansLeSac, quantiteManuelle: true, modifieLe }));
+    verifierAchetes(achetes, quantite);
+    modifierObjet(donnees, id, o => ({ ...o, quantite, dansLeSac, achetes, quantiteManuelle: true, modifieLe }));
+  },
+  // La marque « à acheter » et les pièces achetées, ensemble (phase 9).
+  async reglerAchats(id, aAcheter, achetes, modifieLe) {
+    const donnees = await ecritureDe('reglerAchats');
+    const objet = objetsDe(donnees).find(o => o.id === id);
+    if (!objet) throw objetInconnu(id);
+    verifierAchetes(achetes, objet.quantite);
+    modifierObjet(donnees, id, o => ({ ...o, aAcheter, achetes, modifieLe }));
   },
   async renommerObjetDuVoyage(id, nom, modifieLe) {
     const donnees = await ecritureDe('renommerObjetDuVoyage');

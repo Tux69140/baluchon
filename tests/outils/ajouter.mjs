@@ -46,7 +46,7 @@ export const ajoute = (categorieId, nom, quantite) => ({
   quantiteManuelle: true,
   dansLeSac: 0,
   aAcheter: false,
-  achete: false,
+  achetes: 0,
   note: '',
 });
 export const sansIdNiDate = ({ id, modifieLe, ...reste }) => (id && modifieLe ? reste : null);

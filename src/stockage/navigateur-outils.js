@@ -53,3 +53,9 @@ export async function ecritureDe(operation) {
   panne(donnees, operation);
   return donnees;
 }
+
+// Même refus que la base (src-tauri/src/courses.rs) : un nombre entier de pièces achetées, de 0 à la quantité.
+export function verifierAchetes(achetes, quantite) {
+  if (!Number.isInteger(achetes) || achetes < 0 || achetes > quantite)
+    throw new Error('Les pièces achetées dépassent la quantité prévue.');
+}

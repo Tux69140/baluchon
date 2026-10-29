@@ -41,7 +41,7 @@ const objetALaMain = (id, categorieId) => ({
   quantiteManuelle: true,
   dansLeSac: 0,
   aAcheter: false,
-  achete: false,
+  achetes: 0,
   note: '',
   modifieLe: MAINTENANT,
 });
@@ -119,7 +119,7 @@ test('ajouter avec un id déjà pris est refusé sans rien écrire', async () =>
 
 test('régler la quantité la rend manuelle', async () => {
   const stockage = await stockageAvecVoyage();
-  await stockage.reglerQuantite('ov-tshirts', 5, 2, MAINTENANT);
+  await stockage.reglerQuantite('ov-tshirts', 5, 2, 0, MAINTENANT);
   const objet = (await stockage.lireVoyage('v-vercors')).objets[0];
   assert.deepEqual(
     [objet.quantite, objet.dansLeSac, objet.quantiteManuelle, objet.modifieLe],
@@ -130,16 +130,24 @@ test('régler la quantité la rend manuelle', async () => {
 test('régler la quantité refuse zéro et un sac trop plein', async () => {
   const stockage = await stockageAvecVoyage();
   const avant = localStorage.getItem('baluchon-essai');
-  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 0, 0, MAINTENANT));
-  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 4, 5, MAINTENANT));
-  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 4, -1, MAINTENANT));
-  await assert.rejects(stockage.reglerQuantite('inconnu', 4, 0, MAINTENANT));
+  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 0, 0, 0, MAINTENANT));
+  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 4, 5, 0, MAINTENANT));
+  await assert.rejects(stockage.reglerQuantite('ov-tshirts', 4, -1, 0, MAINTENANT));
+  await assert.rejects(stockage.reglerQuantite('inconnu', 4, 0, 0, MAINTENANT));
   assert.equal(localStorage.getItem('baluchon-essai'), avant);
+});
+
+test('régler la quantité refuse des pièces achetées au-delà, et les écrit sinon', async () => {
+  const stockage = await stockageAvecVoyage();
+  await assert.rejects(stockage.reglerQuantite('ov-repas', 4, 0, 5, MAINTENANT));
+  await stockage.reglerQuantite('ov-repas', 4, 0, 4, MAINTENANT);
+  const repas = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-repas');
+  assert.deepEqual([repas.quantite, repas.achetes], [4, 4]);
 });
 
 test('régler au-delà de 999 est permis', async () => {
   const stockage = await stockageAvecVoyage();
-  await stockage.reglerQuantite('ov-tshirts', 1500, 0, MAINTENANT);
+  await stockage.reglerQuantite('ov-tshirts', 1500, 0, 0, MAINTENANT);
   assert.equal((await stockage.lireVoyage('v-vercors')).objets[0].quantite, 1500);
 });
 

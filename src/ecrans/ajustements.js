@@ -12,6 +12,7 @@
 //   (le renommage, le retrait et l'ajout : refusés, rien ne change) ;
 // - montrer(nouveau) : ce qu'une écriture attendue a fait, montré.
 import { remplir } from '../i18n/traduction.js';
+import { achetesApresQuantite } from '../modele/courses.js';
 import { boutonsDeQuantite, extraitDuRetrait, reglageDeQuantite, validerRenommage } from '../modele/ajustements.js';
 import { BORNES_QUANTITE } from '../modele/modeles.js';
 import { proposerBibliotheque } from './ajout-bibliotheque.js';
@@ -73,9 +74,11 @@ export function gestesDAjustement(ecran) {
     if (!objet || quantite === objet.quantite) return;
     if (quantite > objet.quantite ? !boutonsDeQuantite(objet).plus : quantite < BORNES_QUANTITE.min) return;
     const { dansLeSac } = reglageDeQuantite(objet, quantite);
+    const achetes = achetesApresQuantite(objet, quantite);
     const modifieLe = new Date().toISOString();
-    ecran.appliquer(avecObjet(ecran.contenu(), id, { quantite, dansLeSac, quantiteManuelle: true, modifieLe }), () =>
-      stockage.reglerQuantite(id, quantite, dansLeSac, modifieLe),
+    ecran.appliquer(
+      avecObjet(ecran.contenu(), id, { quantite, dansLeSac, achetes, quantiteManuelle: true, modifieLe }),
+      () => stockage.reglerQuantite(id, quantite, dansLeSac, achetes, modifieLe),
     );
   }
 

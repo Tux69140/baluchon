@@ -41,7 +41,7 @@ const objet = (id, categorieId, nom, quantite, dansLeSac, extra = {}) => ({
   quantiteManuelle: false,
   dansLeSac,
   aAcheter: false,
-  achete: false,
+  achetes: 0,
   note: '',
   modifieLe: 'x',
   ...extra,

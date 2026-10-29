@@ -13,6 +13,7 @@ import {
   verifierEtiquettes,
   remplacerOuAjouter,
   ecritureDe,
+  verifierAchetes,
 } from './navigateur-outils.js';
 import { ajustementsNavigateur } from './navigateur-voyages.js';
 
@@ -224,7 +225,7 @@ export function creerStockageNavigateur() {
         objets: (donnees.objetsDuVoyage ?? []).filter(o => o.voyageId === id),
       };
     },
-    async reglerDansLeSac(id, dansLeSac, modifieLe) {
+    async reglerDansLeSac(id, dansLeSac, achetes, modifieLe) {
       const donnees = lire();
       panne(donnees, 'reglerDansLeSac');
       const objets = donnees.objetsDuVoyage ?? [];
@@ -234,7 +235,11 @@ export function creerStockageNavigateur() {
       if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > objet.quantite) {
         throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
       }
-      ecrire({ ...donnees, objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, dansLeSac, modifieLe } : o)) });
+      verifierAchetes(achetes, objet.quantite);
+      ecrire({
+        ...donnees,
+        objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, dansLeSac, achetes, modifieLe } : o)),
+      });
     },
     async etatsDesObjets() {
       const donnees = lire();

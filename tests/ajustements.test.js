@@ -42,7 +42,7 @@ const objet = (id, categorieId, extra = {}) => ({
   quantiteManuelle: false,
   dansLeSac: 2,
   aAcheter: true,
-  achete: false,
+  achetes: 0,
   note: 'n',
   modifieLe: 'x',
   ...extra,
@@ -76,7 +76,7 @@ test('un objet ajouté est fixé manuellement et ne dit pas partagé', () => {
     quantiteManuelle: true,
     dansLeSac: 0,
     aAcheter: false,
-    achete: false,
+    achetes: 0,
     note: '',
     modifieLe: contexte.maintenant,
   });

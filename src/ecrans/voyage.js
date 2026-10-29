@@ -11,6 +11,7 @@
 // de boucler reçoit son tampon, puis se replie une seconde plus tard. La fiche d'un objet (fiche.js)
 // passe par le même chemin que la case (appliquer), et ses ajustements (quantité prévue, renommer,
 // retirer et « Annuler », src/ecrans/ajustements.js) aussi, comme « Ajouter un objet ».
+import { achetesApresSac } from '../modele/courses.js';
 import { appuiSurCase } from '../modele/sac.js';
 import { listeParCategorie } from '../modele/voyage.js';
 import { DUREE_ALERTE } from './alerte.js';
@@ -220,10 +221,14 @@ function ouvrirListe(app, donnees, contexte) {
   }
 
   // L'écran garde la même date que la base : « Annuler » un retrait réécrit l'objet tel qu'elle le gardait.
+  // Mis en entier dans le sac, un objet à acheter compte comme acheté (src/modele/courses.js).
   function changer(id, dansLeSac) {
+    const objet = contenu.objets.find(o => o.id === id);
+    if (!objet) return;
+    const achetes = achetesApresSac(objet, dansLeSac);
     const modifieLe = new Date().toISOString();
-    const ecriture = () => stockage.reglerDansLeSac(id, dansLeSac, modifieLe);
-    if (!appliquer(avecObjet(contenu, id, { dansLeSac, modifieLe }), ecriture, { coche: true })) return;
+    const ecriture = () => stockage.reglerDansLeSac(id, dansLeSac, achetes, modifieLe);
+    if (!appliquer(avecObjet(contenu, id, { dansLeSac, achetes, modifieLe }), ecriture, { coche: true })) return;
     const caseCochee = trouverCommande(main, 'case', id);
     if (caseCochee) caseCochee.dataset.pulse = '';
   }

@@ -157,7 +157,7 @@ const objetsDe = voyageId =>
       quantiteManuelle: false,
       dansLeSac,
       aAcheter: false,
-      achete: false,
+      achetes: 0,
       note: '',
       modifieLe: 'x',
       ...extra,

@@ -215,7 +215,7 @@ test('le voyage est une copie : champs copiés, modèle d’origine noté, marqu
     quantiteManuelle: false,
     dansLeSac: 0,
     aAcheter: true,
-    achete: false,
+    achetes: 0,
     note: 'Midi et soir.',
     modifieLe: MAINTENANT,
   });
