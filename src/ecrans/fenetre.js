@@ -153,9 +153,13 @@ export function ouvrirFenetre(
 
   // Le voile et le glissé passent par la même question que « × » (spec de la phase 5, fiches de modèle).
   const geste = () => (surGeste && !fermeture ? surGeste() : fermer());
+  // Un appui sur le voile commence aussi sur le voile : une sélection de texte commencée dans la fenêtre et
+  // lâchée au-dehors (souris tirée de droite à gauche) n'en est pas un.
+  let appuiSurLeVoile = false;
+  fenetre.addEventListener('pointerdown', evenement => (appuiSurLeVoile = surLeVoile(fenetre, evenement)));
   fenetre.addEventListener('click', evenement => {
     if (evenement.target.closest('[data-fermer]')) geste();
-    else if (fermerSurVoile && surLeVoile(fenetre, evenement)) geste();
+    else if (fermerSurVoile && appuiSurLeVoile && surLeVoile(fenetre, evenement)) geste();
   });
   if (fermerSurVoile) glisserPourFermer(fenetre, geste);
   // Échap : on ferme nous-mêmes, pour animer. Sans geste préalable de la personne, le navigateur
