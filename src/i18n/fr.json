@@ -586,6 +586,7 @@
     "fermer": "Fermer"
   },
   "annulation": {
+    "voyage": "Voyage « {nom} » supprimé",
     "achete": {
       "one": "{nom} : acheté",
       "other": "{nom} : achetés ({n})"
@@ -1173,6 +1174,43 @@
       "other": "Le voyage n’en prévoit plus que {prevus}. Sortez-en {n}, puis touchez « C’est fait »."
     },
     "rappelRetire": "Retiré du voyage. Sortez-le du sac, puis touchez « C’est fait »."
+  },
+  "menuVoyage": {
+    "actions": "Actions du voyage « {nom} »",
+    "modifier": "Modifier ce voyage",
+    "refaire": "Refaire ce voyage",
+    "supprimer": "Supprimer ce voyage"
+  },
+  "refaireVoyage": {
+    "titre": "Refaire « {nom} »",
+    "ajoute": "ajouté à la main",
+    "retire": "retiré",
+    "retireLu": "retiré la dernière fois",
+    "disparus": {
+      "etiquettes": {
+        "one": "l’étiquette {liste}",
+        "other": "les étiquettes {liste}"
+      },
+      "objets": {
+        "one": "l’objet {liste}",
+        "other": "les objets {liste}"
+      },
+      "et": "{a} et {b}",
+      "etiquetteSeule": "{debut} n’est plus dans la bibliothèque : elle n’est pas reprise.",
+      "objetSeul": "{debut} n’est plus dans la bibliothèque : il n’est pas repris.",
+      "plusieurs": "{debut} ne sont plus dans la bibliothèque : ils ne sont pas repris."
+    }
+  },
+  "suppressionVoyage": {
+    "titre": "Supprimer le voyage « {nom} » ?",
+    "texte": {
+      "one": "Sa liste de {compte} disparaîtra. La bibliothèque n’est pas touchée.",
+      "other": "Sa liste de {compte} disparaîtra. La bibliothèque n’est pas touchée."
+    },
+    "texteSac": {
+      "one": "Sa liste de {compte}, dont {sac} déjà dans le sac, disparaîtra. La bibliothèque n’est pas touchée.",
+      "other": "Sa liste de {compte}, dont {sac} déjà dans le sac, disparaîtra. La bibliothèque n’est pas touchée."
+    }
   },
   "modifierVoyage": {
     "bouton": "Modifier le voyage",

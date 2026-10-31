@@ -157,3 +157,70 @@ test('les icônes de la phase 8 sont embarquées (crayon, livres, corbeille)', (
   assert.match(source, /bibliotheque: books/);
   assert.match(source, /supprimer: trash/);
 });
+
+// Phase 11 : « Refaire ce voyage », le menu « ⋮ » et la suppression d'un voyage (maquette docs/maquettes/refaire/).
+test('les textes de la phase 11 existent et se composent comme la maquette', () => {
+  const t = (cle, valeurs) => remplir(lire(cle), valeurs);
+  const toutes = [
+    'menuVoyage.actions',
+    'menuVoyage.modifier',
+    'menuVoyage.refaire',
+    'menuVoyage.supprimer',
+    'refaireVoyage.titre',
+    'refaireVoyage.ajoute',
+    'refaireVoyage.retire',
+    'refaireVoyage.retireLu',
+    'refaireVoyage.disparus.etiquettes',
+    'refaireVoyage.disparus.objets',
+    'refaireVoyage.disparus.etiquetteSeule',
+    'refaireVoyage.disparus.objetSeul',
+    'refaireVoyage.disparus.plusieurs',
+    'refaireVoyage.disparus.et',
+    'suppressionVoyage.titre',
+    'suppressionVoyage.texte',
+    'suppressionVoyage.texteSac',
+    'annulation.voyage',
+  ];
+  for (const cle of toutes) {
+    assert.ok(estUnTexte(lire(cle)), `texte manquant : ${cle}`);
+    for (const texte of textes(lire(cle))) {
+      assert.doesNotMatch(texte, /« /, `${cle} : espace ordinaire après «`);
+      assert.doesNotMatch(texte, / [»:;?!]/, `${cle} : espace ordinaire avant » : ; ? !`);
+      assert.equal(texte.includes("'"), false, `${cle} : apostrophe droite`);
+    }
+  }
+  assert.equal(t('menuVoyage.actions', { nom: 'Quiberon' }), `Actions du voyage «${NB}Quiberon${NB}»`);
+  assert.deepEqual(
+    ['modifier', 'refaire', 'supprimer'].map(c => lire(`menuVoyage.${c}`)),
+    ['Modifier ce voyage', 'Refaire ce voyage', 'Supprimer ce voyage'],
+  );
+  assert.equal(t('refaireVoyage.titre', { nom: 'Quiberon' }), `Refaire «${NB}Quiberon${NB}»`);
+  assert.deepEqual(
+    ['ajoute', 'retire', 'retireLu'].map(c => lire(`refaireVoyage.${c}`)),
+    ['ajouté à la main', 'retiré', 'retiré la dernière fois'],
+  );
+  const d = c => lire(`refaireVoyage.disparus.${c}`);
+  assert.equal(d('etiquettes').one, 'l’étiquette {liste}');
+  assert.equal(d('etiquettes').other, 'les étiquettes {liste}');
+  assert.equal(d('objets').one, 'l’objet {liste}');
+  assert.equal(d('objets').other, 'les objets {liste}');
+  assert.equal(d('et'), '{a} et {b}');
+  assert.equal(d('etiquetteSeule'), `{debut} n’est plus dans la bibliothèque${NB}: elle n’est pas reprise.`);
+  assert.equal(d('objetSeul'), `{debut} n’est plus dans la bibliothèque${NB}: il n’est pas repris.`);
+  assert.equal(d('plusieurs'), `{debut} ne sont plus dans la bibliothèque${NB}: ils ne sont pas repris.`);
+  assert.equal(t('suppressionVoyage.titre', { nom: 'Quiberon' }), `Supprimer le voyage «${NB}Quiberon${NB}»${NB}?`);
+  const compte = n => remplir(pluriel('ajustement.choix.objets', n), { n });
+  assert.equal(
+    remplir(pluriel('suppressionVoyage.texte', 12), { compte: compte(12) }),
+    'Sa liste de 12 objets disparaîtra. La bibliothèque n’est pas touchée.',
+  );
+  assert.equal(
+    remplir(pluriel('suppressionVoyage.texte', 1), { compte: compte(1) }),
+    'Sa liste de 1 objet disparaîtra. La bibliothèque n’est pas touchée.',
+  );
+  assert.equal(
+    remplir(pluriel('suppressionVoyage.texteSac', 12), { compte: compte(12), sac: '3' }),
+    'Sa liste de 12 objets, dont 3 déjà dans le sac, disparaîtra. La bibliothèque n’est pas touchée.',
+  );
+  assert.equal(t('annulation.voyage', { nom: 'Quiberon' }), `Voyage «${NB}Quiberon${NB}» supprimé`);
+});
