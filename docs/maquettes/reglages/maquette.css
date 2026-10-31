@@ -1,0 +1,203 @@
+/* Maquette de la phase 12 : ce que la phase ajoute aux styles de l'appli. */
+
+/* ---------- Les blocs de Réglages : la largeur de la liste du dessus ----------
+   Un titre de section (Baumans 24 px, comme les rubriques de Mes voyages), puis une carte qui reprend le
+   cadre de la liste (.reglages, menu.css). Au téléphone, tout s'empile ; dès 700 px, chaque carte se partage
+   en deux colonnes égales, au même écart d'une carte à l'autre : les commandes du thème et « Restaurer… »
+   tombent sur la même ligne verticale. */
+.reglages-bloc {
+  margin-top: var(--e-xl);
+}
+
+.reglages-bloc > h2 {
+  margin-bottom: var(--e-sm);
+  font-size: var(--taille-section);
+  line-height: 1.2;
+}
+
+.reglages-carte {
+  display: grid;
+  gap: var(--e-md);
+  padding: var(--e-md);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-lg);
+  background: var(--carte);
+}
+
+.reglages-aide {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* Les segments du thème : un picto devant chaque mot, qui dit aussi le choix sans la couleur. */
+.segments-theme .segment span {
+  gap: 6px;
+}
+
+/* Le picto est un span dans le span du segment : les règles du segment (.segment span) ne le visent pas. */
+.segments-theme .segment span.icone {
+  flex: none;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+}
+
+.segments-theme .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* La sauvegarde : deux colonnes (Sauvegarder, Restaurer), séparées d'un trait. */
+.reglages-colonne {
+  display: grid;
+  align-content: start;
+  gap: var(--e-sm);
+}
+
+.reglages-colonne .bouton {
+  width: 100%;
+}
+
+.reglages-colonne .bouton .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+.reglages-colonne-seconde {
+  padding-top: var(--e-md);
+  border-top: 1px solid var(--separation);
+}
+
+.reglages-date {
+  margin: 0;
+  padding: 2px 0;
+  border-radius: var(--r-sm);
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+.reglages-date b {
+  color: var(--encre);
+  font-weight: 600;
+}
+
+/* La date vient de changer : un bref fond vert (« le vert confirme »), rien si l'appareil demande moins
+   d'animations. */
+@media (prefers-reduced-motion: no-preference) {
+  .reglages-date[data-neuve] {
+    animation: date-neuve 1600ms ease-out;
+  }
+}
+
+@keyframes date-neuve {
+  from,
+  30% {
+    background: var(--fond-succes);
+    box-shadow: 0 0 0 6px var(--fond-succes);
+  }
+}
+
+@media (min-width: 700px) {
+  .reglages-carte {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--e-md) var(--e-2xl);
+    align-items: center;
+    padding: var(--e-lg);
+  }
+
+  .reglages-entete {
+    grid-column: 1 / -1;
+  }
+
+  .reglages-colonne {
+    align-self: start;
+  }
+
+  /* Le trait passe à la verticale, au milieu de l'écart. */
+  .reglages-colonne-seconde {
+    position: relative;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .reglages-colonne-seconde::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(-1 * var(--e-2xl) / 2);
+    border-left: 1px solid var(--separation);
+  }
+}
+
+/* ---------- Le bandeau du bas, sans « Annuler » : un message de réussite ---------- */
+.bandeau-message {
+  padding: 10px 16px 10px 14px;
+}
+
+.bandeau-message .icone {
+  color: var(--action-inverse);
+}
+
+/* Le nom du fichier ne se coupe pas en route. */
+.bandeau-message .nom-fichier {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- Liste des états et démonstration (absentes avec ?capture) ---------- */
+.maquette-etats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-xs) var(--e-md);
+  max-width: var(--largeur-max);
+  margin: var(--e-2xl) auto var(--e-lg);
+  padding: var(--e-md);
+  border: 1px dashed var(--contour);
+  border-radius: var(--r-md);
+  font-size: var(--taille-libelle);
+}
+
+.maquette-etats b {
+  flex-basis: 100%;
+}
+
+.maquette-etats a {
+  color: var(--info);
+}
+
+.maquette-etats a[aria-current] {
+  color: var(--encre);
+  font-weight: 700;
+}
+
+.maquette-demo {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 0 var(--e-md);
+  margin: var(--e-sm) 0 0;
+  padding: var(--e-xs) 0 0;
+  border: 0;
+  border-top: 1px dashed var(--separation);
+}
+
+.maquette-demo legend {
+  float: left;
+  width: 100%;
+  padding: var(--e-xs) 0;
+  color: var(--encre-douce);
+}
+
+.maquette-demo label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--cible);
+}

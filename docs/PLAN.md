@@ -28,12 +28,12 @@ Décisions durables qui s'appliquent à toutes les phases :
     - `categorie_du_voyage` (nom, icône, couleur, ordre copiés) ;
     - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité, ou au-delà tant que des pièces de trop attendent leur sortie (décision du chef de projet, 2026-10-29) ; l'objet est coché quand il atteint la quantité sans la dépasser —, à_acheter, achetés — nombre de pièces achetées, de 0 à la quantité (décision du chef de projet, 2026-10-29) —, note copiée).
   - Méta : version du schéma, langue de la bibliothèque de départ, bibliothèque de départ installée.
-  - Le thème et le filtre « Reste à emballer » de chaque voyage sont des réglages de l'appareil, hors base et hors sauvegarde.
+  - Le thème, le filtre « Reste à emballer » de chaque voyage et la date de la dernière sauvegarde sont des réglages de l'appareil, hors base et hors sauvegarde.
 - **Modèles clés** : Bibliothèque, GroupeEtiquettes, Etiquette, CategorieModele, ObjetModele, Voyage, CategorieDuVoyage, ObjetDuVoyage, Sauvegarde.
 - **Dates** : dates de calendrier locales sans heure (`AAAA-MM-JJ`). Jours = dates du départ au retour inclus ; nuits = jours − 1.
 - **Sauvegarde** :
   - Un fichier JSON versionné (`format: "baluchon-sauvegarde"`, `version`), qui contient la bibliothèque et tous les voyages. Nom : `baluchon-AAAA-MM-JJ-HHhMM.json`, déposé dans Téléchargements.
-  - La restauration valide tout le fichier avant de toucher la base. Elle écrit d'abord une copie de l'état actuel (`baluchon-avant-restauration-….json`), puis remplace tout en une seule opération.
+  - La restauration valide tout le fichier avant de toucher la base ; une version plus ancienne du format est acceptée, une version future refusée. Elle écrit d'abord une copie de l'état actuel (`baluchon-avant-restauration-….json`), puis remplace tout en une seule opération.
 - **Traduction** : un fichier par langue, le français servant de référence. Il contient les textes de l'interface **et** la bibliothèque de départ. On repasse au français quand une traduction manque.
 - **Icônes** : Phosphor (Duotone dans les pavés de catégorie, Bold dans l'interface). Seules les icônes utilisées sont embarquées.
 - **Tests** : tests du modèle sans navigateur ; tests d'écran Playwright jugés au code de sortie, avec une capture claire et une sombre par écran touché.
@@ -311,15 +311,17 @@ Un menu « ⋮ » au bout du titre du voyage regroupe « Modifier ce voyage », 
 
 ### Ce qu'on livre
 
-L'écran Réglages permet de choisir le thème (appareil, clair, sombre), un réglage propre à chaque appareil. Il crée une sauvegarde complète datée dans Téléchargements. Il restaure une sauvegarde après confirmation, en écrivant d'abord une copie automatique de l'état actuel. Un fichier invalide est refusé avec un message clair, et rien n'est modifié.
+L'écran Réglages permet de choisir le thème (appareil, clair, sombre), un réglage propre à chaque appareil. Il crée une sauvegarde complète datée dans Téléchargements et affiche la date de la dernière sauvegarde faite depuis l'appareil. Il restaure une sauvegarde après confirmation, en écrivant d'abord une copie automatique de l'état actuel. Un fichier invalide est refusé avec un message clair, et rien n'est modifié. Détail : `docs/superpowers/specs/2026-10-31-phase-12-reglages-sauvegarde-design.md`.
 
 ### Critères d'acceptation
 
-- [ ] Une sauvegarde créée sur la tablette puis restaurée sur l'ordinateur reproduit à l'identique la bibliothèque et tous les voyages, coches, quantités manuelles et marques comprises (critère de succès 5).
+- [ ] Une sauvegarde créée sur la tablette puis restaurée sur l'ordinateur reproduit à l'identique la bibliothèque et tous les voyages, coches, quantités manuelles, marques et objets écartés compris (critère de succès 5).
 - [ ] La copie « avant restauration » existe avant tout remplacement, et sa restauration ramène l'état précédent.
 - [ ] Un fichier tronqué, d'un autre format ou d'une version future est refusé, sans aucune modification de la base.
 - [ ] Une erreur en pleine restauration laisse la base dans son état d'avant.
-- [ ] Le thème choisi persiste sur l'appareil et ne voyage pas dans la sauvegarde.
+- [ ] Le thème choisi persiste sur l'appareil, s'applique dès le lancement et ne voyage pas dans la sauvegarde ; à partir d'Android 11, l'heure et la batterie restent lisibles dans les trois choix.
+- [ ] La date de la dernière sauvegarde s'affiche sous « Sauvegarder » et ne voyage pas.
+- [ ] Sous Android 7 à 9, la sauvegarde se retrouve sous le raccourci « Téléchargements » du sélecteur de fichiers.
 
 ## Bloquée par
 
@@ -384,6 +386,11 @@ Un paquet Android signé (tablette et téléphone) et un paquet Debian sont cons
 - [ ] Une mise à jour installée par-dessus une version précédente conserve toutes les données.
 - [ ] La clé de signature est sauvegardée hors de l'ordinateur de travail, et le chef de projet sait où.
 - [ ] Le prochain voyage réel est préparé entièrement avec Baluchon, et BagPacker est désinstallé (critère de succès 7).
+
+### À traiter (constaté le 2026-10-31, pendant la phase 12)
+
+- L'ancienne tablette Samsung SM-T550 (Android 7.1) n'accepte que les applis 32 bits, alors que la version d'essai n'est construite qu'en 64 bits : décider des appareils visés et des paquets (un paquet par type d'appareil, ou un paquet commun plus lourd).
+- Sur cette tablette, Baluchon (construit aussi en 32 bits pour l'essai) n'ouvre pas sa base au premier lancement : « Vos voyages n'ont pas pu être lus » ; le journal dit que la base n'a jamais été prête. Il faut fermer et relancer l'appli pour atteindre le menu. L'ASUS, lui aussi sous Android 7 mais en 64 bits, n'a pas le défaut.
 
 ## Bloquée par
 

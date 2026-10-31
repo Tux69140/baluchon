@@ -166,9 +166,9 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 
 **Données**
 
-- Sauvegarde : un seul fichier, daté dans son nom, déposé dans le dossier Téléchargements de l'appareil.
-- Restauration : remplace tout, après confirmation, et après une copie automatique de l'état actuel au même endroit.
-- Thème clair et sombre, qui suit l'appareil par défaut ; ce réglage reste propre à chaque appareil.
+- Sauvegarde : un seul fichier, daté dans son nom, déposé dans le dossier Téléchargements de l'appareil ; Réglages affiche la date de la dernière sauvegarde faite depuis cet appareil. Pas d'envoi direct vers une autre appli : on transporte le fichier soi-même.
+- Restauration : on choisit le fichier avec le sélecteur de l'appareil ; la confirmation dit la date de la sauvegarde et ce qu'elle contient ; elle remplace tout, après une copie automatique de l'état actuel au même endroit. Une sauvegarde d'une version plus ancienne de Baluchon est acceptée, d'une version plus récente refusée.
+- Thème clair et sombre, qui suit l'appareil par défaut (choix Appareil, Clair, Sombre) ; ce réglage reste propre à chaque appareil.
 - Le filtre « Reste à emballer » est retenu voyage par voyage, sur l'appareil, hors base et hors sauvegarde.
 - Langue : celle de l'appareil si une traduction existe, sinon le français. La bibliothèque de départ est installée une fois, dans la langue du premier lancement, puis devient la propriété de l'utilisateur.
 
