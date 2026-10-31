@@ -34,9 +34,8 @@ const apercuDe = ({ bibliotheque, infos, etat }) => genererApercu(bibliotheque, 
 
 // Les objets écartés encore dans l'aperçu, après un changement de choix (docs/PRD.md, « Retour à
 // l'aperçu ») : les garder écartés est l'action principale, c'est la décision déjà prise ; Échap et
-// le retour système les gardent aussi. apercu : celui que montre l'assistant (aussi celui de « Refaire ce
-// voyage », src/ecrans/refaire-voyage.js).
-export async function demanderEcartes(t, outils, ids, apercu) {
+// le retour système les gardent aussi. apercu : celui que montre l'assistant.
+async function demanderEcartes(t, outils, ids, apercu) {
   const nommes = new Set(ids);
   const objets = apercu.flatMap(({ categorie, objets: lignes }) =>
     lignes
@@ -55,6 +54,49 @@ export async function demanderEcartes(t, outils, ids, apercu) {
   if (reponse !== 'remettre') return;
   outils.changerEtat(remettre(outils.etat, ids));
   outils.repeindre('#titre-etape');
+}
+
+// La dernière étape quand c'est l'aperçu qu'on décoche : celle de la création, et celle de « Refaire ce
+// voyage » (src/ecrans/refaire-voyage.js), qui y ajoute ses mentions. apercuDe(outils) : l'aperçu montré ;
+// enPlus(outils) : ce que le mode ajoute à vueApercu ({ enTete, ligne }), rien pour la création.
+export function etapeApercu(t, langue, apercuDe, enPlus = () => ({})) {
+  return {
+    vue: outils =>
+      vueApercu(t, langue, {
+        apercu: apercuDe(outils),
+        ecartes: outils.etat.ecartes,
+        infos: outils.infos,
+        etiquettes: etiquettesChoisies(outils.bibliotheque, outils.etat.choisies),
+        // « Revenir aux étiquettes » : la première étape de groupe, ou Informations s'il n'y en a pas.
+        revenir: outils.derniere > 1 ? 1 : 0,
+        ...enPlus(outils),
+      }),
+    // Rien de retenu, rien à créer.
+    grise: outils => raisonVide(apercuDe(outils), outils.etat.ecartes) !== null,
+    entrer(outils) {
+      const { etat, aReconfirmer } = entrerDansApercu(
+        outils.etat,
+        signatureDe(outils.infos, outils.etat.choisies),
+        idsDeLApercu(apercuDe(outils)),
+      );
+      outils.changerEtat(etat);
+      return aReconfirmer.length ? () => demanderEcartes(t, { ...outils, etat }, aReconfirmer, apercuDe(outils)) : null;
+    },
+    clic(cible, outils) {
+      const touchee = cible.closest('[data-objet], [data-categorie]');
+      if (!touchee) return false;
+      const { objet, categorie } = touchee.dataset;
+      if (objet) {
+        outils.changerEtat(basculerObjet(outils.etat, objet));
+        outils.repeindre(`[data-objet="${CSS.escape(objet)}"]`);
+      } else {
+        const ids = idsDeCategorie(apercuDe(outils).find(c => c.categorie.id === categorie));
+        outils.changerEtat(basculerCategorie(outils.etat, ids));
+        outils.repeindre(`[data-categorie="${CSS.escape(categorie)}"]`);
+      }
+      return true;
+    },
+  };
 }
 
 // La création : l'aperçu en dernière étape, où l'on décoche objets et catégories, puis « Créer le
@@ -82,44 +124,7 @@ function modeCreation({ bibliotheque, accueil, aujourdhui }, contexte) {
       await stockage.creerVoyage(contenu);
       return `#/voyage/${contenu.voyage.id}`;
     },
-    derniere: {
-      vue: outils =>
-        vueApercu(t, contexte.langue, {
-          apercu: apercuDe(outils),
-          ecartes: outils.etat.ecartes,
-          infos: outils.infos,
-          etiquettes: etiquettesChoisies(outils.bibliotheque, outils.etat.choisies),
-          // « Revenir aux étiquettes » : la première étape de groupe, ou Informations s'il n'y en a pas.
-          revenir: outils.derniere > 1 ? 1 : 0,
-        }),
-      // Rien de retenu, rien à créer.
-      grise: outils => raisonVide(apercuDe(outils), outils.etat.ecartes) !== null,
-      entrer(outils) {
-        const { etat, aReconfirmer } = entrerDansApercu(
-          outils.etat,
-          signatureDe(outils.infos, outils.etat.choisies),
-          idsDeLApercu(apercuDe(outils)),
-        );
-        outils.changerEtat(etat);
-        return aReconfirmer.length
-          ? () => demanderEcartes(t, { ...outils, etat }, aReconfirmer, apercuDe(outils))
-          : null;
-      },
-      clic(cible, outils) {
-        const touchee = cible.closest('[data-objet], [data-categorie]');
-        if (!touchee) return false;
-        const { objet, categorie } = touchee.dataset;
-        if (objet) {
-          outils.changerEtat(basculerObjet(outils.etat, objet));
-          outils.repeindre(`[data-objet="${CSS.escape(objet)}"]`);
-        } else {
-          const ids = idsDeCategorie(apercuDe(outils).find(c => c.categorie.id === categorie));
-          outils.changerEtat(basculerCategorie(outils.etat, ids));
-          outils.repeindre(`[data-categorie="${CSS.escape(categorie)}"]`);
-        }
-        return true;
-      },
-    },
+    derniere: etapeApercu(t, contexte.langue, apercuDe),
   };
 }
 

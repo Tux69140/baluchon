@@ -10,24 +10,12 @@
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
-import { etiquettesChoisies } from '../modele/inclusion.js';
 import { apercuRefait, repriseDe } from '../modele/refaire.js';
 import { genererVoyage } from '../modele/voyage.js';
-import {
-  basculerCategorie,
-  basculerObjet,
-  creerAssistant,
-  entrerDansApercu,
-  etapesDe,
-  idsDeCategorie,
-  idsDeLApercu,
-  raisonVide,
-  signatureDe,
-} from './assistant.js';
+import { creerAssistant, etapesDe } from './assistant.js';
 import { ouvrirAssistant } from './assistant-controleur.js';
-import { vueApercu } from './assistant-vues.js';
 import { echapper } from './html.js';
-import { demanderEcartes } from './nouveau-voyage.js';
+import { etapeApercu } from './nouveau-voyage.js';
 import { ligneRefaite, vuePhraseDisparus } from './refaire-vues.js';
 import { ecranVoyage, lireIdentifiant } from './voyage.js';
 import { vueIntrouvable } from './voyage-vues.js';
@@ -51,6 +39,16 @@ function modeRefaire({ origine, bibliotheque, accueil, filtre, aujourdhui }, con
   const depuisLeVoyage = depuis === 'voyage';
   // Revenu à Mes voyages, le focus va au bouton « ⋮ » de la carte, qui a ouvert l'assistant.
   const boutonDeLaCarte = `.menu-voyage-bouton[popovertarget="${CSS.escape(`menu-${voyage.id}`)}"]`;
+  // L'aperçu de la création, avec ce que « Refaire » y ajoute : la phrase des disparus et les mentions.
+  const apercu = etapeApercu(
+    t,
+    langue,
+    outils => calcul(outils).apercu,
+    outils => ({
+      enTete: vuePhraseDisparus(t, langue, repriseDe(origine, outils.bibliotheque).disparues),
+      ligne: ligneRefaite(t, calcul(outils), { recalculer }),
+    }),
+  );
 
   return {
     t: cle => (cle === 'nouveauVoyage.titre' ? titre : t(cle)),
@@ -95,48 +93,15 @@ function modeRefaire({ origine, bibliotheque, accueil, filtre, aujourdhui }, con
       return `#/voyage/${encodeURIComponent(contenu.voyage.id)}`;
     },
     derniere: {
-      vue(outils) {
-        const donnees = calcul(outils);
-        return vueApercu(t, langue, {
-          apercu: donnees.apercu,
-          ecartes: outils.etat.ecartes,
-          infos: outils.infos,
-          etiquettes: etiquettesChoisies(outils.bibliotheque, outils.etat.choisies),
-          revenir: outils.derniere > 1 ? 1 : 0,
-          enTete: vuePhraseDisparus(t, langue, repriseDe(origine, outils.bibliotheque).disparues),
-          ligne: ligneRefaite(t, donnees, { recalculer }),
-        });
-      },
-      // Rien de retenu, rien à créer.
-      grise: outils => raisonVide(calcul(outils).apercu, outils.etat.ecartes) !== null,
-      entrer(outils) {
-        const { etat, aReconfirmer } = entrerDansApercu(
-          outils.etat,
-          signatureDe(outils.infos, outils.etat.choisies),
-          idsDeLApercu(calcul(outils).apercu),
-        );
-        outils.changerEtat(etat);
-        return aReconfirmer.length
-          ? () => demanderEcartes(t, { ...outils, etat }, aReconfirmer, calcul(outils).apercu)
-          : null;
-      },
-      // Un objet, une catégorie, ou un segment « Garder | Recalculer ».
+      ...apercu,
+      // Un segment « Garder | Recalculer » ; sinon un objet ou une catégorie, comme à la création.
       clic(cible, outils) {
-        const touchee = cible.closest('[data-objet], [data-categorie], input[data-manuelle]');
-        if (!touchee) return false;
-        const { objet, categorie, manuelle } = touchee.dataset;
-        if (manuelle) {
-          if (touchee.value === 'recalculer') recalculer.add(manuelle);
-          else recalculer.delete(manuelle);
-          outils.repeindre(`input[data-manuelle="${CSS.escape(manuelle)}"][value="${touchee.value}"]`);
-        } else if (objet) {
-          outils.changerEtat(basculerObjet(outils.etat, objet));
-          outils.repeindre(`[data-objet="${CSS.escape(objet)}"]`);
-        } else {
-          const ids = idsDeCategorie(calcul(outils).apercu.find(c => c.categorie.id === categorie));
-          outils.changerEtat(basculerCategorie(outils.etat, ids));
-          outils.repeindre(`[data-categorie="${CSS.escape(categorie)}"]`);
-        }
+        const segment = cible.closest('input[data-manuelle]');
+        if (!segment) return apercu.clic(cible, outils);
+        const { manuelle } = segment.dataset;
+        if (segment.value === 'recalculer') recalculer.add(manuelle);
+        else recalculer.delete(manuelle);
+        outils.repeindre(`input[data-manuelle="${CSS.escape(manuelle)}"][value="${segment.value}"]`);
         return true;
       },
     },
