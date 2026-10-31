@@ -121,6 +121,13 @@ export function donneesOrigine({ nom = NOM_ORIGINE, bibliotheque = BIBLIOTHEQUE 
   };
 }
 
+// Une bibliothèque qui a perdu les deux étiquettes du voyage d'origine (Randonnée et Plongée), mais garde
+// tous ses objets : la phrase ne nomme que des étiquettes.
+export const SANS_ETIQUETTES = {
+  ...AVANT,
+  etiquettes: AVANT.etiquettes.filter(e => e.id !== 'e-rando' && e.id !== 'e-plongee'),
+};
+
 // Une bibliothèque dont les étiquettes reprises n'appellent plus rien : toutes ses catégories attendent
 // Pluie, que le voyage d'origine n'avait pas (Vigilance 4).
 export const RIEN_N_ENTRE = {
@@ -140,11 +147,19 @@ export function ouvrirEssai(navigateur, url, { format = 'telephone', theme = 'li
   });
 }
 
+// Le pointeur resté sur la ligne du menu survolerait l'étape 3 de la rangée, dessous : on l'écarte, pour des
+// captures sans survol.
+async function quitterLeMenu(page) {
+  await page.mouse.move(0, 0);
+  await calme(page);
+}
+
 // « Refaire ce voyage », dans le menu « ⋮ » du titre du voyage ouvert.
 export async function refaireDepuisLeVoyage(page) {
   await page.click('.voyage-titre .menu-voyage-bouton');
   await page.click('.voyage-titre .menu-voyage [data-menu="refaire"]');
   await attendreEcran(page, 'refaire-voyage');
+  await quitterLeMenu(page);
 }
 
 export const carte = id => `li.carte-avec-actions:has(> a.carte-voyage[href="#/voyage/${id}"])`;
@@ -154,6 +169,7 @@ export async function refaireDepuisLaCarte(page, id) {
   await page.click(`${carte(id)} > .menu-voyage-bouton`);
   await page.click(`${carte(id)} .menu-voyage [data-menu="refaire"]`);
   await attendreEcran(page, 'refaire-voyage');
+  await quitterLeMenu(page);
 }
 
 // Nom et dates (13 au 15 novembre), à l'étape Informations.

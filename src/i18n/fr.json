@@ -1198,7 +1198,8 @@
       "et": "{a} et {b}",
       "etiquetteSeule": "{debut} n’est plus dans la bibliothèque : elle n’est pas reprise.",
       "objetSeul": "{debut} n’est plus dans la bibliothèque : il n’est pas repris.",
-      "plusieurs": "{debut} ne sont plus dans la bibliothèque : ils ne sont pas repris."
+      "plusieurs": "{debut} ne sont plus dans la bibliothèque : ils ne sont pas repris.",
+      "plusieursEtiquettes": "{debut} ne sont plus dans la bibliothèque : elles ne sont pas reprises."
     }
   },
   "suppressionVoyage": {

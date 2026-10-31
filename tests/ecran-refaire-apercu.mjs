@@ -11,6 +11,7 @@
 //   écartées ; refait à son tour, il les montre de nouveau « retiré » ; le voyage d'origine est inchangé ;
 // - revenu à l'aperçu après avoir choisi Pluie, la fenêtre des objets écartés nomme les Chaussures ;
 // - créé avec « Recalculer » et les Chaussures recochées : Pull 3, Chaussures dans le voyage ;
+// - seules des étiquettes disparues : « elles ne sont pas reprises » ;
 // - Vigilance 4 : une bibliothèque dont rien n'entre plus ; l'aperçu montre le seul ajout à la main, et
 //   « Créer le voyage » marche ; décoché, « tout écarté » et « Créer le voyage » grisé, sans effet.
 import { mkdir, readFile } from 'node:fs/promises';
@@ -31,6 +32,7 @@ import {
 import {
   QUATRE,
   RIEN_N_ENTRE,
+  SANS_ETIQUETTES,
   V,
   contenuStocke,
   donneesOrigine,
@@ -235,6 +237,19 @@ try {
     juge.exige(
       objet('Chaussures de marche')?.quantite === 1 && stocke.ecartes.length === 0,
       `${cas} : Chaussures ${vu(objet('Chaussures de marche'))} ${vu(stocke.ecartes)}`,
+    );
+    await fermerEssai(juge, cas, ouvert);
+  }
+
+  // Seules des étiquettes ont disparu : le féminin pluriel.
+  {
+    const cas = 'téléphone, étiquettes disparues';
+    const ouvert = await ouvrirApercu('telephone', 'light', donneesOrigine({ bibliotheque: SANS_ETIQUETTES }));
+    const { phrase } = await lireApercu(ouvert.page);
+    juge.exige(
+      phrase ===
+        `Les étiquettes «${NB}Randonnée${NB}» et «${NB}Plongée${NB}» ne sont plus dans la bibliothèque${NB}: elles ne sont pas reprises.`,
+      `${cas} : ${vu(phrase)}`,
     );
     await fermerEssai(juge, cas, ouvert);
   }

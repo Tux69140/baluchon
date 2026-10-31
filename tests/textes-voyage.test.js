@@ -175,6 +175,7 @@ test('les textes de la phase 11 existent et se composent comme la maquette', () 
     'refaireVoyage.disparus.etiquetteSeule',
     'refaireVoyage.disparus.objetSeul',
     'refaireVoyage.disparus.plusieurs',
+    'refaireVoyage.disparus.plusieursEtiquettes',
     'refaireVoyage.disparus.et',
     'suppressionVoyage.titre',
     'suppressionVoyage.texte',
@@ -209,6 +210,8 @@ test('les textes de la phase 11 existent et se composent comme la maquette', () 
   assert.equal(d('etiquetteSeule'), `{debut} n’est plus dans la bibliothèque${NB}: elle n’est pas reprise.`);
   assert.equal(d('objetSeul'), `{debut} n’est plus dans la bibliothèque${NB}: il n’est pas repris.`);
   assert.equal(d('plusieurs'), `{debut} ne sont plus dans la bibliothèque${NB}: ils ne sont pas repris.`);
+  // Des étiquettes seules : le féminin pluriel (« elles ne sont pas reprises »).
+  assert.equal(d('plusieursEtiquettes'), `{debut} ne sont plus dans la bibliothèque${NB}: elles ne sont pas reprises.`);
   assert.equal(t('suppressionVoyage.titre', { nom: 'Quiberon' }), `Supprimer le voyage «${NB}Quiberon${NB}»${NB}?`);
   const compte = n => remplir(pluriel('ajustement.choix.objets', n), { n });
   assert.equal(

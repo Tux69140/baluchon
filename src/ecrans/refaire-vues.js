@@ -26,8 +26,10 @@ export function vuePhraseDisparus(t, langue, { etiquettes, objets }) {
   if (!morceaux.length) return '';
   const [a, b] = morceaux;
   const debut = b ? remplir(t(d('et')), { a, b }) : a;
+  // Une seule : « elle » (étiquette) ou « il » (objet) ; plusieurs : « elles » si ce ne sont que des
+  // étiquettes, sinon « ils » (le masculin l'emporte dès qu'un objet s'y mêle).
   let forme = etiquettes.length ? 'etiquetteSeule' : 'objetSeul';
-  if (etiquettes.length + objets.length > 1) forme = 'plusieurs';
+  if (etiquettes.length + objets.length > 1) forme = objets.length ? 'plusieurs' : 'plusieursEtiquettes';
   const phrase = remplir(t(d(forme)), { debut });
   // La phrase commence par un morceau en minuscule (« l’étiquette… ») : la majuscule vient d'ici.
   return `
