@@ -4,7 +4,6 @@
 // cible : { type: 'categorie' | 'objet' | 'etiquette' | 'groupe', id }.
 // Ce qu'emporte la suppression d'un voyage entier (phase 11) : consequencesVoyage.
 import { parOrdre } from './inclusion.js';
-import { estRetire } from './sac.js';
 
 // Les étiquettes que la cible supprime, par rang (celles du groupe, ou l'étiquette seule).
 function etiquettesSupprimees({ etiquettes }, cible) {
@@ -91,10 +90,12 @@ export function extraitAvant(bibliotheque, cible) {
   return structuredClone(extrait);
 }
 
-// Ce que la question avant de supprimer un voyage chiffre (décision 10 de la phase 11) : objets, ceux de sa
-// liste (un objet retiré, même avec des pièces encore à sortir, n'en fait plus partie) ; dansLeSac, les
-// objets qui ont au moins une pièce dans le sac, retirés compris (on compte des objets, pas des pièces).
+// Ce que la question avant de supprimer un voyage chiffre (décision 10 de la phase 11) : objets, tous ceux de
+// sa liste, retirés compris (un objet retiré qui attend la sortie de ses pièces y est encore montré : le
+// total est celui de l'en-tête « Dans le sac x / N », et « dont » ne le dépasse jamais ; décision R9 de la
+// relecture finale) ; dansLeSac, ceux qui ont au moins une pièce dans le sac (on compte des objets, pas des
+// pièces).
 export const consequencesVoyage = ({ objets }) => ({
-  objets: objets.filter(o => !estRetire(o)).length,
+  objets: objets.length,
   dansLeSac: objets.filter(o => o.dansLeSac > 0).length,
 });

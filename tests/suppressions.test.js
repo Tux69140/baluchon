@@ -211,9 +211,16 @@ test('un voyage de 87 objets dont 23 ont au moins une pièce dans le sac', () =>
   assert.deepEqual(consequencesVoyage({ objets }), { objets: 87, dansLeSac: 23 });
 });
 
-test('un objet retiré en attente de sortie ne compte que dans le sac', () => {
+// Décision R9 (relecture finale de la phase 11) : la liste du voyage montre encore l'objet retiré qui
+// attend sa sortie ; le total est celui de l'en-tête « Dans le sac x / N », et « dont » ne le dépasse jamais.
+test('un objet retiré en attente de sortie compte dans la liste et dans le sac', () => {
   const objets = [objetDuVoyage(1, 2, 0), objetDuVoyage(2, 1, 1), objetDuVoyage(3, 0, 2)];
-  assert.deepEqual(consequencesVoyage({ objets }), { objets: 2, dansLeSac: 2 });
+  assert.deepEqual(consequencesVoyage({ objets }), { objets: 3, dansLeSac: 2 });
+});
+
+test('« dont » ne dépasse jamais le total : un objet gardé, deux retirés encore dans le sac', () => {
+  const objets = [objetDuVoyage(1, 1, 0), objetDuVoyage(2, 0, 1), objetDuVoyage(3, 0, 2)];
+  assert.deepEqual(consequencesVoyage({ objets }), { objets: 3, dansLeSac: 2 });
 });
 
 test('un voyage sans objet ne compte rien', () => {

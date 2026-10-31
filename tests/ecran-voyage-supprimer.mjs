@@ -82,9 +82,9 @@ const DONNEES = {
     { voyageId: 'v2', modeleId: 'm-bonnet' },
   ],
 };
-// v1 : 15 objets (le Parapluie retiré n'en est plus), dont 11 avec au moins une pièce dans le sac
-// (le Parapluie compris) ; v2 : 1 objet, rien dans le sac.
-const TEXTE_V1 = remplir(s.texteSac, { compte: objets(15), sac: remplir(s.dansLeSac, { n: 11 }) });
+// v1 : 16 objets (le Parapluie retiré compris : la liste le montre encore, décision R9), dont 11 avec au
+// moins une pièce dans le sac (le Parapluie compris) ; v2 : 1 objet, rien dans le sac.
+const TEXTE_V1 = remplir(s.texteSac, { compte: objets(16), sac: remplir(s.dansLeSac, { n: 11 }) });
 const TEXTE_V2 = remplir(s.texte, { compte: objets(1) });
 
 // Ce que le stockage garde d'un voyage, chaque liste rangée par id : un voyage rétabli est réécrit à la fin
@@ -209,7 +209,7 @@ try {
       juge.exige(
         q?.titre === remplir(s.titre, { nom: NOM }) &&
           q.texte === TEXTE_V1 &&
-          vu(q.gras) === vu([objets(15), remplir(s.dansLeSac, { n: 11 })]) &&
+          vu(q.gras) === vu([objets(16), remplir(s.dansLeSac, { n: 11 })]) &&
           vu(q.balises) === vu(['b', 'b']) &&
           vu(q.boutons.map(([l]) => l)) === vu([fr.suppression.garder, fr.suppression.supprimer]) &&
           q.boutons[1][1].includes('bouton-danger') &&
