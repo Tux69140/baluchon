@@ -3,6 +3,7 @@
 // Mes voyages.
 // - aux quatre formats × 2 thèmes : chaque carte a son bouton « Actions du voyage « … » », passées
 //   comprises, posé à part du lien, dans le coin haut droit ; le nom de la carte ne passe pas dessous ;
+//   la colonne du texte, rétrécie par le bouton, ne sépare jamais « 2 » de « voyageurs » (relecture) ;
 // - l'appui sur le bouton ouvre le menu sans ouvrir le voyage : « Refaire ce voyage », puis « Supprimer
 //   ce voyage » en dernier, en danger ; Échap le ferme et rend le focus au bouton ;
 // - l'appui sur la carte ouvre toujours le voyage ;
@@ -75,6 +76,15 @@ const lireCartes = page =>
       const r = b?.getBoundingClientRect();
       const c = a.getBoundingClientRect();
       const nom = a.querySelector('.carte-voyage-nom').getBoundingClientRect();
+      // « … · 2 voyageurs » : le nombre et son nom sur la même ligne (le bouton rétrécit la colonne du texte).
+      const texte = a.querySelector('.carte-voyage-details').firstChild;
+      const fin = /(\d+)\s(\S+)$/.exec(texte.data);
+      const ligneDe = (debut, longueur) => {
+        const plage = document.createRange();
+        plage.setStart(texte, debut);
+        plage.setEnd(texte, debut + longueur);
+        return Math.round(plage.getClientRects()[0].top);
+      };
       return {
         id: a.getAttribute('href').slice('#/voyage/'.length),
         avecActions: li.classList.contains('carte-avec-actions'),
@@ -82,6 +92,7 @@ const lireCartes = page =>
         horsDuLien: Boolean(b) && !a.contains(b),
         coin: Boolean(r) && c.right - r.right < 16 && r.top - c.top < 16,
         libre: Boolean(r) && nom.right <= r.left,
+        voyageursEntiers: Boolean(fin) && ligneDe(fin.index, 1) === ligneDe(texte.data.length - 1, 1),
       };
     }),
   );
@@ -128,6 +139,7 @@ try {
           `${cas} : bouton de la carte ${vu(c)}`,
         );
         juge.exige(c.coin && c.libre, `${cas} : place du bouton de la carte ${vu(c)}`);
+        juge.exige(c.voyageursEntiers, `${cas} : le nombre de voyageurs coupé de son nom ${vu(c)}`);
       }
       await verifierCommandes(page, juge, cas);
       await capture('voyages-menu-ferme');

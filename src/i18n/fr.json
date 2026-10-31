@@ -145,8 +145,8 @@
       "passes": "Passés"
     },
     "voyageurs": {
-      "one": "{n} voyageur",
-      "other": "{n} voyageurs"
+      "one": "{n} voyageur",
+      "other": "{n} voyageurs"
     },
     "details": "{periode} · {voyageurs}",
     "vide": {
