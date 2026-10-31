@@ -288,15 +288,15 @@ Un menu « ⋮ » au bout du titre du voyage regroupe « Modifier ce voyage », 
 
 ### Critères d'acceptation
 
-- [ ] « Refaire ce voyage » s'ouvre depuis le menu du voyage et depuis celui de sa carte ; voyageurs et étiquettes repris ; nom, destination et dates vides.
-- [ ] Le voyage d'origine reste intact.
-- [ ] Une étiquette ou un objet du voyage d'origine qui n'existe plus dans la bibliothèque est signalé et ignoré.
-- [ ] Un objet ajouté à la main revient, marqué ; un objet écarté revient écarté, avec « retiré » ; pour un voyage créé avant cette phase, tout arrive coché.
-- [ ] Une quantité fixée à la main est gardée par défaut et ne change que si l'on choisit « Recalculer ».
-- [ ] À l'étape « Changements » de « Modifier ce voyage », un objet déjà écarté de ce voyage arrive refusé, avec « retiré ».
-- [ ] De « Nouveau voyage » à la liste créée : moins de 2 minutes (critère de succès 3).
-- [ ] « Annuler » rétablit le voyage supprimé avec ses coches, ses achats et ses quantités.
-- [ ] Schéma : chaque voyage retient les objets qu'on y a écartés (migration 007).
+- [x] « Refaire ce voyage » s'ouvre depuis le menu du voyage et depuis celui de sa carte ; voyageurs et étiquettes repris ; nom, destination et dates vides.
+- [x] Le voyage d'origine reste intact.
+- [x] Une étiquette ou un objet du voyage d'origine qui n'existe plus dans la bibliothèque est signalé et ignoré.
+- [x] Un objet ajouté à la main revient, marqué ; un objet écarté revient écarté, avec « retiré » ; pour un voyage créé avant cette phase, tout arrive coché.
+- [x] Une quantité fixée à la main est gardée par défaut et ne change que si l'on choisit « Recalculer ».
+- [x] À l'étape « Changements » de « Modifier ce voyage », un objet déjà écarté de ce voyage arrive refusé, avec « retiré ».
+- [x] De « Nouveau voyage » à la liste créée : moins de 2 minutes (critère de succès 3).
+- [x] « Annuler » rétablit le voyage supprimé avec ses coches, ses achats et ses quantités.
+- [x] Schéma : chaque voyage retient les objets qu'on y a écartés (migration 007).
 
 ## Bloquée par
 
