@@ -1203,14 +1203,9 @@
   },
   "suppressionVoyage": {
     "titre": "Supprimer le voyage « {nom} » ?",
-    "texte": {
-      "one": "Sa liste de {compte} disparaîtra. La bibliothèque n’est pas touchée.",
-      "other": "Sa liste de {compte} disparaîtra. La bibliothèque n’est pas touchée."
-    },
-    "texteSac": {
-      "one": "Sa liste de {compte}, dont {sac} déjà dans le sac, disparaîtra. La bibliothèque n’est pas touchée.",
-      "other": "Sa liste de {compte}, dont {sac} déjà dans le sac, disparaîtra. La bibliothèque n’est pas touchée."
-    }
+    "texte": "Sa liste de {compte} disparaîtra. La bibliothèque n’est pas touchée.",
+    "texteSac": "Sa liste de {compte}, dont {sac}, disparaîtra. La bibliothèque n’est pas touchée.",
+    "dansLeSac": "{n} déjà dans le sac"
   },
   "modifierVoyage": {
     "bouton": "Modifier le voyage",

@@ -179,6 +179,7 @@ test('les textes de la phase 11 existent et se composent comme la maquette', () 
     'suppressionVoyage.titre',
     'suppressionVoyage.texte',
     'suppressionVoyage.texteSac',
+    'suppressionVoyage.dansLeSac',
     'annulation.voyage',
   ];
   for (const cle of toutes) {
@@ -211,16 +212,28 @@ test('les textes de la phase 11 existent et se composent comme la maquette', () 
   assert.equal(t('suppressionVoyage.titre', { nom: 'Quiberon' }), `Supprimer le voyage «${NB}Quiberon${NB}»${NB}?`);
   const compte = n => remplir(pluriel('ajustement.choix.objets', n), { n });
   assert.equal(
-    remplir(pluriel('suppressionVoyage.texte', 12), { compte: compte(12) }),
+    remplir(lire('suppressionVoyage.texte'), { compte: compte(12) }),
     'Sa liste de 12 objets disparaîtra. La bibliothèque n’est pas touchée.',
   );
   assert.equal(
-    remplir(pluriel('suppressionVoyage.texte', 1), { compte: compte(1) }),
+    remplir(lire('suppressionVoyage.texte'), { compte: compte(1) }),
     'Sa liste de 1 objet disparaîtra. La bibliothèque n’est pas touchée.',
   );
   assert.equal(
-    remplir(pluriel('suppressionVoyage.texteSac', 12), { compte: compte(12), sac: '3' }),
+    remplir(lire('suppressionVoyage.texteSac'), {
+      compte: compte(12),
+      sac: t('suppressionVoyage.dansLeSac', { n: 3 }),
+    }),
     'Sa liste de 12 objets, dont 3 déjà dans le sac, disparaîtra. La bibliothèque n’est pas touchée.',
+  );
+  // Un cas mêlé : une étiquette et un objet, joints par « et », forme « plusieurs » (phraseDisparus).
+  const debut = remplir(d('et'), {
+    a: remplir(d('etiquettes').one, { liste: `«${NB}Plongée${NB}»` }),
+    b: remplir(d('objets').one, { liste: `«${NB}Palmes${NB}»` }),
+  });
+  assert.equal(
+    remplir(d('plusieurs'), { debut }),
+    `l’étiquette «${NB}Plongée${NB}» et l’objet «${NB}Palmes${NB}» ne sont plus dans la bibliothèque${NB}: ils ne sont pas repris.`,
   );
   assert.equal(t('annulation.voyage', { nom: 'Quiberon' }), `Voyage «${NB}Quiberon${NB}» supprimé`);
 });
