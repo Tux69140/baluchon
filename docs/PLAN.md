@@ -284,14 +284,19 @@ On modifie les dates ou le nombre de voyageurs d'un voyage, et les quantités ca
 
 ### Ce qu'on livre
 
-« Refaire ce voyage » ouvre l'assistant prérempli avec les étiquettes et le nombre de voyageurs du voyage d'origine. On saisit les nouvelles dates, et la liste est générée depuis la bibliothèque **actuelle**. Supprimer un voyage demande une confirmation chiffrée, suivie d'un « Annuler » de 10 s.
+Un menu « ⋮ » au bout du titre du voyage regroupe « Modifier ce voyage », « Refaire ce voyage » et « Supprimer ce voyage » ; chaque carte de « Mes voyages » a le sien (« Refaire ce voyage », « Supprimer ce voyage »). « Refaire ce voyage » ouvre l'assistant prérempli avec les étiquettes et le nombre de voyageurs du voyage d'origine. On saisit le nom, la destination et les dates, et la liste est générée depuis la bibliothèque **actuelle** : les objets ajoutés à la main reviennent, les objets écartés reviennent écartés. Chaque voyage retient désormais les objets qu'on y écarte. Supprimer un voyage demande une confirmation chiffrée, suivie d'un « Annuler » de 10 s. Détail : `docs/superpowers/specs/2026-10-30-phase-11-refaire-supprimer-design.md`.
 
 ### Critères d'acceptation
 
-- [ ] De « Refaire ce voyage » à la liste créée : moins de 30 secondes. De « Nouveau voyage » à la liste créée : moins de 2 minutes (critère de succès 3).
+- [ ] « Refaire ce voyage » s'ouvre depuis le menu du voyage et depuis celui de sa carte ; voyageurs et étiquettes repris ; nom, destination et dates vides.
 - [ ] Le voyage d'origine reste intact.
-- [ ] Une étiquette du voyage d'origine qui n'existe plus dans la bibliothèque est signalée et ignorée.
-- [ ] « Annuler » rétablit le voyage supprimé avec ses coches et ses quantités.
+- [ ] Une étiquette ou un objet du voyage d'origine qui n'existe plus dans la bibliothèque est signalé et ignoré.
+- [ ] Un objet ajouté à la main revient, marqué ; un objet écarté revient écarté, avec « retiré » ; pour un voyage créé avant cette phase, tout arrive coché.
+- [ ] Une quantité fixée à la main est gardée par défaut et ne change que si l'on choisit « Recalculer ».
+- [ ] À l'étape « Changements » de « Modifier ce voyage », un objet déjà écarté de ce voyage arrive refusé, avec « retiré ».
+- [ ] De « Nouveau voyage » à la liste créée : moins de 2 minutes (critère de succès 3).
+- [ ] « Annuler » rétablit le voyage supprimé avec ses coches, ses achats et ses quantités.
+- [ ] Schéma : chaque voyage retient les objets qu'on y a écartés (migration 007).
 
 ## Bloquée par
 
