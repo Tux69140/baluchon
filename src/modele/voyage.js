@@ -2,6 +2,7 @@
 // liste et classement des voyages (docs/PLAN.md, phase 2).
 import { estDate } from './dates.js';
 import { etiquettesChoisies, genererApercu, parOrdre } from './inclusion.js';
+import { rangSuivant } from './modeles.js';
 import { dateLimite } from './periode.js';
 import { ordreDansLeSac } from './sac.js';
 
@@ -54,9 +55,11 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes, apercu }
   for (const { categorie: modele, objets: lignes, origine } of groupes) {
     const retenus = lignes.filter(({ objet }) => !ecartes.has(objet.id));
     if (!retenus.length) continue;
-    // Une catégorie du voyage d'origine garde le modèle d'où elle venait (aucun, si elle lui était propre).
+    // Une catégorie du voyage d'origine garde le modèle d'où elle venait (aucun, si elle lui était propre) ;
+    // venue en fin d'aperçu, elle prend son rang après celles déjà copiées : son rang d'origine la ferait
+    // remonter parmi celles de la bibliothèque.
     const copie = copierCategorie(modele, voyage.id, ids);
-    const categorie = origine ? { ...copie, modeleId: modele.modeleId } : copie;
+    const categorie = origine ? { ...copie, modeleId: modele.modeleId, ordre: rangSuivant(categories) } : copie;
     categories.push(categorie);
     const place = { voyageId: voyage.id, categorieId: categorie.id };
     for (const { objet, quantite, ajout, manuelle } of retenus)
