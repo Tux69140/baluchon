@@ -44,7 +44,7 @@ function placer(menu, bouton) {
   menu.style.right = `${Math.max(MARGE, document.documentElement.clientWidth - r.right)}px`;
 }
 
-// Le menu ouvert (un popover ferme l'autre en s'ouvrant) : { menu, garde, ligne, fin } — sa garde du
+// Le menu ouvert (un popover ferme l'autre en s'ouvrant) : { menu, bouton, garde, ligne, fin } — sa garde du
 // retour, la ligne qui avait le focus, et la fin du suivi du défilement. Un redessin de l'écran (la liste
 // du voyage qui se range après une coche, l'appareil tourné) retire le menu de la page sans le fermer :
 // le nouveau dessin du même menu reprend alors sa place, sa garde et sa ligne (brancherMenuVoyage).
@@ -72,14 +72,37 @@ function quitter(menu) {
   return partie;
 }
 
+// L'appui qui ferme le menu ouvert, ailleurs que sur le menu et son bouton : il ne fait rien d'autre (une
+// case touchée là ne met rien dans le sac ; décision R10 de la relecture finale de la phase 11), sauf sur
+// un lien (plus bas). Noté dès le contact : à son clic, le menu est déjà fermé.
+let appuiQuiFerme = false;
+addEventListener(
+  'pointerdown',
+  ({ target }) => {
+    appuiQuiFerme =
+      Boolean(ouvert?.menu.matches(':popover-open')) &&
+      !ouvert.menu.contains(target) &&
+      !ouvert.bouton.contains(target);
+  },
+  { capture: true },
+);
+addEventListener('pointercancel', () => (appuiQuiFerme = false), { capture: true });
+
 // Un lien touché menu ouvert, ou pendant que son étape part : un appui ailleurs ferme le menu, mais le
 // lien serait suivi avant le départ de l'étape, que le retrait défairait ensuite (le lien « Mes voyages »
 // recule même dans l'historique, src/main.js, et ne ferait que retirer l'étape). Il attend donc ce départ,
-// puis est suivi tel quel.
+// puis est suivi tel quel. Tout autre clic de l'appui qui a fermé le menu s'arrête là ; un clic du clavier
+// (detail 0) n'est jamais celui d'un appui.
 addEventListener(
   'click',
   evenement => {
+    const absorbe = appuiQuiFerme && evenement.detail > 0;
+    appuiQuiFerme = false;
     const lien = evenement.target.closest?.('a[href]');
+    if (!lien && absorbe) {
+      evenement.preventDefault();
+      evenement.stopPropagation();
+    }
     if (!lien || ouvert?.menu.contains(lien)) return;
     if (ouvert?.menu.matches(':popover-open')) ouvert.menu.hidePopover();
     if (!depart) return;
@@ -101,6 +124,7 @@ export function brancherMenuVoyage(conteneur, surChoix) {
     if (ouvert?.menu !== menu)
       ouvert = {
         menu,
+        bouton,
         garde: poserGardeRetour({ surRetour: fermerAuRetour }),
         ligne: null,
         fin: new AbortController(),
@@ -140,7 +164,7 @@ export function brancherMenuVoyage(conteneur, surChoix) {
   // Le même menu, ouvert dans le dessin d'avant : il se rouvre, avec sa garde, sans rien rejouer.
   if (ouvert && !ouvert.menu.isConnected && ouvert.menu.id === menu.id) {
     ouvert.fin.abort();
-    ouvert = { ...ouvert, menu, fin: new AbortController() };
+    ouvert = { ...ouvert, menu, bouton, fin: new AbortController() };
     menu.showPopover();
     for (const animation of menu.getAnimations()) animation.finish();
   }

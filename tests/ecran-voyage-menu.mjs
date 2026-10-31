@@ -10,6 +10,8 @@
 // - ouvert pendant que la liste se range (une seconde après une coche), il reste ouvert, et le retour
 //   le ferme toujours ;
 // - « Modifier ce voyage » ouvre l'assistant de modification, qui reste à l'écran ;
+// - menu ouvert, un appui sur la case d'un objet ferme le menu sans rien mettre dans le sac (décision R10) ;
+//   témoins : menu fermé, le même appui et Entrée au clavier en mettent une pièce ;
 // - menu ouvert, un appui sur « Mes voyages » le ferme et mène à Mes voyages, qui reste à l'écran ;
 // - vigilance 5 : un nom de voyage long ne fait jamais défiler la page de côté, et le bouton reste sur
 //   la première ligne du titre.
@@ -26,6 +28,7 @@ import {
   RACINE,
   attendreEcran,
   creerJuge,
+  lireStockage,
   ouvrir,
   verifierCommandes,
 } from './outils/page.mjs';
@@ -222,6 +225,45 @@ try {
       const suivant = await retour(page);
       juge.exige(suivant.ecran === 'voyages', `${format}, rangée, second retour : ${vu(suivant)}`);
       juge.exige(erreurs.length === 0, `${format}, rangée : erreurs ${erreurs.join(' | ')}`);
+      await contexte.close();
+    }
+
+    // Décision R10 (relecture finale) : menu ouvert, l'appui sur la case d'un objet (à la souris comme au
+    // doigt) ferme le menu et ne fait rien d'autre : rien de plus dans le sac, ni à l'écran ni gardé.
+    // Témoins : le même appui, menu fermé, met une pièce dans le sac ; au clavier, Entrée sur la case aussi.
+    for (const geste of ['click', 'tap']) {
+      const { contexte, page, erreurs } = await ouvrirVoyage(format);
+      const CASE = '[data-action="case"][data-id="o-tsh"]';
+      const sac = async () => [
+        (await lireStockage(page)).objetsDuVoyage.find(o => o.id === 'o-tsh').dansLeSac,
+        await page.getAttribute(CASE, 'aria-label'),
+      ];
+      const avant = await sac();
+      await ouvrirMenu(page);
+      await page[geste](CASE);
+      await calme(page);
+      const ferme = await lireMenu(page);
+      const apres = await sac();
+      juge.exige(
+        !ferme.ouvert && ferme.ecran === 'voyage' && vu(apres) === vu(avant),
+        `${format}, ${geste} sur une case menu ouvert : ${vu({ ferme, avant, apres })}`,
+      );
+      await page[geste](CASE);
+      const temoin = await attendreQue(
+        page,
+        id => JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(o => o.id === id).dansLeSac === 1,
+        'o-tsh',
+      );
+      juge.exige(temoin, `${format}, ${geste} sur une case menu fermé : rien dans le sac ${vu(await sac())}`);
+      await page.focus(CASE);
+      await page.keyboard.press('Enter');
+      const clavier = await attendreQue(
+        page,
+        id => JSON.parse(localStorage.getItem('baluchon-essai')).objetsDuVoyage.find(o => o.id === id).dansLeSac === 2,
+        'o-tsh',
+      );
+      juge.exige(clavier, `${format}, Entrée sur une case : ${vu(await sac())}`);
+      juge.exige(erreurs.length === 0, `${format}, case menu ouvert : erreurs ${erreurs.join(' | ')}`);
       await contexte.close();
     }
 

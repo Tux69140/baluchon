@@ -9,7 +9,9 @@
 // - l'appui sur la carte ouvre toujours le voyage ;
 // - près du bas de l'écran, le menu s'ouvre au-dessus du bouton ; témoin : en haut, il s'ouvre dessous ;
 // - le retour système ferme le menu et reste sur Mes voyages ;
-// - menu ouvert, un appui sur une autre carte ferme le menu et ouvre ce voyage, qui reste à l'écran.
+// - menu ouvert, un appui sur une autre carte ferme le menu et ouvre ce voyage, qui reste à l'écran ;
+// - menu ouvert, un appui sur le bouton « Menu » ne fait que fermer le menu (décision R10) ; témoin : menu
+//   fermé, il ouvre le tiroir.
 // Captures : menu fermé et ouvert, aux quatre formats × 2 thèmes (captures-travail/).
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -192,6 +194,26 @@ try {
     const etat = await page.evaluate(() => [document.querySelector('#app').dataset.ecran, location.hash]);
     juge.exige(vu(etat) === vu(['voyage', '#/voyage/a1']), `${geste} sur une autre carte menu ouvert : ${vu(etat)}`);
     juge.exige(erreurs.length === 0, `${geste} sur une autre carte : erreurs ${erreurs.join(' | ')}`);
+    await contexte.close();
+  }
+
+  // Décision R10 : menu ouvert, un appui sur le bouton « Menu » du haut ferme le menu et ne fait rien
+  // d'autre (le tiroir ne s'ouvre pas). Témoin : menu fermé, le même appui ouvre le tiroir.
+  for (const geste of ['click', 'tap']) {
+    const { contexte, page, erreurs } = await ouvrirAccueil('telephone');
+    const tiroir = () => page.evaluate(() => Boolean(document.querySelector('dialog.tiroir[open]')));
+    await ouvrirMenu(page, 'c1');
+    await page[geste]('[data-action="menu"]');
+    await calme(page);
+    const apres = { menu: (await lireMenu(page, 'c1')).ouvert, tiroir: await tiroir() };
+    juge.exige(vu(apres) === vu({ menu: false, tiroir: false }), `${geste} sur « Menu » menu ouvert : ${vu(apres)}`);
+    // Le tiroir ouvert à tort couvre le bouton : le témoin n'a alors plus de sens.
+    if (!apres.tiroir) {
+      await page[geste]('[data-action="menu"]');
+      const temoin = await attendreQue(page, () => Boolean(document.querySelector('dialog.tiroir[open]')));
+      juge.exige(temoin, `${geste} sur « Menu » menu fermé : le tiroir ne s’ouvre pas`);
+    }
+    juge.exige(erreurs.length === 0, `${geste} sur « Menu » : erreurs ${erreurs.join(' | ')}`);
     await contexte.close();
   }
 
