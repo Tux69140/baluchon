@@ -9,6 +9,8 @@ import {
   remplacerOuAjouter,
   verifierAchetes,
   verifierSac,
+  ecartesAvec,
+  ecartesSans,
 } from './navigateur-outils.js';
 
 const objetsDe = donnees => donnees.objetsDuVoyage ?? [];
@@ -37,6 +39,7 @@ function verifierCategorie(donnees, { categorie, objet }) {
 }
 
 // Ajout et rétablissement ont le même cœur ; deux noms pour que l'écran distingue « Annuler » d'un ajout.
+// Un rétablissement fait revenir l'objet : son modèle n'est plus écarté.
 async function ecrireAjout(operation, ajout) {
   const donnees = await ecritureDe(operation);
   verifierCategorie(donnees, ajout);
@@ -45,6 +48,7 @@ async function ecrireAjout(operation, ajout) {
     ...donnees,
     categoriesDuVoyage: ajout.categorie ? [...categoriesDe(donnees), ajout.categorie] : categoriesDe(donnees),
     objetsDuVoyage: [...objetsDe(donnees), ajout.objet],
+    objetsEcartes: operation === 'retablirDansLeVoyage' ? ecartesSans(donnees, ajout.objet) : donnees.objetsEcartes,
   });
 }
 
@@ -79,7 +83,8 @@ export const ajustementsNavigateur = {
     if (!net) throw new Error('Le nom ne peut pas être vide.');
     modifierObjet(donnees, id, o => ({ ...o, nom: net, modifieLe }));
   },
-  // Retire l'objet, et sa catégorie si elle n'a plus d'objet ; la bibliothèque n'est pas touchée.
+  // Retire l'objet, et sa catégorie si elle n'a plus d'objet ; la bibliothèque n'est pas touchée. Son modèle
+  // devient écarté du voyage (« Choix de l'agent », conception de la phase 11).
   async retirerDuVoyage(id) {
     const donnees = await ecritureDe('retirerDuVoyage');
     const objet = objetsDe(donnees).find(o => o.id === id);
@@ -89,6 +94,7 @@ export const ajustementsNavigateur = {
     ecrire({
       ...donnees,
       objetsDuVoyage: objets,
+      objetsEcartes: ecartesAvec(donnees, objet),
       categoriesDuVoyage: vide ? categoriesDe(donnees).filter(c => c.id !== objet.categorieId) : categoriesDe(donnees),
     });
   },

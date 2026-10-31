@@ -194,6 +194,42 @@ test('retirer puis rétablir rend le voyage identique, catégorie comprise', asy
   );
 });
 
+const ecartesDe = async stockage => (await stockage.lireVoyage('v-vercors')).ecartes;
+
+test('retirer un objet issu d’un modèle l’écarte ; le rétablir le fait revenir', async () => {
+  const stockage = await stockageAvecVoyage();
+  const objet = contrat.voyage.objets.find(o => o.id === 'ov-tshirts');
+  const categorie = contrat.voyage.categories.find(c => c.id === objet.categorieId);
+  await stockage.retirerDuVoyage('ov-tshirts');
+  assert.deepEqual(await ecartesDe(stockage), ['om-cartes', 'om-tshirts']);
+  await stockage.retablirDansLeVoyage({ categorie, objet });
+  assert.deepEqual(await ecartesDe(stockage), ['om-cartes']);
+});
+
+test('retirer un objet ajouté à la main n’écarte rien', async () => {
+  const stockage = await stockageAvecVoyage();
+  await stockage.ajouterAuVoyage({ categorie: null, objet: objetALaMain('ov-gourde', 'cv-vetements') });
+  await stockage.retirerDuVoyage('ov-gourde');
+  assert.deepEqual(await ecartesDe(stockage), ['om-cartes']);
+});
+
+test('deux voyages écartent chacun leur objet du même modèle', async () => {
+  const stockage = await stockageAvecVoyage();
+  const autre = (id, v) => ({ ...id, id: `${id.id}-${v}`, voyageId: v });
+  const copieVoyage = {
+    voyage: { ...contrat.voyage.voyage, id: 'v-autre' },
+    etiquettes: [],
+    categories: contrat.voyage.categories.map(c => ({ ...c, id: `${c.id}-b`, voyageId: 'v-autre' })),
+    objets: contrat.voyage.objets.map(o => ({ ...autre(o, 'v-autre'), categorieId: `${o.categorieId}-b` })),
+    ecartes: [],
+  };
+  await stockage.creerVoyage(copieVoyage);
+  await stockage.retirerDuVoyage('ov-tshirts');
+  await stockage.retirerDuVoyage('ov-tshirts-v-autre');
+  assert.deepEqual(await ecartesDe(stockage), ['om-cartes', 'om-tshirts']);
+  assert.deepEqual((await stockage.lireVoyage('v-autre')).ecartes, ['om-tshirts']);
+});
+
 test('retirer ne touche pas la bibliothèque', async () => {
   const stockage = await stockageAvecVoyage({ bibliotheque: true });
   await stockage.retirerDuVoyage('ov-tshirts');

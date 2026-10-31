@@ -250,6 +250,7 @@
       }
     ],
     "objetsRetires": ["ov-tshirts"],
-    "categoriesRetirees": ["cv-vetements"]
+    "categoriesRetirees": ["cv-vetements"],
+    "ecartes": ["om-cartes", "om-tshirts"]
   }
 }

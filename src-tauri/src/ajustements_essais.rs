@@ -399,3 +399,67 @@ fn regler_dans_le_sac_refuse_de_creer_un_excedent() {
         (6, 7)
     );
 }
+
+fn ecartes_de(base: &Base, voyage: &str) -> Vec<String> {
+    base.lire_voyage(voyage).unwrap().unwrap().ecartes
+}
+
+#[test]
+fn retirer_un_objet_issu_d_un_modele_l_ecarte_et_le_retablir_le_fait_revenir() {
+    let (_dossier, base, avant) = base_avec_voyage();
+    let objet = avant
+        .objets
+        .iter()
+        .find(|o| o.id == "ov-tshirts")
+        .unwrap()
+        .clone();
+    let categorie = avant
+        .categories
+        .iter()
+        .find(|c| c.id == objet.categorie_id)
+        .unwrap()
+        .clone();
+    base.retirer_du_voyage("ov-tshirts").unwrap();
+    assert_eq!(ecartes_de(&base, "v-vercors"), ["om-cartes", "om-tshirts"]);
+    base.retablir_dans_le_voyage(&AjoutAuVoyage {
+        categorie: Some(categorie),
+        objet,
+    })
+    .unwrap();
+    assert_eq!(ecartes_de(&base, "v-vercors"), ["om-cartes"]);
+}
+
+#[test]
+fn retirer_un_objet_ajoute_a_la_main_n_ecarte_rien() {
+    let (_dossier, base, _avant) = base_avec_voyage();
+    let ajout = AjoutAuVoyage {
+        categorie: None,
+        objet: objet_a_la_main("ov-gourde", "cv-vetements"),
+    };
+    base.ajouter_au_voyage(&ajout).unwrap();
+    base.retirer_du_voyage("ov-gourde").unwrap();
+    assert_eq!(ecartes_de(&base, "v-vercors"), ["om-cartes"]);
+}
+
+#[test]
+fn deux_voyages_ecartent_chacun_leur_objet_du_meme_modele() {
+    let (_dossier, base, avant) = base_avec_voyage();
+    let mut autre = avant.clone();
+    autre.voyage.id = "v-autre".into();
+    autre.etiquettes.clear();
+    autre.ecartes.clear();
+    for c in &mut autre.categories {
+        c.id = format!("{}-b", c.id);
+        c.voyage_id = "v-autre".into();
+    }
+    for o in &mut autre.objets {
+        o.id = format!("{}-b", o.id);
+        o.categorie_id = format!("{}-b", o.categorie_id);
+        o.voyage_id = "v-autre".into();
+    }
+    base.creer_voyage(&autre).unwrap();
+    base.retirer_du_voyage("ov-tshirts").unwrap();
+    base.retirer_du_voyage("ov-tshirts-b").unwrap();
+    assert_eq!(ecartes_de(&base, "v-vercors"), ["om-cartes", "om-tshirts"]);
+    assert_eq!(ecartes_de(&base, "v-autre"), ["om-tshirts"]);
+}

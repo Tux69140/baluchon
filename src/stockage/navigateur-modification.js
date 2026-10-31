@@ -1,7 +1,7 @@
 // La modification d'un voyage dans la variante navigateur du stockage (tests d'écran) : mêmes refus et
 // même résultat que la base (src-tauri/src/modification.rs). Le résultat entier est calculé avant
 // d'écrire : refusée, la modification ne laisse rien.
-import { ecrire, ecritureDe, verifierAchetes, verifierSac } from './navigateur-outils.js';
+import { ecrire, ecritureDe, verifierAchetes, verifierSac, ecartesAvec, ecartesSans } from './navigateur-outils.js';
 
 const refus = texte => new Error(texte);
 
@@ -43,6 +43,8 @@ export const modificationNavigateur = {
   async modifierVoyage(m) {
     const donnees = await ecritureDe('modifierVoyage');
     const v = m.voyage.id;
+    // Même contrat que la base : la liste complète des écartés est obligatoire.
+    if (!Array.isArray(m.ecartes)) throw refus('La liste des objets écartés est absente.');
     const nomme = [...m.etiquettes, ...m.categoriesAjoutees, ...m.objetsAjoutes, ...m.objetsModifies];
     if (nomme.some(x => x.voyageId !== v)) throw refus('La modification touche un autre voyage.');
     if (!(donnees.voyages ?? []).some(x => x.id === v)) throw refus('Voyage introuvable.');
@@ -54,9 +56,15 @@ export const modificationNavigateur = {
       etiquettesDuVoyage: [...(donnees.etiquettesDuVoyage ?? []).filter(e => e.voyageId !== v), ...m.etiquettes],
       categoriesDuVoyage: categories,
       objetsDuVoyage: objets,
+      // La liste complète remplace celle du voyage (« Choix de l'agent », conception de la phase 11).
+      objetsEcartes: [
+        ...(donnees.objetsEcartes ?? []).filter(e => e.voyageId !== v),
+        ...[...new Set(m.ecartes)].map(modeleId => ({ voyageId: v, modeleId })),
+      ],
     });
   },
   // « Retirer du voyage », puis « Plus tard » : plus demandé ni à acheter, ses pièces restent dans le sac.
+  // Son modèle devient écarté du voyage (« Choix de l'agent », conception de la phase 11).
   async marquerRetire(id, modifieLe) {
     const donnees = await ecritureDe('marquerRetire');
     const objets = donnees.objetsDuVoyage ?? [];
@@ -64,8 +72,13 @@ export const modificationNavigateur = {
     ecrire({
       ...donnees,
       objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, quantite: 0, achetes: 0, modifieLe } : o)),
+      objetsEcartes: ecartesAvec(
+        donnees,
+        objets.find(o => o.id === id),
+      ),
     });
   },
+  // Il revient dans le voyage : son modèle n'est plus écarté (même conception).
   async garderDansLeVoyage(id, quantite, quantiteManuelle, achetes, modifieLe) {
     const donnees = await ecritureDe('garderDansLeVoyage');
     const objets = donnees.objetsDuVoyage ?? [];
@@ -75,6 +88,10 @@ export const modificationNavigateur = {
     ecrire({
       ...donnees,
       objetsDuVoyage: objets.map(o => (o.id === id ? { ...o, quantite, quantiteManuelle, achetes, modifieLe } : o)),
+      objetsEcartes: ecartesSans(
+        donnees,
+        objets.find(o => o.id === id),
+      ),
     });
   },
 };

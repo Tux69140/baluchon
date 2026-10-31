@@ -8,6 +8,30 @@ use crate::voyages::{inserer_categorie, inserer_objet, CategorieDuVoyage, ObjetD
 use rusqlite::{params, Connection, OptionalExtension, Transaction};
 use serde::Deserialize;
 
+// L'objet du voyage entre dans la mémoire des écartés de son voyage (s'il vient d'un modèle) : voir
+// « Choix de l'agent » de la conception de la phase 11 pour ce qui est « écarté ». Un objet ajouté à la
+// main (sans modèle) n'y entre jamais.
+pub(crate) fn ecarter(tx: &Connection, id: &str) -> Result<(), String> {
+    tx.execute(
+        "INSERT OR IGNORE INTO objet_ecarte (voyage_id, modele_id)
+         SELECT voyage_id, modele_id FROM objet_du_voyage WHERE id = ?1 AND modele_id IS NOT NULL",
+        [id],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
+// L'objet revient dans le voyage : son modèle n'est plus écarté (même conception).
+pub(crate) fn ne_plus_ecarter(tx: &Connection, id: &str) -> Result<(), String> {
+    tx.execute(
+        "DELETE FROM objet_ecarte WHERE (voyage_id, modele_id) IN
+           (SELECT voyage_id, modele_id FROM objet_du_voyage WHERE id = ?1 AND modele_id IS NOT NULL)",
+        [id],
+    )
+    .map_err(en_texte)?;
+    Ok(())
+}
+
 // L'objet à écrire, avec sa catégorie quand elle est neuve : une catégorie ne naît que de son premier objet.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -81,26 +105,32 @@ fn verifier_categorie(tx: &Transaction, ajout: &AjoutAuVoyage) -> Result<(), Str
     Ok(())
 }
 
+fn ecrire_ajout_dans(tx: &Transaction, ajout: &AjoutAuVoyage) -> Result<(), String> {
+    verifier_categorie(tx, ajout)?;
+    if let Some(categorie) = &ajout.categorie {
+        inserer_categorie(tx, categorie)?;
+    }
+    inserer_objet(tx, &ajout.objet)
+}
+
 impl Base {
-    fn ecrire_ajout(&self, ajout: &AjoutAuVoyage) -> Result<(), String> {
+    pub fn ajouter_au_voyage(&self, ajout: &AjoutAuVoyage) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        verifier_categorie(&tx, ajout)?;
-        if let Some(categorie) = &ajout.categorie {
-            inserer_categorie(&tx, categorie)?;
-        }
-        inserer_objet(&tx, &ajout.objet)?;
+        ecrire_ajout_dans(&tx, ajout)?;
         tx.commit().map_err(en_texte)
-    }
-
-    pub fn ajouter_au_voyage(&self, ajout: &AjoutAuVoyage) -> Result<(), String> {
-        self.ecrire_ajout(ajout)
     }
 
     // Même écriture qu'un ajout, sous un autre nom : l'écran distingue ainsi « Annuler » d'un ajout
     // (un rétablissement ne rend pas définitif un autre retrait).
+    // Le modèle de l'objet rétabli n'est plus écarté (« Choix de l'agent », conception de la phase 11),
+    // dans la même transaction.
     pub fn retablir_dans_le_voyage(&self, ajout: &AjoutAuVoyage) -> Result<(), String> {
-        self.ecrire_ajout(ajout)
+        let connexion = self.connexion()?;
+        let tx = connexion.unchecked_transaction().map_err(en_texte)?;
+        ecrire_ajout_dans(&tx, ajout)?;
+        ne_plus_ecarter(&tx, &ajout.objet.id)?;
+        tx.commit().map_err(en_texte)
     }
 
     // Un réglage à la main est définitif : la quantité n'est plus jamais recalculée. Le sac garde ses
@@ -158,7 +188,8 @@ impl Base {
     }
 
     // Retire l'objet, et sa catégorie si elle n'a plus d'objet : une catégorie vide n'a pas de sens
-    // dans un voyage. La bibliothèque n'est pas touchée.
+    // dans un voyage. La bibliothèque n'est pas touchée. Le modèle de l'objet devient écarté du voyage
+    // (« Choix de l'agent », conception de la phase 11), dans la même transaction.
     pub fn retirer_du_voyage(&self, id: &str) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
@@ -171,6 +202,7 @@ impl Base {
             .optional()
             .map_err(en_texte)?;
         let categorie = categorie.ok_or_else(objet_inconnu)?;
+        ecarter(&tx, id)?;
         tx.execute("DELETE FROM objet_du_voyage WHERE id = ?1", [id])
             .map_err(en_texte)?;
         tx.execute(

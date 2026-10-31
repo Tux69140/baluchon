@@ -92,3 +92,37 @@ fn garder_dans_le_voyage_rend_une_quantite_et_garde_le_sac() {
         (3, 3, true, 3)
     );
 }
+
+fn ecartes_de(base: &Base) -> Vec<String> {
+    base.lire_voyage("v-vercors").unwrap().unwrap().ecartes
+}
+
+#[test]
+fn marquer_retire_ecarte_le_modele_et_le_garder_dans_le_voyage_le_fait_revenir() {
+    let (_dossier, base, _avant) = base_avec_voyage();
+    base.marquer_retire("ov-tshirts", MAINTENANT).unwrap();
+    assert_eq!(ecartes_de(&base), ["om-cartes", "om-tshirts"]);
+    base.garder_dans_le_voyage("ov-tshirts", 3, false, 0, MAINTENANT)
+        .unwrap();
+    assert_eq!(ecartes_de(&base), ["om-cartes"]);
+}
+
+#[test]
+fn une_modification_remplace_la_liste_des_ecartes_du_voyage() {
+    let (_dossier, base, _avant) = base_avec_voyage();
+    let mut m = contrat().modification;
+    m.ecartes = vec!["om-autre".into()];
+    base.modifier_voyage(&m).unwrap();
+    assert_eq!(ecartes_de(&base), ["om-autre"]);
+}
+
+#[test]
+fn une_modification_sans_la_liste_des_ecartes_est_refusee() {
+    let mut json: serde_json::Value =
+        serde_json::from_str(include_str!("../../tests/contrat/stockage.json")).unwrap();
+    json["modification"]
+        .as_object_mut()
+        .unwrap()
+        .remove("ecartes");
+    assert!(serde_json::from_value::<ModificationDuVoyage>(json["modification"].clone()).is_err());
+}

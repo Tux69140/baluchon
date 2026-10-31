@@ -54,6 +54,18 @@ export async function ecritureDe(operation) {
   return donnees;
 }
 
+// La mémoire des écartés d'un voyage (src-tauri/src/ajustements.rs) : un objet issu d'un modèle qui sort du
+// voyage entre dans la liste, un objet qui y revient en sort ; un objet ajouté à la main (sans modèle) n'y
+// entre jamais. Voir « Choix de l'agent », conception de la phase 11. Renvoient la nouvelle liste.
+export function ecartesAvec(donnees, objet) {
+  const liste = donnees.objetsEcartes ?? [];
+  if (!objet.modeleId || liste.some(e => e.voyageId === objet.voyageId && e.modeleId === objet.modeleId)) return liste;
+  return [...liste, { voyageId: objet.voyageId, modeleId: objet.modeleId }];
+}
+
+export const ecartesSans = (donnees, objet) =>
+  (donnees.objetsEcartes ?? []).filter(e => !(e.voyageId === objet.voyageId && e.modeleId === objet.modeleId));
+
 // Même refus que la base (src-tauri/src/courses.rs) : un nombre entier de pièces achetées, de 0 à la quantité.
 export function verifierAchetes(achetes, quantite) {
   if (!Number.isInteger(achetes) || achetes < 0 || achetes > quantite)

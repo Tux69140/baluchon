@@ -2,7 +2,7 @@
 // objets et catégories — calculée par le modèle (src/modele/changements.js), écrite en une seule
 // transaction : refusée, elle ne laisse rien d'écrit. S'y ajoutent les deux gestes d'un objet retiré
 // qui attend la sortie de ses pièces : « Plus tard » (marquer_retire) et « Le garder dans le voyage ».
-use crate::ajustements::verifier_sac;
+use crate::ajustements::{ecarter, ne_plus_ecarter, verifier_sac};
 use crate::base::{en_texte, Base};
 use crate::voyages::{
     inserer_categorie, inserer_etiquette, inserer_objet, CategorieDuVoyage, EtiquetteDuVoyage,
@@ -21,6 +21,9 @@ pub struct ModificationDuVoyage {
     pub objets_modifies: Vec<ObjetDuVoyage>,
     pub objets_retires: Vec<String>,
     pub categories_retirees: Vec<String>,
+    // La liste complète des modèles écartés après la modification (obligatoire, sans valeur par défaut) :
+    // elle remplace celle du voyage (« Choix de l'agent », conception de la phase 11).
+    pub ecartes: Vec<String>,
 }
 
 fn refus(texte: &str) -> String {
@@ -141,6 +144,15 @@ impl Base {
                 .map_err(en_texte)?;
             une_ligne(retirees, "Cette catégorie contient encore des objets.")?;
         }
+        tx.execute("DELETE FROM objet_ecarte WHERE voyage_id = ?1", [&v.id])
+            .map_err(en_texte)?;
+        for modele_id in &m.ecartes {
+            tx.execute(
+                "INSERT OR IGNORE INTO objet_ecarte (voyage_id, modele_id) VALUES (?1, ?2)",
+                params![v.id, modele_id],
+            )
+            .map_err(en_texte)?;
+        }
         // Un objet ajouté ou modifié ne peut être rangé que dans une catégorie de son voyage.
         let egares: i64 = tx
             .query_row(
@@ -161,16 +173,20 @@ impl Base {
 
     // « Retirer du voyage », puis « Plus tard » : l'objet garde ses pièces dans le sac, n'est plus
     // demandé (quantité 0) ni à acheter. Sans pièce dans le sac, il n'a rien à attendre : refusé.
+    // Son modèle devient écarté du voyage (« Choix de l'agent », conception de la phase 11).
     pub fn marquer_retire(&self, id: &str, modifie_le: &str) -> Result<(), String> {
-        let modifiees = self
-            .connexion()?
+        let connexion = self.connexion()?;
+        let tx = connexion.unchecked_transaction().map_err(en_texte)?;
+        let modifiees = tx
             .execute(
                 "UPDATE objet_du_voyage SET quantite = 0, achetes = 0, modifie_le = ?2
                  WHERE id = ?1 AND dans_le_sac > 0",
                 params![id, modifie_le],
             )
             .map_err(en_texte)?;
-        une_ligne(modifiees, "Aucune pièce de cet objet n'est dans le sac.")
+        une_ligne(modifiees, "Aucune pièce de cet objet n'est dans le sac.")?;
+        ecarter(&tx, id)?;
+        tx.commit().map_err(en_texte)
     }
 
     // « Le garder dans le voyage » : il reprend une quantité, ses pièces restent dans le sac ; tout entier
@@ -189,15 +205,19 @@ impl Base {
         if achetes < 0 || achetes > quantite {
             return Err(crate::courses::ACHATS_HORS_BORNES.to_owned());
         }
-        let modifiees = self
-            .connexion()?
+        let connexion = self.connexion()?;
+        let tx = connexion.unchecked_transaction().map_err(en_texte)?;
+        let modifiees = tx
             .execute(
                 "UPDATE objet_du_voyage SET quantite = ?2, quantite_manuelle = ?3, achetes = ?4, modifie_le = ?5
                  WHERE id = ?1",
                 params![id, quantite, quantite_manuelle, achetes, modifie_le],
             )
             .map_err(en_texte)?;
-        une_ligne(modifiees, "Objet introuvable.")
+        une_ligne(modifiees, "Objet introuvable.")?;
+        // Il revient dans le voyage : son modèle n'est plus écarté (même conception).
+        ne_plus_ecarter(&tx, id)?;
+        tx.commit().map_err(en_texte)
     }
 }
 

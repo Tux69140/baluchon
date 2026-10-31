@@ -83,3 +83,25 @@ test('garder dans le voyage rend une quantité et garde le sac', async () => {
   const tshirts = (await stockage.lireVoyage('v-vercors')).objets.find(o => o.id === 'ov-tshirts');
   assert.deepEqual([tshirts.quantite, tshirts.dansLeSac, tshirts.quantiteManuelle, tshirts.achetes], [3, 3, true, 3]);
 });
+
+test('marquer retiré écarte le modèle ; le garder dans le voyage le fait revenir', async () => {
+  const stockage = await stockageAvecVoyage();
+  await stockage.marquerRetire('ov-tshirts', MAINTENANT);
+  assert.deepEqual((await stockage.lireVoyage('v-vercors')).ecartes, ['om-cartes', 'om-tshirts']);
+  await stockage.garderDansLeVoyage('ov-tshirts', 3, false, 0, MAINTENANT);
+  assert.deepEqual((await stockage.lireVoyage('v-vercors')).ecartes, ['om-cartes']);
+});
+
+test('une modification remplace la liste des écartés du voyage', async () => {
+  const stockage = await stockageAvecVoyage();
+  await stockage.modifierVoyage({ ...copie(contrat.modification), ecartes: ['om-autre'] });
+  assert.deepEqual((await stockage.lireVoyage('v-vercors')).ecartes, ['om-autre']);
+});
+
+test('une modification sans la liste des écartés est refusée sans rien écrire', async () => {
+  const stockage = await stockageAvecVoyage();
+  const m = copie(contrat.modification);
+  delete m.ecartes;
+  await assert.rejects(stockage.modifierVoyage(m));
+  assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);
+});
