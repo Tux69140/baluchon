@@ -37,6 +37,7 @@ import { ecranVoyage } from './ecrans/voyage.js';
 import { ecranCourses } from './ecrans/courses.js';
 import { ecranModifierVoyage } from './ecrans/modifier-voyage.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
+import { ecranRefaireDepuisVoyages, ecranRefaireVoyage } from './ecrans/refaire-voyage.js';
 import { ecranReglages } from './ecrans/reglages.js';
 import { ecranBibliotheque } from './ecrans/bibliotheque.js';
 import { ecranEtiquettes } from './ecrans/etiquettes.js';
@@ -58,6 +59,9 @@ const ECRANS = [
   { motif: /^#\/voyage\/([\w%-]+)$/, ecran: ecranVoyage },
   { motif: /^#\/voyage\/([\w%-]+)\/courses$/, ecran: ecranCourses },
   { motif: /^#\/voyage\/([\w%-]+)\/modifier$/, ecran: ecranModifierVoyage },
+  // « Refaire ce voyage », depuis le menu « ⋮ » du voyage, ou de sa carte de Mes voyages.
+  { motif: /^#\/voyage\/([\w%-]+)\/refaire$/, ecran: ecranRefaireVoyage },
+  { motif: /^#\/voyages\/refaire\/([\w%-]+)$/, ecran: ecranRefaireDepuisVoyages },
   { motif: /^#\/nouveau-voyage$/, ecran: ecranNouveauVoyage },
   { motif: /^#\/reglages$/, ecran: ecranReglages },
   { motif: /^#\/bibliotheque$/, ecran: ecranBibliotheque },

@@ -138,17 +138,20 @@ const boite = coche =>
   `<span class="case-boite" aria-hidden="true">${coche === 'plein' ? iconeInterface('coche') : ''}</span>`;
 
 // Une carte par catégorie : sa tête est la case de toute la catégorie, chaque ligne celle d'un objet.
-// Un objet écarté reste à sa place, barré et atténué, pour être recoché d'un appui.
-function vueCategorie(t, ligneDeCategorie, ecartes) {
+// Un objet écarté reste à sa place, barré et atténué, pour être recoché d'un appui. ligne : ce qu'un mode
+// ajoute à la ligne d'un objet (vueApercu).
+function vueCategorie(t, ligneDeCategorie, ecartes, ligne) {
   const { categorie, objets } = ligneDeCategorie;
   const { retenus, coche } = etatCoche(idsDeCategorie(ligneDeCategorie), ecartes);
   const lignes = objets.map(({ objet, quantite }) => {
     const sienne = ecartes.has(objet.id) ? 'vide' : 'plein';
+    const plus = ligne(objet, sienne === 'vide');
     const nom = remplir(t('nouveauVoyage.case.objet'), { nom: echapper(objet.nom), quantite });
+    const dire = plus?.dire ? `, ${echapper(plus.dire)}` : '';
     return `
-              <li><button type="button" class="apercu-objet" role="checkbox" aria-checked="${ARIA_COCHE[sienne]}" aria-label="${nom}" data-coche="${sienne}" data-objet="${echapper(objet.id)}">
-                ${boite(sienne)}<span class="objet-texte"><span class="objet-nom">${echapper(objet.nom)}</span><span class="objet-sous">${decrireRegle(t, objet)}</span></span><span class="objet-quantite">${quantite}</span>
-              </button></li>`;
+              <li><button type="button" class="apercu-objet" role="checkbox" aria-checked="${ARIA_COCHE[sienne]}" aria-label="${nom}${dire}" data-coche="${sienne}" data-objet="${echapper(objet.id)}">
+                ${boite(sienne)}<span class="objet-texte"><span class="objet-nom">${echapper(objet.nom)}</span><span class="objet-sous">${plus?.sous ?? decrireRegle(t, objet)}</span></span><span class="objet-quantite">${quantite}</span>
+              </button>${plus?.apres ?? ''}</li>`;
   });
   const total = objets.length;
   const nom = remplir(t('nouveauVoyage.case.categorie'), { nom: echapper(categorie.nom), retenus, total });
@@ -166,7 +169,11 @@ function vueCategorie(t, ligneDeCategorie, ecartes) {
 // étiquettes choisies), puis les catégories. Vide : la mascotte dit pourquoi, et « Revenir aux
 // étiquettes » mène à l'étape `revenir`. Tout écarté : un message au-dessus de la liste, qui reste.
 // Dans les deux cas, #raison-vide décrit « Créer le voyage », grisé.
-export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, revenir }) {
+// Ce qu'un autre mode y ajoute (« Refaire ce voyage », src/ecrans/refaire-vues.js) : enTete, du HTML posé
+// sous la tête de l'aperçu ; ligne(objet, ecarte) → { sous, dire, apres } ou null : le texte sous le nom
+// (à la place de la règle), ce que le nom de la case dit en plus, et du HTML sous la case. Sans eux,
+// l'aperçu de la création.
+export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, revenir, enTete = '', ligne = () => null }) {
   const raison = raisonVide(apercu, ecartes);
   if (raison === 'aucunObjet')
     return `
@@ -195,8 +202,8 @@ export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, reven
               <h3 class="etape-titre" id="titre-etape" tabindex="-1">${titre}</h3>
               <p class="apercu-rappel">${rappel}</p>
               <p class="etape-aide">${t('nouveauVoyage.aideApercu')}</p>
-            </div>${message}
-            <div class="apercu-categories">${apercu.map(c => vueCategorie(t, c, ecartes)).join('')}
+            </div>${enTete}${message}
+            <div class="apercu-categories">${apercu.map(c => vueCategorie(t, c, ecartes, ligne)).join('')}
             </div>
           </section>`;
 }

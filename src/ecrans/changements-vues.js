@@ -16,7 +16,10 @@ const boite = coche => `<span class="case-boite" aria-hidden="true">${coche ? ic
 const fleche = (avant, apres) => `${avant}<span class="recap-fleche" aria-hidden="true">→</span>${apres}`;
 const pastilleSortir = (t, n, langue) =>
   `<span class="pastille-sortir">${iconeInterface('sortir')}${echapper(pluriel(t, 'voyage.aSortir', n, langue))}</span>`;
-const pastilleMention = texte => `<span class="pastille-mention">${iconeInterface('retire')}${echapper(texte)}</span>`;
+// Une mention : un mot et son icône, jamais la couleur seule (docs/DESIGN.md) ; « retiré » par défaut.
+// Aussi celles de l'aperçu de « Refaire » (src/ecrans/refaire-vues.js).
+export const pastilleMention = (texte, icone = 'retire') =>
+  `<span class="pastille-mention">${iconeInterface(icone)}${echapper(texte)}</span>`;
 const mention = texte => `<span>${echapper(texte)}</span>`;
 
 // Ce que le changement de quantité veut dire pour le sac, une fois appliqué.
@@ -62,23 +65,30 @@ function ligneACocher(t, langue, ligne, accepte) {
               </button></li>`;
 }
 
-// Une quantité fixée manuellement : gardée par défaut ; « Recalculer » est un choix explicite (deux
-// segments, comme ceux des fiches de modèle).
+// Le choix d'une quantité fixée manuellement : gardée par défaut ; « Recalculer » est un choix explicite
+// (deux segments, comme ceux des fiches de modèle). Aussi celui de l'aperçu de « Refaire »
+// (src/ecrans/refaire-vues.js). cle : ce que désigne le choix (data-manuelle) ; nom : celui de l'objet.
+export function vueSegmentsManuelle(t, { cle, nom, gardee, calcul }, recalculer) {
+  const l = c => t(`modifierVoyage.ligne.${c}`);
+  const choix = (valeur, libelle, coche) =>
+    `<label class="segment"><input type="radio" name="m-${echapper(cle)}" value="${valeur}" data-manuelle="${echapper(cle)}"${coche ? ' checked' : ''} /><span>${echapper(libelle)}</span></label>`;
+  return `
+                <div class="segments recap-segments" role="radiogroup" aria-label="${echapper(remplir(l('quantiteDe'), { nom }))}">
+                  ${choix('garder', remplir(l('garder'), { n: gardee }), !recalculer)}
+                  ${choix('recalculer', remplir(l('recalculer'), { n: calcul }), recalculer)}
+                </div>`;
+}
+
+// Une quantité fixée manuellement, à l'étape « Changements ».
 function ligneManuelle(t, langue, ligne, recalculer) {
   const l = cle => t(`modifierVoyage.ligne.${cle}`);
-  const nom = `m-${echapper(ligne.cle)}`;
   const effet = recalculer ? effetSurLeSac(t, langue, ligne.apres, ligne.objet.dansLeSac) : '';
-  const choix = (valeur, libelle, coche) =>
-    `<label class="segment"><input type="radio" name="${nom}" value="${valeur}" data-manuelle="${echapper(ligne.cle)}"${coche ? ' checked' : ''} /><span>${echapper(libelle)}</span></label>`;
+  const choix = { cle: ligne.cle, nom: ligne.nom, gardee: ligne.avant, calcul: ligne.apres };
   return `
               <li class="recap-manuelle">
                 <div class="recap-ligne-fixe">
                   <span class="recap-signe">${iconeInterface('modifier')}</span><span class="objet-texte"><span class="objet-nom">${echapper(ligne.nom)}</span><span class="objet-sous">${mention(remplir(l('manuelle'), ligne))}${effet}</span></span><span class="recap-valeur">${recalculer ? fleche(ligne.avant, ligne.apres) : ligne.avant}</span>
-                </div>
-                <div class="segments recap-segments" role="radiogroup" aria-label="${echapper(remplir(l('quantiteDe'), ligne))}">
-                  ${choix('garder', remplir(l('garder'), { n: ligne.avant }), !recalculer)}
-                  ${choix('recalculer', remplir(l('recalculer'), { n: ligne.apres }), recalculer)}
-                </div>
+                </div>${vueSegmentsManuelle(t, choix, recalculer)}
               </li>`;
 }
 

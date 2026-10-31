@@ -152,6 +152,9 @@ a.bouton {
   color: var(--encre-douce);
   font: 600 var(--taille-libelle) var(--police);
   text-decoration: none;
+  /* Le lien peut porter le nom d'un voyage (Modifier, Refaire) : un nom très long passe à la ligne
+     plutôt que de faire défiler la page de côté au téléphone. */
+  overflow-wrap: anywhere;
 }
 
 /* Bouton flottant : toujours au-dessus de la barre système du bas ; l'écran garde la place libre. */

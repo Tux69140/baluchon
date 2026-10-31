@@ -34,10 +34,11 @@ const apercuDe = ({ bibliotheque, infos, etat }) => genererApercu(bibliotheque, 
 
 // Les objets écartés encore dans l'aperçu, après un changement de choix (docs/PRD.md, « Retour à
 // l'aperçu ») : les garder écartés est l'action principale, c'est la décision déjà prise ; Échap et
-// le retour système les gardent aussi.
-async function demanderEcartes(t, outils, ids) {
+// le retour système les gardent aussi. apercu : celui que montre l'assistant (aussi celui de « Refaire ce
+// voyage », src/ecrans/refaire-voyage.js).
+export async function demanderEcartes(t, outils, ids, apercu) {
   const nommes = new Set(ids);
-  const objets = apercuDe(outils).flatMap(({ categorie, objets: lignes }) =>
+  const objets = apercu.flatMap(({ categorie, objets: lignes }) =>
     lignes
       .filter(({ objet }) => nommes.has(objet.id))
       .map(({ objet }) => ({ nom: objet.nom, categorie: categorie.nom })),
@@ -100,7 +101,9 @@ function modeCreation({ bibliotheque, accueil, aujourdhui }, contexte) {
           idsDeLApercu(apercuDe(outils)),
         );
         outils.changerEtat(etat);
-        return aReconfirmer.length ? () => demanderEcartes(t, { ...outils, etat }, aReconfirmer) : null;
+        return aReconfirmer.length
+          ? () => demanderEcartes(t, { ...outils, etat }, aReconfirmer, apercuDe(outils))
+          : null;
       },
       clic(cible, outils) {
         const touchee = cible.closest('[data-objet], [data-categorie]');

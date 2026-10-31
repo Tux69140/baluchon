@@ -1,5 +1,6 @@
 /* L'aperçu de l'assistant « Nouveau voyage » : ce que le voyage contiendrait, catégories et objets
-   à cocher (src/ecrans/assistant-vues.js). Le reste de l'assistant : src/styles/assistant.css. */
+   à cocher (src/ecrans/assistant-vues.js). Le reste de l'assistant : src/styles/assistant.css. L'aperçu de
+   « Refaire ce voyage » et l'étape « Changements » (changements.css) le reprennent. */
 
 .apercu-tete {
   display: grid;
@@ -143,4 +144,35 @@
 
 .apercu-vide .bouton {
   margin-top: var(--e-md);
+}
+
+/* ---------- Ce que « Refaire ce voyage » ajoute, commun à l'étape « Changements » ----------
+   (phase 11 ; maquette docs/maquettes/refaire/, états « refaire-apercu » et « changements-retire »)
+   Une mention sous le nom : « retiré » (l'objet avait été écarté de ce voyage), « ajouté à la main » ; un
+   mot et une icône, jamais la couleur seule. */
+.pastille-mention {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 1px 8px;
+  border-radius: var(--r-plein);
+  background: var(--actif);
+  color: var(--encre);
+  font: 600 var(--taille-mention) / 1.4 var(--police);
+  white-space: nowrap;
+}
+
+.pastille-mention .icone svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Le choix « Garder | Recalculer » d'une quantité fixée à la main, sous sa ligne, aligné sur le nom. */
+.recap-segments {
+  max-width: 380px;
+  margin: 0 var(--e-md) 12px 56px;
+}
+
+.recap-segments .segment span {
+  min-height: 44px;
 }
