@@ -3,8 +3,8 @@
 // filtre, cartes de catégorie (téléphone) ou grand format (le voyage, le menu des catégories en cartes
 // ou en tuiles, la liste de la choisie), lignes d'objet, voyage vide ; « Ajouter un objet » (phase 8,
 // maquette docs/maquettes/ajuster/) : bouton flottant au téléphone, dernière ligne de la liste en grand
-// format, bouton de l'écran vide ; « Modifier le voyage » sous les étiquettes (phase 10). Rien ne vit ici
-// que du dessin :
+// format, bouton de l'écran vide ; le menu « ⋮ » des actions du voyage au bout du titre (phase 11, il
+// remplace « Modifier le voyage » de la phase 10). Rien ne vit ici que du dessin :
 // l'ordre, les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les
 // pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
@@ -15,6 +15,7 @@ import { colonnesGrandFormat, marqueAttenuee, tuileCategorie } from './grand-for
 import { echapper } from './html.js';
 import { iconeInterface, paveCategorie } from './icones.js';
 import { jauge } from './jauge.js';
+import { vueMenuVoyage } from './menu-voyage.js';
 import { categoriesAffichees } from './rangement.js';
 import { lienRetour } from './retour.js';
 import mascotte from '../images/baluchon.svg';
@@ -70,14 +71,17 @@ function vueEtiquettes(t, etiquettes) {
         <ul class="etiquettes-voyage" aria-label="${t('voyage.etiquettes')}">${puces}</ul>`;
 }
 
+// Le nom du voyage et, au bout, le menu « ⋮ » de ses actions (phase 11, src/ecrans/menu-voyage.js),
+// calé sur la première ligne du nom (src/styles/menu-voyage.css).
 function vueEntete({ t, langue }, voyage, etiquettes) {
   const destination = voyage.destination ? `<p>${echapper(voyage.destination)}</p>` : '';
   return `
-      <h1>${echapper(voyage.nom)}</h1>
+      <div class="voyage-titre">
+        <h1>${echapper(voyage.nom)}</h1>${vueMenuVoyage(t, voyage, ['modifier', 'refaire', 'supprimer'], '-voyage')}
+      </div>
       <div class="voyage-entete">
         ${destination}
         <p class="voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</p>${vueEtiquettes(t, etiquettes)}
-        <a class="bouton bouton-secondaire voyage-modifier" href="#/voyage/${encodeURIComponent(voyage.id)}/modifier" data-action="modifier">${iconeInterface('modifier')}${t('modifierVoyage.bouton')}</a>
       </div>`;
 }
 

@@ -94,9 +94,10 @@ const DONNEES = {
 };
 const V = contenu.voyage.id;
 
-// « Modifier le voyage » depuis l'écran du voyage, jusqu'à l'assistant.
+// « Modifier ce voyage », dans le menu « ⋮ » du titre (phase 11), jusqu'à l'assistant.
 async function ouvrirModification(page) {
-  await page.click('#app [data-action="modifier"]');
+  await page.click('.voyage-titre .menu-voyage-bouton');
+  await page.click('.voyage-titre .menu-voyage [data-menu="modifier"]');
   await attendreEcran(page, 'modifier-voyage');
   await calme(page);
 }

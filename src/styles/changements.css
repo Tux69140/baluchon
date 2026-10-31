@@ -1,14 +1,6 @@
 /* « Modifier le voyage » (phase 10 ; maquette validée le 2026-10-29, docs/maquettes/plans-changent/) : le
-   bouton de l'en-tête du voyage, le pied de l'assistant au téléphone, et l'étape « Changements », qui
-   reprend l'aperçu (assistant-apercu.css). */
-.voyage-modifier {
-  margin-top: var(--e-md);
-}
-
-.voyage-modifier .icone svg {
-  width: 20px;
-  height: 20px;
-}
+   pied de l'assistant au téléphone, et l'étape « Changements », qui reprend l'aperçu
+   (assistant-apercu.css). On l'ouvre par le menu « ⋮ » du voyage (phase 11, menu-voyage.css). */
 
 /* ---------- L'assistant en mode « modifier » ----------
    Au téléphone, « Voir les changements » est plus long que « Voir l'aperçu » : il prend la place qu'il

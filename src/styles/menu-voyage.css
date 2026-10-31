@@ -1,0 +1,127 @@
+/* Le menu « ⋮ » d'un voyage (phase 11, décision 13 ; maquette validée le 2026-10-30,
+   docs/maquettes/refaire/) : au bout du titre du voyage et sur chaque carte de Mes voyages
+   (src/ecrans/menu-voyage.js). Le bouton à icône de l'appli (bord, 44 px), pour qu'il se lise comme une
+   commande et non comme un morceau du lien ou du titre ; le même menu aux deux endroits. */
+.menu-voyage-bouton:hover,
+.menu-voyage-bouton[aria-expanded='true'] {
+  background: var(--actif);
+}
+
+.menu-voyage-bouton .icone svg,
+.menu-voyage .icone svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Sur la carte : posé dans son coin, la carte lui garde sa place. */
+.carte-avec-actions {
+  position: relative;
+}
+
+.carte-avec-actions > .carte-voyage {
+  padding-right: calc(var(--e-md) + var(--cible) + var(--e-sm));
+}
+
+.carte-avec-actions > .menu-voyage-bouton {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+/* Au bout du titre du voyage : en haut de la ligne, même quand le nom prend deux lignes ; le titre garde
+   ses marges, le bouton se cale sur sa première ligne. */
+.voyage-titre {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-sm);
+}
+
+.voyage-titre > h1 {
+  flex: 1;
+  min-width: 0;
+  /* Le titre de l'écran (socle.css), qui n'est plus l'enfant direct de l'écran ou du bloc. */
+  font-size: var(--taille-ecran);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  /* La première ligne (37 px environ) centrée sur le bouton (44 px), sans que le bouton dépasse en haut :
+     en trois colonnes, le bloc du voyage défile seul et en couperait le bord. */
+  padding-top: 3px;
+}
+
+.voyage-titre > .menu-voyage-bouton {
+  flex: none;
+}
+
+/* Le menu : dans la couche du dessus, placé par src/ecrans/menu-voyage.js ; les ombres et le bord des fenêtres. */
+.menu-voyage {
+  position: fixed;
+  inset: auto;
+  min-width: 232px;
+  margin: 0;
+  padding: var(--e-xs);
+  border: 1px solid var(--separation);
+  border-radius: var(--r-md);
+  /* En sombre, une surface relevée : l'ombre ne se voit pas sur la nuit marine. */
+  background: light-dark(var(--carte), var(--releve));
+  color: var(--encre);
+  box-shadow: 0 16px 40px -12px rgb(13 22 36 / 0.45);
+}
+
+.menu-voyage:popover-open {
+  display: grid;
+}
+
+.menu-voyage-ligne {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 var(--e-md) 0 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--encre);
+  font: 600 16px var(--police);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menu-voyage-ligne:hover,
+.menu-voyage-ligne:focus-visible {
+  background: var(--actif);
+}
+
+/* La suppression, en dernier et à l'écart : sous un trait, en rouge, l'icône dit aussi ce qu'elle fait. */
+.menu-voyage-danger {
+  position: relative;
+  margin-top: 9px;
+  color: var(--erreur);
+}
+
+.menu-voyage-danger::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: -4px;
+  left: -4px;
+  border-top: 1px solid var(--separation);
+}
+
+.menu-voyage-danger:hover,
+.menu-voyage-danger:focus-visible {
+  background: var(--fond-erreur);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .menu-voyage:popover-open {
+    animation: menu-entree 150ms ease-out;
+  }
+}
+
+@keyframes menu-entree {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}

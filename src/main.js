@@ -26,6 +26,7 @@ import './styles/ajustements.css';
 import './styles/courses.css';
 import './styles/sortir.css';
 import './styles/changements.css';
+import './styles/menu-voyage.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';

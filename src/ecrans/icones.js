@@ -29,6 +29,9 @@ import plusCircle from '@phosphor-icons/core/bold/plus-circle-bold.svg?raw';
 import arrowCounterClockwise from '@phosphor-icons/core/bold/arrow-counter-clockwise-bold.svg?raw';
 import shoppingCart from '@phosphor-icons/core/bold/shopping-cart-bold.svg?raw';
 import trayArrowUp from '@phosphor-icons/core/bold/tray-arrow-up-bold.svg?raw';
+import dotsThreeVertical from '@phosphor-icons/core/bold/dots-three-vertical-bold.svg?raw';
+import copy from '@phosphor-icons/core/bold/copy-bold.svg?raw';
+import hand from '@phosphor-icons/core/bold/hand-bold.svg?raw';
 import { svgPicto } from './pictos.js';
 import { echapper } from './html.js';
 
@@ -62,6 +65,9 @@ const INTERFACE = {
   annuler: arrowCounterClockwise,
   courses: shoppingCart,
   sortir: trayArrowUp,
+  actions: dotsThreeVertical,
+  refaire: copy,
+  aLaMain: hand,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.

@@ -255,10 +255,10 @@ try {
       await page.keyboard.press('Tab');
       suite.push(await focusActuel(page));
     }
-    // « Modifier le voyage » (phase 10), sous les étiquettes, vient avant le filtre ; la puce « Courses »
-    // (phase 9) suit le filtre.
+    // Le menu « ⋮ » des actions du voyage (phase 11), au bout du titre, vient avant le filtre ; la puce
+    // « Courses » (phase 9) suit le filtre.
     const attendue = [
-      'modifier:',
+      'actions:',
       'filtre:',
       'courses:',
       ...['vet', 'toi', 'ali', 'pap', 'cam'].map(c => `choisir:${cat('v1', c)}`),

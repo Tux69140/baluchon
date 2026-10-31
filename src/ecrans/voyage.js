@@ -18,6 +18,7 @@ import { DUREE_ALERTE } from './alerte.js';
 import { avecObjet, gestesDAjustement } from './ajustements.js';
 import { allerALaListe, suivreDisposition, trouverCommande } from './disposition.js';
 import { confirmerVider, ouvrirFiche } from './fiche.js';
+import { brancherMenuVoyage } from './menu-voyage.js';
 import { gestesDeSortie, sortieAnnoncee } from './sortie-du-sac.js';
 import {
   apresRepit,
@@ -100,6 +101,7 @@ function ouvrirListe(app, donnees, contexte) {
     repli: 'filtre',
     apresPose() {
       poses = { tampons: new Set(), bandeau: false };
+      brancherMenuVoyage(main.querySelector('.voyage-titre'), choisirDansLeMenu);
       // Un objet disparu (relecture, retrait) ferme la fiche (repeindre(undefined)).
       const objet = contenu.objets.find(o => o.id === fiche?.id);
       fiche?.repeindre(
@@ -111,6 +113,13 @@ function ouvrirListe(app, donnees, contexte) {
     signal: fin.signal,
     parti,
   });
+
+  // Le menu « ⋮ » du titre (src/ecrans/menu-voyage.js) ; « supprimer » : la suppression du voyage (tâche 7).
+  function choisirDansLeMenu(cle) {
+    const adresse = `#/voyage/${encodeURIComponent(contenu.voyage.id)}`;
+    if (cle === 'modifier') location.hash = `${adresse}/modifier`;
+    else if (cle === 'refaire') location.hash = `${adresse}/refaire`;
+  }
 
   function arreter() {
     for (const cle of Object.keys(minuteries)) clearTimeout(minuteries[cle]);

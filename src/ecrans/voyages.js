@@ -1,10 +1,12 @@
 // Écran Voyages (#/voyages), l'accueil : les voyages en cours, à venir puis passés (US-28) ou, au
-// premier lancement, l'écran vide qui invite à créer le premier (US-29).
+// premier lancement, l'écran vide qui invite à créer le premier (US-29). Chaque carte a son menu « ⋮ »
+// (phase 11) : « Refaire ce voyage », « Supprimer ce voyage ».
 import { echapper } from './html.js';
 import { detailsVoyage } from './format.js';
 import { iconeInterface } from './icones.js';
 import { jauge } from './jauge.js';
 import { barreHaut, ouvrirMenu } from './menu.js';
+import { brancherMenuVoyage, vueMenuVoyage } from './menu-voyage.js';
 import { suivreFin } from './mode-rangement.js';
 import { lienRetour } from './retour.js';
 import { remplir } from '../i18n/traduction.js';
@@ -40,12 +42,12 @@ function carte(voyage, { t, langue }, avancement) {
     ? `<span class="carte-voyage-destination">${echapper(voyage.destination)}</span>`
     : '';
   return `
-        <li>
+        <li class="carte-avec-actions">
           <a class="carte-voyage" href="#/voyage/${encodeURIComponent(voyage.id)}">
             <span class="carte-voyage-nom">${echapper(voyage.nom)}</span>
             ${destination}
             <span class="carte-voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</span>${vueProgression(avancement, t)}
-          </a>
+          </a>${vueMenuVoyage(t, voyage, ['refaire', 'supprimer'])}
         </li>`;
 }
 
@@ -64,6 +66,18 @@ function vueListe(voyages, aujourdhui, progressions, contexte) {
   );
   return `${rubriques.join('')}
       <a class="bouton bouton-principal bouton-flottant" href="#/nouveau-voyage">${iconeInterface('plus')}${contexte.t('voyages.nouveau')}</a>`;
+}
+
+// Le menu « ⋮ » de chaque carte (src/ecrans/menu-voyage.js), posé à part du lien : la carte ouvre toujours
+// le voyage. « supprimer » : la suppression du voyage (tâche 7).
+function brancherMenus(app, voyages) {
+  for (const voyage of voyages) {
+    const li = app.querySelector(`#${CSS.escape(`menu-${voyage.id}`)}`)?.parentElement;
+    if (!li) continue;
+    brancherMenuVoyage(li, cle => {
+      if (cle === 'refaire') location.hash = `#/voyages/refaire/${encodeURIComponent(voyage.id)}`;
+    });
+  }
 }
 
 // La progression est un plus : sans elle, la liste s'affiche quand même ; la panne reste au journal.
@@ -114,6 +128,7 @@ export const ecranVoyages = {
     app
       .querySelector('[data-action="menu"]')
       .addEventListener('click', () => ouvrirMenu(contexte, { courant: 'voyages' }));
+    brancherMenus(app, voyages);
     suivreRetablissements(app, donnees, contexte);
   },
 };
