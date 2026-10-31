@@ -72,11 +72,16 @@ function vueListe(voyages, aujourdhui, progressions, contexte) {
 // Le lien de la carte d'un voyage.
 const lienDeCarte = id => `a.carte-voyage[href="#/voyage/${CSS.escape(encodeURIComponent(id))}"]`;
 
+// Chaque relecture porte un numéro : seule la dernière demandée dessine. La relecture d'après une
+// suppression, lente, qui aboutirait après celle d'« Annuler », effacerait sinon le voyage rendu.
+let derniereRelecture = 0;
+
 // Relit la liste et la redessine, sans changer de défilement (le contenu est remplacé d'un seul coup : la page
 // garde sa place) : après une suppression, et quand « Annuler » rend un voyage entier. focus : ce qui prend
 // ensuite le focus, sans faire défiler. Une relecture refusée laisse la liste telle qu'elle est (la panne
 // reste au journal).
 async function redessiner(app, contexte, parti, focus) {
+  const numero = ++derniereRelecture;
   let donnees;
   try {
     donnees = await ecranVoyages.charger(contexte);
@@ -84,7 +89,7 @@ async function redessiner(app, contexte, parti, focus) {
     console.error(erreur);
     return;
   }
-  if (parti()) return;
+  if (parti() || numero !== derniereRelecture) return;
   ecranVoyages.dessiner(app, donnees, contexte);
   app.querySelector(focus)?.focus({ preventScroll: true });
 }
@@ -123,15 +128,26 @@ const lireProgressions = async stockage =>
     }),
   );
 
+// Mes voyages n'est redessiné que s'il est l'écran montré, rien d'ouvert par-dessus. Simple fond de
+// l'assistant (Nouveau voyage, Refaire, en fenêtre sur tablette et ordinateur), le redessiner effacerait la
+// fenêtre et sa saisie : le routeur le relit quand on y revient. Sous une question (une autre suppression,
+// le menu), il attend qu'elle se ferme, sans la fermer.
+function quandSeul(faire, signal) {
+  if (location.hash !== '#/voyages') return;
+  const fenetre = document.querySelector('dialog[open]');
+  if (!fenetre) return faire();
+  fenetre.addEventListener('close', () => quandSeul(faire, signal), { once: true, signal });
+}
+
 // « Annuler » touché d'ici (le bandeau suit d'un écran à l'autre, src/ecrans/annulation.js), événement
-// « voyage-retabli » : un voyage supprimé revient entier (entier), la liste est relue et redessinée, le focus
-// sur sa carte ; un retrait d'objet, la carte du voyage rendu relit son avancement, comme Nouveau voyage relit
-// la bibliothèque à « bibliotheque-retablie », et rien d'autre ne bouge.
+// « voyage-retabli » : un voyage supprimé revient entier (entier), la liste est relue et redessinée (quandSeul),
+// le focus sur sa carte ; un retrait d'objet, la carte du voyage rendu relit son avancement, comme Nouveau
+// voyage relit la bibliothèque à « bibliotheque-retablie », et rien d'autre ne bouge.
 function suivreRetablissements(app, { voyages, aujourdhui }, contexte, { signal, parti }) {
   window.addEventListener(
     'voyage-retabli',
     async ({ detail: { voyageId, entier } }) => {
-      if (entier) return redessiner(app, contexte, parti, lienDeCarte(voyageId));
+      if (entier) return quandSeul(() => redessiner(app, contexte, parti, lienDeCarte(voyageId)), signal);
       const progressions = await lireProgressions(contexte.stockage);
       const classes = classerVoyages(voyages, aujourdhui);
       const rubrique = RUBRIQUES.find(r => classes[r].some(v => v.id === voyageId));

@@ -1,7 +1,7 @@
 // Variante navigateur du stockage, pour les tests d’écran : même forme que le stockage Tauri, données
 // rangées dans le navigateur sous une seule clé. Un test y dépose son état de départ avant le
 // chargement de la page ; « pannes » y simule une erreur de lecture ou d’enregistrement, « lenteurs » une
-// écriture (ou une lecture de la bibliothèque) qui n'aboutit que lorsque le test appelle
+// écriture (ou une lecture de la bibliothèque ou de la liste des voyages) qui n'aboutit que lorsque le test appelle
 // window.debloquerStockage(), « toucheRetour » la touche retour d'Android (ecouterRetourNavigateur).
 import { lireFiltre, ecrireFiltre } from './preferences.js';
 import {
@@ -45,9 +45,11 @@ function sansEtiquettes(bibliotheque, retirees) {
 
 export function creerStockageNavigateur() {
   return Object.freeze({
+    // Lente, elle rend l'état lu à l'appel, comme lireBibliotheque.
     async listerVoyages() {
       const donnees = lire();
       panne(donnees, 'listerVoyages');
+      await lenteur(donnees, 'listerVoyages');
       return donnees.voyages ?? [];
     },
     bibliothequeInstallee: async () => Boolean(lire().meta?.bibliothequeInstallee),
