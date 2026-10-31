@@ -110,7 +110,9 @@ test('une modification refusée ne touche pas les écartés', async () => {
   const stockage = await stockageAvecVoyage();
   const autreVoyage = copie(contrat.modification);
   autreVoyage.ecartes = ['om-autre'];
+  // Refus d'appartenance : un objet modifié est d'un autre voyage.
   autreVoyage.objetsModifies[0].voyageId = 'v-autre';
+  // Refus à l'insertion d'un objet : catégorie inconnue.
   const categorieInconnue = copie(contrat.modification);
   categorieInconnue.ecartes = ['om-autre'];
   categorieInconnue.objetsAjoutes[0].categorieId = 'cv-inconnue';

@@ -129,18 +129,43 @@ fn une_modification_sans_la_liste_des_ecartes_est_refusee() {
 
 #[test]
 fn une_modification_refusee_ne_touche_pas_les_ecartes() {
-    // Un refus avant les écritures (objet d'un autre voyage), puis un refus tardif (catégorie inconnue),
-    // détecté après la réécriture des écartés : la transaction abandonnée ne laisse rien.
+    // Trois refus, de plus en plus tardifs ; dans chacun la liste proposée diffère de celle du voyage.
     let (_dossier, base, avant) = base_avec_voyage();
-    let mut autre_voyage = contrat().modification;
-    autre_voyage.ecartes = vec!["om-autre".into()];
+    // Un second voyage, avec sa propre catégorie.
+    let mut autre = avant.clone();
+    autre.voyage.id = "v-autre".into();
+    autre.etiquettes.clear();
+    autre.ecartes.clear();
+    for c in &mut autre.categories {
+        c.id = format!("{}-b", c.id);
+        c.voyage_id = "v-autre".into();
+    }
+    for o in &mut autre.objets {
+        o.id = format!("{}-b", o.id);
+        o.categorie_id = format!("{}-b", o.categorie_id);
+        o.voyage_id = "v-autre".into();
+    }
+    base.creer_voyage(&autre).unwrap();
+    let avant_autre = base.lire_voyage("v-autre").unwrap().unwrap();
+    let neuve = || {
+        let mut m = contrat().modification;
+        m.ecartes = vec!["om-autre".into()];
+        m
+    };
+    // 1. Refusée avant toute écriture : un objet modifié appartient à un autre voyage.
+    let mut autre_voyage = neuve();
     autre_voyage.objets_modifies[0].voyage_id = "v-autre".into();
-    let mut categorie_inconnue = contrat().modification;
-    categorie_inconnue.ecartes = vec!["om-autre".into()];
+    // 2. Refusée à l'insertion d'un objet (avant la réécriture des écartés) : catégorie inconnue.
+    let mut categorie_inconnue = neuve();
     categorie_inconnue.objets_ajoutes[0].categorie_id = "cv-inconnue".into();
-    for m in [autre_voyage, categorie_inconnue] {
+    // 3. Refusée APRÈS la réécriture des écartés, par le dernier contrôle : l'objet modifié est rangé
+    // dans une catégorie existante, mais d'un autre voyage.
+    let mut categorie_d_un_autre = neuve();
+    categorie_d_un_autre.objets_modifies[0].categorie_id = "cv-alimentation-b".into();
+    for m in [autre_voyage, categorie_inconnue, categorie_d_un_autre] {
         assert!(base.modifier_voyage(&m).is_err());
         assert_eq!(ecartes_de(&base), ["om-cartes"]);
         assert_eq!(base.lire_voyage("v-vercors").unwrap().unwrap(), avant);
+        assert_eq!(base.lire_voyage("v-autre").unwrap().unwrap(), avant_autre);
     }
 }
