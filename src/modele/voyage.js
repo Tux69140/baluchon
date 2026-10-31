@@ -26,8 +26,10 @@ const parNom = (a, b) => a.nom.localeCompare(b.nom);
 
 // Le voyage est une copie indépendante de la bibliothèque : il ne garde du modèle que son
 // identifiant d'origine (modeleId). L'inclusion vient de l'aperçu (une seule définition) ; `ecartes`
-// porte les objets modèles que l'utilisateur a décochés dans l'aperçu. Les étiquettes choisies sont
-// copiées dans l'ordre des groupes.
+// porte les objets que l'utilisateur a décochés dans l'aperçu. Les étiquettes choisies sont copiées
+// dans l'ordre des groupes. L'aperçu d'un voyage refait (src/modele/refaire.js) y ajoute des lignes
+// `ajout` (objets ajoutés à la main), des lignes `manuelle` (quantité fixée gardée) et des catégories
+// `origine` (reprises du voyage d'origine).
 export function genererVoyage(bibliotheque, infos, { choisies, ecartes, apercu }, { nouvelId, maintenant }) {
   const erreurs = validerInformations(infos);
   if (Object.keys(erreurs).length)
@@ -49,13 +51,20 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes, apercu }
   const categories = [];
   const objets = [];
   const groupes = apercu ?? genererApercu(bibliotheque, infos, choisies);
-  for (const { categorie: modele, objets: lignes } of groupes) {
+  for (const { categorie: modele, objets: lignes, origine } of groupes) {
     const retenus = lignes.filter(({ objet }) => !ecartes.has(objet.id));
     if (!retenus.length) continue;
-    const categorie = copierCategorie(modele, voyage.id, ids);
+    // Une catégorie du voyage d'origine garde le modèle d'où elle venait (aucun, si elle lui était propre).
+    const copie = copierCategorie(modele, voyage.id, ids);
+    const categorie = origine ? { ...copie, modeleId: modele.modeleId } : copie;
     categories.push(categorie);
-    for (const { objet, quantite } of retenus)
-      objets.push(copierObjet(objet, { voyageId: voyage.id, categorieId: categorie.id, quantite }, ids));
+    const place = { voyageId: voyage.id, categorieId: categorie.id };
+    for (const { objet, quantite, ajout, manuelle } of retenus)
+      objets.push(
+        ajout
+          ? copierAjout(objet, place, ids)
+          : copierObjet(objet, { ...place, quantite, quantiteManuelle: Boolean(manuelle) }, ids),
+      );
   }
   // La mémoire des écartés (décision 11) : les objets de l'aperçu que l'assistant a décochés, hors ajouts
   // à la main ; un id écarté qui n'y figure plus n'est pas retenu.
@@ -76,7 +85,11 @@ export function copierCategorie({ id, nom, icone, couleur, ordre }, voyageId, { 
   return { id: nouvelId(), voyageId, modeleId: id, nom, icone, couleur, ordre, modifieLe: maintenant };
 }
 
-export function copierObjet(modele, { voyageId, categorieId, quantite }, { nouvelId, maintenant }) {
+export function copierObjet(
+  modele,
+  { voyageId, categorieId, quantite, quantiteManuelle = false },
+  { nouvelId, maintenant },
+) {
   return {
     id: nouvelId(),
     voyageId,
@@ -89,13 +102,19 @@ export function copierObjet(modele, { voyageId, categorieId, quantite }, { nouve
     parPersonne: modele.parPersonne,
     consommable: modele.consommable,
     quantite,
-    quantiteManuelle: false,
+    quantiteManuelle,
     dansLeSac: 0,
     aAcheter: modele.consommable,
     achetes: 0,
     note: modele.note,
     modifieLe: maintenant,
   };
+}
+
+// Un objet ajouté à la main dans un voyage d'origine, repris dans un voyage refait : tel quel (quantité,
+// « fixée manuellement », « à acheter »), sauf qu'il n'est encore ni dans le sac ni acheté.
+export function copierAjout(objet, { voyageId, categorieId }, { nouvelId, maintenant }) {
+  return { ...objet, id: nouvelId(), voyageId, categorieId, dansLeSac: 0, achetes: 0, modifieLe: maintenant };
 }
 
 // La liste d'un voyage à l'écran : catégories dans l'ordre de la bibliothèque, objets par nom,
