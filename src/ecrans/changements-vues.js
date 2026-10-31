@@ -16,6 +16,7 @@ const boite = coche => `<span class="case-boite" aria-hidden="true">${coche ? ic
 const fleche = (avant, apres) => `${avant}<span class="recap-fleche" aria-hidden="true">→</span>${apres}`;
 const pastilleSortir = (t, n, langue) =>
   `<span class="pastille-sortir">${iconeInterface('sortir')}${echapper(pluriel(t, 'voyage.aSortir', n, langue))}</span>`;
+const pastilleMention = texte => `<span class="pastille-mention">${iconeInterface('retire')}${echapper(texte)}</span>`;
 const mention = texte => `<span>${echapper(texte)}</span>`;
 
 // Ce que le changement de quantité veut dire pour le sac, une fois appliqué.
@@ -35,7 +36,7 @@ function sousTexte(t, langue, ligne, accepte) {
       ? effetSurLeSac(t, langue, ligne.apres, dansLeSac)
       : mention(remplir(l('resteA'), { n: ligne.avant }));
   if (ligne.genre === 'entree') {
-    if (!accepte) return mention(l('pasAjoute'));
+    if (!accepte) return `${mention(l('pasAjoute'))}${ligne.retire ? pastilleMention(l('retire')) : ''}`;
     return mention(ligne.raison ? remplir(l('nouveauPour'), { etiquette: ligne.raison }) : l('nouveau'));
   }
   if (ligne.genre === 'retour') return mention(l(accepte ? 'revient' : 'resteRetire'));
@@ -49,7 +50,8 @@ function sousTexte(t, langue, ligne, accepte) {
 // Le nom de la case reprend ce que dit la ligne, et ce que fera l'appui.
 function nomDeLaCase(t, ligne, accepte) {
   const quoi = remplir(t(`modifierVoyage.case.${ligne.genre}`), ligne);
-  return remplir(t(`modifierVoyage.case.${accepte ? 'applique' : 'pasApplique'}`), { quoi });
+  const nom = remplir(t(`modifierVoyage.case.${accepte ? 'applique' : 'pasApplique'}`), { quoi });
+  return ligne.retire && !accepte ? remplir(t('modifierVoyage.case.retire'), { quoi: nom }) : nom;
 }
 
 function ligneACocher(t, langue, ligne, accepte) {

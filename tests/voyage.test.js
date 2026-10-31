@@ -297,3 +297,39 @@ test('la liste d’un voyage place les objets complets après les incomplets de 
     ['Tente', 'Duvet'],
   );
 });
+
+// Décision 11 : le voyage retient les objets de l'aperçu écartés, pas ceux de l'assistant qui n'y sont plus.
+test('le voyage retient les objets écartés de l’aperçu, triés', () => {
+  const { ecartes, objets } = generer(infos(), {
+    choisies: new Set(['e-pluie']),
+    ecartes: new Set(['o-repas', 'o-parapluie']),
+  });
+  assert.deepEqual(ecartes, ['o-parapluie', 'o-repas']);
+  assert.equal(
+    objets.some(o => o.nom === 'Repas' || o.nom === 'Parapluie'),
+    false,
+  );
+});
+
+test('un objet écarté qui n’est plus dans l’aperçu n’est pas retenu', () => {
+  const { ecartes } = generer(infos(), { choisies: new Set(), ecartes: new Set(['o-parapluie', 'o-repas']) });
+  assert.deepEqual(ecartes, ['o-repas']);
+});
+
+test('un aperçu fourni remplace celui de la bibliothèque, et les ajouts à la main ne sont pas retenus', () => {
+  const apercu = [
+    {
+      categorie: bibliotheque().categories[1],
+      objets: [
+        { objet: bibliotheque().objets[0], quantite: 4 },
+        { objet: bibliotheque().objets[1], quantite: 1, ajout: true },
+      ],
+    },
+  ];
+  const { ecartes } = generer(infos(), {
+    choisies: new Set(),
+    ecartes: new Set(['o-repas', 'o-dentifrice', 'o-skis']),
+    apercu,
+  });
+  assert.deepEqual(ecartes, ['o-repas']);
+});

@@ -4,6 +4,7 @@
 import caretLeft from '@phosphor-icons/core/bold/caret-left-bold.svg?raw';
 import caretRight from '@phosphor-icons/core/bold/caret-right-bold.svg?raw';
 import plus from '@phosphor-icons/core/bold/plus-bold.svg?raw';
+import minusCircle from '@phosphor-icons/core/bold/minus-circle-bold.svg?raw';
 import minus from '@phosphor-icons/core/bold/minus-bold.svg?raw';
 import warningCircle from '@phosphor-icons/core/bold/warning-circle-bold.svg?raw';
 import check from '@phosphor-icons/core/bold/check-bold.svg?raw';
@@ -37,6 +38,7 @@ const INTERFACE = {
   suivant: caretRight,
   plus,
   moins: minus,
+  retire: minusCircle,
   erreur: warningCircle,
   fermer: x,
   coche: check,

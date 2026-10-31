@@ -116,3 +116,22 @@
 .recap-segments .segment span {
   min-height: 44px;
 }
+
+/* « retiré » : l'objet a déjà été écarté de ce voyage, il arrive refusé (décision 11 ; maquette
+   docs/maquettes/refaire/, état « changements-retire »). */
+.pastille-mention {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-xs);
+  padding: 1px 8px;
+  border-radius: var(--r-plein);
+  background: var(--actif);
+  color: var(--encre);
+  font: 600 var(--taille-mention) / 1.4 var(--police);
+  white-space: nowrap;
+}
+
+.pastille-mention .icone svg {
+  width: 13px;
+  height: 13px;
+}

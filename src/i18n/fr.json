@@ -1211,6 +1211,7 @@
       "nouveauPour": "nouveau · pour « {etiquette} »",
       "nouveau": "nouveau",
       "pasAjoute": "ne sera pas ajouté",
+      "retire": "retiré",
       "etiquetteRetiree": "« {etiquette} » retirée",
       "plusPrevu": "plus aucune pièce prévue",
       "resteDansLeVoyage": "{raison} · reste dans le voyage",
@@ -1227,6 +1228,7 @@
       "entree": "{nom} : ajouter {apres}",
       "sortie": "{nom} : retirer du voyage",
       "retour": "{nom} : le garder, {apres}",
+      "retire": "{quoi}, retiré de ce voyage",
       "applique": "{quoi}, sera appliqué",
       "pasApplique": "{quoi}, ne sera pas appliqué"
     }

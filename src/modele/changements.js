@@ -52,9 +52,10 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
   const retirees = difference(choisiesAvant, choisies);
   const modeles = new Set(bibliotheque.objets.map(o => o.id));
   const parModele = new Map(contenu.objets.filter(o => o.modeleId).map(o => [o.modeleId, o]));
+  const ecartes = new Set(contenu.ecartes ?? []);
   const lignes = [];
   const ajouter = (genre, nom, avantN, apresN, defaut, champs) =>
-    lignes.push({ genre, nom, avant: avantN, apres: apresN, defaut, ...champs });
+    lignes.push({ genre, nom, avant: avantN, apres: apresN, defaut, retire: false, ...champs });
 
   for (const objet of contenu.objets) {
     const connu = objet.modeleId && modeles.has(objet.modeleId);
@@ -88,10 +89,12 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
   }
   for (const [id, { modele, quantite }] of apres)
     if (!avant.has(id) && !parModele.has(id))
-      ajouter('entree', modele.nom, 0, quantite, true, {
+      // Déjà écarté de ce voyage (décision 11) : il arrive refusé, marqué « retiré ».
+      ajouter('entree', modele.nom, 0, quantite, !ecartes.has(id), {
         cle: `entree:${id}`,
         modele,
         raison: raisonDe(bibliotheque, id, ajoutees),
+        retire: ecartes.has(id),
       });
   return lignes;
 }
@@ -174,10 +177,22 @@ export function appliquerChangements(entree, ids) {
     objetsModifies: [],
     objetsRetires: [],
     categoriesRetirees: [],
+    ecartes: [],
   };
+  const ecartes = new Set(contenu.ecartes ?? []);
   const copiees = new Map();
   for (const { categorie, lignes } of changements)
-    for (const ligne of lignes.filter(l => acceptes.has(l.cle))) {
+    for (const ligne of lignes) {
+      // La mémoire des écartés suit les choix : une entrée refusée et une sortie acceptée y mettent
+      // l'objet, une entrée ou un retour acceptés l'en sortent.
+      const accepte = acceptes.has(ligne.cle);
+      const modeleId = ligne.modele ? ligne.modele.id : ligne.objet.modeleId;
+      if (modeleId) {
+        if (ligne.genre === 'entree') accepte ? ecartes.delete(modeleId) : ecartes.add(modeleId);
+        else if (ligne.genre === 'retour' && accepte) ecartes.delete(modeleId);
+        else if (ligne.genre === 'sortie' && accepte) ecartes.add(modeleId);
+      }
+      if (!accepte) continue;
       if (ligne.genre !== 'entree') {
         const apres = objetApres(ligne, ids.maintenant);
         if (apres) modification.objetsModifies.push(apres);
@@ -194,6 +209,7 @@ export function appliquerChangements(entree, ids) {
         copierObjet(ligne.modele, { voyageId: voyage.id, categorieId, quantite: ligne.apres }, ids),
       );
     }
+  modification.ecartes = [...ecartes].sort();
   // Une catégorie que les retraits ont vidée disparaît, comme avec « Retirer du voyage ».
   // Une catégorie qui reçoit un objet ajouté reste (une étiquette remplacée par une autre).
   const partis = new Set(modification.objetsRetires);

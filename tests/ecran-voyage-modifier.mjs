@@ -128,8 +128,43 @@ async function appliquer(page) {
 }
 const stocke = async (page, nom) => (await lireStockage(page)).objetsDuVoyage.find(o => o.nom === nom) ?? null;
 
+// Décision 11 : le Poncho a été écarté de ce voyage ; ajouter « Pluie » le propose, refusé et « retiré ».
+const DONNEES_ECARTE = { ...DONNEES, objetsEcartes: [{ voyageId: V, modeleId: 'o-poncho' }] };
+async function verifierRetire(format, theme) {
+  const cas = `retiré ${format} ${NOMS_THEME[theme]}`;
+  const ouvert = await ouvrirVoyage(navigateur, serveur.url, { format, theme, donnees: DONNEES_ECARTE, voyageId: V });
+  const { page } = ouvert;
+  await ouvrirModification(page);
+  await basculerEtiquette(page, 2, 'Pluie');
+  await voirLesChangements(page);
+  const poncho = await page.evaluate(() => {
+    const l = [...document.querySelectorAll('.recapitulatif .recap-ligne')].find(
+      b => b.querySelector('.objet-nom').textContent === 'Poncho',
+    );
+    return (
+      l && {
+        coche: l.getAttribute('aria-checked'),
+        mention: l.querySelector('.pastille-mention')?.textContent.trim() ?? null,
+        case: l.getAttribute('aria-label'),
+        barre: getComputedStyle(l.querySelector('.recap-valeur')).textDecorationLine,
+      }
+    );
+  });
+  juge.exige(
+    poncho?.coche === 'false' &&
+      poncho.mention === 'retiré' &&
+      poncho.case.endsWith(', retiré de ce voyage') &&
+      poncho.barre === 'line-through',
+    `${cas} : Poncho ${vu(poncho)}`,
+  );
+  await capture(page, 'voyage-modifier-retire', format, theme);
+  await fermerEssai(juge, cas, ouvert);
+}
+
 try {
   await mkdir(CAPTURES, { recursive: true });
+  for (const format of ['telephone', 'tablette-portrait', 'tablette-paysage', 'ordinateur'])
+    for (const theme of ['light', 'dark']) await verifierRetire(format, theme);
   for (const [format, theme] of [
     ['telephone', 'light'],
     ['tablette-paysage', 'dark'],

@@ -28,7 +28,7 @@ const parNom = (a, b) => a.nom.localeCompare(b.nom);
 // identifiant d'origine (modeleId). L'inclusion vient de l'aperçu (une seule définition) ; `ecartes`
 // porte les objets modèles que l'utilisateur a décochés dans l'aperçu. Les étiquettes choisies sont
 // copiées dans l'ordre des groupes.
-export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouvelId, maintenant }) {
+export function genererVoyage(bibliotheque, infos, { choisies, ecartes, apercu }, { nouvelId, maintenant }) {
   const erreurs = validerInformations(infos);
   if (Object.keys(erreurs).length)
     throw Object.assign(new Error(`Voyage refusé : ${Object.values(erreurs).join(', ')}`), { erreurs });
@@ -48,7 +48,8 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouv
   );
   const categories = [];
   const objets = [];
-  for (const { categorie: modele, objets: lignes } of genererApercu(bibliotheque, infos, choisies)) {
+  const groupes = apercu ?? genererApercu(bibliotheque, infos, choisies);
+  for (const { categorie: modele, objets: lignes } of groupes) {
     const retenus = lignes.filter(({ objet }) => !ecartes.has(objet.id));
     if (!retenus.length) continue;
     const categorie = copierCategorie(modele, voyage.id, ids);
@@ -56,7 +57,12 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouv
     for (const { objet, quantite } of retenus)
       objets.push(copierObjet(objet, { voyageId: voyage.id, categorieId: categorie.id, quantite }, ids));
   }
-  return { voyage, etiquettes, categories, objets, ecartes: [...ecartes].sort() };
+  // La mémoire des écartés (décision 11) : les objets de l'aperçu que l'assistant a décochés, hors ajouts
+  // à la main ; un id écarté qui n'y figure plus n'est pas retenu.
+  const retenus = groupes
+    .flatMap(({ objets: lignes }) => lignes.filter(l => !l.ajout).map(l => l.objet.id))
+    .filter(id => ecartes.has(id));
+  return { voyage, etiquettes, categories, objets, ecartes: [...new Set(retenus)].sort() };
 }
 
 // Une étiquette, une catégorie et un objet de la bibliothèque copiés dans un voyage : à la création

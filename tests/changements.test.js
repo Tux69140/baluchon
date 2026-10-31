@@ -343,3 +343,72 @@ test('un objet retiré qui revient, tout entier dans le sac, compte comme achet�
   const gaz = modifie(modification, 'Cartouches de gaz');
   assert.deepEqual([gaz.quantite, gaz.dansLeSac, gaz.achetes], [3, 3, 3]);
 });
+
+// Décision 11 : un objet déjà écarté arrive refusé, marqué « retiré » ; la mémoire suit les choix.
+const avecEcartes = (contenu, ecartes) => ({ ...contenu, ecartes });
+const ecartesApres = (contenu, choisies, acceptes, nouvellesInfos = infos(), biblio = bibliotheque()) =>
+  appliquer(contenu, nouvellesInfos, choisies, acceptes, biblio).modification.ecartes;
+
+test('une entrée déjà écartée arrive refusée et marquée « retiré »', () => {
+  const contenu = avecEcartes(creer(), ['o-lampe']);
+  const changements = changer(contenu, infos(), ['e-camping']);
+  const lampe = ligne(changements, 'Lampe frontale');
+  assert.deepEqual([lampe.genre, lampe.defaut, lampe.retire], ['entree', false, true]);
+  const gaz = ligne(changements, 'Cartouches de gaz');
+  assert.deepEqual([gaz.defaut, gaz.retire], [true, false]);
+});
+
+test('accepter l’entrée d’un objet écarté le sort de la mémoire', () => {
+  const contenu = avecEcartes(creer(), ['o-lampe', 'o-pull']);
+  const cles = ch => lignes(ch).map(l => l.cle);
+  assert.deepEqual(ecartesApres(contenu, ['e-camping'], cles), ['o-pull']);
+  assert.deepEqual(
+    ecartesApres(contenu, ['e-camping'], () => []),
+    ['o-gaz', 'o-lampe', 'o-pull'],
+  );
+});
+
+test('refuser une entrée neuve la met dans la mémoire, l’accepter la laisse dehors', () => {
+  const contenu = avecEcartes(creer(), []);
+  assert.deepEqual(ecartesApres(contenu, ['e-camping']), []);
+  const sansGaz = ch =>
+    lignes(ch)
+      .filter(l => l.nom !== 'Lampe frontale')
+      .map(l => l.cle);
+  assert.deepEqual(ecartesApres(contenu, ['e-camping'], sansGaz), ['o-lampe']);
+});
+
+test('accepter une sortie met l’objet dans la mémoire, la refuser non', () => {
+  const contenu = avecEcartes(creer({ choisies: ['e-camping'] }), []);
+  assert.deepEqual(ecartesApres(contenu, []), []);
+  const acceptees = ch =>
+    lignes(ch)
+      .filter(l => l.nom === 'Lampe frontale')
+      .map(l => l.cle);
+  assert.deepEqual(ecartesApres(contenu, [], acceptees), ['o-lampe']);
+});
+
+test('accepter le retour d’un objet retiré en attente de sortie le sort de la mémoire', () => {
+  const contenu = retoucher(creer({ choisies: ['e-rando'] }), 'Chaussures de marche', { quantite: 0, dansLeSac: 1 });
+  const sansRando = avecEcartes({ ...contenu, etiquettes: [] }, ['o-chaussures']);
+  const retour = ligne(changer(sansRando, infos(), ['e-rando']), 'Chaussures de marche');
+  assert.equal(retour.retire, false);
+  assert.deepEqual(ecartesApres(sansRando, ['e-rando']), []);
+  assert.deepEqual(
+    ecartesApres(sansRando, ['e-rando'], () => []),
+    ['o-chaussures'],
+  );
+});
+
+test('témoin : sans mémoire dans le voyage, les entrées restent acceptées et rien n’est écarté', () => {
+  const sans = { ...creer(), ecartes: undefined };
+  const lampe = ligne(changer(sans, infos(), ['e-camping']), 'Lampe frontale');
+  assert.deepEqual([lampe.defaut, lampe.retire], [true, false]);
+  assert.deepEqual(ecartesApres(sans, ['e-camping']), []);
+});
+
+test('les objets sans modèle ne sont pas retenus dans la mémoire', () => {
+  const contenu = avecEcartes(creer(), []);
+  const main = { ...contenu.objets[0], id: 'main', nom: 'Gourde', modeleId: null };
+  assert.deepEqual(ecartesApres({ ...contenu, objets: [...contenu.objets, main] }, []), []);
+});
