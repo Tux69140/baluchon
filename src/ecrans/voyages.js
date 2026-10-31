@@ -1,6 +1,6 @@
 // Écran Voyages (#/voyages), l'accueil : les voyages en cours, à venir puis passés (US-28) ou, au
 // premier lancement, l'écran vide qui invite à créer le premier (US-29). Chaque carte a son menu « ⋮ »
-// (phase 11) : « Refaire ce voyage », « Supprimer ce voyage ».
+// (phase 11) : « Refaire ce voyage », « Supprimer ce voyage » (src/ecrans/suppression-voyage.js).
 import { echapper } from './html.js';
 import { detailsVoyage } from './format.js';
 import { iconeInterface } from './icones.js';
@@ -9,6 +9,7 @@ import { barreHaut, ouvrirMenu } from './menu.js';
 import { brancherMenuVoyage, vueMenuVoyage } from './menu-voyage.js';
 import { suivreFin } from './mode-rangement.js';
 import { lienRetour } from './retour.js';
+import { supprimerVoyage } from './suppression-voyage.js';
 import { remplir } from '../i18n/traduction.js';
 import { dateDuJour } from '../modele/dates.js';
 import { estFini, progressionParVoyage } from '../modele/sac.js';
@@ -68,14 +69,47 @@ function vueListe(voyages, aujourdhui, progressions, contexte) {
       <a class="bouton bouton-principal bouton-flottant" href="#/nouveau-voyage">${iconeInterface('plus')}${contexte.t('voyages.nouveau')}</a>`;
 }
 
+// Le lien de la carte d'un voyage.
+const lienDeCarte = id => `a.carte-voyage[href="#/voyage/${CSS.escape(encodeURIComponent(id))}"]`;
+
+// Relit la liste et la redessine, sans changer de défilement (le contenu est remplacé d'un seul coup : la page
+// garde sa place) : après une suppression, et quand « Annuler » rend un voyage entier. focus : ce qui prend
+// ensuite le focus, sans faire défiler. Une relecture refusée laisse la liste telle qu'elle est (la panne
+// reste au journal).
+async function redessiner(app, contexte, parti, focus) {
+  let donnees;
+  try {
+    donnees = await ecranVoyages.charger(contexte);
+  } catch (erreur) {
+    console.error(erreur);
+    return;
+  }
+  if (parti()) return;
+  ecranVoyages.dessiner(app, donnees, contexte);
+  app.querySelector(focus)?.focus({ preventScroll: true });
+}
+
+// Ce qui prend le focus une fois la carte de ce voyage partie : la carte d'après, sinon celle d'avant, sinon
+// « Nouveau voyage » (la liste vide, ou le bouton flottant).
+function apresDepart(app, id) {
+  const liens = [...app.querySelectorAll('a.carte-voyage')].map(l => l.getAttribute('href'));
+  const rang = liens.indexOf(`#/voyage/${encodeURIComponent(id)}`);
+  const voisin = liens[rang + 1] ?? liens[rang - 1];
+  return voisin ? `a.carte-voyage[href="${CSS.escape(voisin)}"]` : 'a[href="#/nouveau-voyage"]';
+}
+
 // Le menu « ⋮ » de chaque carte (src/ecrans/menu-voyage.js), posé à part du lien : la carte ouvre toujours
-// le voyage. « supprimer » : la suppression du voyage (tâche 7).
-function brancherMenus(app, voyages) {
+// le voyage.
+function brancherMenus(app, voyages, contexte, { signal, parti }) {
   for (const voyage of voyages) {
     const li = app.querySelector(`#${CSS.escape(`menu-${voyage.id}`)}`)?.parentElement;
     if (!li) continue;
     brancherMenuVoyage(li, cle => {
       if (cle === 'refaire') location.hash = `#/voyages/refaire/${encodeURIComponent(voyage.id)}`;
+      else if (cle === 'supprimer') {
+        const relire = () => redessiner(app, contexte, parti, apresDepart(app, voyage.id));
+        supprimerVoyage({ ...contexte, app, signal, relire }, voyage, { depuis: 'voyages' });
+      }
     });
   }
 }
@@ -89,18 +123,19 @@ const lireProgressions = async stockage =>
     }),
   );
 
-// « Annuler » d'un retrait touché d'ici (le bandeau suit d'un écran à l'autre, src/ecrans/annulation.js) :
-// la carte du voyage rendu relit son avancement (événement « voyage-retabli »), comme Nouveau voyage
-// relit la bibliothèque à « bibliotheque-retablie ». Rien d'autre ne bouge.
-function suivreRetablissements(app, { voyages, aujourdhui }, contexte) {
-  const { signal, parti } = suivreFin(app, app.firstElementChild);
+// « Annuler » touché d'ici (le bandeau suit d'un écran à l'autre, src/ecrans/annulation.js), événement
+// « voyage-retabli » : un voyage supprimé revient entier (entier), la liste est relue et redessinée, le focus
+// sur sa carte ; un retrait d'objet, la carte du voyage rendu relit son avancement, comme Nouveau voyage relit
+// la bibliothèque à « bibliotheque-retablie », et rien d'autre ne bouge.
+function suivreRetablissements(app, { voyages, aujourdhui }, contexte, { signal, parti }) {
   window.addEventListener(
     'voyage-retabli',
-    async ({ detail: { voyageId } }) => {
+    async ({ detail: { voyageId, entier } }) => {
+      if (entier) return redessiner(app, contexte, parti, lienDeCarte(voyageId));
       const progressions = await lireProgressions(contexte.stockage);
       const classes = classerVoyages(voyages, aujourdhui);
       const rubrique = RUBRIQUES.find(r => classes[r].some(v => v.id === voyageId));
-      const lien = app.querySelector(`a.carte-voyage[href="#/voyage/${CSS.escape(encodeURIComponent(voyageId))}"]`);
+      const lien = app.querySelector(lienDeCarte(voyageId));
       if (parti() || !rubrique || !lien) return;
       lien.querySelector('.carte-progression')?.remove();
       lien
@@ -128,8 +163,10 @@ export const ecranVoyages = {
     app
       .querySelector('[data-action="menu"]')
       .addEventListener('click', () => ouvrirMenu(contexte, { courant: 'voyages' }));
-    brancherMenus(app, voyages);
-    suivreRetablissements(app, donnees, contexte);
+    // La fin de l'écran (un autre écran, ou ce même écran redessiné) retire ses écouteurs et ses questions.
+    const fin = suivreFin(app, app.firstElementChild);
+    brancherMenus(app, voyages, contexte, fin);
+    suivreRetablissements(app, donnees, contexte, fin);
   },
 };
 

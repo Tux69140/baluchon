@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { consequences, estBloquee, extraitAvant, memesConsequences } from '../src/modele/suppressions.js';
+import {
+  consequences,
+  consequencesVoyage,
+  estBloquee,
+  extraitAvant,
+  memesConsequences,
+} from '../src/modele/suppressions.js';
 
 // Bibliothèque construite sur le modèle de docs/maquettes/suppressions/donnees.js, avec les
 // formes que rend lireBibliotheque() : les étiquettes des modèles sont des identifiants, dans l'ordre.
@@ -193,4 +199,23 @@ test('mêmes conséquences : rien de ce qui est emporté, perdu ou bloquant n’
   // Crème solaire revenue : un élément perd une étiquette de plus.
   const chaud = etiquette('e-chaud');
   assert.equal(memesConsequences(de(sansCreme, chaud), de(bibliotheque, chaud)), false);
+});
+
+// Phase 11 : la question avant de supprimer un voyage chiffre sa liste et ce qui est déjà dans le sac.
+// Un objet compte dans le sac dès sa première pièce (pas les pièces) ; un objet retiré qui attend encore
+// d'être sorti du sac (quantité 0) ne fait plus partie de la liste, mais ses pièces sont dans le sac.
+const objetDuVoyage = (i, quantite, dansLeSac) => ({ id: `o-${i}`, quantite, dansLeSac });
+
+test('un voyage de 87 objets dont 23 ont au moins une pièce dans le sac', () => {
+  const objets = Array.from({ length: 87 }, (_, i) => objetDuVoyage(i, 3, i < 23 ? 1 + (i % 3) : 0));
+  assert.deepEqual(consequencesVoyage({ objets }), { objets: 87, dansLeSac: 23 });
+});
+
+test('un objet retiré en attente de sortie ne compte que dans le sac', () => {
+  const objets = [objetDuVoyage(1, 2, 0), objetDuVoyage(2, 1, 1), objetDuVoyage(3, 0, 2)];
+  assert.deepEqual(consequencesVoyage({ objets }), { objets: 2, dansLeSac: 2 });
+});
+
+test('un voyage sans objet ne compte rien', () => {
+  assert.deepEqual(consequencesVoyage({ objets: [] }), { objets: 0, dansLeSac: 0 });
 });

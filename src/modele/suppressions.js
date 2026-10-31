@@ -2,7 +2,9 @@
 // règle des orphelins : l'écran la montre (question, refus) et la base ne la connaît pas, c'est le
 // modèle qui refuse avant d'écrire.
 // cible : { type: 'categorie' | 'objet' | 'etiquette' | 'groupe', id }.
+// Ce qu'emporte la suppression d'un voyage entier (phase 11) : consequencesVoyage.
 import { parOrdre } from './inclusion.js';
+import { estRetire } from './sac.js';
 
 // Les étiquettes que la cible supprime, par rang (celles du groupe, ou l'étiquette seule).
 function etiquettesSupprimees({ etiquettes }, cible) {
@@ -88,3 +90,11 @@ export function extraitAvant(bibliotheque, cible) {
   // Copie profonde : l'écran ne doit pas voir l'extrait changer quand la bibliothèque change.
   return structuredClone(extrait);
 }
+
+// Ce que la question avant de supprimer un voyage chiffre (décision 10 de la phase 11) : objets, ceux de sa
+// liste (un objet retiré, même avec des pièces encore à sortir, n'en fait plus partie) ; dansLeSac, les
+// objets qui ont au moins une pièce dans le sac, retirés compris (on compte des objets, pas des pièces).
+export const consequencesVoyage = ({ objets }) => ({
+  objets: objets.filter(o => !estRetire(o)).length,
+  dansLeSac: objets.filter(o => o.dansLeSac > 0).length,
+});

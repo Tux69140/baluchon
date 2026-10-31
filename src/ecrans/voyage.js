@@ -20,6 +20,7 @@ import { allerALaListe, suivreDisposition, trouverCommande } from './disposition
 import { confirmerVider, ouvrirFiche } from './fiche.js';
 import { brancherMenuVoyage } from './menu-voyage.js';
 import { gestesDeSortie, sortieAnnoncee } from './sortie-du-sac.js';
+import { supprimerVoyage } from './suppression-voyage.js';
 import {
   apresRepit,
   apresTampon,
@@ -114,11 +115,13 @@ function ouvrirListe(app, donnees, contexte) {
     parti,
   });
 
-  // Le menu « ⋮ » du titre (src/ecrans/menu-voyage.js) ; « supprimer » : la suppression du voyage (tâche 7).
+  // Le menu « ⋮ » du titre (src/ecrans/menu-voyage.js) ; « supprimer » : src/ecrans/suppression-voyage.js.
   function choisirDansLeMenu(cle) {
     const adresse = `#/voyage/${encodeURIComponent(contenu.voyage.id)}`;
     if (cle === 'modifier') location.hash = `${adresse}/modifier`;
     else if (cle === 'refaire') location.hash = `${adresse}/refaire`;
+    else if (cle === 'supprimer')
+      supprimerVoyage({ ...contexte, app, signal: fin.signal, attendre }, contenu.voyage, { depuis: 'voyage' });
   }
 
   function arreter() {
