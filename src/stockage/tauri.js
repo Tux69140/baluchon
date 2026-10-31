@@ -24,6 +24,7 @@ export function creerStockageTauri() {
     retablirBibliotheque: extrait => invoke('retablir_bibliotheque', { extrait }),
     creerVoyage: contenu => invoke('creer_voyage', { contenu }),
     lireVoyage: id => invoke('lire_voyage', { id }),
+    supprimerVoyage: id => invoke('supprimer_voyage', { id }),
     reglerDansLeSac: (id, dansLeSac, achetes, modifieLe) =>
       invoke('regler_dans_le_sac', { id, dansLeSac, achetes, modifieLe }),
     reglerAchats: (id, aAcheter, achetes, modifieLe) => invoke('regler_achats', { id, aAcheter, achetes, modifieLe }),

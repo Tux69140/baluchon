@@ -200,7 +200,7 @@ export function creerStockageNavigateur() {
       };
       ecrire({ ...donnees, bibliotheque });
     },
-    async creerVoyage({ voyage, etiquettes, categories, objets }) {
+    async creerVoyage({ voyage, etiquettes, categories, objets, ecartes = [] }) {
       const donnees = lire();
       panne(donnees, 'creerVoyage');
       await lenteur(donnees, 'creerVoyage');
@@ -210,6 +210,24 @@ export function creerStockageNavigateur() {
         etiquettesDuVoyage: [...(donnees.etiquettesDuVoyage ?? []), ...etiquettes],
         categoriesDuVoyage: [...(donnees.categoriesDuVoyage ?? []), ...categories],
         objetsDuVoyage: [...(donnees.objetsDuVoyage ?? []), ...objets],
+        objetsEcartes: [
+          ...(donnees.objetsEcartes ?? []),
+          ...ecartes.map(modeleId => ({ voyageId: voyage.id, modeleId })),
+        ],
+      });
+    },
+    // Efface le voyage et tout ce qui en dépend en une écriture ; la bibliothèque n'est pas touchée.
+    async supprimerVoyage(id) {
+      const donnees = await ecritureDe('supprimerVoyage');
+      if (!(donnees.voyages ?? []).some(v => v.id === id)) throw new Error(`Voyage inconnu : ${id}`);
+      const reste = cle => (donnees[cle] ?? []).filter(x => x.voyageId !== id);
+      ecrire({
+        ...donnees,
+        voyages: (donnees.voyages ?? []).filter(v => v.id !== id),
+        etiquettesDuVoyage: reste('etiquettesDuVoyage'),
+        categoriesDuVoyage: reste('categoriesDuVoyage'),
+        objetsDuVoyage: reste('objetsDuVoyage'),
+        objetsEcartes: reste('objetsEcartes'),
       });
     },
     async lireVoyage(id) {
@@ -225,6 +243,11 @@ export function creerStockageNavigateur() {
         // Par rang, puis par création, comme la base : une catégorie rétablie retrouve sa place.
         categories: trierParOrdre((donnees.categoriesDuVoyage ?? []).filter(c => c.voyageId === id)),
         objets: (donnees.objetsDuVoyage ?? []).filter(o => o.voyageId === id),
+        // Un voyage d'avant la phase 11 n'a pas la clé : liste vide.
+        ecartes: (donnees.objetsEcartes ?? [])
+          .filter(e => e.voyageId === id)
+          .map(e => e.modeleId)
+          .sort(),
       };
     },
     async reglerDansLeSac(id, dansLeSac, achetes, modifieLe) {

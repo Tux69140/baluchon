@@ -56,7 +56,7 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes }, { nouv
     for (const { objet, quantite } of retenus)
       objets.push(copierObjet(objet, { voyageId: voyage.id, categorieId: categorie.id, quantite }, ids));
   }
-  return { voyage, etiquettes, categories, objets };
+  return { voyage, etiquettes, categories, objets, ecartes: [...ecartes].sort() };
 }
 
 // Une étiquette, une catégorie et un objet de la bibliothèque copiés dans un voyage : à la création

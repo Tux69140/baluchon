@@ -6,13 +6,14 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: [&str; 6] = [
+const MIGRATIONS: [&str; 7] = [
     include_str!("../migrations/001_initial.sql"),
     include_str!("../migrations/002_bibliotheque_et_voyages.sql"),
     include_str!("../migrations/003_dans_le_sac_en_pieces.sql"),
     include_str!("../migrations/004_etiquettes.sql"),
     include_str!("../migrations/005_achats_en_pieces.sql"),
     include_str!("../migrations/006_pieces_a_sortir.sql"),
+    include_str!("../migrations/007_objets_ecartes.sql"),
 ];
 
 pub struct Base(Mutex<Connection>);
@@ -342,7 +343,7 @@ mod tests {
                 .unwrap();
         }
         let base = Base::ouvrir(&chemin).unwrap();
-        assert_eq!(version(&base), 6);
+        assert_eq!(version(&base), MIGRATIONS.len() as i64);
         let objet = base.lire_voyage("v1").unwrap().unwrap().objets.remove(0);
         assert_eq!(
             (objet.quantite, objet.dans_le_sac, objet.achetes),
@@ -364,5 +365,39 @@ mod tests {
                 []
             )
             .is_err());
+    }
+
+    // Phase 11 : la base retient les objets écartés d'un voyage. Rien n'est reconstruit pour les voyages
+    // existants (décision 3 de la conception) : ils se relisent sans écartés.
+    #[test]
+    fn la_migration_007_garde_les_voyages_sans_ecartes() {
+        let dossier = Dossier::nouveau();
+        let chemin = dossier.chemin.join("phase10.sqlite3");
+        {
+            let connexion = Connection::open(&chemin).unwrap();
+            connexion
+                .execute_batch("PRAGMA foreign_keys = ON;")
+                .unwrap();
+            for (indice, sql) in MIGRATIONS[0..6].iter().enumerate() {
+                connexion.execute_batch(sql).unwrap();
+                connexion
+                    .execute(
+                        "INSERT INTO schema_migrations (version) VALUES (?1)",
+                        [indice as i64 + 1],
+                    )
+                    .unwrap();
+            }
+            connexion
+                .execute_batch(
+                    "INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
+                       VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 2, 'x');",
+                )
+                .unwrap();
+        }
+        let base = Base::ouvrir(&chemin).unwrap();
+        assert_eq!(version(&base), 7);
+        let voyage = base.lire_voyage("v1").unwrap().unwrap();
+        assert_eq!(voyage.voyage.nom, "Vercors");
+        assert_eq!(voyage.ecartes, Vec::<String>::new());
     }
 }

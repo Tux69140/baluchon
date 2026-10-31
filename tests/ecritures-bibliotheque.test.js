@@ -27,6 +27,7 @@ const AUTRES = [
   'reglerQuantite',
   'renommerObjetDuVoyage',
   'retirerDuVoyage',
+  'supprimerVoyage',
   'modifierVoyage',
   'marquerRetire',
   'garderDansLeVoyage',

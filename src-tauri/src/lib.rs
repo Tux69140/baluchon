@@ -127,6 +127,11 @@ fn creer_voyage(base: State<'_, Base>, contenu: VoyageComplet) -> Result<(), Str
 }
 
 #[tauri::command]
+fn supprimer_voyage(base: State<'_, Base>, id: String) -> Result<(), String> {
+    base.supprimer_voyage(&id)
+}
+
+#[tauri::command]
 fn lire_voyage(base: State<'_, Base>, id: String) -> Result<Option<VoyageComplet>, String> {
     base.lire_voyage(&id)
 }
@@ -255,6 +260,7 @@ pub fn run() {
             retablir_bibliotheque,
             creer_voyage,
             lire_voyage,
+            supprimer_voyage,
             regler_dans_le_sac,
             regler_achats,
             etats_des_objets,

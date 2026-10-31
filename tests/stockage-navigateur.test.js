@@ -44,6 +44,7 @@ test('les voyages déposés par un test (forme de la phase 1) restent lisibles',
     etiquettes: [],
     categories: [],
     objets: [],
+    ecartes: [],
   });
 });
 
