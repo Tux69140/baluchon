@@ -126,3 +126,21 @@ fn une_modification_sans_la_liste_des_ecartes_est_refusee() {
         .remove("ecartes");
     assert!(serde_json::from_value::<ModificationDuVoyage>(json["modification"].clone()).is_err());
 }
+
+#[test]
+fn une_modification_refusee_ne_touche_pas_les_ecartes() {
+    // Un refus avant les écritures (objet d'un autre voyage), puis un refus tardif (catégorie inconnue),
+    // détecté après la réécriture des écartés : la transaction abandonnée ne laisse rien.
+    let (_dossier, base, avant) = base_avec_voyage();
+    let mut autre_voyage = contrat().modification;
+    autre_voyage.ecartes = vec!["om-autre".into()];
+    autre_voyage.objets_modifies[0].voyage_id = "v-autre".into();
+    let mut categorie_inconnue = contrat().modification;
+    categorie_inconnue.ecartes = vec!["om-autre".into()];
+    categorie_inconnue.objets_ajoutes[0].categorie_id = "cv-inconnue".into();
+    for m in [autre_voyage, categorie_inconnue] {
+        assert!(base.modifier_voyage(&m).is_err());
+        assert_eq!(ecartes_de(&base), ["om-cartes"]);
+        assert_eq!(base.lire_voyage("v-vercors").unwrap().unwrap(), avant);
+    }
+}

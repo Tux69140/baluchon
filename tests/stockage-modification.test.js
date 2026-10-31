@@ -105,3 +105,17 @@ test('une modification sans la liste des écartés est refusée sans rien écrir
   await assert.rejects(stockage.modifierVoyage(m));
   assert.deepEqual(await stockage.lireVoyage('v-vercors'), contrat.voyage);
 });
+
+test('une modification refusée ne touche pas les écartés', async () => {
+  const stockage = await stockageAvecVoyage();
+  const autreVoyage = copie(contrat.modification);
+  autreVoyage.ecartes = ['om-autre'];
+  autreVoyage.objetsModifies[0].voyageId = 'v-autre';
+  const categorieInconnue = copie(contrat.modification);
+  categorieInconnue.ecartes = ['om-autre'];
+  categorieInconnue.objetsAjoutes[0].categorieId = 'cv-inconnue';
+  for (const m of [autreVoyage, categorieInconnue]) {
+    await assert.rejects(stockage.modifierVoyage(m));
+    assert.deepEqual((await stockage.lireVoyage('v-vercors')).ecartes, ['om-cartes']);
+  }
+});

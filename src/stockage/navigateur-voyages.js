@@ -40,7 +40,7 @@ function verifierCategorie(donnees, { categorie, objet }) {
 
 // Ajout et rétablissement ont le même cœur ; deux noms pour que l'écran distingue « Annuler » d'un ajout.
 // Un rétablissement fait revenir l'objet : son modèle n'est plus écarté.
-async function ecrireAjout(operation, ajout) {
+async function ecrireAjout(operation, ajout, retablit = false) {
   const donnees = await ecritureDe(operation);
   verifierCategorie(donnees, ajout);
   if (objetsDe(donnees).some(o => o.id === ajout.objet.id)) throw new Error(`Objet déjà pris : ${ajout.objet.id}`);
@@ -48,7 +48,7 @@ async function ecrireAjout(operation, ajout) {
     ...donnees,
     categoriesDuVoyage: ajout.categorie ? [...categoriesDe(donnees), ajout.categorie] : categoriesDe(donnees),
     objetsDuVoyage: [...objetsDe(donnees), ajout.objet],
-    objetsEcartes: operation === 'retablirDansLeVoyage' ? ecartesSans(donnees, ajout.objet) : donnees.objetsEcartes,
+    ...(retablit && { objetsEcartes: ecartesSans(donnees, ajout.objet) }),
   });
 }
 
@@ -59,7 +59,7 @@ function modifierObjet(donnees, id, changer) {
 
 export const ajustementsNavigateur = {
   ajouterAuVoyage: ajout => ecrireAjout('ajouterAuVoyage', ajout),
-  retablirDansLeVoyage: ajout => ecrireAjout('retablirDansLeVoyage', ajout),
+  retablirDansLeVoyage: ajout => ecrireAjout('retablirDansLeVoyage', ajout, true),
   async reglerQuantite(id, quantite, dansLeSac, achetes, modifieLe) {
     const donnees = await ecritureDe('reglerQuantite');
     if (!Number.isInteger(quantite) || quantite < 1) throw new Error(`Quantité prévue refusée : ${quantite}`);
