@@ -25,11 +25,18 @@ export function formaterPeriode(t, depart, retour, langue) {
   });
 }
 
-// « 1 voyageur », « 2 voyageurs » : clés `one` et `other` du fichier de traduction. Une langue aux
-// pluriels plus fins (phase 13) ajoutera ses formes ici.
+// « 1 voyageur », « 2 voyageurs » : la forme que la langue donne à ce nombre (`zero`, `one`, `two`,
+// `few`, `many`, `other`), lue sous la clé du fichier de traduction ; `other` si cette forme manque.
 export function pluriel(t, cle, n, langue) {
-  const forme = new Intl.PluralRules(langue).select(n) === 'one' ? 'one' : 'other';
-  return remplir(t(`${cle}.${forme}`), { n });
+  const forme = new Intl.PluralRules(langue).select(n);
+  let texte;
+  try {
+    texte = t(`${cle}.${forme}`);
+  } catch (faute) {
+    if (forme === 'other') throw faute;
+    texte = t(`${cle}.other`);
+  }
+  return remplir(texte, { n });
 }
 
 // « 2 femmes, 1 enfant » : les groupes présents d'un voyage, les groupes vides omis.

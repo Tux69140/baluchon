@@ -11,6 +11,7 @@ import { joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
 import { estRetire, piecesASortir } from './sac.js';
 import { copierCategorie, copierEtiquette, copierObjet, validerInformations } from './voyage.js';
+import { comparerNoms } from './tri.js';
 
 // Les étiquettes de la bibliothèque d'où viennent celles du voyage, quand elles y sont encore : ce
 // que l'assistant présélectionne, et l'état « avant » de la comparaison.
@@ -128,7 +129,7 @@ export function calculerChangements(entree) {
   }
   return [...groupes.values()]
     .sort((a, b) => parOrdre(a.categorie, b.categorie))
-    .map(({ categorie, lignes }) => ({ categorie, lignes: lignes.sort((a, b) => a.nom.localeCompare(b.nom)) }));
+    .map(({ categorie, lignes }) => ({ categorie, lignes: lignes.sort((a, b) => comparerNoms(a.nom, b.nom)) }));
 }
 
 // Les étiquettes choisies, copiées comme à la création (une étiquette déjà dans le voyage garde son

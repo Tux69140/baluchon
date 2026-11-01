@@ -28,11 +28,13 @@ import './styles/sortir.css';
 import './styles/changements.css';
 import './styles/menu-voyage.css';
 import './styles/reglages.css';
-import fr from './i18n/fr.json';
+import { DICTIONNAIRES } from './i18n/dictionnaires.js';
+import { choisirLangue } from './i18n/langue.js';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, lireTheme, ouvrirStockage } from './stockage/index.js';
 import { construireBibliotheque } from './modele/bibliotheque.js';
 import { nouvelId } from './modele/identifiant.js';
+import { poserLangueDuTri } from './modele/tri.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
 import { ecranVoyage } from './ecrans/voyage.js';
 import { ecranCourses } from './ecrans/courses.js';
@@ -46,9 +48,13 @@ import { retourDansLAppli } from './ecrans/retour-systeme.js';
 import { surveillerEcritures } from './ecrans/annulation.js';
 import { appliquerTheme, poserTheme } from './ecrans/theme.js';
 
-// Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
-const LANGUE = 'fr';
-const t = creerTraducteur({ fr }, LANGUE);
+// La langue de l'appareil si on la parle, le français sinon ; le tri des noms la suit.
+const LANGUE = choisirLangue(
+  navigator.languages?.length ? [...navigator.languages] : [navigator.language ?? 'fr'],
+  Object.keys(DICTIONNAIRES),
+);
+poserLangueDuTri(LANGUE);
+const t = creerTraducteur(DICTIONNAIRES, LANGUE);
 const app = document.querySelector('#app');
 
 // Le thème choisi, avant tout await : aucun éclair de l'autre thème au lancement.
@@ -203,7 +209,7 @@ async function demarrer() {
   // appartient ensuite à l'utilisateur (docs/PRD.md, « Données »).
   if (!(await stockage.bibliothequeInstallee()))
     await stockage.installerBibliotheque(
-      construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: new Date().toISOString() }),
+      construireBibliotheque(DICTIONNAIRES.fr.bibliothequeDeDepart, { nouvelId, maintenant: new Date().toISOString() }),
       LANGUE,
     );
   // La touche retour d'Android remonte l'historique par la page elle-même (src/ecrans/retour-systeme.js) :

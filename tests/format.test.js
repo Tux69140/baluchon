@@ -105,3 +105,13 @@ test('detailComposition dit les groupes présents, au singulier ou au pluriel, g
     'du sam. 10 oct. au mar. 13 oct. 2026 · 2\u00a0femmes, 1\u00a0enfant',
   );
 });
+
+test('le pluriel lit la forme de la langue, puis « other » si elle manque', () => {
+  const dico = { n: { one: '{n} un', few: '{n} quelques', other: '{n} autres' } };
+  const tp = creerTraducteur({ fr: dico }, 'fr');
+  assert.equal(pluriel(tp, 'n', 3, 'pl'), '3 quelques');
+  assert.equal(pluriel(tp, 'n', 3, 'fr'), '3 autres');
+  assert.equal(pluriel(tp, 'n', 1, 'fr'), '1 un');
+  // « many » (français : un million) n'existe pas dans ce dictionnaire.
+  assert.equal(pluriel(tp, 'n', 1000000, 'fr'), '1000000 autres');
+});

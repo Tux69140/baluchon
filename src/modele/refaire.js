@@ -7,6 +7,7 @@
 import { choisiesDuVoyage } from './changements.js';
 import { genererApercu, parOrdre } from './inclusion.js';
 import { estRetire } from './sac.js';
+import { comparerNoms } from './tri.js';
 
 // Ce que le voyage d'origine contient encore : un objet retiré qui attend la sortie de ses pièces n'en
 // fait plus partie (ni repris, ni signalé, ni « fixé manuellement : 0 »).
@@ -16,7 +17,7 @@ const restants = origine => origine.objets.filter(objet => !estRetire(objet));
 // avant la phase 11 (décision 3).
 const ecartesDe = origine => new Set(origine.ecartes ?? []);
 
-const lignesParNom = (a, b) => a.objet.nom.localeCompare(b.objet.nom);
+const lignesParNom = (a, b) => comparerNoms(a.objet.nom, b.objet.nom);
 
 // Les étiquettes présélectionnées (celles de la bibliothèque d'où viennent celles du voyage), les objets
 // écartés d'entrée, et ce qui a disparu de la bibliothèque depuis : les étiquettes, et les objets venus
@@ -28,7 +29,7 @@ export function repriseDe(origine, bibliotheque) {
   const rang = new Map(origine.categories.map(c => [c.id, c.ordre]));
   const objets = restants(origine)
     .filter(objet => objet.modeleId && !modeles.has(objet.modeleId))
-    .sort((a, b) => rang.get(a.categorieId) - rang.get(b.categorieId) || a.nom.localeCompare(b.nom))
+    .sort((a, b) => rang.get(a.categorieId) - rang.get(b.categorieId) || comparerNoms(a.nom, b.nom))
     .map(objet => objet.nom);
   const etiquettes = [...origine.etiquettes]
     .sort(parOrdre)

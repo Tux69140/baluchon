@@ -76,7 +76,7 @@ const etiquette = id => ({ type: 'etiquette', id });
 const vide = { categories: [], objets: [] };
 
 test('une catégorie emporte ses objets', () => {
-  const c = consequences(bibliotheque, { type: 'categorie', id: 'c-cam' }, 'fr');
+  const c = consequences(bibliotheque, { type: 'categorie', id: 'c-cam' });
   assert.deepEqual(noms(c.objets).sort(), ['Lampe frontale', 'Sac de couchage', 'Tente']);
   assert.deepEqual(c.etiquettes, []);
   assert.deepEqual(c.perdent, vide);
@@ -85,12 +85,12 @@ test('une catégorie emporte ses objets', () => {
 });
 
 test('un objet n’emporte rien d’autre', () => {
-  const c = consequences(bibliotheque, { type: 'objet', id: 'o-tongs' }, 'fr');
+  const c = consequences(bibliotheque, { type: 'objet', id: 'o-tongs' });
   assert.deepEqual(c, { objets: [], etiquettes: [], perdent: vide, bloquent: vide });
 });
 
 test('Chaud : 1 objet la perd, rien ne bloque', () => {
-  const c = consequences(bibliotheque, etiquette('e-chaud'), 'fr');
+  const c = consequences(bibliotheque, etiquette('e-chaud'));
   assert.deepEqual(noms(c.etiquettes), ['Chaud']);
   assert.deepEqual(noms(c.perdent.objets), ['Crème solaire']);
   assert.deepEqual(c.perdent.categories, []);
@@ -98,7 +98,7 @@ test('Chaud : 1 objet la perd, rien ne bloque', () => {
 });
 
 test('Hôtel : personne ne la porte', () => {
-  const c = consequences(bibliotheque, etiquette('e-hotel'), 'fr');
+  const c = consequences(bibliotheque, etiquette('e-hotel'));
   assert.deepEqual(
     c.etiquettes.map(e => e.nom),
     ['Hôtel'],
@@ -108,7 +108,7 @@ test('Hôtel : personne ne la porte', () => {
 });
 
 test('Plage : Baignade, Maillot de bain et Tongs bloquent, Crème solaire perd', () => {
-  const c = consequences(bibliotheque, etiquette('e-plage'), 'fr');
+  const c = consequences(bibliotheque, etiquette('e-plage'));
   assert.deepEqual(noms(c.bloquent.categories), ['Baignade']);
   assert.deepEqual(noms(c.bloquent.objets), ['Maillot de bain', 'Tongs']);
   assert.deepEqual(noms(c.perdent.objets), ['Crème solaire']);
@@ -116,7 +116,7 @@ test('Plage : Baignade, Maillot de bain et Tongs bloquent, Crème solaire perd',
 });
 
 test('groupe Climat : Bonnet, Cape de pluie, Doudoune bloquent ; Crème solaire perd une fois', () => {
-  const c = consequences(bibliotheque, { type: 'groupe', id: 'g-cli' }, 'fr');
+  const c = consequences(bibliotheque, { type: 'groupe', id: 'g-cli' });
   assert.deepEqual(noms(c.etiquettes), ['Chaud', 'Froid', 'Pluie']);
   assert.deepEqual(noms(c.bloquent.objets), ['Bonnet', 'Cape de pluie', 'Doudoune']);
   assert.deepEqual(noms(c.perdent.objets), ['Crème solaire']);
@@ -124,7 +124,7 @@ test('groupe Climat : Bonnet, Cape de pluie, Doudoune bloquent ; Crème solaire 
 });
 
 test('groupe Hébergement : Camping perd, rien ne bloque', () => {
-  const c = consequences(bibliotheque, { type: 'groupe', id: 'g-heb' }, 'fr');
+  const c = consequences(bibliotheque, { type: 'groupe', id: 'g-heb' });
   assert.deepEqual(noms(c.perdent.categories), ['Camping']);
   assert.deepEqual(c.perdent.objets, []);
   assert.equal(estBloquee(c), false);
@@ -135,13 +135,13 @@ test('un modèle toujours inclus qui porte l’étiquette la perd sans bloquer',
     ...bibliotheque,
     objets: [objet('o-t', 'Torche', 'c-vet', ['e-plage'], true)],
   };
-  const c = consequences(b, etiquette('e-plage'), 'fr');
+  const c = consequences(b, etiquette('e-plage'));
   assert.deepEqual(noms(c.perdent.objets), ['Torche']);
   assert.deepEqual(c.bloquent.objets, []);
 });
 
 test('un modèle déjà sans étiquette ne bloque rien', () => {
-  const c = consequences(bibliotheque, { type: 'groupe', id: 'g-act' }, 'fr');
+  const c = consequences(bibliotheque, { type: 'groupe', id: 'g-act' });
   assert.ok(!noms(c.bloquent.objets).includes('Parasol'));
   assert.ok(!noms(c.perdent.objets).includes('Parasol'));
 });
@@ -178,7 +178,7 @@ test('mêmes conséquences : rien de ce qui est emporté, perdu ou bloquant n’
   const sans = (liste, id) => liste.filter(x => x.id !== id);
   const climat = { type: 'groupe', id: 'g-cli' };
   const toilette = { type: 'categorie', id: 'c-toil' };
-  const de = (b, cible) => consequences(b, cible, 'fr');
+  const de = (b, cible) => consequences(b, cible);
   assert.equal(memesConsequences(de(bibliotheque, climat), de(structuredClone(bibliotheque), climat)), true);
   // Ailleurs, rien ne compte : un objet de plus dans Baignade, Hôtel renommé.
   const ailleurs = {

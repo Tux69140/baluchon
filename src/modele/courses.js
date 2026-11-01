@@ -2,6 +2,7 @@
 // US-23, US-24 ; décisions du chef de projet du 2026-10-29,
 // docs/superpowers/specs/2026-10-29-phase-9-courses-design.md). Chaque règle n'est écrite qu'ici.
 import { etatDePieces } from './sac.js';
+import { comparerNoms } from './tri.js';
 
 // Un objet marqué reste à acheter tant que toutes ses pièces ne le sont pas ; il quitte alors les Courses
 // et sa pastille s'efface, mais il garde sa marque : une quantité augmentée l'y ramène pour ce qui manque.
@@ -32,7 +33,7 @@ export function basculerAAcheter(objet) {
 // Les catégories dans l'ordre du voyage, sans celles qui n'ont rien à acheter ; les objets par nom.
 // retenus : les objets tout juste achetés, gardés le temps de leur seconde de répit.
 export function listeDesCourses({ categories, objets }, retenus = new Set()) {
-  const parNom = (a, b) => a.nom.localeCompare(b.nom, 'fr');
+  const parNom = (a, b) => comparerNoms(a.nom, b.nom);
   return [...categories]
     .sort((a, b) => a.ordre - b.ordre)
     .map(categorie => ({

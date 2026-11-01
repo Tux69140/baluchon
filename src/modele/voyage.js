@@ -6,6 +6,7 @@ import { etiquettesChoisies, genererApercu, parOrdre } from './inclusion.js';
 import { rangSuivant } from './modeles.js';
 import { dateLimite } from './periode.js';
 import { ordreDansLeSac } from './sac.js';
+import { comparerNoms } from './tri.js';
 
 // Les erreurs, rangées par champ ; un objet vide quand tout est bon. Chaque code a son texte dans
 // fr.json (nouveauVoyage.erreurs.*). L'écran rend la plupart impossibles (calendrier, − / +), mais
@@ -20,7 +21,7 @@ export function validerInformations({ nom, depart, retour, femmes, hommes, enfan
   return { ...erreurs, ...validerComposition({ femmes, hommes, enfants }) };
 }
 
-const parNom = (a, b) => a.nom.localeCompare(b.nom);
+const parNom = (a, b) => comparerNoms(a.nom, b.nom);
 
 // Le voyage est une copie indépendante de la bibliothèque : il ne garde du modèle que son
 // identifiant d'origine (modeleId). L'inclusion vient de l'aperçu (une seule définition) ; `ecartes`

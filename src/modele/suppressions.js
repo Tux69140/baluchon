@@ -4,6 +4,7 @@
 // cible : { type: 'categorie' | 'objet' | 'etiquette' | 'groupe', id }.
 // Ce qu'emporte la suppression d'un voyage entier (phase 11) : consequencesVoyage.
 import { parOrdre } from './inclusion.js';
+import { comparerNoms } from './tri.js';
 
 // Les étiquettes que la cible supprime, par rang (celles du groupe, ou l'étiquette seule).
 function etiquettesSupprimees({ etiquettes }, cible) {
@@ -22,7 +23,7 @@ function classer(element, toujours, supprimees, resultat) {
   resultat[bloque ? 'bloquent' : 'perdent'].push(element);
 }
 
-export function consequences(bibliotheque, cible, langue) {
+export function consequences(bibliotheque, cible) {
   const resultat = {
     objets: [],
     etiquettes: etiquettesSupprimees(bibliotheque, cible),
@@ -32,7 +33,7 @@ export function consequences(bibliotheque, cible, langue) {
   if (cible.type === 'categorie') {
     resultat.objets = bibliotheque.objets
       .filter(o => o.categorieId === cible.id)
-      .sort((a, b) => a.nom.localeCompare(b.nom, langue));
+      .sort((a, b) => comparerNoms(a.nom, b.nom));
     return resultat;
   }
   const supprimees = new Set(resultat.etiquettes.map(e => e.id));
@@ -43,8 +44,7 @@ export function consequences(bibliotheque, cible, langue) {
   const rangs = new Map(categories.map(c => [c.id, c.ordre]));
   for (const categorie of categories) classer(categorie, categorie.toujoursIncluse, supprimees, parCategorie);
   const objets = { perdent: [], bloquent: [] };
-  const parRangPuisNom = (a, b) =>
-    rangs.get(a.categorieId) - rangs.get(b.categorieId) || a.nom.localeCompare(b.nom, langue);
+  const parRangPuisNom = (a, b) => rangs.get(a.categorieId) - rangs.get(b.categorieId) || comparerNoms(a.nom, b.nom);
   for (const objet of [...bibliotheque.objets].sort(parRangPuisNom)) {
     classer(objet, objet.toujoursInclus, supprimees, objets);
   }

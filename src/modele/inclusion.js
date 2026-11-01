@@ -4,6 +4,7 @@
 import { composition } from './composition.js';
 import { joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
+import { comparerNoms } from './tri.js';
 
 export const parOrdre = (a, b) => a.ordre - b.ordre;
 
@@ -39,7 +40,7 @@ export function genererApercu(bibliotheque, infos, choisies) {
       .filter(o => estInclus({ toujours: o.toujoursInclus, etiquettes: o.etiquettes }, choisies))
       .map(objet => ({ objet, quantite: calculerQuantite(objet, periode) }))
       .filter(({ quantite }) => quantite > 0)
-      .sort((a, b) => a.objet.nom.localeCompare(b.objet.nom));
+      .sort((a, b) => comparerNoms(a.objet.nom, b.objet.nom));
     if (objets.length) apercu.push({ categorie, objets });
   }
   return apercu;

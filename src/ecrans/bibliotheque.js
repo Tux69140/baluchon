@@ -18,11 +18,12 @@ import { allerALaListe, suivreDisposition } from './disposition.js';
 import { editerCategorie, editerObjet } from './edition-modeles.js';
 import { creerFileOrdre } from './file-ordre.js';
 import { GLISSEMENT, creerModeRangement, suivreFin } from './mode-rangement.js';
+import { comparerNoms } from '../modele/tri.js';
 
 // Ce que l'écran dessine, tiré de la bibliothèque lue : les catégories par rang, les objets de chacune
 // par nom, le nom de chaque étiquette.
-function preparer(bibliotheque, langue) {
-  const parNom = (a, b) => a.nom.localeCompare(b.nom, langue);
+function preparer(bibliotheque) {
+  const parNom = (a, b) => comparerNoms(a.nom, b.nom);
   const rangees = [...bibliotheque.categories]
     .sort((a, b) => a.ordre - b.ordre)
     .map(categorie => ({
@@ -49,7 +50,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   const main = app.firstElementChild;
   // La bibliothèque telle que le stockage la garde (les fiches en partent), et ce que l'écran en tire.
   let lue = bibliotheque;
-  let donnees = preparer(lue, langue);
+  let donnees = preparer(lue);
   const ui = {
     // Toutes repliées à l'ouverture : on voit d'un coup d'œil toute la bibliothèque.
     ouvertes: new Set(),
@@ -112,7 +113,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
   async function echec() {
     try {
       lue = await stockage.lireBibliotheque();
-      donnees = preparer(lue, langue);
+      donnees = preparer(lue);
     } catch (erreurDeLecture) {
       // Relecture impossible : l'écran garde l'ordre qu'il montre, le dernier confirmé.
       console.error(erreurDeLecture);
@@ -153,7 +154,7 @@ function ouvrirBibliotheque(app, bibliotheque, contexte) {
       console.error(erreur);
       return;
     }
-    donnees = preparer(lue, langue);
+    donnees = preparer(lue);
     if (!donnees.rangees.some(r => r.categorie.id === ui.choisie))
       ui.choisie = donnees.rangees[0]?.categorie.id ?? null;
     // L'ordre voulu garde ses déplacements en attente, et reçoit en dernier une catégorie neuve.

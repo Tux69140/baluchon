@@ -1,5 +1,6 @@
 // Le sac : compter les pièces, mesurer l'avancement, ordonner la liste (docs/PRD.md, « Écrans et
 // gestes », US-15, US-16, US-17 et US-40). Chaque règle n'est écrite qu'ici.
+import { comparerNoms } from './tri.js';
 
 // Des pièces de trop dans le sac attendent que l'utilisateur confirme les avoir sorties : quantité
 // baissée sous ce qui était emballé, ou objet retiré (quantité 0) avec des pièces dedans (décisions du
@@ -52,7 +53,7 @@ export const estBouclee = objets => estFini(progression(objets));
 
 // Alphabétique, les complets au fond de la liste pour garder le reste à faire en haut.
 export function ordreDansLeSac(objets) {
-  const parNom = (a, b) => a.nom.localeCompare(b.nom);
+  const parNom = (a, b) => comparerNoms(a.nom, b.nom);
   return [...objets.filter(o => !estComplet(o)).sort(parNom), ...objets.filter(estComplet).sort(parNom)];
 }
 

@@ -7,7 +7,12 @@ import { createServer } from 'vite';
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export async function demarrerServeur() {
-  const serveur = await createServer({ root: RACINE, logLevel: 'error', server: { port: 0, strictPort: false } });
+  const serveur = await createServer({
+    root: RACINE,
+    mode: 'essai',
+    logLevel: 'error',
+    server: { port: 0, strictPort: false },
+  });
   await serveur.listen();
   const adresse = serveur.httpServer.address();
   return { url: `http://localhost:${adresse.port}`, fermer: () => serveur.close() };

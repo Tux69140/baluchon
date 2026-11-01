@@ -55,10 +55,10 @@ async function ecrire({ t, langue, stockage, cible, dans }, bibliotheque, chiffr
 // Rend true, ou PERIMEE ; une écriture refusée lève.
 const PERIMEE = 'perimee';
 function ecrireSiInchangee(contexte, annoncees, nom) {
-  const { stockage, cible, langue } = contexte;
+  const { stockage, cible } = contexte;
   return sansAnnuler(async () => {
     const fraiche = await stockage.lireBibliotheque();
-    const chiffres = consequences(fraiche, cible, langue);
+    const chiffres = consequences(fraiche, cible);
     if (!memesConsequences(annoncees, chiffres)) return PERIMEE;
     await ecrire(contexte, fraiche, chiffres, nom);
     return true;
@@ -77,7 +77,7 @@ async function supprimerDeLaBibliotheque(contexte) {
   const { t, langue, stockage, cible, signal, dans, ouvrirFiche } = contexte;
   const bibliotheque = await stockage.lireBibliotheque();
   const nom = bibliotheque[LISTES[cible.type]].find(x => x.id === cible.id)?.nom ?? '';
-  const chiffres = consequences(bibliotheque, cible, langue);
+  const chiffres = consequences(bibliotheque, cible);
   const supprimer = annoncees => ecrireSiInchangee(contexte, annoncees, nom);
   let issue;
   if (estBloquee(chiffres))

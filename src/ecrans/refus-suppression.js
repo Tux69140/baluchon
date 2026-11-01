@@ -98,7 +98,7 @@ export async function ouvrirRefus({ t, langue, cible, nom, lire, ouvrirFiche, su
   }
 
   function peindre() {
-    const chiffres = consequences(lue, cible, langue);
+    const chiffres = consequences(lue, cible);
     annoncees = chiffres;
     const elements = estBloquee(chiffres) ? bloquants(chiffres) : [];
     annoncer(elements);
