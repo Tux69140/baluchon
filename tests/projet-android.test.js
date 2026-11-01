@@ -205,3 +205,16 @@ test('l’activité dépose un fichier dans Téléchargements sans jamais écras
   assert.match(source, /MediaScannerConnection\.scanFile/);
   assert.match(source, /baluchonDepose\(/);
 });
+
+// Un second dépôt pendant que la boîte d'autorisation est ouverte ne la redemande pas : Android répondrait
+// aussitôt par des tableaux vides, lus comme un refus pour tous les dépôts en attente.
+test('l’activité ne demande l’autorisation que si aucune demande n’est déjà en cours', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL(`../${NOTRE_JAVA}/${ACTIVITE}`, import.meta.url), 'utf8');
+  assert.match(
+    source,
+    /val aucuneDemandeEnCours = synchronized\(depotsEnAttente\) \{\s*val vide = depotsEnAttente\.isEmpty\(\)\s*depotsEnAttente\.add\(depot\)\s*vide\s*\}/,
+  );
+  assert.match(source, /if \(aucuneDemandeEnCours\) \{\s*runOnUiThread \{\s*requestPermissions\(/);
+  assert.equal(source.match(/requestPermissions\(/g).length, 1);
+});

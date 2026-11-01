@@ -82,9 +82,17 @@ class MainActivity : TauriActivity() {
       } else if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
         repondre(depot, deposerDansLeDossier(depot))
       } else {
-        synchronized(depotsEnAttente) { depotsEnAttente.add(depot) }
-        runOnUiThread {
-          requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), demandeAutorisation)
+        // Une seule demande à la fois : redemander pendant que la boîte est ouverte ferait répondre Android
+        // aussitôt par des tableaux vides, lus comme un refus alors que l'utilisateur n'a pas encore choisi.
+        val aucuneDemandeEnCours = synchronized(depotsEnAttente) {
+          val vide = depotsEnAttente.isEmpty()
+          depotsEnAttente.add(depot)
+          vide
+        }
+        if (aucuneDemandeEnCours) {
+          runOnUiThread {
+            requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), demandeAutorisation)
+          }
         }
       }
     } catch (e: Exception) {
