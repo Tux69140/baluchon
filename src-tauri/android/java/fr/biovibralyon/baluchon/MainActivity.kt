@@ -3,10 +3,12 @@ package fr.biovibralyon.baluchon
 import android.Manifest
 import android.app.DownloadManager
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -76,6 +78,21 @@ class MainActivity : TauriActivity() {
     @JavascriptInterface
     fun deposer(numero: String, nom: String, texte: String) {
       Thread { deposerOuDemander(Depot(numero, nom, texte)) }.start()
+    }
+
+    // Ouvre une adresse du site dans le navigateur du système (écran « À propos », phase 13). Seules les
+    // adresses https:// sont suivies : jamais un fichier local ni une adresse non chiffrée. Sans navigateur
+    // installé, rien ne s'ouvre et l'appli continue.
+    @JavascriptInterface
+    fun ouvrirLien(adresse: String) {
+      if (!adresse.startsWith("https://")) return
+      runOnUiThread {
+        try {
+          startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(adresse)))
+        } catch (e: Exception) {
+          Log.w("Baluchon", "Aucun navigateur pour ouvrir le lien", e)
+        }
+      }
     }
   }
 

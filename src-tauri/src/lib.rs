@@ -6,6 +6,8 @@ mod edition;
 #[cfg(test)]
 mod essais;
 mod etiquettes;
+#[cfg(desktop)]
+mod lien;
 mod modification;
 mod sauvegarde;
 mod suppressions;
@@ -70,6 +72,13 @@ fn deposer_dans_telechargements(
 ) -> Result<&'static str, String> {
     let dossier = app.path().download_dir().map_err(|e| e.to_string())?;
     sauvegarde::deposer(&dossier, &nom, &texte)
+}
+
+// Ordinateur seulement : sur Android, la page passe par l'activité (window.BaluchonAndroid.ouvrirLien).
+#[cfg(desktop)]
+#[tauri::command]
+fn ouvrir_lien(adresse: String) -> Result<(), String> {
+    lien::ouvrir(&adresse)
 }
 
 #[tauri::command]
@@ -274,6 +283,8 @@ pub fn run() {
             remplacer_tout,
             #[cfg(desktop)]
             deposer_dans_telechargements,
+            #[cfg(desktop)]
+            ouvrir_lien,
             enregistrer_categorie,
             enregistrer_objet,
             ranger_categories,

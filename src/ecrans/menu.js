@@ -17,6 +17,7 @@ const entrees = t => [
   { adresse: '#/voyages', icone: 'voyages', libelle: t('voyages.titre'), cle: 'voyages' },
   { adresse: '#/nouveau-voyage', icone: 'nouveau', libelle: t('voyages.nouveau'), cle: 'nouveau' },
   { adresse: '#/reglages', icone: 'reglages', libelle: t('menu.reglages'), cle: 'reglages' },
+  { adresse: '#/a-propos', icone: 'aPropos', libelle: t('menu.aPropos'), cle: 'a-propos' },
 ];
 
 const vueMenu = (t, courant) => `
@@ -37,8 +38,8 @@ const vueMenu = (t, courant) => `
       </nav>
     </dialog>`;
 
-// courant : l'entrée de l'écran ouvert, sur fond actif ('voyages', ou 'reglages' pour Réglages et la
-// Bibliothèque). Le menu se ferme par ×, le voile, Échap ou le retour système (un niveau, comme une
+// courant : l'entrée de l'écran ouvert, sur fond actif ('voyages', 'a-propos', ou 'reglages' pour Réglages et
+// la Bibliothèque). Le menu se ferme par ×, le voile, Échap ou le retour système (un niveau, comme une
 // fiche). Une entrée ferme d'abord le menu et attend que son étape d'historique soit partie (sinon ce
 // retrait reculerait sous l'écran suivant), puis : Mes voyages remonte à l'accueil ; Nouveau voyage et
 // Réglages passent par l'accueil, pour que le retour système y ramène ensuite ; l'écran déjà ouvert

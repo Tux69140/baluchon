@@ -1,0 +1,89 @@
+/* L'écran « À propos » (src/ecrans/a-propos.js), repris de la maquette validée de la phase 13
+   (docs/maquettes/bibliotheque-depart/maquette.css). */
+.a-propos-identite {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  margin-top: var(--e-lg);
+}
+
+.a-propos-identite img {
+  flex: none;
+}
+
+.a-propos-identite p {
+  margin: 0;
+}
+
+.a-propos-nom {
+  font:
+    400 var(--taille-ecran) / 1.1 'Baumans',
+    var(--police);
+}
+
+.a-propos-version {
+  margin-top: 2px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.a-propos-slogan {
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+.a-propos-titre {
+  margin: var(--e-xl) 0 0;
+  font-size: var(--taille-section);
+  line-height: 1.2;
+}
+
+.a-propos-liens,
+.a-propos-liste {
+  margin-top: var(--e-sm);
+}
+
+.a-propos .reglages > li + li {
+  border-top: 1px solid var(--separation);
+}
+
+.a-propos-ligne {
+  align-items: flex-start;
+}
+
+.a-propos-ligne:hover {
+  background: none;
+}
+
+.a-propos-ligne .reglage-texte span + span {
+  margin-top: 2px;
+}
+
+.a-propos-ligne .reglage-texte span {
+  text-wrap: pretty;
+}
+
+.a-propos-lien .reglage-texte span {
+  overflow-wrap: anywhere;
+}
+
+.a-propos-externe {
+  display: inline-flex;
+  flex: none;
+  color: var(--encre-douce);
+}
+
+.a-propos-externe svg,
+.a-propos .reglage-picto svg {
+  width: 24px;
+  height: 24px;
+}
+
+@media (min-width: 900px) {
+  .a-propos-colonnes {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: var(--e-2xl);
+    align-items: start;
+  }
+}

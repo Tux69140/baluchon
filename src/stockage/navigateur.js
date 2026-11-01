@@ -58,6 +58,12 @@ function reglerBarres(sombre) {
   (window.barresReglees ??= []).push(sombre);
 }
 
+// Un navigateur ouvre l'adresse dans un autre onglet, sans lien avec la page (les tests d'écran espionnent
+// window.open : aucune requête ne doit quitter l'appli).
+async function ouvrirLien(adresse) {
+  window.open(adresse, '_blank', 'noopener');
+}
+
 export function creerStockageNavigateur() {
   return Object.freeze({
     // Lente, elle rend l'état lu à l'appel, comme lireBibliotheque.
@@ -287,6 +293,7 @@ export function creerStockageNavigateur() {
     lireDerniereComposition,
     ecrireDerniereComposition,
     reglerBarres,
+    ouvrirLien,
   });
 }
 

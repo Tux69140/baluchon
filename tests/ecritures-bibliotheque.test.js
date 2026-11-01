@@ -43,6 +43,8 @@ const AUTRES = [
   'reglerBarres',
   // Un fichier posé dans Téléchargements : ni la base ni la bibliothèque ne bougent.
   'deposerFichier',
+  // Une adresse ouverte dans le navigateur du système (écran « À propos ») : aucune donnée ne bouge.
+  'ouvrirLien',
   // L'installation n'a lieu qu'au premier lancement, avant toute suppression ; le rétablissement est
   // « Annuler » lui-même.
   'installerBibliotheque',

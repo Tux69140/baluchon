@@ -230,6 +230,17 @@ test('l’activité dépose un fichier dans Téléchargements sans jamais écras
   assert.match(source, /baluchonDepose\(/);
 });
 
+test('l’activité n’ouvre dans le navigateur que des adresses https://', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL(`../${NOTRE_JAVA}/${ACTIVITE}`, import.meta.url), 'utf8');
+  assert.match(source, /import android\.content\.Intent/);
+  assert.match(source, /import android\.net\.Uri/);
+  const corps =
+    source.match(/@JavascriptInterface\s+fun ouvrirLien\(adresse: String\) \{([\s\S]*?)\n {4}\}\n/)?.[1] ?? '';
+  assert.match(corps, /if \(!adresse\.startsWith\("https:\/\/"\)\) return/);
+  assert.match(corps, /Intent\(Intent\.ACTION_VIEW, Uri\.parse\(adresse\)\)/);
+});
+
 // Le nom vient de la page : jamais un chemin. Et si seule la déclaration comme téléchargement échoue, le
 // fichier est bien écrit : on répond « depose » (il se retrouve par le gestionnaire de fichiers).
 test('l’activité refuse un nom qui est un chemin, et garde le fichier écrit si la déclaration échoue', async () => {

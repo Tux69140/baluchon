@@ -37,6 +37,12 @@ import sun from '@phosphor-icons/core/bold/sun-bold.svg?raw';
 import moon from '@phosphor-icons/core/bold/moon-bold.svg?raw';
 import downloadSimple from '@phosphor-icons/core/bold/download-simple-bold.svg?raw';
 import clockCounterClockwise from '@phosphor-icons/core/bold/clock-counter-clockwise-bold.svg?raw';
+import certificate from '@phosphor-icons/core/bold/certificate-bold.svg?raw';
+import wifiSlash from '@phosphor-icons/core/bold/wifi-slash-bold.svg?raw';
+import translate from '@phosphor-icons/core/bold/translate-bold.svg?raw';
+import handHeart from '@phosphor-icons/core/bold/hand-heart-bold.svg?raw';
+import globe from '@phosphor-icons/core/bold/globe-bold.svg?raw';
+import arrowSquareOut from '@phosphor-icons/core/bold/arrow-square-out-bold.svg?raw';
 import { svgPicto } from './pictos.js';
 import { echapper } from './html.js';
 
@@ -80,6 +86,15 @@ const INTERFACE = {
   sombre: moon,
   sauvegarder: downloadSimple,
   restaurer: clockCounterClockwise,
+  // « À propos » : l'entrée du menu, les lignes de son écran, et le picto d'un lien qui sort de l'appli.
+  aPropos: info,
+  libre: certificate,
+  horsLigne: wifiSlash,
+  traduction: translate,
+  credits: handHeart,
+  decouvrir: globe,
+  versions: downloadSimple,
+  externe: arrowSquareOut,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.

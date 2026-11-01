@@ -28,6 +28,7 @@ import './styles/sortir.css';
 import './styles/changements.css';
 import './styles/menu-voyage.css';
 import './styles/reglages.css';
+import './styles/a-propos.css';
 import { DICTIONNAIRES } from './i18n/dictionnaires.js';
 import { choisirLangue } from './i18n/langue.js';
 import { creerTraducteur } from './i18n/traduction.js';
@@ -43,6 +44,7 @@ import { ecranModifierVoyage } from './ecrans/modifier-voyage.js';
 import { ecranNouveauVoyage } from './ecrans/nouveau-voyage.js';
 import { ecranRefaireDepuisVoyages, ecranRefaireVoyage } from './ecrans/refaire-voyage.js';
 import { ecranReglages } from './ecrans/reglages.js';
+import { ecranAPropos } from './ecrans/a-propos.js';
 import { ecranBibliotheque } from './ecrans/bibliotheque.js';
 import { ecranEtiquettes } from './ecrans/etiquettes.js';
 import { retourDansLAppli } from './ecrans/retour-systeme.js';
@@ -75,6 +77,7 @@ const ECRANS = [
   { motif: /^#\/voyages\/refaire\/([\w%-]+)$/, ecran: ecranRefaireDepuisVoyages },
   { motif: /^#\/nouveau-voyage$/, ecran: ecranNouveauVoyage },
   { motif: /^#\/reglages$/, ecran: ecranReglages },
+  { motif: /^#\/a-propos$/, ecran: ecranAPropos },
   { motif: /^#\/bibliotheque$/, ecran: ecranBibliotheque },
   { motif: /^#\/etiquettes$/, ecran: ecranEtiquettes },
 ];

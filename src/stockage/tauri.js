@@ -52,6 +52,7 @@ export function creerStockageTauri() {
     lireTout: () => invoke('lire_tout'),
     remplacerTout: contenu => invoke('remplacer_tout', { contenu }),
     deposerFichier: deposerDansTelechargements,
+    ouvrirLien: ouvrirLienTauri,
     lireFiltre,
     ecrireFiltre,
     lireTheme,
@@ -96,6 +97,13 @@ export function deposerDansTelechargements(nom, texte, fenetre = window) {
       reject(erreur);
     }
   });
+}
+
+// Ouvrir une adresse du site dans le navigateur du système (écran « À propos »). L'activité et la commande
+// de l'appli refusent chacune toute adresse qui ne commence pas par https://.
+export function ouvrirLienTauri(adresse, fenetre = window) {
+  if (fenetre.BaluchonAndroid?.ouvrirLien) return Promise.resolve(fenetre.BaluchonAndroid.ouvrirLien(adresse));
+  return invoke('ouvrir_lien', { adresse });
 }
 
 // Un gestionnaire inscrit, Tauri ne recule ni ne ferme plus de lui-même à l'appui sur la touche retour

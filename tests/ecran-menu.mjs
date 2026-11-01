@@ -62,7 +62,7 @@ const TOUS_FORMATS = {
   ...Object.fromEntries(Object.entries(FORMATS).map(([nom, taille]) => [nom, { taille }])),
   ordinateur: { taille: { width: 1440, height: 900 }, tactile: false },
 };
-const ENTREES = [fr.voyages.titre, fr.voyages.nouveau, fr.menu.reglages];
+const ENTREES = [fr.voyages.titre, fr.voyages.nouveau, fr.menu.reglages, fr.menu.aPropos];
 
 const vu = e => JSON.stringify(e);
 const juge = creerJuge();

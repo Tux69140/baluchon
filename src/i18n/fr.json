@@ -901,7 +901,34 @@
   "menu": {
     "ouvrir": "Menu",
     "fermer": "Fermer le menu",
-    "reglages": "Réglages"
+    "reglages": "Réglages",
+    "aPropos": "À propos"
+  },
+  "aPropos": {
+    "titre": "À propos",
+    "nom": "Baluchon",
+    "version": "Version {version}",
+    "slogan": "Listes de bagages, libre et hors ligne.",
+    "liens": "Sur le web",
+    "bref": "Bon à savoir",
+    "decouvrir": { "titre": "Découvrir Baluchon" },
+    "versions": { "titre": "Nouvelles versions" },
+    "lienAria": "{titre}, {adresse}, {navigateur}",
+    "navigateur": "ouvre le navigateur",
+    "libre": {
+      "titre": "Appli libre",
+      "texte": "Licence GNU GPL, version 3 ou ultérieure (GPL-3.0-or-later) : chacun peut l’utiliser, l’étudier, la partager et la modifier."
+    },
+    "horsLigne": {
+      "titre": "Hors ligne, sans traceur",
+      "texte": "Vos voyages et votre bibliothèque restent sur cet appareil : Baluchon n’envoie rien, à personne."
+    },
+    "traduction": { "titre": "Traduction", "texte": "Texte original en français." },
+    "credits": {
+      "titre": "Crédits",
+      "pictos": "Pictos : Phosphor Icons, licence MIT.",
+      "polices": "Polices : Baumans et Source Sans 3, licence SIL Open Font License (OFL)."
+    }
   },
   "reglages": {
     "titre": "Réglages",
