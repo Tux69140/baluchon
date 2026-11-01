@@ -23,7 +23,7 @@ export const ECRITURES_BIBLIOTHEQUE = Object.freeze([
 ]);
 
 // Le thème choisi se lit sans attendre l'ouverture du stockage : la page le pose avant son premier affichage.
-export { lireTheme } from './preferences.js';
+export { lireTheme, THEMES } from './preferences.js';
 
 const dansTauri = () => typeof window.__TAURI_INTERNALS__?.invoke === 'function';
 

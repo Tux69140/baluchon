@@ -7,9 +7,8 @@
 // égales, alignées d'une carte à l'autre (src/styles/reglages.css).
 import { echapper } from './html.js';
 import { iconeInterface } from './icones.js';
+import { THEMES } from '../stockage/index.js';
 import { segments } from './fiche-modele-vues.js';
-
-const THEMES = ['appareil', 'clair', 'sombre'];
 
 const blocTheme = (t, theme) => `
       <section class="reglages-bloc" aria-labelledby="titre-theme">

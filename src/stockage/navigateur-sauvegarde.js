@@ -1,6 +1,8 @@
 // Lire et remplacer toutes les données dans la variante navigateur du stockage (tests d'écran) : même
-// résultat et mêmes refus que la base (src-tauri/src/sauvegarde.rs). Le résultat entier est calculé et
-// vérifié avant d'écrire : refusé, le remplacement ne laisse rien.
+// résultat que la base (src-tauri/src/sauvegarde.rs), mais avec moins de contrôles : elle ne vérifie que
+// le rattachement de chaque objet à une catégorie de sa bibliothèque ou de son voyage (ni doublons, ni
+// autres références). Le résultat entier est calculé et vérifié avant d'écrire : refusé, le remplacement
+// ne laisse rien.
 import {
   lire,
   ecrire,

@@ -7,14 +7,11 @@
 // - « Restaurer » : la copie « avant restauration » est déposée d'abord, relue, égale à l'état d'avant ; puis
 //   Mes voyages montre les 4 voyages et le bandeau « Sauvegarde du … restaurée. » ; le bandeau « Annuler » d'une
 //   suppression de voyage affiché avant a disparu, et rien n'est rétabli ; la date de dernière sauvegarde ne
-//   change pas ;
+//   change pas ; la touche retour y quitte l'appli ;
 // - restaurer ensuite la copie ramène l'état d'avant (coches, quantités), et Sauvegarder redonne le même contenu ;
-// - refus (tronqué, autre format, version 2) : « Restauration impossible » + « Rien n'a été modifié. », un seul
-//   bouton « Compris », rien déposé ni changé ;
-// - copie préalable refusée : « Accès aux fichiers refusé » + « Rien n'a été remplacé. », données inchangées ;
-//   le refus levé, la même restauration réussit (témoin) ;
-// - pannes (lecture de la copie, remplacement) : « La restauration n'a pas abouti », données inchangées ;
-//   la panne levée, la restauration réussit (témoin) ;
+// - refus (tronqué, autre format, version 2) : « Restauration impossible » ;
+// - copie préalable refusée : « Accès aux fichiers refusé » (texte : « Restaurer une sauvegarde… »), rien remplacé, puis témoin ;
+// - pannes (lecture de la copie, remplacement) : « La restauration n'a pas abouti », données inchangées ; la panne levée, elle réussit (témoin) ;
 // - disposition : cibles de 44 px, clair et sombre, aux cinq formats ; captures restaurer-….
 // Le thème du bureau Debian n'est jamais touché : seul emulateMedia de Playwright change de thème.
 import assert from 'node:assert/strict';
@@ -25,7 +22,7 @@ import contrat from './contrat/stockage.json' with { type: 'json' };
 import { construireSauvegarde, lireSauvegarde } from '../src/modele/sauvegarde.js';
 import { DONNEES, a, lireBandeau } from './outils/annulation.mjs';
 import { attendreQue, calme } from './outils/attente.mjs';
-import { fr, remplir } from './outils/bibliotheque.mjs';
+import { fr, remplir, toucheRetour } from './outils/bibliotheque.mjs';
 import {
   CAPTURES,
   FORMATS,
@@ -80,10 +77,13 @@ const FICHIERS_REFUSES = {
 const resume = lireSauvegarde(VALIDE);
 assert.ok(resume.ok && resume.resume.voyages === 4 && resume.resume.objets === 312, 'la sauvegarde de l’essai');
 
-// L'état de l'appareil au départ : les données de l'essai des annulations, dont les étiquettes de voyage
-// reçoivent la date de modification que l'appli écrit toujours (sans elle, le fichier de la copie serait
-// refusé à la relecture).
-const DEPART = { ...DONNEES, etiquettesDuVoyage: DONNEES.etiquettesDuVoyage.map(e => ({ ...e, modifieLe: 'x' })) };
+// L'état de l'appareil au départ : les données de l'essai des annulations, dont les étiquettes de voyage reçoivent
+// la date de modification que l'appli écrit toujours (sans elle, la copie serait refusée à la relecture).
+const DEPART = {
+  ...DONNEES,
+  toucheRetour: true,
+  etiquettesDuVoyage: DONNEES.etiquettesDuVoyage.map(e => ({ ...e, modifieLe: 'x' })),
+};
 
 const juge = creerJuge();
 const serveur = await demarrerServeur();
@@ -291,6 +291,9 @@ async function essaiParcours(format, taille) {
     message?.texte === 'Sauvegarde du 12 octobre 2026, 21 h 15 restaurée.' && message.bouton === false,
     `${cas} : bandeau ${vu(message)}`,
   );
+  await toucheRetour(page);
+  const quittees = await page.evaluate(() => window.sortiesDemandees);
+  juge.exige(quittees === 1 && (await ecran(page)) === 'voyages', `${cas} : touche retour : ${quittees} sortie(s)`);
   juge.exige(
     (await derniere(page)) === dateAvant,
     `${cas} : la date de dernière sauvegarde a changé : ${dateAvant} -> ${await derniere(page)}`,
@@ -389,7 +392,7 @@ async function essaiEchecs() {
   juge.exige(
     refus?.titre === R.autorisation.titre &&
       refus.texte.includes(net(R.autorisation.texte)) &&
-      refus.texte.includes(net(R.autorisation.comment)) &&
+      refus.texte.includes(net(Q.autorisationComment)) &&
       refus.texte.includes(Q.refusee) &&
       vu(refus.boutons.map(b => b.libelle)) === vu([R.compris]),
     `copie refusée : fenêtre ${vu(refus)}`,

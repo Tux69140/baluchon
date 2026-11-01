@@ -140,16 +140,12 @@ export async function restaurer(contexte, texte, { signal }) {
     await informer(
       contexte,
       t('reglages.sauvegarde.autorisation.titre'),
-      [
-        t('reglages.sauvegarde.autorisation.texte'),
-        t('reglages.sauvegarde.autorisation.comment'),
-        t(`${prefixe}.refusee`),
-      ],
+      [t('reglages.sauvegarde.autorisation.texte'), t(`${prefixe}.autorisationComment`), t(`${prefixe}.refusee`)],
       signal,
     );
     return;
   }
   retirerAnnulation();
-  location.hash = '#/voyages';
+  contexte.revenirAccueil();
   montrerMessage({ texteHtml: echapper(remplir(t(`${prefixe}.reussie`), { date })) });
 }

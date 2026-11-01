@@ -26,7 +26,7 @@ export function ecrireFiltre(voyageId, actif) {
 
 // Le thème : « appareil » (défaut, et toute valeur inconnue), « clair » ou « sombre ».
 const CLE_THEME = 'baluchon-theme';
-const THEMES = ['appareil', 'clair', 'sombre'];
+export const THEMES = ['appareil', 'clair', 'sombre'];
 
 export function lireTheme() {
   try {

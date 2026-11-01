@@ -513,6 +513,7 @@
           "version": "Cette sauvegarde vient d’une version plus récente de Baluchon. Mettez l’appli à jour pour la restaurer.",
           "rien": "Rien n’a été modifié."
         },
+        "autorisationComment": "Touchez de nouveau « Restaurer une sauvegarde… » et acceptez la demande d’Android. Si elle ne s’affiche plus : Paramètres d’Android, Applications, Baluchon, Autorisations, puis Stockage.",
         "refusee": "Rien n’a été remplacé.",
         "panne": {
           "titre": "La restauration n’a pas abouti",
