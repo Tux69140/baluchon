@@ -12,7 +12,7 @@ Baluchon est une appli de listes de bagages libre et hors ligne, dont toute la l
 
 - une **bibliothèque** de catégories et d'objets modèles, entièrement modifiable, livrée avec une bibliothèque de départ complète ;
 - des **groupes d'étiquettes** (Activités, Climat, Transport, Hébergement…) que l'utilisateur crée lui-même. Un objet ou une catégorie entre dans la liste si l'une de ses étiquettes est cochée pour le voyage, ou s'il est « toujours inclus » ;
-- des **quantités calculées** : fixes, par jour ou par nuit, avec un plafond, multipliées par le nombre de voyageurs pour les objets « par personne » ;
+- des **quantités calculées** : fixes, par jour, par nuit ou par semaine, avec un plafond, multipliées par le nombre de personnes concernées (tous, adultes, femmes, hommes ou enfants) pour les objets « par personne » ;
 - un **assistant de création** en étapes, qui se termine par un aperçu à ajuster avant de créer le voyage, et « Refaire ce voyage » pour les séjours qui reviennent ;
 - une **liste de voyage** où l'on coche ce qui est « dans le sac », avec un écran **Courses** qui rassemble automatiquement les consommables à acheter.
 
@@ -39,7 +39,7 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 
 **Création d'un voyage**
 
-- **US-9** : En tant qu'utilisateur, je veux saisir le nom, la destination, les dates de départ et de retour et le nombre de voyageurs, afin que l'appli connaisse les jours, les nuits et les personnes.
+- **US-9** : En tant qu'utilisateur, je veux saisir le nom, la destination, les dates de départ et de retour et le nombre de femmes, d'hommes et d'enfants, afin que l'appli connaisse les jours, les nuits et les personnes, et ne propose que ce qui sert à chacun.
 - **US-10** : En tant qu'utilisateur, je veux qu'une date de retour antérieure au départ soit signalée et bloque la suite, afin de ne jamais obtenir de quantités absurdes.
 - **US-11** : En tant qu'utilisateur, je veux choisir mes étiquettes, une étape par groupe, en touchant des puces, afin de décrire le voyage sans formulaire interminable.
 - **US-12** : En tant qu'utilisateur, je veux un aperçu de la liste générée, par catégorie et avec les quantités calculées, où je peux décocher ce qui ne me concerne pas, afin de corriger avant la création.
@@ -122,7 +122,8 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 **Calcul des quantités**
 
 - Jours = nombre de dates du départ au retour inclus ; nuits = jours − 1 (du 10 au 13 : 4 jours, 3 nuits). Un aller-retour dans la journée compte 1 jour et 0 nuit.
-- Quantité d'un objet : valeur fixe, ou valeur × jours, ou valeur × nuits. Le plafond s'applique **par personne**, puis le résultat est multiplié par le nombre de voyageurs si l'objet est « par personne ».
+- Quantité d'un objet : valeur fixe, ou valeur × jours, ou valeur × nuits, ou valeur × semaines commencées (1 à 7 jours = 1 semaine ; décision du chef de projet, 2026-11-01). Le plafond s'applique **par personne**, puis le résultat est multiplié par le nombre de personnes de son groupe si l'objet est « par personne ».
+- Composition d'un voyage (décision du chef de projet, 2026-11-01) : femmes, hommes et enfants, chacun de 0 à 20, au moins 1 et au plus 20 en tout. Chaque objet modèle dit pour qui il est : tous (enfants compris), adultes, femmes, hommes ou enfants, par personne ou partagé ; un objet dont le groupe est vide dans le voyage n'est pas proposé. « Nouveau voyage » propose 1 femme et 1 homme au premier voyage, puis la composition du dernier voyage créé.
 - Les quantités sont des nombres entiers. Un objet dont la quantité calculée vaut 0 (par exemple « par nuit » sur un aller-retour dans la journée) n'apparaît pas dans l'aperçu.
 - Une quantité corrigée à la main dans un voyage n'est plus jamais recalculée automatiquement ; quand les plans changent, l'utilisateur peut choisir de la recalculer (décision du chef de projet, 2026-10-29).
 
@@ -140,7 +141,7 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Retour à l'aperçu après un changement d'étiquettes, de dates ou de voyageurs : si des objets avaient été écartés, une fenêtre les nomme et propose « Les garder écartés » ou « Les remettre dans la liste ». Sans changement, aucune fenêtre. Les objets nouveaux apportés par le changement arrivent cochés ; les quantités se recalculent.
 - Aperçu vide : si aucune règle ne retient d'objet, la mascotte et un message l'expliquent, avec un bouton « Revenir aux étiquettes » ; si l'utilisateur a tout écarté, un message le dit et la liste reste affichée pour recocher. Dans les deux cas, « Créer le voyage » est grisé et un mot dit pourquoi.
 - Les étiquettes copiées dans un voyage s'affichent dans l'en-tête de son écran, sous les dates, en petites puces non touchables ; les cartes de la liste des voyages n'en montrent pas.
-- Nombre de voyageurs de 1 à 20 ; durée d'un voyage de 1 jour à 1 an.
+- Nombre de voyageurs de 1 à 20 en tout ; durée d'un voyage de 1 jour à 1 an.
 - Catégories dans l'ordre réglé dans la bibliothèque ; objets par ordre alphabétique dans leur catégorie, les objets cochés en bas.
 - Liste d'un voyage : une vue unique. La case d'un objet compte les pièces mises dans le sac : chaque appui en ajoute une. Un objet est **coché** quand toutes ses pièces sont dans le sac ; un objet en partie rempli affiche « 6 / 16 », sa case montre un état intermédiaire (un trait), et il reste à sa place. Sur un objet coché, la case remet le compte à 0, après confirmation s'il compte plus d'une pièce.
 - Le reste de la ligne ouvre la **fiche de l'objet** : nombre dans le sac (− / +, jamais au-delà de la quantité prévue), « Tout dans le sac », « Vider » (après confirmation s'il y a plus d'une pièce dans le sac), note en lecture seule, puis quantité prévue, renommer, retirer (phase 8) et « à acheter » (phase 9). Au téléphone, la fiche monte du bas de l'écran ; sur tablette et ordinateur, c'est une fenêtre centrée.
@@ -170,7 +171,8 @@ Chaque voyage est une copie indépendante de la bibliothèque : l'historique des
 - Restauration : on choisit le fichier avec le sélecteur de l'appareil ; la confirmation dit la date de la sauvegarde et ce qu'elle contient ; elle remplace tout, après une copie automatique de l'état actuel au même endroit. Une sauvegarde d'une version plus ancienne de Baluchon est acceptée, d'une version plus récente refusée.
 - Thème clair et sombre, qui suit l'appareil par défaut (choix Appareil, Clair, Sombre) ; ce réglage reste propre à chaque appareil.
 - Le filtre « Reste à emballer » est retenu voyage par voyage, sur l'appareil, hors base et hors sauvegarde.
-- Langue : celle de l'appareil si une traduction existe, sinon le français. La bibliothèque de départ est installée une fois, dans la langue du premier lancement, puis devient la propriété de l'utilisateur.
+- Langue : celle de l'appareil, relue à chaque démarrage, sans réglage dans l'appli ; une variante régionale prend la langue de base ; sans traduction, le français. La bibliothèque de départ est installée une fois, dans la langue du premier lancement si sa traduction est complète (sinon en français), puis devient la propriété de l'utilisateur (décisions du chef de projet, 2026-11-01).
+- « À propos » (décisions du chef de projet, 2026-11-01) : dernière entrée du menu ; mascotte, nom et version, licence GPL, « hors ligne, sans traceur », crédits, ligne « Traduction » ; liens « Découvrir Baluchon » (https://baluchon.biovibralyon.fr/) et « Nouvelles versions » (https://baluchon.biovibralyon.fr/telecharger), ouverts dans le navigateur ; ni lien GitHub ni mention de BagPacker.
 
 **Identité**
 

@@ -1,0 +1,227 @@
+/* Maquette de la phase 13 : ce que la phase ajoute aux styles de l'appli. */
+
+/* ---------- Nouveau voyage : les trois compteurs ----------
+   La légende porte le total à son bout ; les compteurs sont les lignes d'une liste encadrée (une par
+   groupe, le nom à gauche, − nombre + à droite), au cadre des listes de l'appli. Dès que le champ a la
+   place (fenêtre en une colonne), les trois côte à côte, le nom au-dessus du compteur. La ligne du message
+   est réservée : erreur ou limite apparaissent sans rien faire bouger. */
+.place-composition {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.champ-composition legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--e-md);
+  width: 100%;
+  margin-bottom: var(--e-xs);
+}
+
+.composition-total {
+  color: var(--encre-douce);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.composition {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--separation);
+  border-radius: var(--r-md);
+  background: var(--carte);
+}
+
+.composition-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-md);
+  min-height: 56px;
+  padding: 0 var(--e-sm) 0 var(--e-md);
+}
+
+.composition-ligne + .composition-ligne {
+  border-top: 1px solid var(--separation);
+}
+
+.composition-nom {
+  font-size: var(--taille-objet);
+}
+
+.champ-composition .compteur-valeur {
+  min-width: 2ch;
+}
+
+.composition-message[data-etat='limite'] {
+  color: var(--encre-douce);
+}
+
+@container (min-width: 540px) {
+  .composition {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .composition-ligne {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--e-xs);
+    min-width: 0;
+    padding: var(--e-sm) 4px 10px;
+  }
+
+  .composition-ligne + .composition-ligne {
+    border-top: 0;
+    border-left: 1px solid var(--separation);
+  }
+
+  .composition-nom {
+    font-size: var(--taille-libelle);
+    font-weight: 600;
+    color: var(--encre-douce);
+  }
+}
+
+/* ---------- Fiche d'un objet modèle : « Par semaine » et « Pour qui » ---------- */
+/* Quatre règles et cinq groupes sur une ligne : au téléphone, les mots gardent leur taille et le segment
+   rogne son retrait ; « Par semaine » peut passer sur deux lignes, le segment garde sa hauteur. */
+.segments-regle .segment span,
+.segments-pour-qui .segment span {
+  padding-inline: 4px;
+}
+
+.pour-qui {
+  display: grid;
+  gap: var(--e-sm);
+  margin-top: var(--e-sm);
+}
+
+.pour-qui-titre {
+  margin: 0;
+  font: 600 var(--taille-libelle) var(--police);
+}
+
+.lecture span {
+  text-wrap: pretty;
+}
+
+.lecture .lecture-absent {
+  color: var(--encre-douce);
+  font-style: italic;
+}
+
+/* ---------- À propos ---------- */
+.a-propos-identite {
+  display: flex;
+  align-items: center;
+  gap: var(--e-md);
+  margin-top: var(--e-lg);
+}
+
+.a-propos-identite img {
+  flex: none;
+}
+
+.a-propos-identite p {
+  margin: 0;
+}
+
+.a-propos-nom {
+  font: 400 var(--taille-ecran) / 1.1 'Baumans', var(--police);
+}
+
+.a-propos-version {
+  margin-top: 2px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.a-propos-slogan {
+  color: var(--encre-douce);
+  font-size: var(--taille-libelle);
+}
+
+.a-propos-titre {
+  margin: var(--e-xl) 0 0;
+  font-size: var(--taille-section);
+  line-height: 1.2;
+}
+
+.a-propos-liens,
+.a-propos-liste {
+  margin-top: var(--e-sm);
+}
+
+.a-propos .reglages > li + li {
+  border-top: 1px solid var(--separation);
+}
+
+.a-propos-ligne {
+  align-items: flex-start;
+}
+
+.a-propos-ligne:hover {
+  background: none;
+}
+
+.a-propos-ligne .reglage-texte span + span {
+  margin-top: 2px;
+}
+
+.a-propos-ligne .reglage-texte span {
+  text-wrap: pretty;
+}
+
+.a-propos-lien .reglage-texte span {
+  overflow-wrap: anywhere;
+}
+
+.a-propos-externe {
+  display: inline-flex;
+  flex: none;
+  color: var(--encre-douce);
+}
+
+.a-propos-externe svg,
+.a-propos .reglage-picto svg {
+  width: 24px;
+  height: 24px;
+}
+
+@media (min-width: 900px) {
+  .a-propos-colonnes {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: var(--e-2xl);
+    align-items: start;
+  }
+}
+
+/* ---------- Liste des états (absente avec ?capture) ---------- */
+.maquette-etats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-xs) var(--e-md);
+  max-width: var(--largeur-max);
+  margin: var(--e-2xl) auto var(--e-lg);
+  padding: var(--e-md);
+  border: 1px dashed var(--contour);
+  border-radius: var(--r-md);
+  font-size: var(--taille-libelle);
+}
+
+.maquette-etats b {
+  flex-basis: 100%;
+}
+
+.maquette-etats a {
+  color: var(--info);
+}
+
+.maquette-etats a[aria-current] {
+  color: var(--encre);
+  font-weight: 700;
+}

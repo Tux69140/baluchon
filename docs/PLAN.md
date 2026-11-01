@@ -23,7 +23,7 @@ Décisions durables qui s'appliquent à toutes les phases :
     - `categorie_modele` (nom, icône, couleur, ordre, toujours_incluse) et ses étiquettes ;
     - `objet_modele` (catégorie, nom, règle de quantité `fixe | par_jour | par_nuit`, valeur, plafond par personne facultatif, par_personne, consommable, toujours_inclus, note) et ses étiquettes.
   - Voyages, **copies indépendantes** de la bibliothèque, qui gardent seulement l'identifiant du modèle d'origine (facultatif, sans contrainte) :
-    - `voyage` (nom, destination, départ, retour, voyageurs) ;
+    - `voyage` (nom, destination, départ, retour, femmes, hommes, enfants — trois nombres à la place de « voyageurs » depuis la phase 13) ;
     - `etiquette_du_voyage` (identifiant d'origine, nom copié) ;
     - `categorie_du_voyage` (nom, icône, couleur, ordre copiés) ;
     - `objet_du_voyage` (nom, règle copiée, quantité, quantité_manuelle, dans_le_sac — nombre de pièces dans le sac, de 0 à la quantité, ou au-delà tant que des pièces de trop attendent leur sortie (décision du chef de projet, 2026-10-29) ; l'objet est coché quand il atteint la quantité sans la dépasser —, à_acheter, achetés — nombre de pièces achetées, de 0 à la quantité (décision du chef de projet, 2026-10-29) —, note copiée).
@@ -34,7 +34,7 @@ Décisions durables qui s'appliquent à toutes les phases :
 - **Sauvegarde** :
   - Un fichier JSON versionné (`format: "baluchon-sauvegarde"`, `version`), qui contient la bibliothèque et tous les voyages. Nom : `baluchon-AAAA-MM-JJ-HHhMM.json`, déposé dans Téléchargements.
   - La restauration valide tout le fichier avant de toucher la base ; une version plus ancienne du format est acceptée, une version future refusée. Elle écrit d'abord une copie de l'état actuel (`baluchon-avant-restauration-….json`), puis remplace tout en une seule opération.
-- **Traduction** : un fichier par langue, le français servant de référence. Il contient les textes de l'interface **et** la bibliothèque de départ. On repasse au français quand une traduction manque.
+- **Traduction** : un fichier par langue, le français servant de référence, chargé sans toucher au code. Il contient les textes de l'interface **et** les noms et notes de la bibliothèque de départ, dont la structure (clés, pictos, couleurs, règles, étiquettes) vit dans un fichier neutre du modèle (phase 13). On repasse au français quand une traduction manque ; `pnpm verif` contrôle chaque fichier de langue.
 - **Icônes** : Phosphor (Duotone dans les pavés de catégorie, Bold dans l'interface). Seules les icônes utilisées sont embarquées.
 - **Tests** : tests du modèle sans navigateur ; tests d'écran Playwright jugés au code de sortie, avec une capture claire et une sombre par écran touché.
 - **Contrôles automatiques dès la phase 1** : ESLint et Prettier, taille des fichiers (environ 500 lignes), textes écrits hors des fichiers de traduction, exports inutilisés, frontière entre les couches.
@@ -336,7 +336,7 @@ L'écran Réglages permet de choisir le thème (appareil, clair, sombre), un ré
 
 ### Ce qu'on livre
 
-Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes d'étiquettes (Activités, Climat, Transport, Hébergement…), catégories et objets courants, quantités et notes. Elle a la même étendue que celle de BagPacker, mais sa rédaction est originale. Elle vit dans le fichier de traduction ; un contributeur peut traduire l'interface et la bibliothèque sans toucher au code. Au premier lancement, l'appli prend la langue de l'appareil si une traduction existe, sinon le français. La bibliothèque est installée une fois, puis appartient à l'utilisateur. Le menu gagne une entrée « À propos » (décision du chef de projet, 2026-10-25).
+Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes d'étiquettes (Activités, Destination, Transport, Hébergement), 16 catégories, 171 objets, quantités et notes, relus avec le chef de projet sur une page en ligne. Elle a la même étendue que celle de BagPacker, mais sa rédaction est originale. Sa structure vit dans le modèle, ses textes dans le fichier de traduction ; un contributeur peut traduire l'interface et la bibliothèque sans toucher au code. Le voyage compte ses femmes, ses hommes et ses enfants, et chaque objet dit pour qui il est ; une règle « par semaine » s'ajoute (décisions du chef de projet, 2026-11-01 ; conception `docs/superpowers/specs/2026-11-01-phase-13-bibliotheque-traduisible-design.md`, maquette `docs/maquettes/bibliotheque-depart/`). Au premier lancement, l'appli prend la langue de l'appareil si une traduction existe, sinon le français. La bibliothèque est installée une fois, puis appartient à l'utilisateur. Le menu gagne une entrée « À propos » (décision du chef de projet, 2026-10-25).
 
 ### Critères d'acceptation
 
@@ -345,6 +345,8 @@ Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes 
 - [ ] Avec une traduction d'essai ajoutée par le seul fichier de langue, l'interface et la bibliothèque s'affichent dans cette langue sur un appareil réglé ainsi.
 - [ ] Sur un appareil dans une langue non traduite, tout s'affiche en français.
 - [ ] Changer la langue de l'appareil après le premier lancement ne modifie pas la bibliothèque déjà installée.
+- [ ] Pour 2 femmes et 1 enfant, les objets « hommes » ne sont pas proposés et les objets « enfants » le sont ; les voyages créés avant la mise à jour gardent leurs quantités.
+- [ ] « À propos » s'ouvre depuis le menu et ses deux liens ouvrent le navigateur, sur ordinateur comme sur Android.
 
 ## Bloquée par
 
