@@ -23,12 +23,21 @@ function controlerTexte(reference, texte, chemin, fautes) {
     fautes.push(`${chemin} : valeurs ${accolades(valeursDe(texte))} au lieu de ${accolades(valeursDe(reference))}`);
 }
 
+// Les formes que l'appli peut afficher : « other » (repli de pluriel()) et celles que la langue donne aux
+// entiers de 0 à 999, les seuls nombres que l'appli compte. Pas resolvedOptions().pluralCategories : il
+// compte des formes réservées aux très grands nombres (« many » en es, fr, it, pt : millions) qu'aucun
+// texte ne montrera jamais.
+const formesAffichables = langue => {
+  const regles = new Intl.PluralRules(langue);
+  return new Set(['other', ...Array.from({ length: 1000 }, (_, n) => regles.select(n))]);
+};
+
 function controlerPluriel(reference, trad, chemin, langue, fautes) {
   const formes = Object.entries(trad);
   if (!formes.every(([, texte]) => estTexte(texte) && texte.trim() !== ''))
     return fautes.push(`${chemin} : une forme de pluriel est vide ou n’est pas un texte`);
-  const categories = new Intl.PluralRules(langue).resolvedOptions().pluralCategories;
-  const absentes = categories.filter(forme => !(forme in trad));
+  const categories = formesAffichables(langue);
+  const absentes = [...categories].filter(forme => !(forme in trad));
   if (absentes.length)
     fautes.push(`${chemin} : forme(s) de pluriel manquante(s) en « ${langue} » : ${absentes.join(', ')}`);
   // « un » peut s'écrire sans {n} (« 1 étiquette ») : on juge l'ensemble des formes, et chacune ne

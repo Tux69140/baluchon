@@ -181,6 +181,9 @@ test('langues : une forme de pluriel de la langue manque', () => {
   assert.match(faute(pl, 'pl').join(), /voyages\.compte : forme\(s\) de pluriel manquante\(s\).*few/);
   const complet = { voyages: { compte: { one: '{n} a', few: '{n} b', many: '{n} c', other: '{n} d' } } };
   assert.deepEqual(faute(complet, 'pl'), []);
+  // « many » de l'espagnol ne sert qu'aux millions : l'appli ne l'affiche jamais, il n'est pas exigé.
+  const es = { voyages: { compte: { one: '{n} viaje', other: '{n} viajes' } } };
+  assert.deepEqual(faute(es, 'es'), []);
 });
 
 test('langues : la bibliothèque est complète ou absente, jamais à moitié traduite', () => {
