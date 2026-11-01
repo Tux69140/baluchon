@@ -2,7 +2,7 @@
 // fiche d'une catégorie ou d'un objet depuis l'écran, lire ce qu'elle montre, son catalogue des
 // pictos, et attendre qu'elle se ferme.
 import { attendreQue, calme } from './attente.mjs';
-import { disposition, fr, remplir } from './bibliotheque.mjs';
+import { disposition, fr } from './bibliotheque.mjs';
 import { lireStockage } from './page.mjs';
 
 export const m = fr.modele;
@@ -10,15 +10,18 @@ export const FICHE = 'dialog.fiche-modele';
 export const CATALOGUE = 'dialog.catalogue';
 // Le picto et le nom affichés d'un picto du catalogue.
 export const nomPicto = cle => fr.catalogue.pictos[cle].nom;
-export const exemple = quantite =>
-  remplir(m.objet.exemple, { jours: '10 jours', nuits: '9 nuits', voyageurs: '3 voyageurs', quantite });
+// L'exemple chiffré de la fiche d'un objet (10 jours, 9 nuits, une femme, un homme, un enfant), écrit en
+// toutes lettres : semaines pour « par semaine ».
+export const exemple = (quantite, { semaines = false } = {}) =>
+  `Pour 10\u00a0jours${semaines ? ' (2\u00a0semaines)' : ''} et 9\u00a0nuits, ` +
+  `avec 1\u00a0femme, 1\u00a0homme et 1\u00a0enfant\u00a0: ${quantite}.`;
 
 // Ce que montre la fiche ouverte ; null s'il n'y en a pas (ou si elle se ferme).
 export const lireFiche = page =>
   page.evaluate(selecteur => {
     const d = [...document.querySelectorAll(selecteur)].find(x => x.open && !('fermeture' in x.dataset));
     if (!d) return null;
-    const texte = el => el?.textContent.replace(/\s+/g, ' ').trim() ?? null;
+    const texte = el => el?.textContent.replace(/[ \t\n\r\f]+/g, ' ').trim() ?? null;
     const q = s => d.querySelector(s);
     const pied = d.querySelector('.fenetre-pied .bouton-principal');
     return {
@@ -38,6 +41,9 @@ export const lireFiche = page =>
       plafondActif: q('[data-bascule="plafondActif"]')?.getAttribute('aria-checked') ?? null,
       plafond: q('input[data-nombre="plafond"]')?.value ?? null,
       lecture: [texte(q('.lecture b')), texte(q('.lecture span'))],
+      absent: texte(q('.lecture-absent')),
+      libelleNombre: texte(q('input[data-nombre="valeur"]')?.closest('.ligne-reglage')?.firstElementChild),
+      regles: [...d.querySelectorAll('.segments-regle label')].map(texte),
       erreurs: [...d.querySelectorAll('.erreur-champ')].map(texte).filter(Boolean),
       focus: document.activeElement?.id || document.activeElement?.dataset?.nombre || null,
       // Des balises nées d'un nom (Review Focus 1).
@@ -132,7 +138,7 @@ export const lireCatalogue = page =>
   page.evaluate(selecteur => {
     const d = document.querySelector(`${selecteur}[open]`);
     if (!d) return null;
-    const texte = el => el?.textContent.replace(/\s+/g, ' ').trim() ?? null;
+    const texte = el => el?.textContent.replace(/[ \t\n\r\f]+/g, ' ').trim() ?? null;
     return {
       titre: texte(d.querySelector('h2')),
       themes: [...d.querySelectorAll('.theme h3')].map(texte),

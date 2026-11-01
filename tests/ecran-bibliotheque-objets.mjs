@@ -8,6 +8,8 @@
 //   ne sortent pas de 1 à 999 ;
 // - curseur : « 1|2 » + 5 → « 15|2 » (rien de réécrit) ; « 1|2 » + a → « 1|2 » (le « a » retiré) ;
 //   « 1| » effacé → champ vide ;
+// - phase 13 : « Par semaine » (« Chaque semaine », exemple « (2 semaines) »), « Pour qui » Enfants puis
+//   « Partagé » (résumé, exemple, « Sans enfant dans le voyage… »), enregistré puis relu tel quel ;
 // - nouvel objet dans Alimentation : « Ajouter l’objet » sans nom → « Donnez un nom à cet objet. » et
 //   focus sur le nom ; « Pâtes », par jour → rangé entre Gourde et Repas, éclairé, enregistré ;
 // - Review Focus 1 : un objet nommé <i>Pâtes</i> & "riz" reste du texte dans sa ligne et le titre de
@@ -15,14 +17,7 @@
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
-import {
-  fermerEssai,
-  fr,
-  lire,
-  ouvrirBibliotheque as ouvrirLaBibliotheque,
-  remplir,
-  vu,
-} from './outils/bibliotheque.mjs';
+import { fermerEssai, lire, ouvrirBibliotheque as ouvrirLaBibliotheque, remplir, vu } from './outils/bibliotheque.mjs';
 import {
   FICHE,
   attendreFermee,
@@ -46,7 +41,6 @@ const navigateur = await chromium.launch();
 const ouvrirBibliotheque = (format, options) => ouvrirLaBibliotheque(navigateur, serveur.url, format, options);
 const fermer = (cas, ouvert) => fermerEssai(juge, cas, ouvert);
 const o = m.objet;
-const regle = (cle, valeurs) => remplir(fr.regle[cle], valeurs);
 
 // La place des blocs de la quantité, du nom jusqu'au message sous la quantité.
 const places = page =>
@@ -78,11 +72,11 @@ async function essaiRepas() {
     repas?.titre === 'Repas' &&
       repas.sousTitre === remplir(o.dans, { categorie: 'Alimentation' }) &&
       repas.bouton === m.enregistrer &&
-      vu(repas.choix) === vu([o.parJour, o.parPersonne, m.toujoursInclus]) &&
+      vu(repas.choix) === vu([o.parJour, o.groupes.tous, o.par.tous, m.toujoursInclus]) &&
       repas.valeur === '2' &&
       repas.plafondActif === 'false' &&
       repas.plafond === null &&
-      vu(repas.lecture) === vu([regle('parJourParPersonne', { valeur: 2 }), exemple(60)]),
+      vu(repas.lecture) === vu(['2 par jour et par personne', exemple(60)]),
     `${cas} : ${vu(repas)}`,
   );
   await toucher(page, '[data-bascule="plafondActif"]');
@@ -91,19 +85,13 @@ async function essaiRepas() {
   juge.exige(
     plafond?.plafondActif === 'true' &&
       plafond.plafond === '6' &&
-      vu(plafond.lecture) ===
-        vu([
-          regle('plafondParPersonne', { regle: regle('parJourParPersonne', { valeur: 2 }), plafond: 6 }),
-          exemple(18),
-        ]),
+      vu(plafond.lecture) === vu(['2 par jour, au plus 6, par personne', exemple(18)]),
     `${cas} : plafond à 6 ${vu(plafond)}`,
   );
   await segment(page, o.fixe);
   const fixe = await lireFiche(page);
   juge.exige(
-    fixe?.plafondActif === null &&
-      fixe.plafond === null &&
-      vu(fixe.lecture) === vu([regle('fixeParPersonne', { valeur: 2 }), exemple(6)]),
+    fixe?.plafondActif === null && fixe.plafond === null && vu(fixe.lecture) === vu(['2 par personne', exemple(6)]),
     `${cas} : Fixe ${vu(fixe)}`,
   );
   await segment(page, o.parJour);
@@ -120,7 +108,12 @@ async function essaiRepas() {
       vu(vide.lecture) === vu([o.aIndiquer, o.aIndiquerAide]),
     `${cas} : valeur vide ${vu(vide)}`,
   );
-  juge.exige(vu(apres) === vu(avant), `${cas} : le message a déplacé la fiche ${vu({ avant, apres })}`);
+  // Le nom, les segments et l'encadré restent en place ; l'encadré lui-même change de hauteur (l'exemple chiffré
+  // fait deux lignes, « Quantité à indiquer » une seule), ce qui n'a rien à voir avec le message.
+  juge.exige(
+    vu(apres.slice(0, 3)) === vu(avant.slice(0, 3)),
+    `${cas} : le message a déplacé la fiche ${vu({ avant, apres })}`,
+  );
   const repasStocke = (await bibliothequeStockee(page)).objets.find(x => x.nom === 'Repas');
   juge.exige(repasStocke?.valeur === 2 && repasStocke.regle === 'par_jour', `${cas} : écrit ${vu(repasStocke)}`);
   for (const [tape, lu] of [
@@ -155,6 +148,66 @@ async function essaiRepas() {
   await fermer(cas, ouvert);
 }
 
+// Phase 13 : « Par semaine » et « Pour qui » (maquette validée, docs/maquettes/bibliotheque-depart/).
+async function essaiPourQui() {
+  const cas = 'pour qui et par semaine';
+  const ouvert = await ouvrirBibliotheque('telephone');
+  const { page } = ouvert;
+  juge.exige(await ouvrirFicheObjet(page, 'Alimentation', 'Repas'), `${cas} : la fiche ne s'ouvre pas`);
+  const depart = await lireFiche(page);
+  juge.exige(
+    vu(depart?.regles) === vu([o.fixe, o.parJour, o.parNuit, o.parSemaine]) && depart.absent === null,
+    `${cas} : règles ${vu(depart)}`,
+  );
+  await segment(page, o.parSemaine);
+  const semaine = await lireFiche(page);
+  juge.exige(
+    semaine?.libelleNombre === o.chaqueSemaine &&
+      vu(semaine.lecture) === vu(['2 par semaine et par personne', exemple(12, { semaines: true })]),
+    `${cas} : par semaine ${vu(semaine)}`,
+  );
+  await segment(page, o.groupes.enfants);
+  await segment(page, o.partage);
+  const enfants = await lireFiche(page);
+  juge.exige(
+    vu(enfants?.choix) === vu([o.parSemaine, o.groupes.enfants, o.partage, m.toujoursInclus]) &&
+      vu(enfants.lecture) === vu(['2 par semaine, partagé entre les enfants', exemple(4, { semaines: true })]) &&
+      enfants.absent === 'Sans enfant dans le voyage, il n’est pas proposé.',
+    `${cas} : enfants partagé ${vu(enfants)}`,
+  );
+  await toucher(page, '[data-bascule="plafondActif"]');
+  const plafond = await lireFiche(page);
+  juge.exige(
+    vu(plafond?.lecture) ===
+      vu(['2 par semaine, au plus 2, partagé entre les enfants', exemple(2, { semaines: true })]),
+    `${cas} : plafond ${vu(plafond)}`,
+  );
+  await segment(page, o.par.enfants);
+  await enregistrer(page);
+  juge.exige(await attendreFermee(page), `${cas} : la fiche reste ouverte`);
+  const stocke = (await bibliothequeStockee(page)).objets.find(x => x.nom === 'Repas');
+  juge.exige(
+    stocke?.regle === 'par_semaine' && stocke.pourQui === 'enfants' && stocke.parPersonne === true,
+    `${cas} : écrit ${vu(stocke)}`,
+  );
+  await ouvrirFicheObjet(page, 'Alimentation', 'Repas');
+  const relu = await lireFiche(page);
+  juge.exige(
+    vu(relu?.choix) === vu([o.parSemaine, o.groupes.enfants, o.par.enfants, m.toujoursInclus]),
+    `${cas} : relu ${vu(relu)}`,
+  );
+  await segment(page, o.partage);
+  await enregistrer(page);
+  juge.exige(await attendreFermee(page), `${cas} : la fiche reste ouverte (2)`);
+  await ouvrirFicheObjet(page, 'Alimentation', 'Repas');
+  const partage = await lireFiche(page);
+  juge.exige(
+    vu(partage?.choix) === vu([o.parSemaine, o.groupes.enfants, o.partage, m.toujoursInclus]),
+    `${cas} : « Enfants, partagé » relu ${vu(partage)}`,
+  );
+  await fermer(cas, ouvert);
+}
+
 async function essaiNouvelObjet() {
   const cas = 'nouvel objet';
   const ouvert = await ouvrirBibliotheque('telephone');
@@ -166,7 +219,7 @@ async function essaiNouvelObjet() {
       neuf.bouton === o.ajouter &&
       neuf.nom === '' &&
       neuf.valeur === '1' &&
-      vu(neuf.choix) === vu([o.fixe, o.parPersonne, m.toujoursInclus]) &&
+      vu(neuf.choix) === vu([o.fixe, o.groupes.tous, o.par.tous, m.toujoursInclus]) &&
       neuf.aide === remplir(o.aideToujours, { categorie: 'Alimentation' }),
     `${cas} : fiche neuve ${vu(neuf)}`,
   );
@@ -227,6 +280,7 @@ async function essaiNomPiege() {
 
 try {
   await essaiRepas();
+  await essaiPourQui();
   await essaiNouvelObjet();
   await essaiNomPiege();
 } finally {

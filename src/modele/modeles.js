@@ -53,7 +53,7 @@ export function validerCategorie({ nom, selonEtiquettes, etiquettes }) {
   return erreurs;
 }
 
-// Le plafond n'a de sens qu'avec « par jour » et « par nuit » : avec « fixe » il est effacé, donc
+// Le plafond n'a de sens qu'avec « par jour », « par nuit » et « par semaine » : avec « fixe » il est effacé, donc
 // jamais jugé.
 export const plafondPossible = ({ regle }) => regle !== 'fixe';
 

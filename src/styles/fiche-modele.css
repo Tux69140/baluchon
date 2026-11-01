@@ -185,6 +185,29 @@
 
 .lecture span {
   color: var(--encre-douce);
+  text-wrap: pretty;
+}
+
+.lecture .lecture-absent {
+  font-style: italic;
+}
+
+/* Quatre règles et cinq groupes sur une ligne : au téléphone, les mots gardent leur taille et le segment
+   rogne son retrait ; « Par semaine » peut passer sur deux lignes, le segment garde sa hauteur. */
+.segments-regle .segment span,
+.segments-pour-qui .segment span {
+  padding-inline: 4px;
+}
+
+.pour-qui {
+  display: grid;
+  gap: var(--e-sm);
+  margin-top: var(--e-sm);
+}
+
+.pour-qui-titre {
+  margin: 0;
+  font: 600 var(--taille-libelle) var(--police);
 }
 
 /* Interrupteur : la piste se dessine sur 52 × 32, la cible fait 60 × 44. */

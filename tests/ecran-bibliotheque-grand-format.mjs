@@ -77,6 +77,7 @@ function avec(categories) {
       valeur: 1,
       plafond: null,
       parPersonne: false,
+      pourQui: 'tous',
       consommable: false,
       toujoursInclus: true,
       note: '',

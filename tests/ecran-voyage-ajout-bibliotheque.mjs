@@ -105,7 +105,7 @@ try {
         fiche.sousTitre === remplir(m.objet.dans, { categorie: 'Toilette' }) &&
         fiche.nom === PIEGE &&
         fiche.valeur === '3' &&
-        vu(fiche.choix) === vu([m.objet.fixe, m.objet.partage, m.selonEtiquettes]) &&
+        vu(fiche.choix) === vu([m.objet.fixe, m.objet.groupes.tous, m.objet.partage, m.selonEtiquettes]) &&
         vu(fiche.etiquettes) === '[]' &&
         fiche.bouton === b.ajouter &&
         fiche.balises === 0 &&

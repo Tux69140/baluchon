@@ -59,22 +59,32 @@ test('detailsVoyage assemble la période et les voyageurs avec le séparateur de
   );
 });
 
-test('une règle se décrit en toutes lettres', () => {
-  const r = (regle, valeur, parPersonne, plafond = null) => decrireRegle(t, { regle, valeur, parPersonne, plafond });
-  assert.equal(r('par_jour', 2, true), '2 par jour et par personne');
-  assert.equal(r('fixe', 1, false), '1 en tout');
-  assert.equal(r('par_jour', 1, true, 5), '1 par jour et par personne, au plus 5 par personne');
-  assert.equal(r('par_nuit', 1, false, 3), '1 par nuit, au plus 3');
+test('une règle se décrit en toutes lettres, selon « pour qui » et « partagé »', () => {
+  const r = (regle, valeur, parPersonne, pourQui, plafond = null) =>
+    decrireRegle(t, { regle, valeur, parPersonne, pourQui, plafond });
+  assert.equal(r('fixe', 1, true, 'enfants'), '1 par enfant');
+  assert.equal(r('fixe', 1, true, 'tous'), '1 par personne');
+  assert.equal(r('par_semaine', 1, true, 'tous'), '1 par semaine et par personne');
+  assert.equal(r('par_jour', 2, true, 'tous'), '2 par jour et par personne');
+  assert.equal(r('par_jour', 1, true, 'femmes', 5), '1 par jour, au plus 5, par femme');
+  assert.equal(r('par_semaine', 5, false, 'tous'), '5 par semaine, partagé');
+  assert.equal(r('fixe', 1, false, 'tous'), '1, partagé');
+  assert.equal(r('fixe', 4, false, 'adultes'), '4, partagé entre les adultes');
+  assert.equal(r('par_nuit', 1, false, 'hommes', 3), '1 par nuit, au plus 3, partagé entre les hommes');
+  assert.equal(r('fixe', 2, true, 'hommes'), '2 par homme');
+  assert.equal(r('fixe', 2, true, 'adultes'), '2 par adulte');
 });
 
-test('une règle se décrit aussi en bref, pour tenir sur une ligne (« 1 / nuit / personne »)', () => {
-  const r = (regle, valeur, parPersonne, plafond = null) =>
-    decrireRegle(t, { regle, valeur, parPersonne, plafond }, { bref: true });
-  assert.equal(r('par_jour', 2, true), '2 / jour / personne');
-  assert.equal(r('fixe', 1, false), '1 en tout');
-  assert.equal(r('fixe', 3, true), '3 / personne');
-  assert.equal(r('par_nuit', 1, true, 1), '1 / nuit / personne, au plus 1 / personne');
-  assert.equal(r('par_nuit', 1, false, 3), '1 / nuit, au plus 3');
+test('une règle se décrit aussi en bref, pour tenir sur une ligne (« 2 / jour / enfant »)', () => {
+  const r = (regle, valeur, parPersonne, pourQui, plafond = null) =>
+    decrireRegle(t, { regle, valeur, parPersonne, pourQui, plafond }, { bref: true });
+  assert.equal(r('par_jour', 2, true, 'enfants'), '2 / jour / enfant');
+  assert.equal(r('par_jour', 2, true, 'tous'), '2 / jour / personne');
+  assert.equal(r('par_semaine', 5, false, 'tous'), '5 / semaine');
+  assert.equal(r('fixe', 1, false, 'tous'), '1 en tout');
+  assert.equal(r('fixe', 3, true, 'tous'), '3 / personne');
+  assert.equal(r('par_nuit', 1, true, 'femmes', 1), '1 / nuit / femme, au plus 1 / femme');
+  assert.equal(r('par_nuit', 1, false, 'tous', 3), '1 / nuit, au plus 3');
 });
 
 test('un instant se lit à l’heure de l’appareil, en toutes lettres : « 31 octobre 2026, 18 h 40 »', () => {

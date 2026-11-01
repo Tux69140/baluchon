@@ -74,19 +74,25 @@ const CLES = [
     'fixe',
     'parJour',
     'parNuit',
+    'parSemaine',
     'nombre',
     'chaqueJour',
     'chaqueNuit',
+    'chaqueSemaine',
     'moins',
     'plus',
     'plafond',
     'plafondAucun',
     'plafondAuPlus',
-    'plafondAuPlusParPersonne',
+    ...['tous', 'adultes', 'femmes', 'hommes', 'enfants'].map(g => `plafondPar.${g}`),
     'auPlus',
-    'parPersonne',
+    ...['tous', 'adultes', 'femmes', 'hommes', 'enfants'].flatMap(g => [`groupes.${g}`, `par.${g}`]),
+    'compter',
     'partage',
     'exemple',
+    'exempleSemaines',
+    'exempleComposition',
+    ...['adultes', 'femmes', 'hommes', 'enfants'].map(g => `absent.${g}`),
     'aIndiquer',
     'aIndiquerAide',
     'consommable',
@@ -114,7 +120,8 @@ test('les valeurs reprennent la maquette, apostrophes typographiques', () => {
   assert.equal(lire('modele.objet.choisirEtiquettes').endsWith('qui le feront proposer.'), true);
   assert.equal(lire('modele.categorie.choisirEtiquettes').endsWith('qui la feront proposer.'), true);
   assert.equal(lire('bibliotheque.place'), '{nom} : place {n} sur {total}');
-  assert.equal(lire('modele.objet.exemple'), 'Pour {jours}, {nuits} et {voyageurs} : {quantite}.');
+  assert.equal(lire('modele.objet.exemple'), 'Pour {jours} et {nuits}, avec {composition}\u00a0: {quantite}.');
+  assert.equal(lire('modele.objet.aideToujours'), 'Proposé dès que la catégorie «\u00a0{categorie}\u00a0» l’est.');
   const tous = JSON.stringify(fr.modele) + JSON.stringify(fr.bibliotheque) + JSON.stringify(fr.catalogue);
   assert.equal(tous.includes("'"), false, 'apostrophe droite');
 });

@@ -73,6 +73,7 @@ const DONNEES_PIEGE = {
         valeur: 1,
         plafond: null,
         parPersonne: true,
+        pourQui: 'tous',
         consommable: false,
         toujoursInclus: false,
         note: '',
@@ -138,9 +139,9 @@ async function essaiLecture() {
     `${cas} : Alimentation ${vu(ouverte)}`,
   );
   juge.exige(
-    vu(repas?.sous) === vu([fr.regle.parJourParPersonne.replace('{valeur}', 2), b.consommable]) &&
+    vu(repas?.sous) === vu(['2 par jour et par personne', b.consommable]) &&
       repas.note &&
-      vu(gourde?.sous) === vu([fr.regle.fixeParPersonne.replace('{valeur}', 1)]) &&
+      vu(gourde?.sous) === vu(['1 par personne']) &&
       !gourde.note,
     `${cas} : lignes ${vu(ouverte?.objets)}`,
   );

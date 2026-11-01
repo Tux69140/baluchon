@@ -1,7 +1,7 @@
 // Calcul des quantités (docs/PRD.md, « Calcul des quantités » ; critère de succès 2).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculerQuantite } from '../src/modele/quantites.js';
+import { calculerQuantite, semainesCommencees } from '../src/modele/quantites.js';
 
 const objet = (regle, valeur, { plafond = null, parPersonne = false, pourQui = 'tous' } = {}) => ({
   regle,
@@ -61,4 +61,8 @@ test('groupe vide : 0, même partagé', () => {
   const comprimes = { regle: 'fixe', valeur: 4, plafond: null, parPersonne: false, pourQui: 'enfants' };
   assert.equal(calculerQuantite(comprimes, p({ femmes: 2 })), 0);
   assert.equal(calculerQuantite(comprimes, p({ femmes: 2, enfants: 3 })), 4);
+});
+
+test('semainesCommencees : une semaine entamée compte pour une', () => {
+  assert.deepEqual([1, 7, 8, 10, 14, 15].map(semainesCommencees), [1, 1, 2, 2, 2, 3]);
 });

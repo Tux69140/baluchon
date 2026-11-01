@@ -3,11 +3,15 @@
 // les personnes du groupe « Pour qui » de l'objet s'il est « par personne ». Seul endroit de ce calcul.
 import { personnes } from './composition.js';
 
+// Une semaine commencée compte pour une : 8 jours font 2 semaines. Seule définition (le calcul et l'exemple
+// de la fiche d'un objet).
+export const semainesCommencees = jours => Math.ceil(jours / 7);
+
 const BASES = {
   fixe: () => 1,
   par_jour: ({ jours }) => jours,
   par_nuit: ({ nuits }) => nuits,
-  par_semaine: ({ jours }) => Math.ceil(jours / 7),
+  par_semaine: ({ jours }) => semainesCommencees(jours),
 };
 
 export function calculerQuantite({ regle, valeur, plafond, parPersonne, pourQui }, periode) {

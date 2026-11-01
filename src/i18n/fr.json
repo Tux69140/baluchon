@@ -115,24 +115,39 @@
     "retirer": "Retirer du voyage"
   },
   "regle": {
-    "fixe": "{valeur} en tout",
-    "fixeParPersonne": "{valeur} par personne",
+    "fixe": "{valeur}",
     "parJour": "{valeur} par jour",
-    "parJourParPersonne": "{valeur} par jour et par personne",
     "parNuit": "{valeur} par nuit",
-    "parNuitParPersonne": "{valeur} par nuit et par personne",
+    "parSemaine": "{valeur} par semaine",
     "plafond": "{regle}, au plus {plafond}",
-    "plafondParPersonne": "{regle}, au plus {plafond} par personne"
+    "parUnite": "{regle} par {unite}",
+    "etParUnite": "{regle} et par {unite}",
+    "plafondParUnite": "{regle}, par {unite}",
+    "avecPartage": "{regle}, {partage}",
+    "unite": {
+      "tous": "personne",
+      "adultes": "adulte",
+      "femmes": "femme",
+      "hommes": "homme",
+      "enfants": "enfant"
+    },
+    "partage": {
+      "tous": "partagé",
+      "adultes": "partagé entre les adultes",
+      "femmes": "partagé entre les femmes",
+      "hommes": "partagé entre les hommes",
+      "enfants": "partagé entre les enfants"
+    }
   },
   "regleBreve": {
     "fixe": "{valeur} en tout",
-    "fixeParPersonne": "{valeur} / personne",
+    "fixeParUnite": "{valeur} / {unite}",
     "parJour": "{valeur} / jour",
-    "parJourParPersonne": "{valeur} / jour / personne",
     "parNuit": "{valeur} / nuit",
-    "parNuitParPersonne": "{valeur} / nuit / personne",
+    "parSemaine": "{valeur} / semaine",
+    "parUnite": "{regle} / {unite}",
     "plafond": "{regle}, au plus {plafond}",
-    "plafondParPersonne": "{regle}, au plus {plafond} / personne"
+    "plafondParUnite": "{regle}, au plus {plafond} / {unite}"
   },
   "voyages": {
     "titre": "Mes voyages",
@@ -255,12 +270,16 @@
   },
   "duree": {
     "jours": {
-      "one": "{n} jour",
-      "other": "{n} jours"
+      "one": "{n} jour",
+      "other": "{n} jours"
     },
     "nuits": {
-      "one": "{n} nuit",
-      "other": "{n} nuits"
+      "one": "{n} nuit",
+      "other": "{n} nuits"
+    },
+    "semaines": {
+      "one": "{n} semaine",
+      "other": "{n} semaines"
     }
   },
   "erreurs": {
@@ -706,24 +725,54 @@
       "fixe": "Fixe",
       "parJour": "Par jour",
       "parNuit": "Par nuit",
+      "parSemaine": "Par semaine",
       "nombre": "Nombre",
       "chaqueJour": "Chaque jour",
       "chaqueNuit": "Chaque nuit",
+      "chaqueSemaine": "Chaque semaine",
       "moins": "{libelle} : un de moins",
       "plus": "{libelle} : un de plus",
       "plafond": "Plafond",
       "plafondAucun": "aucun",
       "plafondAuPlus": "au plus",
-      "plafondAuPlusParPersonne": "au plus, par personne",
+      "plafondPar": {
+        "tous": "au plus, par personne",
+        "adultes": "au plus, par adulte",
+        "femmes": "au plus, par femme",
+        "hommes": "au plus, par homme",
+        "enfants": "au plus, par enfant"
+      },
       "auPlus": "Au plus",
-      "parPersonne": "Par personne",
+      "groupes": {
+        "tous": "Tous",
+        "adultes": "Adultes",
+        "femmes": "Femmes",
+        "hommes": "Hommes",
+        "enfants": "Enfants"
+      },
+      "compter": "Compté pour chacun, ou partagé",
+      "par": {
+        "tous": "Par personne",
+        "adultes": "Par adulte",
+        "femmes": "Par femme",
+        "hommes": "Par homme",
+        "enfants": "Par enfant"
+      },
       "partage": "Partagé",
-      "exemple": "Pour {jours}, {nuits} et {voyageurs} : {quantite}.",
+      "exemple": "Pour {jours} et {nuits}, avec {composition} : {quantite}.",
+      "exempleSemaines": " ({semaines})",
+      "exempleComposition": "{femmes}, {hommes} et {enfants}",
+      "absent": {
+        "adultes": "Sans adulte dans le voyage, il n’est pas proposé.",
+        "femmes": "Sans femme dans le voyage, il n’est pas proposé.",
+        "hommes": "Sans homme dans le voyage, il n’est pas proposé.",
+        "enfants": "Sans enfant dans le voyage, il n’est pas proposé."
+      },
       "aIndiquer": "Quantité à indiquer",
       "aIndiquerAide": "Elle se calcule pour chaque voyage.",
       "consommable": "Consommable",
       "consommableAide": "à racheter avant chaque voyage",
-      "aideToujours": "Proposé dès que la catégorie « {categorie} » l’est.",
+      "aideToujours": "Proposé dès que la catégorie « {categorie} » l’est.",
       "aideEtiquettes": "Proposé si l’une de ces étiquettes est cochée : {etiquettes}.",
       "choisirEtiquettes": "Choisissez les étiquettes qui le feront proposer.",
       "note": "Note",

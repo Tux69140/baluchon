@@ -48,16 +48,28 @@ export const detailsVoyage = (t, voyage, langue, { detail = false } = {}) =>
       : pluriel(t, 'voyages.voyageurs', totalVoyageurs(voyage), langue),
   });
 
-// « 2 par jour et par personne, au plus 5 par personne » : la règle de quantité d'un objet, dite en
-// toutes lettres sur la fiche. Le plafond reprend « par personne » seulement si la règle le dit. bref : « 2 /
-// jour / personne », pour tenir sur une ligne (la formule d'origine d'une quantité fixée manuellement).
+const BASES_REGLE = { fixe: 'fixe', par_jour: 'parJour', par_nuit: 'parNuit', par_semaine: 'parSemaine' };
+
+// La règle de quantité d'un objet, dite en toutes lettres sur la fiche et dans les listes : « 1 par
+// enfant », « 2 par jour, au plus 7, par personne », « 1 par semaine et par personne », « 5 par
+// semaine, partagé », « 4, partagé entre les adultes ». bref : « 2 / jour / enfant », « 5 / semaine »,
+// pour tenir sur une ligne (la formule d'origine d'une quantité fixée manuellement) ; elle ne dit pas
+// « partagé ».
 export function decrireRegle(t, objet, { bref = false } = {}) {
+  const { regle, valeur, plafond, parPersonne, pourQui } = objet;
   const famille = bref ? 'regleBreve' : 'regle';
-  const base = { fixe: 'fixe', par_jour: 'parJour', par_nuit: 'parNuit' }[objet.regle];
-  const suffixe = objet.parPersonne ? 'ParPersonne' : '';
-  const regle = remplir(t(`${famille}.${base}${suffixe}`), { valeur: objet.valeur });
-  if (objet.plafond === null) return regle;
-  return remplir(t(`${famille}.plafond${suffixe}`), { regle, plafond: objet.plafond });
+  const unite = parPersonne ? t(`regle.unite.${pourQui}`) : '';
+  const enUnite = (cle, base) => remplir(t(`${famille}.${cle}`), { regle: base, unite, valeur, plafond });
+  const base = enUnite(bref && regle === 'fixe' && parPersonne ? 'fixeParUnite' : BASES_REGLE[regle]);
+  if (bref) {
+    const avecUnite = parPersonne && regle !== 'fixe' ? enUnite('parUnite', base) : base;
+    return plafond === null ? avecUnite : enUnite(parPersonne ? 'plafondParUnite' : 'plafond', avecUnite);
+  }
+  const avecPlafond = plafond === null ? base : enUnite('plafond', base);
+  if (!parPersonne)
+    return remplir(t('regle.avecPartage'), { regle: avecPlafond, partage: t(`regle.partage.${pourQui}`) });
+  if (regle === 'fixe') return enUnite('parUnite', avecPlafond);
+  return enUnite(plafond === null ? 'etParUnite' : 'plafondParUnite', avecPlafond);
 }
 
 // « 31 octobre 2026, 18 h 40 » : un instant (ISO) à l'heure de l'appareil, en toutes lettres. Sert à la

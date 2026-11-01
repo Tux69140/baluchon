@@ -160,7 +160,10 @@ try {
       JSON.stringify(e.entre) === JSON.stringify(['2026-10-11', '2026-10-12']),
       `parcours : jours grisés ${e.entre}`,
     );
-    juge.exige(e.resume === 'Du sam. 10 oct. au mar. 13 oct. · 4 jours, 3 nuits', `parcours : résumé « ${e.resume} »`);
+    juge.exige(
+      e.resume === 'Du sam. 10 oct. au mar. 13 oct. · 4\u00a0jours, 3\u00a0nuits',
+      `parcours : résumé « ${e.resume} »`,
+    );
     // Jamais la couleur seule : le rôle du jour est dit au lecteur d'écran, et la période porte un
     // trait visible, qui reste quand le doigt (ou la souris) s'y attarde.
     for (const [date, etatAttendu] of [
