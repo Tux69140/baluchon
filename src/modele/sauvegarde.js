@@ -134,6 +134,7 @@ function voyageValide(contenu, vus) {
 
 function formeValide(donnees) {
   if (!TYPES.t(donnees.creeLe) || !TYPES.t(donnees.langue)) return false;
+  if (Number.isNaN(Date.parse(donnees.creeLe))) return false;
   if (!bibliothequeValide(donnees.bibliotheque) || !estListe(donnees.voyages)) return false;
   const vus = { voyages: new Set(), etiquettes: new Set(), categories: new Set(), objets: new Set() };
   return donnees.voyages.every(v => voyageValide(v, vus));

@@ -76,7 +76,9 @@ new MutationObserver(placer).observe(document.body, {
 });
 addEventListener('resize', placer);
 
-function retirerAnnulation() {
+// Retire le bandeau affiché, quel qu'il soit, sans rien rétablir : la suppression qu'il couvrait reste faite.
+// Sert à une restauration, après laquelle un « Annuler » d'avant réécrirait des données remplacées.
+export function retirerAnnulation() {
   if (!courant) return;
   clearTimeout(courant.minuterie);
   courant.fin.abort();

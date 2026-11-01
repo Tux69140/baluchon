@@ -33,8 +33,8 @@ export const ligneDerniere = (t, derniere, neuve = false) =>
     ? `<p class="reglages-date" id="date-sauvegarde"${neuve ? ' data-neuve' : ''}>${echapper(t('reglages.sauvegarde.derniere'))} <b>${echapper(derniere)}</b></p>`
     : `<p class="reglages-date" id="date-sauvegarde">${echapper(t('reglages.sauvegarde.aucune'))}</p>`;
 
-// « Restaurer une sauvegarde… » est dessiné à sa place, inactif : son geste vient avec la tâche suivante
-// de la phase.
+// « Restaurer une sauvegarde… » ouvre le sélecteur de fichiers du système par le champ caché dessous : le
+// bouton reste le seul point d'entrée, au clavier comme au doigt.
 const blocSauvegarde = (t, derniere) => `
       <section class="reglages-bloc" aria-labelledby="titre-sauvegarde">
         <h2 id="titre-sauvegarde">${t('reglages.sauvegarde.titre')}</h2>
@@ -45,8 +45,9 @@ const blocSauvegarde = (t, derniere) => `
             ${ligneDerniere(t, derniere)}
           </div>
           <div class="reglages-colonne reglages-colonne-seconde">
-            <button type="button" class="bouton bouton-secondaire" data-geste="restaurer" aria-describedby="aide-restaurer" disabled>${iconeInterface('restaurer')}${echapper(t('reglages.sauvegarde.restaurer'))}</button>
+            <button type="button" class="bouton bouton-secondaire" data-geste="restaurer" aria-describedby="aide-restaurer">${iconeInterface('restaurer')}${echapper(t('reglages.sauvegarde.restaurer'))}</button>
             <p class="reglages-aide" id="aide-restaurer">${echapper(t('reglages.sauvegarde.restaurerAide'))}</p>
+            <input type="file" accept=".json,application/json" data-champ="fichier" hidden tabindex="-1" aria-hidden="true" />
           </div>
         </div>
       </section>`;

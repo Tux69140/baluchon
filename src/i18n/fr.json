@@ -496,6 +496,28 @@
         "titre": "Accès aux fichiers refusé",
         "texte": "Sans votre autorisation, Baluchon ne peut rien déposer dans Téléchargements : aucun fichier n’a été écrit.",
         "comment": "Touchez de nouveau « Sauvegarder » et acceptez la demande d’Android. Si elle ne s’affiche plus : Paramètres d’Android, Applications, Baluchon, Autorisations, puis Stockage."
+      },
+      "restauration": {
+        "titre": "Restaurer la sauvegarde du {date} ?",
+        "contenu": "Elle contient {voyages} et une bibliothèque de {objets}.",
+        "voyages": { "one": "{n} voyage", "other": "{n} voyages" },
+        "objets": { "one": "{n} objet", "other": "{n} objets" },
+        "remplacement": "Tout ce qui est sur cet appareil sera remplacé. Une copie de l’état actuel sera d’abord déposée dans Téléchargements.",
+        "garder": "Garder mes données",
+        "restaurer": "Restaurer",
+        "reussie": "Sauvegarde du {date} restaurée.",
+        "refus": {
+          "titre": "Restauration impossible",
+          "abime": "Ce fichier est abîmé ou incomplet.",
+          "format": "Ce fichier n’est pas une sauvegarde de Baluchon.",
+          "version": "Cette sauvegarde vient d’une version plus récente de Baluchon. Mettez l’appli à jour pour la restaurer.",
+          "rien": "Rien n’a été modifié."
+        },
+        "refusee": "Rien n’a été remplacé.",
+        "panne": {
+          "titre": "La restauration n’a pas abouti",
+          "texte": "Rien n’a été modifié : vos données sont telles qu’avant."
+        }
       }
     }
   },

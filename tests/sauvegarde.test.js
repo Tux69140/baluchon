@@ -61,6 +61,8 @@ test('un champ manquant ou mal typé est abîmé', () => {
   assert.equal(raison(fichier(s => delete s.bibliotheque.objets[0].nom)), 'abime');
   assert.equal(raison(fichier(s => (s.voyages[0].objets[0].quantite = '3'))), 'abime');
   assert.equal(raison(fichier(s => delete s.langue)), 'abime');
+  // Une date de création illisible ferait échouer l'affichage de la confirmation : fichier abîmé.
+  assert.equal(raison(fichier(s => (s.creeLe = 'hier soir'))), 'abime');
 });
 
 test('un identifiant en double dans une table est abîmé', () => {

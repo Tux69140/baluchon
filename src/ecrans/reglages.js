@@ -3,13 +3,13 @@
 // depuis la phase 12, le Thème et la Sauvegarde (maquette docs/maquettes/reglages/, disposition dans
 // reglages-vues.js). Le thème choisi s'applique aussitôt et se retient sur l'appareil ; « Sauvegarder »
 // dépose un fichier dans Téléchargements (src/ecrans/sauvegarde.js) et la date de la dernière sauvegarde se
-// met à jour.
+// met à jour ; « Restaurer une sauvegarde… » ouvre le sélecteur de fichiers du système et mène la restauration.
 import { formaterInstant } from './format.js';
 import { iconeInterface } from './icones.js';
 import { barreHaut, ouvrirMenu } from './menu.js';
 import { suivreFin } from './mode-rangement.js';
 import { ligneDerniere, vueBlocs } from './reglages-vues.js';
-import { sauvegarder } from './sauvegarde.js';
+import { restaurer, sauvegarder } from './sauvegarde.js';
 import { appliquerTheme } from './theme.js';
 
 // Une ligne : son picto, son titre et sa phrase d'aide.
@@ -54,8 +54,8 @@ export const ecranReglages = {
       stockage.ecrireTheme(evenement.target.value);
       appliquerTheme(stockage);
     });
-    // Un seul dépôt à la fois ; la date se met à jour (avec un bref fond vert) si elle a changé, sans
-    // redessiner l'écran : le bouton garde le focus.
+    // Un seul geste de sauvegarde à la fois (« Sauvegarder » ou « Restaurer ») ; la date se met à jour (avec
+    // un bref fond vert) si elle a changé, sans redessiner l'écran : le bouton garde le focus.
     let enCours = false;
     main.querySelector('[data-geste="sauvegarder"]').addEventListener('click', async () => {
       if (enCours) return;
@@ -65,6 +65,31 @@ export const ecranReglages = {
         await sauvegarder(contexte, { app, signal });
         if (!main.isConnected || stockage.lireDerniereSauvegarde() === avant) return;
         main.querySelector('#date-sauvegarde').outerHTML = ligneDerniere(t, derniereSauvegarde(contexte), true);
+      } finally {
+        enCours = false;
+      }
+    });
+    // « Restaurer une sauvegarde… » : le bouton ouvre le sélecteur de fichiers du système (le champ caché
+    // dessous). La valeur du champ est vidée dès la lecture : choisir deux fois le même fichier doit réagir.
+    // Annuler le sélecteur ne livre aucun fichier : rien ne se passe.
+    const champ = main.querySelector('[data-champ="fichier"]');
+    main.querySelector('[data-geste="restaurer"]').addEventListener('click', () => {
+      if (!enCours) champ.click();
+    });
+    champ.addEventListener('change', async () => {
+      const fichier = champ.files[0];
+      if (!fichier || enCours) return void (champ.value = '');
+      enCours = true;
+      try {
+        let texte;
+        try {
+          texte = await fichier.text();
+        } catch (erreur) {
+          console.error(erreur);
+          texte = '';
+        }
+        champ.value = '';
+        await restaurer(contexte, texte, { signal });
       } finally {
         enCours = false;
       }
