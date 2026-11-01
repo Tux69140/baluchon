@@ -29,7 +29,7 @@ import './styles/changements.css';
 import './styles/menu-voyage.css';
 import fr from './i18n/fr.json';
 import { creerTraducteur } from './i18n/traduction.js';
-import { ecouterRetourSysteme, ouvrirStockage } from './stockage/index.js';
+import { ecouterRetourSysteme, lireTheme, ouvrirStockage } from './stockage/index.js';
 import { construireBibliotheque } from './modele/bibliotheque.js';
 import { nouvelId } from './modele/identifiant.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
@@ -43,13 +43,15 @@ import { ecranBibliotheque } from './ecrans/bibliotheque.js';
 import { ecranEtiquettes } from './ecrans/etiquettes.js';
 import { retourDansLAppli } from './ecrans/retour-systeme.js';
 import { surveillerEcritures } from './ecrans/annulation.js';
-import { appliquerTheme } from './ecrans/theme.js';
+import { appliquerTheme, poserTheme } from './ecrans/theme.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
 const LANGUE = 'fr';
 const t = creerTraducteur({ fr }, LANGUE);
 const app = document.querySelector('#app');
 
+// Le thème choisi, avant tout await : aucun éclair de l'autre thème au lancement.
+poserTheme(lireTheme());
 document.documentElement.lang = LANGUE;
 document.title = t('appli.nom');
 
@@ -194,7 +196,7 @@ async function afficher() {
 async function demarrer() {
   // Toute écriture dans la bibliothèque, hors rétablissement, retire d'abord le bandeau « Annuler ».
   stockage = surveillerEcritures(await ouvrirStockage());
-  // Le thème choisi, posé avant tout dessin : aucun éclair du mauvais thème au lancement.
+  // Suivi de l'appareil et couleur des barres système, qui ont besoin du stockage.
   appliquerTheme(stockage);
   // La bibliothèque de départ s'installe une seule fois, dans la langue du premier lancement ; elle
   // appartient ensuite à l'utilisateur (docs/PRD.md, « Données »).

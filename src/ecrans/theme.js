@@ -8,18 +8,17 @@ const REQUETE = '(prefers-color-scheme: dark)';
 // Un seul suivi de l'appareil, même si appliquerTheme est rappelé : il relit le stockage le plus récent.
 let suivi = null;
 
+// La règle « choix -> attribut » : seule définition. Appelée dès le début du démarrage (src/main.js), avant
+// tout await, pour que la page ne s'affiche jamais un instant dans le thème de l'appareil.
+export function poserTheme(choix) {
+  if (choix === 'appareil') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = choix === 'sombre' ? 'dark' : 'light';
+}
+
 function appliquer(stockage, appareil) {
-  const racine = document.documentElement;
   const choix = stockage.lireTheme();
-  let sombre;
-  if (choix === 'appareil') {
-    delete racine.dataset.theme;
-    sombre = appareil.matches;
-  } else {
-    sombre = choix === 'sombre';
-    racine.dataset.theme = sombre ? 'dark' : 'light';
-  }
-  stockage.reglerBarres(sombre);
+  poserTheme(choix);
+  stockage.reglerBarres(choix === 'appareil' ? appareil.matches : choix === 'sombre');
 }
 
 export function appliquerTheme(stockage) {

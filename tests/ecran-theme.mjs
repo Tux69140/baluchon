@@ -23,6 +23,13 @@ const DONNEES = { voyages: [] };
 // Posé avant le chargement : le thème de la racine au moment où #app reçoit du contenu pour la première fois.
 const OBSERVER = () => {
   window.themeAuPremierContenu = undefined;
+  // Le thème déjà posé quand le script de démarrage rend la main pour la première fois : à la fin du
+  // chargement du document, avant que le stockage (import dynamique) soit ouvert. Posé plus tard, la page
+  // s'afficherait un instant dans le thème de l'appareil.
+  document.addEventListener(
+    'DOMContentLoaded',
+    () => (window.themeAuDemarrage = document.documentElement.dataset.theme ?? null),
+  );
   const guetter = () => {
     const app = document.querySelector('#app');
     if (!app) return requestAnimationFrame(guetter);
@@ -38,6 +45,7 @@ const lire = page =>
   page.evaluate(() => ({
     theme: document.documentElement.dataset.theme ?? null,
     premier: window.themeAuPremierContenu,
+    demarrage: window.themeAuDemarrage,
     barres: window.barresReglees ?? null,
     fond: getComputedStyle(document.body).backgroundColor,
   }));
@@ -60,6 +68,7 @@ const clair = fond => /^rgb\((24[0-9]|25[0-5])/.test(fond);
   const e = await lire(page);
   juge.exige(e.theme === 'dark', `Sombre : data-theme = ${e.theme}`);
   juge.exige(e.premier === 'dark', `Sombre : au premier contenu, data-theme = ${e.premier}`);
+  juge.exige(e.demarrage === 'dark', `Sombre : au premier rendu de la main, data-theme = ${e.demarrage}`);
   juge.exige(!clair(e.fond), `Sombre : fond clair ${e.fond}`);
   juge.exige(JSON.stringify(e.barres) === '[true]', `Sombre : barres ${JSON.stringify(e.barres)}`);
   await page.emulateMedia({ colorScheme: 'dark' });
@@ -76,6 +85,7 @@ const clair = fond => /^rgb\((24[0-9]|25[0-5])/.test(fond);
   const { page, contexte, erreurs } = await ouvrirAvec('clair', { choix: 'clair', appareil: 'dark' });
   const e = await lire(page);
   juge.exige(e.theme === 'light' && e.premier === 'light', `Clair : ${JSON.stringify(e)}`);
+  juge.exige(e.demarrage === 'light', `Clair : au premier rendu de la main, data-theme = ${e.demarrage}`);
   juge.exige(clair(e.fond), `Clair : fond sombre ${e.fond}`);
   juge.exige(JSON.stringify(e.barres) === '[false]', `Clair : barres ${JSON.stringify(e.barres)}`);
   await page.emulateMedia({ colorScheme: 'light' });
