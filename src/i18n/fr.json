@@ -148,6 +148,11 @@
       "one": "{n} voyageur",
       "other": "{n} voyageurs"
     },
+    "compte": {
+      "femmes": { "one": "{n} femme", "other": "{n} femmes" },
+      "hommes": { "one": "{n} homme", "other": "{n} hommes" },
+      "enfants": { "one": "{n} enfant", "other": "{n} enfants" }
+    },
     "details": "{periode} · {voyageurs}",
     "vide": {
       "titre": "Créez votre premier voyage",
@@ -209,9 +214,15 @@
     "nom": "Nom du voyage",
     "destination": "Destination (facultatif)",
     "dates": "Dates",
-    "voyageurs": "Voyageurs",
-    "moinsVoyageurs": "Un voyageur de moins",
-    "plusVoyageurs": "Un voyageur de plus",
+    "composition": {
+      "legende": "Voyageurs",
+      "total": "{n} en tout",
+      "groupes": { "femmes": "Femmes", "hommes": "Hommes", "enfants": "Enfants" },
+      "moins": { "femmes": "Une femme de moins", "hommes": "Un homme de moins", "enfants": "Un enfant de moins" },
+      "plus": { "femmes": "Une femme de plus", "hommes": "Un homme de plus", "enfants": "Un enfant de plus" },
+      "aucun": "Ajoutez au moins une personne.",
+      "max": "Un voyage compte au plus 20 voyageurs."
+    },
     "creer": "Créer le voyage",
     "resume": {
       "vide": "Touchez le jour du départ, puis celui du retour.",
@@ -224,7 +235,6 @@
       "datesInvalides": "Ces dates n’existent pas dans le calendrier.",
       "retourAvantDepart": "Le retour ne peut pas précéder le départ.",
       "tropLong": "Un voyage dure au plus un an.",
-      "voyageursHorsLimites": "Le nombre de voyageurs va de 1 à 20.",
       "enregistrement": "Le voyage n’a pas pu être enregistré. Rien n’a été modifié ; réessayez."
     }
   },
@@ -1280,9 +1290,17 @@
         "other": "{n} jours au lieu de {avant}"
       },
       "datesDecalees": "Dates décalées",
-      "voyageurs": {
-        "one": "{n} voyageur au lieu de {avant}",
-        "other": "{n} voyageurs au lieu de {avant}"
+      "composition": {
+        "plus": {
+          "femmes": { "one": "{n} femme de plus", "other": "{n} femmes de plus" },
+          "hommes": { "one": "{n} homme de plus", "other": "{n} hommes de plus" },
+          "enfants": { "one": "{n} enfant de plus", "other": "{n} enfants de plus" }
+        },
+        "moins": {
+          "femmes": { "one": "{n} femme de moins", "other": "{n} femmes de moins" },
+          "hommes": { "one": "{n} homme de moins", "other": "{n} hommes de moins" },
+          "enfants": { "one": "{n} enfant de moins", "other": "{n} enfants de moins" }
+        }
       },
       "ajoutee": "+ {nom}",
       "retiree": "− {nom}"
@@ -1292,6 +1310,8 @@
       "toutDansLeSac": "déjà tout dans le sac",
       "resteA": "reste à {n}",
       "nouveauPour": "nouveau · pour « {etiquette} »",
+      "nouveauPourGroupe": "nouveau · pour {groupe}",
+      "groupeRetire": "plus personne pour {groupe}",
       "nouveau": "nouveau",
       "pasAjoute": "ne sera pas ajouté",
       "retire": "retiré",
@@ -1305,6 +1325,13 @@
       "garder": "Garder {n}",
       "recalculer": "Recalculer : {n}",
       "quantiteDe": "{nom} : quantité"
+    },
+    "pourQui": {
+      "tous": "tous",
+      "adultes": "les adultes",
+      "femmes": "les femmes",
+      "hommes": "les hommes",
+      "enfants": "les enfants"
     },
     "case": {
       "quantite": "{nom} : {avant} → {apres}",

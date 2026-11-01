@@ -63,17 +63,20 @@ try {
         'témoin : le calcul ne voit pas le bleu ciel trop pâle sur la carte claire',
       );
 
-    // Un jour au milieu de la période, atteint au clavier ; puis le bouton « un voyageur de plus ».
+    // Un jour au milieu de la période, atteint au clavier ; puis le bouton « Une femme de moins ».
     await page.click('[data-jour="2026-10-10"]');
     await page.click('[data-jour="2026-10-14"]');
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
     const jour = await contour(page);
     await page.locator('.calendrier').screenshot({ path: join(CAPTURES, `focus-jour-${nomTheme}.png`) });
-    await page.focus('[data-voyageurs="-1"]');
+    await page.focus('[data-groupe="femmes"][data-pas="-1"]');
     await page.keyboard.press('Tab');
     const bouton = await contour(page);
-    await page.locator('.compteur').screenshot({ path: join(CAPTURES, `focus-bouton-${nomTheme}.png`) });
+    await page
+      .locator('.compteur')
+      .first()
+      .screenshot({ path: join(CAPTURES, `focus-bouton-${nomTheme}.png`) });
 
     for (const [cas, vu] of [
       [`${nomTheme}, jour`, jour],

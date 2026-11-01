@@ -104,7 +104,9 @@ try {
     destination: 'Autrans',
     depart: '2026-10-10',
     retour: '2026-10-13',
-    voyageurs: 2,
+    femmes: 1,
+    hommes: 1,
+    enfants: 0,
   };
   const temoin = await ouvrir(navigateur, serveur.url, {
     taille: FORMATS['tablette-portrait'],

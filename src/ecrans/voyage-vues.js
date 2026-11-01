@@ -82,7 +82,7 @@ function vueEntete({ t, langue }, voyage, etiquettes) {
       </div>
       <div class="voyage-entete">
         ${destination}
-        <p class="voyage-details">${echapper(detailsVoyage(t, voyage, langue))}</p>${vueEtiquettes(t, etiquettes)}
+        <p class="voyage-details">${echapper(detailsVoyage(t, voyage, langue, { detail: true }))}</p>${vueEtiquettes(t, etiquettes)}
       </div>`;
 }
 

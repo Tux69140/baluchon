@@ -39,6 +39,7 @@ const objetModele = (id, categorieId, nom) => ({
   valeur: 1,
   plafond: null,
   parPersonne: true,
+  pourQui: 'tous',
   consommable: false,
   toujoursInclus: true,
   note: '',

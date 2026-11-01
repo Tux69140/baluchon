@@ -41,14 +41,7 @@ const vueInformations = t => `
             <label for="destination">${t('nouveauVoyage.destination')}</label>
             <input id="destination" name="destination" type="text" autocomplete="off" />
           </div>
-          <fieldset class="champ champ-voyageurs">
-            <legend>${t('nouveauVoyage.voyageurs')}</legend>
-            <div class="compteur">
-              <button type="button" class="bouton-icone" data-voyageurs="-1" aria-label="${t('nouveauVoyage.moinsVoyageurs')}">${iconeInterface('moins')}</button>
-              <output class="compteur-valeur" aria-live="polite"></output>
-              <button type="button" class="bouton-icone" data-voyageurs="1" aria-label="${t('nouveauVoyage.plusVoyageurs')}">${iconeInterface('plus')}</button>
-            </div>
-          </fieldset>
+          <div class="place-composition"></div>
           <fieldset class="champ champ-dates" aria-describedby="resume-dates erreur-dates">
             <legend>${t('nouveauVoyage.dates')}</legend>
             <p class="resume-dates" id="resume-dates" aria-live="polite"></p>
@@ -188,7 +181,7 @@ export function vueApercu(t, langue, { apercu, ecartes, infos, etiquettes, reven
   const titre = remplir(pluriel(t, 'nouveauVoyage.retenus', retenus, langue), { total: ids.length });
   const rappel = remplir(t(etiquettes.length ? 'nouveauVoyage.rappelEtiquettes' : 'nouveauVoyage.rappel'), {
     nom: echapper(infos.nom),
-    details: detailsVoyage(t, infos, langue),
+    details: detailsVoyage(t, infos, langue, { detail: true }),
     etiquettes: etiquettes.map(e => echapper(e.nom)).join(t('nouveauVoyage.separateurEtiquettes')),
   });
   const message =

@@ -1,7 +1,7 @@
 // Mise en forme des dates et des nombres pour l'écran, dans la langue de l'appli : les noms des jours
 // et des mois viennent du navigateur (Intl), il n'y a donc rien à traduire de notre côté.
 import { remplir } from '../i18n/traduction.js';
-import { totalVoyageurs } from '../modele/composition.js';
+import { GROUPES_COMPOSITION, totalVoyageurs } from '../modele/composition.js';
 
 // Une date de calendrier se lit à midi UTC et se formate en UTC : aucun fuseau ne la décale.
 const enDate = date => new Date(`${date}T12:00:00Z`);
@@ -32,12 +32,20 @@ export function pluriel(t, cle, n, langue) {
   return remplir(t(`${cle}.${forme}`), { n });
 }
 
-// La ligne « du sam. 10 oct. au mar. 13 oct. 2026 · 2 voyageurs », commune à la carte du voyage et à
-// son en-tête.
-export const detailsVoyage = (t, voyage, langue) =>
+// « 2 femmes, 1 enfant » : les groupes présents d'un voyage, les groupes vides omis.
+export const detailComposition = (t, c, langue) =>
+  GROUPES_COMPOSITION.filter(g => c[g] > 0)
+    .map(g => pluriel(t, `voyages.compte.${g}`, c[g], langue))
+    .join(', ');
+
+// La ligne « du sam. 10 oct. au mar. 13 oct. 2026 · 3 voyageurs », commune à la carte du voyage et à
+// son en-tête ; avec detail, la composition (« 2 femmes, 1 enfant ») remplace le total : en-tête et aperçu.
+export const detailsVoyage = (t, voyage, langue, { detail = false } = {}) =>
   remplir(t('voyages.details'), {
     periode: formaterPeriode(t, voyage.depart, voyage.retour, langue),
-    voyageurs: pluriel(t, 'voyages.voyageurs', totalVoyageurs(voyage), langue),
+    voyageurs: detail
+      ? detailComposition(t, voyage, langue)
+      : pluriel(t, 'voyages.voyageurs', totalVoyageurs(voyage), langue),
   });
 
 // « 2 par jour et par personne, au plus 5 par personne » : la règle de quantité d'un objet, dite en

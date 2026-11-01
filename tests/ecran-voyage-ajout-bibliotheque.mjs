@@ -137,6 +137,7 @@ try {
           valeur: 3,
           plafond: null,
           parPersonne: false,
+          pourQui: 'tous',
           consommable: false,
           toujoursInclus: false,
           note: '',

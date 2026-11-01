@@ -41,6 +41,7 @@ export const ajoute = (categorieId, nom, quantite) => ({
   valeur: 0,
   plafond: null,
   parPersonne: true,
+  pourQui: 'tous',
   consommable: false,
   quantite,
   quantiteManuelle: true,

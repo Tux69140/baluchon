@@ -26,6 +26,7 @@ import {
   vuePied,
 } from './assistant-vues.js';
 import { DUREE_ALERTE } from './alerte.js';
+import { vueComposition } from './composition-vues.js';
 import { creerCalendrier } from './calendrier.js';
 import { demander, ouvrirFenetre, poserGardeRetour } from './fenetre.js';
 import { iconeInterface } from './icones.js';
@@ -119,14 +120,7 @@ export function ouvrirAssistant(app, contexte, mode) {
 
   function rafraichirInfos() {
     element('#resume-dates').textContent = resumeDates(infos, t, langue);
-    // Provisoire (jusqu'à la tâche 3 de la phase 13) : un seul compteur, qui règle les femmes.
-    const total = totalVoyageurs(infos);
-    element('.compteur-valeur').textContent = total;
-    element('[data-voyageurs="-1"]').setAttribute(
-      'aria-disabled',
-      total <= 1 || infos.femmes <= BORNES_COMPOSITION.min,
-    );
-    element('[data-voyageurs="1"]').setAttribute('aria-disabled', total >= BORNES_COMPOSITION.total);
+    element('.place-composition').innerHTML = vueComposition(t, infos);
     peindreRangee();
     suivreGarde();
     if (!essaye) return;
@@ -206,6 +200,8 @@ export function ouvrirAssistant(app, contexte, mode) {
     const premier = CHAMPS.find(champ => erreurs[champ]);
     if (premier === 'nom') element('#nom').focus();
     if (premier === 'dates') element('.jour[tabindex="0"]').focus();
+    // Aucun voyageur : le focus va au « + » de la première ligne, le geste qui répare.
+    if (!premier && erreurs.composition) element('[data-groupe][data-pas="1"]').focus();
   }
 
   // Le seul chemin d'une étape à l'autre (Suivant, Précédent, rangée, « Voir l'aperçu ») : au-delà
@@ -364,6 +360,20 @@ export function ouvrirAssistant(app, contexte, mode) {
   }
   window.addEventListener('bibliotheque-retablie', relireBibliotheque, { signal: fin.signal });
 
+  // Un « + » ou un « − » d'un groupe : un bouton grisé ne fait rien. Le bouton garde le focus ; arrivé à sa
+  // borne (il se grise), le focus passe à son voisin, sinon il se perdrait avec le bouton redessiné.
+  function changerComposition(bouton, groupe, pas) {
+    if (bouton.getAttribute('aria-disabled') === 'true') return;
+    const voulu = infos[groupe] + pas;
+    if (voulu < BORNES_COMPOSITION.min || voulu > BORNES_COMPOSITION.max) return;
+    if (totalVoyageurs(infos) + pas > BORNES_COMPOSITION.total) return;
+    infos[groupe] = voulu;
+    rafraichirInfos();
+    const boutonDe = sens => element(`[data-groupe="${groupe}"][data-pas="${sens}"]`);
+    const meme = boutonDe(pas);
+    (meme.getAttribute('aria-disabled') === 'true' ? boutonDe(-pas) : meme).focus();
+  }
+
   function basculerPuce(puce) {
     etat = basculerEtiquette(etat, puce.dataset.etiquette);
     const choisie = etat.choisies.has(puce.dataset.etiquette);
@@ -401,16 +411,12 @@ export function ouvrirAssistant(app, contexte, mode) {
   racine.addEventListener('click', evenement => {
     // Les cases de la dernière étape sont au mode (objets de l'aperçu, changements).
     if (etat.etape === derniere && mode.derniere.clic(evenement.target, outils())) return;
-    const cible = evenement.target.closest('[data-aller], [data-action], [data-etiquette], [data-voyageurs]');
+    const cible = evenement.target.closest('[data-aller], [data-action], [data-etiquette], [data-groupe]');
     if (!cible) return;
-    const { aller: indice, action, etiquette, voyageurs } = cible.dataset;
+    const { aller: indice, action, etiquette, groupe, pas } = cible.dataset;
     if (indice !== undefined && cible.getAttribute('aria-disabled') !== 'true') aller(Number(indice));
-    else if (voyageurs) {
-      const voulu = infos.femmes + Number(voyageurs);
-      const total = totalVoyageurs(infos) + Number(voyageurs);
-      if (voulu >= BORNES_COMPOSITION.min && total >= 1 && total <= BORNES_COMPOSITION.total) infos.femmes = voulu;
-      rafraichirInfos();
-    } else if (etiquette) basculerPuce(cible);
+    else if (groupe) changerComposition(cible, groupe, Number(pas));
+    else if (etiquette) basculerPuce(cible);
     else if (action === 'precedent') aller(etat.etape - 1);
     else if (action === 'apercu') aller(derniere);
     else if (action === 'fermer') demanderFermeture();

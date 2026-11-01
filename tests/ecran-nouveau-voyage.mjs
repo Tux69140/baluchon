@@ -15,8 +15,7 @@
 //   bouge, focus sur le nom ; le nom et les dates sont dits invalides au lecteur d'écran ; le
 //   message du nom (et son « invalide ») s'efface une fois le nom saisi, celui des dates reste ;
 // - au clavier : flèches, Page suiv., Entrée et Espace ;
-// - voyageurs : 2 par défaut, bornés à 1 et 20 (Playwright tient un bouton aria-disabled pour
-//   inactif et l'attendrait : les appuis qui doivent être refusés sont forcés) ;
+// - voyageurs : 1 femme et 1 homme par défaut (leurs bornes : ecran-nouveau-voyage-composition.mjs) ;
 // - double appui sur Créer : un seul voyage ; panne d'enregistrement : bandeau d'alerte (phase 4), on
 //   reste sur l'aperçu, le bouton Créer ne bouge pas, la saisie est gardée (Informations) ; la panne
 //   levée, un second appui crée le voyage (un seul).
@@ -50,7 +49,9 @@ const PAQUES = {
   destination: '',
   depart: '2026-04-03',
   retour: '2026-04-06',
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   modifieLe: 'x',
 };
 const jour = date => `[data-jour="${date}"]`;
@@ -87,7 +88,9 @@ const etat = page =>
     entre: [...document.querySelectorAll('.jour-entre')].map(b => b.dataset.jour),
     resume: document.querySelector('#resume-dates')?.textContent.trim(),
     focus: document.activeElement?.dataset?.jour ?? document.activeElement?.id ?? null,
-    voyageurs: document.querySelector('.compteur-valeur')?.textContent.trim(),
+    voyageurs: String(
+      [...document.querySelectorAll('.compteur-valeur')].reduce((n, o) => n + Number(o.textContent), 0),
+    ),
   }));
 
 // Les objets du voyage et leur quantité. Sur tablette, une seule catégorie montre les siens : chaque
@@ -321,21 +324,6 @@ try {
     await contexte.close();
   }
 
-  // Voyageurs bornés de 1 à 20.
-  {
-    const { contexte, page } = await nouveauFormulaire(navigateur, serveur.url);
-    await page.click('[data-voyageurs="-1"]');
-    await page.click('[data-voyageurs="-1"]', { force: true });
-    const min = await page.evaluate(() => ({
-      valeur: document.querySelector('.compteur-valeur').textContent,
-      inactif: document.querySelector('[data-voyageurs="-1"]').getAttribute('aria-disabled'),
-    }));
-    juge.exige(min.valeur === '1' && min.inactif === 'true', `voyageurs : minimum ${JSON.stringify(min)}`);
-    for (let i = 0; i < 25; i++) await page.click('[data-voyageurs="1"]', { force: true });
-    juge.exige((await etat(page)).voyageurs === '20', `voyageurs : maximum ${(await etat(page)).voyageurs}`);
-    await contexte.close();
-  }
-
   // Double appui : un seul voyage.
   {
     const { contexte, page } = await nouveauFormulaire(navigateur, serveur.url);
@@ -423,7 +411,4 @@ try {
   await navigateur.close();
   await serveur.fermer();
 }
-juge.conclure(
-  'Écran Nouveau voyage',
-  'parcours, calendrier, erreurs, clavier, voyageurs, pannes, 3 formats × 2 thèmes',
-);
+juge.conclure('Écran Nouveau voyage', 'parcours, calendrier, erreurs, clavier, pannes, 3 formats × 2 thèmes');

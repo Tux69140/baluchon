@@ -1,7 +1,7 @@
 // Phase 5 (docs/PLAN.md) : la fiche d'un objet modèle (maquette validée le 2026-10-25,
 // docs/maquettes/bibliotheque/, états « fiche-objet », « nouvel-objet », « refus »).
 // - fiche de Repas : « Par jour » coché, 2, plafond inactif, « Par personne », encadré « 2 par jour et
-//   par personne » et « Pour 4 jours, 3 nuits et 2 voyageurs : 16. » ; plafond activé puis 6 → « … : 12. » ;
+//   par personne » et « Pour 10 jours, 9 nuits et 3 voyageurs : 60. » ; plafond activé puis 6 → « … : 18. » ;
 //   « Fixe » → plus de plafond ;
 // - Review Focus 5 : valeur vidée puis « Enregistrer » → « Indiquez une quantité, de 1 à 999. » à sa
 //   place, rien ne bouge au-dessus, rien d'écrit ; « 0 » → 1 ; « 1000 » → 999 ; « 12a » → 12 ; − / +
@@ -82,7 +82,7 @@ async function essaiRepas() {
       repas.valeur === '2' &&
       repas.plafondActif === 'false' &&
       repas.plafond === null &&
-      vu(repas.lecture) === vu([regle('parJourParPersonne', { valeur: 2 }), exemple(16)]),
+      vu(repas.lecture) === vu([regle('parJourParPersonne', { valeur: 2 }), exemple(60)]),
     `${cas} : ${vu(repas)}`,
   );
   await toucher(page, '[data-bascule="plafondActif"]');
@@ -94,7 +94,7 @@ async function essaiRepas() {
       vu(plafond.lecture) ===
         vu([
           regle('plafondParPersonne', { regle: regle('parJourParPersonne', { valeur: 2 }), plafond: 6 }),
-          exemple(12),
+          exemple(18),
         ]),
     `${cas} : plafond à 6 ${vu(plafond)}`,
   );
@@ -103,7 +103,7 @@ async function essaiRepas() {
   juge.exige(
     fixe?.plafondActif === null &&
       fixe.plafond === null &&
-      vu(fixe.lecture) === vu([regle('fixeParPersonne', { valeur: 2 }), exemple(4)]),
+      vu(fixe.lecture) === vu([regle('fixeParPersonne', { valeur: 2 }), exemple(6)]),
     `${cas} : Fixe ${vu(fixe)}`,
   );
   await segment(page, o.parJour);

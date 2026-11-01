@@ -115,7 +115,7 @@ const mesurer = page =>
       destination: boite('#destination'),
       dates: boite('fieldset:has(.calendrier)'),
       calendrier: boite('.calendrier'),
-      voyageurs: boite('fieldset:has(.compteur)'),
+      voyageurs: boite('.champ-composition'),
       actions: boite('.formulaire-actions'),
       pied: boite('.formulaire-pied'),
       // « Suivant » se voit : c'est bien lui qu'on touche en son milieu.

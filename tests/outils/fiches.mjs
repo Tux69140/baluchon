@@ -11,7 +11,7 @@ export const CATALOGUE = 'dialog.catalogue';
 // Le picto et le nom affichés d'un picto du catalogue.
 export const nomPicto = cle => fr.catalogue.pictos[cle].nom;
 export const exemple = quantite =>
-  remplir(m.objet.exemple, { jours: '4 jours', nuits: '3 nuits', voyageurs: '2 voyageurs', quantite });
+  remplir(m.objet.exemple, { jours: '10 jours', nuits: '9 nuits', voyageurs: '3 voyageurs', quantite });
 
 // Ce que montre la fiche ouverte ; null s'il n'y en a pas (ou si elle se ferme).
 export const lireFiche = page =>

@@ -1,6 +1,6 @@
 // Phase 12, tâche 6 : « Restaurer une sauvegarde… » de Réglages, ce qui ne remplace rien (le parcours réussi est
 // dans tests/ecran-restaurer.mjs ; le décor partagé, dans tests/outils/restaurer.mjs).
-// - refus (tronqué, autre format, version 2) : « Restauration impossible » ;
+// - refus (tronqué, autre format, version 3) : « Restauration impossible » ;
 // - copie préalable refusée : « Accès aux fichiers refusé » (texte : « Restaurer une sauvegarde… »), rien remplacé, puis témoin ;
 // - pannes (lecture de la copie, remplacement) : « La restauration n'a pas abouti », données inchangées ; la panne levée, elle réussit (témoin) ;
 // - fenêtre de confirmation refermée par Échap ou par la touche retour : rien n'est déposé ni remplacé, l'écran
@@ -39,7 +39,7 @@ const serveur = await demarrerServeur();
 const navigateur = await chromium.launch();
 const ouvrirReglages = (taille, options) => ouvrirReglagesDe(navigateur, serveur, taille, options);
 
-// 2. Refus : tronqué, autre format, version 2.
+// 2. Refus : tronqué, autre format, version 3.
 async function essaiRefus() {
   const { page, contexte, erreurs } = await ouvrirReglages(FORMATS['tablette-paysage']);
   const avant = await donneesDe(page);

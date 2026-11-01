@@ -1,6 +1,8 @@
 // Phase 10 (docs/superpowers/specs/2026-10-29-phase-10-plans-changent-design.md ; maquette validée
 // docs/maquettes/plans-changent/, états voyage, assistant, recapitulatif, sortie) : « Modifier le voyage ».
-// - l'assistant s'ouvre prérempli (nom, voyageurs, étiquettes du voyage) ;
+// - l'assistant s'ouvre prérempli (nom, composition, étiquettes du voyage) ;
+// - un enfant de plus : la puce « 1 enfant de plus » et l'objet pour les enfants entre, « nouveau · pour
+//   les enfants » ;
 // - critère : de 2 à 3 voyageurs, la ligne Repas dit 16 → 24 ; appliqué, Repas vaut 24 et une quantité
 //   fixée manuellement ne bouge pas (gardée par défaut) ;
 // - ajouter « Pluie » fait entrer le Poncho, avec sa quantité pour ce voyage ;
@@ -46,6 +48,7 @@ const objet = (id, categorieId, nom, regle, valeur, autres = {}) => ({
   valeur,
   plafond: null,
   parPersonne: true,
+  pourQui: 'tous',
   consommable: false,
   toujoursInclus: !autres.etiquettes?.length,
   note: '',
@@ -71,12 +74,21 @@ const BIBLIOTHEQUE = {
     objet('o-chaussures', 'c-vet', 'Chaussures de marche', 'fixe', 1, { parPersonne: false, etiquettes: ['e-rando'] }),
     objet('o-poncho', 'c-vet', 'Poncho', 'fixe', 1, { etiquettes: ['e-pluie'] }),
     objet('o-repas', 'c-ali', 'Repas', 'par_jour', 2, { consommable: true }),
+    objet('o-doudou', 'c-vet', 'Doudou', 'fixe', 1, { pourQui: 'enfants' }),
   ],
 };
 let n = 0;
 const contenu = genererVoyage(
   BIBLIOTHEQUE,
-  { nom: 'Quiberon', destination: 'Bretagne', depart: '2026-11-10', retour: '2026-11-13', voyageurs: 2 },
+  {
+    nom: 'Quiberon',
+    destination: 'Bretagne',
+    depart: '2026-11-10',
+    retour: '2026-11-13',
+    femmes: 1,
+    hommes: 1,
+    enfants: 0,
+  },
   { choisies: new Set(['e-rando']), ecartes: new Set() },
   { nouvelId: () => `id-${++n}`, maintenant: 'avant' },
 );
@@ -127,6 +139,7 @@ async function appliquer(page) {
   await attendreEcran(page, 'voyage');
   await calme(page);
 }
+const total = ({ femmes, hommes, enfants }) => femmes + hommes + enfants;
 const stocke = async (page, nom) => (await lireStockage(page)).objetsDuVoyage.find(o => o.nom === nom) ?? null;
 
 // Décision 11 : le Poncho a été écarté de ce voyage ; ajouter « Pluie » le propose, refusé et « retiré ».
@@ -162,10 +175,36 @@ async function verifierRetire(format, theme) {
   await fermerEssai(juge, cas, ouvert);
 }
 
+// Un enfant de plus : la puce de ce qui change, et l'objet pour les enfants qui entre avec sa raison.
+async function verifierComposition(format, theme) {
+  const cas = `composition ${format} ${NOMS_THEME[theme]}`;
+  const ouvert = await ouvrirVoyage(navigateur, serveur.url, { format, theme, donnees: DONNEES, voyageId: V });
+  const { page } = ouvert;
+  await ouvrirModification(page);
+  await page.click('.assistant [data-groupe="enfants"][data-pas="1"]');
+  await voirLesChangements(page);
+  const vue = await page.evaluate(() => ({
+    puces: [...document.querySelectorAll('.recap-modifs li')].map(li => li.textContent),
+    doudou: [...document.querySelectorAll('.recapitulatif .recap-ligne')]
+      .find(l => l.querySelector('.objet-nom').textContent === 'Doudou')
+      ?.querySelector('.objet-sous')
+      .textContent.trim(),
+  }));
+  juge.exige(vu(vue.puces) === vu(['1\u00a0enfant de plus']), `${cas} : puces ${vu(vue.puces)}`);
+  juge.exige(vue.doudou === 'nouveau · pour les enfants', `${cas} : Doudou « ${vue.doudou} »`);
+  await capture(page, 'voyage-modifier-composition', format, theme);
+  await appliquer(page);
+  const stocke = (await lireStockage(page)).voyages.find(v => v.id === V);
+  juge.exige(stocke.enfants === 1 && stocke.femmes === 1, `${cas} : voyage écrit ${vu(stocke)}`);
+  await fermerEssai(juge, cas, ouvert);
+}
+
 try {
   await mkdir(CAPTURES, { recursive: true });
   for (const format of ['telephone', 'tablette-portrait', 'tablette-paysage', 'ordinateur'])
     for (const theme of ['light', 'dark']) await verifierRetire(format, theme);
+  for (const format of ['telephone', 'tablette-paysage'])
+    for (const theme of ['light', 'dark']) await verifierComposition(format, theme);
   for (const [format, theme] of [
     ['telephone', 'light'],
     ['tablette-paysage', 'dark'],
@@ -178,18 +217,18 @@ try {
     await ouvrirModification(page);
     const prerempli = await page.evaluate(() => ({
       nom: document.querySelector('#nom').value,
-      voyageurs: document.querySelector('.compteur-valeur').textContent,
+      voyageurs: [...document.querySelectorAll('.composition-ligne .compteur-valeur')].map(o => o.textContent).join(),
       titre: document.querySelector('.assistant h1, .assistant h2').textContent.trim(),
     }));
     juge.exige(
-      vu(prerempli) === vu({ nom: 'Quiberon', voyageurs: '2', titre: m.titre }),
+      vu(prerempli) === vu({ nom: 'Quiberon', voyageurs: '1,1,0', titre: m.titre }),
       `${cas} : prérempli ${vu(prerempli)}`,
     );
     await aller(page, 1);
     const rando = await page.getAttribute('.assistant [data-etiquette="e-rando"]', 'aria-pressed');
     juge.exige(rando === 'true', `${cas} : Randonnée pas présélectionnée (${rando})`);
     await aller(page, 0);
-    await page.click('.assistant [data-voyageurs="1"]');
+    await page.click('.assistant [data-groupe="femmes"][data-pas="1"]');
     await capture(page, 'voyage-modifier-assistant', format, theme);
 
     // Critère : Repas 16 → 24, Pull fixé à 5 gardé par défaut.
@@ -270,7 +309,7 @@ try {
     // Panne d'écriture, puis un second appui qui réussit.
     await ecrireStockage(page, { ...(await lireStockage(page)), pannes: ['modifierVoyage'] });
     await ouvrirModification(page);
-    await page.click('.assistant [data-voyageurs="1"]');
+    await page.click('.assistant [data-groupe="femmes"][data-pas="1"]');
     await voirLesChangements(page);
     await page.click('.assistant [data-action="creer"]');
     const alerte = await attendreQue(page, () => document.querySelector('.assistant .alerte')?.textContent ?? false);
@@ -285,7 +324,7 @@ try {
 
     // Abandon après un changement : la question, puis rien n'a changé.
     await ouvrirModification(page);
-    await page.click('.assistant [data-voyageurs="-1"]');
+    await page.click('.assistant [data-groupe="femmes"][data-pas="-1"]');
     if (format === 'telephone') await page.click('.assistant .lien-retour');
     else await page.keyboard.press('Escape');
     await attendreQuestion(page);
@@ -294,7 +333,7 @@ try {
     await repondre(page, fr.nouveauVoyage.abandon.abandonner);
     await attendreEcran(page, 'voyage');
     juge.exige(
-      (await lireStockage(page)).voyages.find(v => v.id === V).voyageurs === 4,
+      total((await lireStockage(page)).voyages.find(v => v.id === V)) === 4,
       `${cas} : abandon a écrit ${vu((await lireStockage(page)).voyages)}`,
     );
     await fermerEssai(juge, cas, ouvert);

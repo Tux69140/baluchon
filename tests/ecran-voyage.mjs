@@ -186,7 +186,9 @@ try {
       const m = await lire(page);
       juge.exige(m.titre === NOM, `${cas} : titre « ${m.titre} »`);
       juge.exige(
-        m.entete.includes('Autrans') && m.entete.includes(fr.voyages.voyageurs.other.replace('{n}', 2)),
+        m.entete.includes('Autrans') &&
+          m.entete.includes(fr.voyages.compte.femmes.one.replace('{n}', 1)) &&
+          m.entete.includes(fr.voyages.compte.hommes.one.replace('{n}', 1)),
         `${cas} : en-tête « ${m.entete} »`,
       );
       juge.exige(m.retour === '#/voyages', `${cas} : retour ${m.retour}`);
@@ -281,7 +283,7 @@ try {
   const seul = await ouvrir(navigateur, serveur.url, {
     taille: FORMATS.telephone,
     theme: 'light',
-    donnees: { ...DONNEES, voyages: DONNEES.voyages.map(v => (v.id === 'v1' ? { ...v, voyageurs: 1 } : v)) },
+    donnees: { ...DONNEES, voyages: DONNEES.voyages.map(v => (v.id === 'v1' ? { ...v, hommes: 0 } : v)) },
     adresse: '#/voyage/v1',
   });
   const vuSeul = await lire(seul.page);

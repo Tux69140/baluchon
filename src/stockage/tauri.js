@@ -9,6 +9,8 @@ import {
   ecrireTheme,
   lireDerniereSauvegarde,
   ecrireDerniereSauvegarde,
+  lireDerniereComposition,
+  ecrireDerniereComposition,
 } from './preferences.js';
 
 export function creerStockageTauri() {
@@ -56,6 +58,8 @@ export function creerStockageTauri() {
     ecrireTheme,
     lireDerniereSauvegarde,
     ecrireDerniereSauvegarde,
+    lireDerniereComposition,
+    ecrireDerniereComposition,
     reglerBarres,
   });
 }

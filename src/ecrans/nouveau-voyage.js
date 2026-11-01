@@ -7,7 +7,7 @@
 // à l'étape précédente ; fermer l'assistant avec une saisie demande d'abord s'il faut l'abandonner.
 // Le moteur de l'assistant, commun avec « Modifier le voyage », vit dans src/ecrans/assistant-controleur.js ;
 // ce fichier n'en garde que ce qui est propre à la création : l'aperçu, les objets écartés, la copie.
-import { COMPOSITION_INITIALE } from '../modele/composition.js';
+import { composition } from '../modele/composition.js';
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { etiquettesChoisies, genererApercu } from '../modele/inclusion.js';
@@ -107,7 +107,7 @@ function modeCreation({ bibliotheque, accueil, aujourdhui }, contexte) {
   return {
     // Une forme constante : une date absente vaut '' (signatureDe compare les informations d'un aperçu
     // à l'autre ; '' et undefined y feraient deux signatures).
-    infos: { nom: '', destination: '', depart: '', retour: '', ...COMPOSITION_INITIALE },
+    infos: { nom: '', destination: '', depart: '', retour: '', ...stockage.lireDerniereComposition() },
     etat: creerAssistant(),
     bibliotheque,
     aujourdhui,
@@ -123,6 +123,8 @@ function modeCreation({ bibliotheque, accueil, aujourdhui }, contexte) {
         { nouvelId, maintenant: new Date().toISOString() },
       );
       await stockage.creerVoyage(contenu);
+      // Le prochain « Nouveau voyage » repart de cette composition (le voyage est écrit : rien n'est perdu si la préférence l'est).
+      stockage.ecrireDerniereComposition(composition(infos));
       return `#/voyage/${contenu.voyage.id}`;
     },
     derniere: etapeApercu(t, contexte.langue, apercuDe),

@@ -1,7 +1,7 @@
 // Qui voyage (docs/superpowers/specs/2026-11-01-phase-13-bibliotheque-traduisible-design.md,
 // « Comportement ») : la composition d'un voyage en trois groupes, et les cinq groupes de « Pour qui »
 // qu'un objet peut viser. Seul endroit où l'on compte des personnes.
-const GROUPES_COMPOSITION = Object.freeze(['femmes', 'hommes', 'enfants']);
+export const GROUPES_COMPOSITION = Object.freeze(['femmes', 'hommes', 'enfants']);
 export const POUR_QUI = Object.freeze(['tous', 'adultes', 'femmes', 'hommes', 'enfants']);
 
 // Chaque compteur va de 0 à 20 ; le total, de 1 à 20.

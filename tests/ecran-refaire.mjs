@@ -2,7 +2,7 @@
 // maquette validée le 2026-10-30, docs/maquettes/refaire/, états refaire-infos et refaire-etiquettes) :
 // l'assistant ouvert en mode « refaire » depuis le menu « ⋮ » du voyage ou de sa carte.
 // - aux quatre formats × 2 thèmes : fenêtre par-dessus le voyage (téléphone : plein écran), titrée
-//   « Refaire « … » » (nom piégé échappé) ; nom, destination et dates vides, 3 voyageurs repris ;
+//   « Refaire « … » » (nom piégé échappé) ; nom, destination et dates vides, composition (2 femmes, 1 enfant) reprise ;
 //   Randonnée reprise et cochée, Plongée (supprimée de la bibliothèque) absente, Pluie non cochée ;
 //   cibles de 44 px, pas de défilement de côté ; captures Informations et étiquettes ;
 // - fermer sans rien saisir ne demande rien et rend le voyage ; après un nom saisi, « Abandonner ce
@@ -70,7 +70,7 @@ const lireAssistant = page =>
       nom: document.querySelector('#nom')?.value ?? null,
       destination: document.querySelector('#destination')?.value ?? null,
       dates: texte(document.querySelector('#resume-dates')),
-      voyageurs: texte(document.querySelector('.compteur-valeur')),
+      voyageurs: [...document.querySelectorAll('.composition-ligne .compteur-valeur')].map(o => o.textContent).join(),
       etape: document.querySelector('.formulaire-corps')?.dataset.etape ?? null,
     };
   });
@@ -121,7 +121,7 @@ try {
             nom: '',
             destination: '',
             dates: nv.resume.vide,
-            voyageurs: '3',
+            voyageurs: '2,0,1',
             etape: 'infos',
           }),
         `${cas} : assistant ouvert ${vu(vue)}`,

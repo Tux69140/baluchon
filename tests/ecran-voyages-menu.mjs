@@ -40,7 +40,9 @@ const v = (id, nom, depart, retour) => ({
   destination: 'Quelque part',
   depart,
   retour,
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   modifieLe: 'x',
 });
 const VOYAGES = [

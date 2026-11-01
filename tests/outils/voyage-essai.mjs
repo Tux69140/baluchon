@@ -11,7 +11,9 @@ const voyage = (id, nom) => ({
   destination: 'Autrans',
   depart: '2026-10-10',
   retour: '2026-10-13',
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   modifieLe: 'x',
 });
 
@@ -36,6 +38,7 @@ const objet = (id, categorieId, nom, quantite, dansLeSac, extra = {}) => ({
   valeur: quantite,
   plafond: null,
   parPersonne: true,
+  pourQui: 'tous',
   consommable: false,
   quantite,
   quantiteManuelle: false,

@@ -66,19 +66,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Voyageurs sur une ligne : le libellé à gauche, − nombre + calé à droite, comme une ligne de
-   réglage. Un legend flottant redevient un enfant ordinaire du fieldset : il se range dans la ligne. */
-.champ-voyageurs {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-md);
-}
-
-.champ-voyageurs legend {
-  float: left;
-}
-
 .compteur {
   display: flex;
   align-items: center;
@@ -97,10 +84,89 @@
   gap: var(--e-sm);
 }
 
-/* Voyageurs monte avant les dates (décision du 2026-10-25) : il garde sous lui le même écart que les
-   autres champs, la place d'un message. */
-.formulaire .champ-voyageurs {
-  padding-bottom: calc(var(--e-xs) + var(--hauteur-message));
+/* ---------- Nouveau voyage : les trois compteurs ----------
+   La légende porte le total à son bout ; les compteurs sont les lignes d'une liste encadrée (une par
+   groupe, le nom à gauche, − nombre + à droite), au cadre des listes de l'appli. Dès que le champ a la
+   place (fenêtre en une colonne), les trois côte à côte, le nom au-dessus du compteur. La ligne du message
+   est réservée : erreur ou limite apparaissent sans rien faire bouger. */
+.place-composition {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.champ-composition legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--e-md);
+  width: 100%;
+  margin-bottom: var(--e-xs);
+}
+
+.composition-total {
+  color: var(--encre-douce);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.composition {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--separation);
+  border-radius: var(--r-md);
+  background: var(--carte);
+}
+
+.composition-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-md);
+  min-height: 56px;
+  padding: 0 var(--e-sm) 0 var(--e-md);
+}
+
+.composition-ligne + .composition-ligne {
+  border-top: 1px solid var(--separation);
+}
+
+.composition-nom {
+  font-size: var(--taille-objet);
+}
+
+.champ-composition .compteur-valeur {
+  min-width: 2ch;
+}
+
+.composition-message[data-etat='limite'] {
+  color: var(--encre-douce);
+}
+
+@container (min-width: 540px) {
+  .composition {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .composition-ligne {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--e-xs);
+    min-width: 0;
+    padding: var(--e-sm) 4px 10px;
+  }
+
+  .composition-ligne + .composition-ligne {
+    border-top: 0;
+    border-left: 1px solid var(--separation);
+  }
+
+  .composition-nom {
+    font-size: var(--taille-libelle);
+    font-weight: 600;
+    color: var(--encre-douce);
+  }
 }
 
 /* Écran plein (téléphone). Le pied de l'assistant : src/styles/assistant.css. */
@@ -161,5 +227,11 @@
   .formulaire .champ-dates {
     grid-column: 2;
     grid-row: 1 / -1;
+  }
+
+  /* Les trois compteurs s'empilent dans la colonne de gauche (trop étroite pour les trois côte à côte) :
+     un peu moins hauts, pour que cette colonne ne dépasse pas celle du calendrier. */
+  .composition-ligne {
+    min-height: 52px;
   }
 }

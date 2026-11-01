@@ -5,6 +5,7 @@ import fr from '../src/i18n/fr.json' with { type: 'json' };
 import { creerTraducteur } from '../src/i18n/traduction.js';
 import {
   decrireRegle,
+  detailComposition,
   detailsVoyage,
   formaterDate,
   formaterInstant,
@@ -82,4 +83,15 @@ test('un instant se lit à l’heure de l’appareil, en toutes lettres : « 31 
     '31 octobre 2026, 18\u00a0h\u00a040',
   );
   assert.equal(formaterInstant(t, new Date(2026, 0, 2, 7, 5).toISOString(), 'fr'), '2 janvier 2026, 7\u00a0h\u00a005');
+});
+
+test('detailComposition dit les groupes présents, au singulier ou au pluriel, groupes vides omis', () => {
+  assert.equal(detailComposition(t, { femmes: 2, hommes: 0, enfants: 1 }, 'fr'), '2\u00a0femmes, 1\u00a0enfant');
+  assert.equal(detailComposition(t, { femmes: 0, hommes: 1, enfants: 0 }, 'fr'), '1\u00a0homme');
+  assert.equal(
+    detailsVoyage(t, { depart: '2026-10-10', retour: '2026-10-13', femmes: 2, hommes: 0, enfants: 1 }, 'fr', {
+      detail: true,
+    }),
+    'du sam. 10 oct. au mar. 13 oct. 2026 · 2\u00a0femmes, 1\u00a0enfant',
+  );
 });

@@ -45,7 +45,7 @@ export const VALIDE = JSON.stringify(SAUVEGARDE);
 export const FICHIERS_REFUSES = {
   abime: VALIDE.slice(0, VALIDE.length / 2),
   format: JSON.stringify({ format: 'autre-chose', version: 1 }),
-  version: JSON.stringify({ ...SAUVEGARDE, version: 2 }),
+  version: JSON.stringify({ ...SAUVEGARDE, version: 3 }),
 };
 const resume = lireSauvegarde(VALIDE);
 assert.ok(resume.ok && resume.resume.voyages === 4 && resume.resume.objets === 312, 'la sauvegarde de l’essai');

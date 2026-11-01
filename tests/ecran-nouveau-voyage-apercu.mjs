@@ -87,7 +87,7 @@ const questionEcartes = (q, liste) =>
       { texte: ecartes.garder, principal: true },
     ]);
 const MAINTENANT = new Date('2026-10-06T10:00:00');
-const INFOS = { depart: '2026-11-13', retour: '2026-11-15', voyageurs: 2 };
+const INFOS = { depart: '2026-11-13', retour: '2026-11-15', femmes: 1, hommes: 1, enfants: 0 };
 const CHOISIES = ['Randonnée', 'Camping', 'Froid', 'Tente'];
 const TOUS_FORMATS = {
   ...Object.fromEntries(Object.entries(FORMATS).map(([nom, taille]) => [nom, { taille }])),

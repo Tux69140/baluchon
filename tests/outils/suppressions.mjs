@@ -19,7 +19,14 @@ export const QUESTION = 'dialog[role="alertdialog"]';
 // Les espaces insécables des textes se lisent comme des espaces.
 export const net = texte => texte?.replace(/\s+/g, ' ').trim() ?? null;
 
-const objet = (nom, etiquettes = []) => ({ nom, regle: 'fixe', valeur: 1, parPersonne: true, etiquettes });
+const objet = (nom, etiquettes = []) => ({
+  nom,
+  regle: 'fixe',
+  valeur: 1,
+  parPersonne: true,
+  pourQui: 'tous',
+  etiquettes,
+});
 
 // Les groupes de départ (Activités, Climat, Hébergement) ; Baignade porte Plage, Camping porte
 // Camping et Tente ; un modèle sans étiquette est « toujours inclus ».

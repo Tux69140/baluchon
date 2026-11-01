@@ -38,6 +38,8 @@ const AUTRES = [
   'ecrireTheme',
   'lireDerniereSauvegarde',
   'ecrireDerniereSauvegarde',
+  'lireDerniereComposition',
+  'ecrireDerniereComposition',
   'reglerBarres',
   // Un fichier posé dans Téléchargements : ni la base ni la bibliothèque ne bougent.
   'deposerFichier',

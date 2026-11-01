@@ -31,7 +31,9 @@ const PAQUES = {
   destination: '',
   depart: '2026-04-03',
   retour: '2026-04-06',
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   modifieLe: 'x',
 };
 

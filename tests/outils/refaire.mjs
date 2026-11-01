@@ -38,6 +38,7 @@ const objet = (id, categorieId, nom, regle, valeur, autres = {}) => ({
   valeur,
   plafond: null,
   parPersonne: true,
+  pourQui: 'tous',
   consommable: false,
   toujoursInclus: !autres.etiquettes?.length,
   note: '',
@@ -87,7 +88,15 @@ export const NOM_ORIGINE = 'Quiberon <i>&</i>';
 let n = 0;
 const genere = genererVoyage(
   AVANT,
-  { nom: NOM_ORIGINE, destination: 'Bretagne', depart: '2026-07-10', retour: '2026-07-17', voyageurs: 3 },
+  {
+    nom: NOM_ORIGINE,
+    destination: 'Bretagne',
+    depart: '2026-07-10',
+    retour: '2026-07-17',
+    femmes: 2,
+    hommes: 0,
+    enfants: 1,
+  },
   { choisies: new Set(['e-rando', 'e-plongee']), ecartes: new Set(['o-chaussures']) },
   { nouvelId: () => `id-${++n}`, maintenant: 'avant' },
 );

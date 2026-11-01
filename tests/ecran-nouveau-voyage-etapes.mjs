@@ -83,7 +83,7 @@ const vue = page =>
 // Voyageurs, puis les dates : dans l'ordre du document, et à l'écran (dessous, ou dans la colonne de droite).
 const voyageursAvantDates = page =>
   page.evaluate(() => {
-    const voyageurs = document.querySelector('.champ-voyageurs');
+    const voyageurs = document.querySelector('.champ-composition');
     const dates = document.querySelector('.champ-dates');
     const v = voyageurs.getBoundingClientRect();
     const d = dates.getBoundingClientRect();

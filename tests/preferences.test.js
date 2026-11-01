@@ -3,8 +3,10 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ecrireDerniereComposition,
   ecrireDerniereSauvegarde,
   ecrireTheme,
+  lireDerniereComposition,
   lireDerniereSauvegarde,
   lireTheme,
 } from '../src/stockage/preferences.js';
@@ -61,4 +63,24 @@ test('un stockage refusé donne les défauts et n’empêche rien', () => {
   assert.equal(lireDerniereSauvegarde(), null);
   assert.doesNotThrow(() => ecrireTheme('sombre'));
   assert.doesNotThrow(() => ecrireDerniereSauvegarde('2026-10-31T14:05:00.000Z'));
+});
+
+test('la dernière composition est retenue ; sans elle, ou abîmée, c’est la composition initiale', () => {
+  const initiale = { femmes: 1, hommes: 1, enfants: 0 };
+  assert.deepEqual(lireDerniereComposition(), initiale);
+  ecrireDerniereComposition({ femmes: 2, hommes: 0, enfants: 1 });
+  assert.deepEqual(lireDerniereComposition(), { femmes: 2, hommes: 0, enfants: 1 });
+  for (const abimee of [
+    'n’importe quoi',
+    '{"femmes":0,"hommes":0,"enfants":0}',
+    '{"femmes":30,"hommes":1,"enfants":0}',
+    '{"femmes":"2"}',
+    'null',
+  ]) {
+    magasin.set('baluchon-derniere-composition', abimee);
+    assert.deepEqual(lireDerniereComposition(), initiale, abimee);
+  }
+  refuse();
+  assert.deepEqual(lireDerniereComposition(), initiale);
+  assert.doesNotThrow(() => ecrireDerniereComposition({ femmes: 2, hommes: 0, enfants: 1 }));
 });

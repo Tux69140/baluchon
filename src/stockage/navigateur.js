@@ -10,6 +10,8 @@ import {
   ecrireTheme,
   lireDerniereSauvegarde,
   ecrireDerniereSauvegarde,
+  lireDerniereComposition,
+  ecrireDerniereComposition,
 } from './preferences.js';
 import {
   lire,
@@ -282,6 +284,8 @@ export function creerStockageNavigateur() {
     ecrireTheme,
     lireDerniereSauvegarde,
     ecrireDerniereSauvegarde,
+    lireDerniereComposition,
+    ecrireDerniereComposition,
     reglerBarres,
   });
 }

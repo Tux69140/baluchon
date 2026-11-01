@@ -121,7 +121,9 @@ const voyage = (id, nom) => ({
   destination: 'Crozon, Finistère',
   depart: '2026-11-06',
   retour: '2026-11-09',
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   modifieLe: 'x',
 });
 
@@ -152,6 +154,7 @@ const objetsDe = voyageId =>
       valeur: quantite,
       plafond: null,
       parPersonne: true,
+      pourQui: 'tous',
       consommable: false,
       quantite,
       quantiteManuelle: false,

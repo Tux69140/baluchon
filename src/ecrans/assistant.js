@@ -94,6 +94,6 @@ export function raisonVide(apercu, ecartes) {
   return ids.every(id => ecartes.has(id)) ? 'toutEcarte' : null;
 }
 
-// Les voyageurs (2 par défaut) ne comptent pas : rien n'a été saisi tant que l'on n'y a pas touché ailleurs.
+// Les compteurs de voyageurs (proposés d’avance) ne comptent pas : rien n'a été saisi tant que l'on n'y a pas touché ailleurs.
 export const saisieCommencee = ({ nom, destination, depart }, etat) =>
   Boolean(String(nom ?? '').trim() || String(destination ?? '').trim() || depart || etat.choisies.size);
