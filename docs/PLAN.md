@@ -315,13 +315,13 @@ L'écran Réglages permet de choisir le thème (appareil, clair, sombre), un ré
 
 ### Critères d'acceptation
 
-- [ ] Une sauvegarde créée sur la tablette puis restaurée sur l'ordinateur reproduit à l'identique la bibliothèque et tous les voyages, coches, quantités manuelles, marques et objets écartés compris (critère de succès 5).
-- [ ] La copie « avant restauration » existe avant tout remplacement, et sa restauration ramène l'état précédent.
-- [ ] Un fichier tronqué, d'un autre format ou d'une version future est refusé, sans aucune modification de la base.
-- [ ] Une erreur en pleine restauration laisse la base dans son état d'avant.
-- [ ] Le thème choisi persiste sur l'appareil, s'applique dès le lancement et ne voyage pas dans la sauvegarde ; à partir d'Android 11, l'heure et la batterie restent lisibles dans les trois choix.
-- [ ] La date de la dernière sauvegarde s'affiche sous « Sauvegarder » et ne voyage pas.
-- [ ] Sous Android 7 à 9, la sauvegarde se retrouve sous le raccourci « Téléchargements » du sélecteur de fichiers.
+- [x] Une sauvegarde créée sur la tablette puis restaurée sur l'ordinateur reproduit à l'identique la bibliothèque et tous les voyages, coches, quantités manuelles, marques et objets écartés compris (critère de succès 5).
+- [x] La copie « avant restauration » existe avant tout remplacement, et sa restauration ramène l'état précédent.
+- [x] Un fichier tronqué, d'un autre format ou d'une version future est refusé, sans aucune modification de la base.
+- [x] Une erreur en pleine restauration laisse la base dans son état d'avant.
+- [x] Le thème choisi persiste sur l'appareil, s'applique dès le lancement et ne voyage pas dans la sauvegarde ; à partir d'Android 11, l'heure et la batterie restent lisibles dans les trois choix.
+- [x] La date de la dernière sauvegarde s'affiche sous « Sauvegarder » et ne voyage pas.
+- [x] Sous Android 7 à 9, la sauvegarde se retrouve sous le raccourci « Téléchargements » du sélecteur de fichiers.
 
 ## Bloquée par
 
