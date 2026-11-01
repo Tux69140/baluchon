@@ -101,9 +101,11 @@ fait passer toute l'appli et la bibliothèque dans cette langue.
 
 ## Choix de l'agent (annoncés pendant l'étude, sans objection)
 
-12. **Composition proposée** dans « Nouveau voyage » : 1 femme et 1 homme au premier voyage, puis la
-    composition du dernier voyage créé. « Refaire ce voyage » reprend celle du voyage d'origine
-    (phase 11).
+12. **Composition proposée** dans « Nouveau voyage » : 0 femme, 0 homme, 0 enfant après l'installation
+    (décision du chef de projet, 2026-11-01, après essai : « 1 femme et 1 homme » imposait un couple
+    par défaut), puis la composition du dernier voyage créé. « Refaire ce voyage » reprend celle du
+    voyage d'origine (phase 11). Un réglage de la composition proposée est une idée du chef de projet
+    pour plus tard, hors de cette phase.
 13. **Affichage** : le total sur les cartes de « Mes voyages » (« 3 voyageurs ») ; le détail dans
     l'en-tête du voyage et dans l'aperçu (« 2 femmes, 1 enfant », les groupes vides omis).
 14. **Mise en page des compteurs**, de « Pour qui » et de « À propos » : fixée par une maquette
@@ -228,7 +230,8 @@ navigateur du système : il faut un petit ajout côté ordinateur et dans le pon
 disposition :
 - **Compteurs** : légende « Voyageurs » avec le total au bout (« 2 en tout ») ; liste encadrée, une
   ligne par groupe (nom à gauche, − nombre + à droite) ; côte à côte, nom au-dessus, dès que le champ
-  a 540 px. Ligne de message réservée sous la liste : « Ajoutez au moins une personne. » (rouge, picto)
+  a 540 px. Ligne de message réservée sous la liste : « Ajoutez au moins une personne. » (rouge, picto, montré seulement après un essai d'aller plus loin
+  avec 0 personne, comme les autres erreurs de l'étape)
   ou, à 20, « Un voyage compte au plus 20 voyageurs. » (gris, ⓘ, les + grisés).
 - **Résumés de règle**, mêmes textes dans la Bibliothèque et sous chaque objet de l'aperçu :
   « valeur + rythme, au plus N, pour qui » : « 1 par enfant », « 1 par adulte », « 1 par personne »,
