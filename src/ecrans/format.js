@@ -50,3 +50,15 @@ export function decrireRegle(t, objet, { bref = false } = {}) {
   if (objet.plafond === null) return regle;
   return remplir(t(`${famille}.plafond${suffixe}`), { regle, plafond: objet.plafond });
 }
+
+// « 31 octobre 2026, 18 h 40 » : un instant (ISO) à l'heure de l'appareil, en toutes lettres. Sert à la
+// date de la dernière sauvegarde et à la confirmation de restauration.
+export function formaterInstant(t, iso, langue) {
+  const instant = new Date(iso);
+  const date = new Intl.DateTimeFormat(langue, { day: 'numeric', month: 'long', year: 'numeric' }).format(instant);
+  const heure = remplir(t('dates.heure'), {
+    h: instant.getHours(),
+    min: String(instant.getMinutes()).padStart(2, '0'),
+  });
+  return remplir(t('dates.dateHeure'), { date, heure });
+}

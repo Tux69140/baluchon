@@ -7,6 +7,7 @@ import {
   decrireRegle,
   detailsVoyage,
   formaterDate,
+  formaterInstant,
   formaterJourCourt,
   formaterPeriode,
   pluriel,
@@ -73,4 +74,12 @@ test('une règle se décrit aussi en bref, pour tenir sur une ligne (« 1 / nuit
   assert.equal(r('fixe', 3, true), '3 / personne');
   assert.equal(r('par_nuit', 1, true, 1), '1 / nuit / personne, au plus 1 / personne');
   assert.equal(r('par_nuit', 1, false, 3), '1 / nuit, au plus 3');
+});
+
+test('un instant se lit à l’heure de l’appareil, en toutes lettres : « 31 octobre 2026, 18 h 40 »', () => {
+  assert.equal(
+    formaterInstant(t, new Date(2026, 9, 31, 18, 40).toISOString(), 'fr'),
+    '31 octobre 2026, 18\u00a0h\u00a040',
+  );
+  assert.equal(formaterInstant(t, new Date(2026, 0, 2, 7, 5).toISOString(), 'fr'), '2 janvier 2026, 7\u00a0h\u00a005');
 });

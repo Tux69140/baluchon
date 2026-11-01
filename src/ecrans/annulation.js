@@ -102,11 +102,11 @@ function programmerFin(bandeau, duree) {
 // « Annuler » ne répond plus tant qu'au moins une chose le tient, et de nouveau ensuite.
 function occuper(bandeau) {
   bandeau.occupations += 1;
-  bandeau.bouton.setAttribute('aria-disabled', 'true');
+  bandeau.bouton?.setAttribute('aria-disabled', 'true');
 }
 function liberer(bandeau) {
   bandeau.occupations -= 1;
-  if (!bandeau.occupations) bandeau.bouton.removeAttribute('aria-disabled');
+  if (!bandeau.occupations) bandeau.bouton?.removeAttribute('aria-disabled');
 }
 
 // « Annuler » touché : un seul rétablissement à la fois. Refusé, le bandeau reste pour un nouvel essai
@@ -146,34 +146,60 @@ export async function sansAnnuler(travail) {
   }
 }
 
+// Le bandeau vide, prêt à être posé : un popover manuel, annoncé comme un statut.
+function creerElement(html) {
+  const el = document.createElement('div');
+  el.className = 'bandeau-annuler';
+  el.setAttribute('popover', 'manual');
+  el.setAttribute('role', 'status');
+  el.dataset.entree = '';
+  el.innerHTML = html;
+  // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.
+  el.addEventListener('animationend', () => delete el.dataset.entree, { once: true });
+  return el;
+}
+
+// Le bandeau devient le bandeau courant, avec ses 10 s, et prend sa place.
+function installer(bandeau) {
+  programmerFin(bandeau, DUREE);
+  courant = bandeau;
+  placer();
+}
+
 // texte : ce qui vient d'être supprimé (ou acheté, dans les Courses), en texte simple ; annuler() rétablit et
 // rend une promesse. icone : le picto du bandeau (la corbeille, ou le chariot des Courses).
 // app : la racine de l'appli, où dire un rétablissement refusé. voyage : l'id du voyage d'un retrait
 // d'objet (le bandeau de la bibliothèque n'en a pas).
 export function montrerAnnulation({ t, app, texte, annuler, voyage = null, icone = 'supprimer' }) {
   retirerAnnulation();
-  const el = document.createElement('div');
-  el.className = 'bandeau-annuler';
-  el.setAttribute('popover', 'manual');
-  el.setAttribute('role', 'status');
-  el.dataset.entree = '';
-  el.innerHTML = `
+  const el = creerElement(`
     ${iconeInterface(icone)}
     <p>${echapper(texte)}</p>
-    <button type="button" class="bandeau-action">${iconeInterface('annuler')}${echapper(t('annulation.annuler'))}</button>`;
-  // Sans animation (l'appareil en demande moins), rien ne s'achève : data-entree reste, sans effet.
-  el.addEventListener('animationend', () => delete el.dataset.entree, { once: true });
+    <button type="button" class="bandeau-action">${iconeInterface('annuler')}${echapper(t('annulation.annuler'))}</button>`);
   const bouton = el.querySelector('button');
   const bandeau = { el, bouton, voyage, fin: new AbortController(), retablit: false, occupations: 0 };
-  programmerFin(bandeau, DUREE);
-  courant = bandeau;
+  installer(bandeau);
   // Toujours une promesse tenue, quoi qu'il arrive dans retablir : les lectures et écritures qui
   // l'attendent ne restent jamais bloquées.
   bouton.addEventListener('click', () => {
     if (bouton.getAttribute('aria-disabled') !== 'true')
       retablissement = retablir(bandeau, { t, app, annuler }).catch(console.error);
   });
-  placer();
+}
+
+// Le bandeau du bas, sans « Annuler » : un message de réussite (« Sauvegarde déposée… », spec de la
+// phase 12), du même style, et qui part seul au bout de 10 s. texteHtml : déjà échappé par l'appelant (un
+// nom de fichier en gras). Il ne retire jamais un bandeau « Annuler » en cours : rend false, et l'appelant
+// passe le message par annoncerEnHaut. Un autre message, lui, est remplacé.
+export function montrerMessage({ texteHtml }) {
+  if (courant?.bouton) return false;
+  retirerAnnulation();
+  const el = creerElement(`
+    ${iconeInterface('boucle')}
+    <p>${texteHtml}</p>`);
+  el.classList.add('bandeau-message');
+  installer({ el, bouton: null, voyage: null, fin: new AbortController(), retablit: false, occupations: 0 });
+  return true;
 }
 
 // Le stockage, de même forme, dont chaque écriture de la bibliothèque passe par la garde et retire le

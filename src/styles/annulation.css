@@ -89,3 +89,18 @@
     translate: 0 12px;
   }
 }
+
+/* ---------- Le bandeau du bas, sans « Annuler » : un message de réussite ---------- */
+.bandeau-message {
+  padding: 10px 16px 10px 14px;
+}
+
+.bandeau-message .icone {
+  color: var(--action-inverse);
+}
+
+/* Le nom du fichier ne se coupe pas en route. */
+.bandeau-message .nom-fichier {
+  font-weight: 600;
+  white-space: nowrap;
+}

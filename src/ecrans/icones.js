@@ -32,6 +32,11 @@ import trayArrowUp from '@phosphor-icons/core/bold/tray-arrow-up-bold.svg?raw';
 import dotsThreeVertical from '@phosphor-icons/core/bold/dots-three-vertical-bold.svg?raw';
 import copy from '@phosphor-icons/core/bold/copy-bold.svg?raw';
 import hand from '@phosphor-icons/core/bold/hand-bold.svg?raw';
+import circleHalf from '@phosphor-icons/core/bold/circle-half-bold.svg?raw';
+import sun from '@phosphor-icons/core/bold/sun-bold.svg?raw';
+import moon from '@phosphor-icons/core/bold/moon-bold.svg?raw';
+import downloadSimple from '@phosphor-icons/core/bold/download-simple-bold.svg?raw';
+import clockCounterClockwise from '@phosphor-icons/core/bold/clock-counter-clockwise-bold.svg?raw';
 import { svgPicto } from './pictos.js';
 import { echapper } from './html.js';
 
@@ -68,6 +73,13 @@ const INTERFACE = {
   actions: dotsThreeVertical,
   refaire: copy,
   aLaMain: hand,
+  // Réglages : les trois thèmes, « Sauvegarder » (la flèche qui descend dans Téléchargements) et
+  // « Restaurer une sauvegarde… » (l'horloge qui revient en arrière).
+  appareil: circleHalf,
+  clair: sun,
+  sombre: moon,
+  sauvegarder: downloadSimple,
+  restaurer: clockCounterClockwise,
 };
 
 // Un picto est décoratif : le texte voisin (ou l'aria-label du bouton) dit ce qu'il signifie.

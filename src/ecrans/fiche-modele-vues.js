@@ -29,15 +29,16 @@ export const champNom = (t, valeur, erreur, { idAide = '', entree = false, id = 
         </div>`;
 
 // Choix exclusif en segments : de vrais boutons radio, dessinés côte à côte. options : [valeur,
-// libellé] ; les booléens s'écrivent 'true' et 'false'. attributs : posés sur le bouton de la valeur
-// nommée (le message d'un champ, par exemple).
-export const segments = (cle, legende, options, valeur, attributs = {}) => `
-          <div class="segments" role="radiogroup" aria-label="${echapper(legende)}">${options
+// libellé, picto] ; les booléens s'écrivent 'true' et 'false' ; le picto (HTML d'interface) précède le
+// libellé quand il est donné. attributs : posés sur le bouton de la valeur nommée (le message d'un champ,
+// par exemple). classe : une classe de plus pour les segments ; decrit : l'id de ce qui les décrit.
+export const segments = (cle, legende, options, valeur, attributs = {}, { classe = '', decrit = '' } = {}) => `
+          <div class="segments${classe ? ` ${classe}` : ''}" role="radiogroup" aria-label="${echapper(legende)}"${decrit ? ` aria-describedby="${decrit}"` : ''}>${options
             .map(
-              ([v, libelle]) => `
+              ([v, libelle, picto = '']) => `
             <label class="segment">
               <input type="radio" name="f-${cle}" value="${v}" data-choix="${cle}"${v === String(valeur) ? ' checked' : ''}${attributs[v] ?? ''} />
-              <span>${echapper(libelle)}</span>
+              <span>${picto}${echapper(libelle)}</span>
             </label>`,
             )
             .join('')}

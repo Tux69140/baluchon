@@ -155,7 +155,9 @@
     }
   },
   "dates": {
-    "periode": "du {depart} au {retour}"
+    "periode": "du {depart} au {retour}",
+    "heure": "{h} h {min}",
+    "dateHeure": "{date}, {heure}"
   },
   "nouveauVoyage": {
     "titre": "Nouveau voyage",
@@ -470,7 +472,32 @@
     "bibliotheque": "Bibliothèque",
     "bibliothequeAide": "Les catégories et les objets proposés à chaque nouveau voyage",
     "etiquettes": "Étiquettes",
-    "etiquettesAide": "Les questions posées par « Nouveau voyage » pour bâtir la liste"
+    "etiquettesAide": "Les questions posées par « Nouveau voyage » pour bâtir la liste",
+    "theme": {
+      "titre": "Thème",
+      "legende": "Thème de l’appli",
+      "aide": "« Appareil » suit le réglage clair ou sombre de cet appareil. Le choix ne vaut que pour lui.",
+      "appareil": "Appareil",
+      "clair": "Clair",
+      "sombre": "Sombre"
+    },
+    "sauvegarde": {
+      "titre": "Sauvegarde",
+      "aide": "Toute la bibliothèque et tous les voyages, dans un fichier déposé dans Téléchargements.",
+      "sauvegarder": "Sauvegarder",
+      "derniere": "Dernière sauvegarde :",
+      "aucune": "Aucune sauvegarde depuis cet appareil",
+      "restaurer": "Restaurer une sauvegarde…",
+      "restaurerAide": "Tout ce qui est sur cet appareil sera remplacé. Une copie de l’état actuel est d’abord déposée dans Téléchargements.",
+      "deposee": "Sauvegarde déposée dans Téléchargements :",
+      "erreur": "La sauvegarde n’a pas pu être déposée. Rien n’a changé ; réessayez.",
+      "compris": "Compris",
+      "autorisation": {
+        "titre": "Accès aux fichiers refusé",
+        "texte": "Sans votre autorisation, Baluchon ne peut rien déposer dans Téléchargements : aucun fichier n’a été écrit.",
+        "comment": "Touchez de nouveau « Sauvegarder » et acceptez la demande d’Android. Si elle ne s’affiche plus : Paramètres d’Android, Applications, Baluchon, Autorisations, puis Stockage."
+      }
+    }
   },
   "bibliotheque": {
     "titre": "Bibliothèque",
