@@ -64,7 +64,7 @@
 }
 
 .a-propos-lien .reglage-texte span {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .a-propos-externe {

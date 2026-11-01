@@ -23,6 +23,7 @@ const affichee = adresse => adresse.replace(/^https:\/\//, '').replace(/\/$/, ''
 
 // Un lien vers le site : son nom, l'adresse en clair dessous, le picto qui dit qu'il sort de l'appli. Le
 // libellé lu à voix haute annonce aussi qu'il ouvre le navigateur.
+// Un <wbr> suit chaque « / » : si l'adresse doit passer à la ligne, c'est là et nulle part ailleurs.
 const lien = (t, { cle, adresse }) => {
   const titre = t(`aPropos.${cle}.titre`);
   const aria = remplir(t('aPropos.lienAria'), {
@@ -34,7 +35,7 @@ const lien = (t, { cle, adresse }) => {
           <li>
             <a class="reglage a-propos-lien" href="${adresse}" aria-label="${echapper(aria)}">
               <span class="reglage-picto">${iconeInterface(cle)}</span>
-              <span class="reglage-texte"><b>${echapper(titre)}</b><span>${affichee(adresse)}</span></span>
+              <span class="reglage-texte"><b>${echapper(titre)}</b><span>${affichee(adresse).replace(/\//g, '/<wbr>')}</span></span>
               <span class="a-propos-externe">${iconeInterface('externe')}</span>
             </a>
           </li>`;

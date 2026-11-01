@@ -151,11 +151,48 @@ async function essaiFormat(format, theme) {
   await contexte.close();
 }
 
+// Téléphone étroit (360 px) : l'adresse affichée ne se coupe jamais au milieu d'un mot, seulement après « / ».
+async function essaiAdresseEtroite() {
+  const { page, contexte, erreurs } = await ouvrirEcran({ width: 360, height: 640 });
+  const lignes = await page.evaluate(() => {
+    const noeud = document.querySelector('#app a.a-propos-lien[href$="/telecharger"] .reglage-texte > span');
+    const texte = noeud.textContent;
+    const courant = [];
+    const plage = document.createRange();
+    const par = [];
+    const parcours = document.createTreeWalker(noeud, NodeFilter.SHOW_TEXT);
+    let debut = 0;
+    for (let n = parcours.nextNode(); n; n = parcours.nextNode()) {
+      for (let i = 0; i < n.length; i++) {
+        plage.setStart(n, i);
+        plage.setEnd(n, i + 1);
+        par.push(Math.round(plage.getBoundingClientRect().top));
+      }
+    }
+    for (let i = 1; i < par.length; i++) if (par[i] !== par[i - 1]) courant.push(texte.slice(debut, (debut = i)));
+    courant.push(texte.slice(debut));
+    return { texte, lignes: courant };
+  });
+  const coupures = lignes.lignes.slice(0, -1);
+  juge.exige(
+    coupures.every(l => l.endsWith('/')),
+    `360 px : l’adresse se coupe ailleurs qu’après « / » ${vu(lignes.lignes)}`,
+  );
+  juge.exige(
+    lignes.texte === 'baluchon.biovibralyon.fr/telecharger',
+    `360 px : texte de l’adresse ${vu(lignes.texte)}`,
+  );
+  await page.screenshot({ path: join(CAPTURES, 'a-propos-360.png'), fullPage: true });
+  juge.exige(erreurs.length === 0, `360 px : erreurs dans la page : ${erreurs.join(' | ')}`);
+  await contexte.close();
+}
+
 try {
   await mkdir(CAPTURES, { recursive: true });
   await essaiMenu();
   await essaiContenu();
   await essaiLiens();
+  await essaiAdresseEtroite();
   for (const theme of ['light', 'dark']) for (const format of Object.keys(FORMATS)) await essaiFormat(format, theme);
 } finally {
   await navigateur.close();
