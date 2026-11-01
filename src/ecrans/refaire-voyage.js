@@ -91,6 +91,8 @@ function modeRefaire({ origine, bibliotheque, accueil, filtre, aujourdhui }, con
         { nouvelId, maintenant: new Date().toISOString() },
       );
       await stockage.creerVoyage(contenu);
+      // Comme à la création : le prochain « Nouveau voyage » repart de cette composition.
+      stockage.ecrireDerniereComposition(composition(infos));
       return `#/voyage/${encodeURIComponent(contenu.voyage.id)}`;
     },
     derniere: {

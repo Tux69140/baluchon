@@ -217,6 +217,11 @@ try {
     );
     const relu = await contenuStocke(page, V);
     juge.exige(vu(relu) === vu(origine), `${cas} : le voyage d'origine a changé ${vu(relu)}`);
+    // Le voyage refait retient sa composition : le « Nouveau voyage » suivant propose celle de l'origine (2, 0, 1).
+    await page.evaluate(() => (location.hash = '#/nouveau-voyage'));
+    await attendreEcran(page, 'nouveau-voyage');
+    const proposee = await page.$$eval('.composition-ligne .compteur-valeur', o => o.map(e => e.textContent).join());
+    juge.exige(proposee === '2,0,1', `${cas} : composition proposée après un voyage refait ${proposee}`);
     await fermerEssai(juge, cas, ouvert);
 
     // Depuis la carte : Mes voyages derrière ; fermer rend le focus au « ⋮ » de la carte.
