@@ -78,3 +78,25 @@ export function verifierSac(objet, quantite, dansLeSac) {
   if (!Number.isInteger(dansLeSac) || dansLeSac < 0 || dansLeSac > Math.max(quantite, objet.dansLeSac))
     throw new Error(`Pièces dans le sac hors bornes : ${dansLeSac}`);
 }
+
+// La base relit par rang puis par ordre de création ; le tri est stable, comme ORDER BY ordre, rowid.
+export const trierParOrdre = liste => [...liste].sort((a, b) => a.ordre - b.ordre);
+
+// Un voyage complet tel que la base le relit (lire_voyage_de, src-tauri/src/voyages.rs), ou null.
+export function voyageComplet(donnees, id) {
+  const voyage = (donnees.voyages ?? []).find(v => v.id === id);
+  if (!voyage) return null;
+  return {
+    voyage,
+    // Un voyage enregistré avant les étiquettes n'a pas la clé : liste vide.
+    etiquettes: (donnees.etiquettesDuVoyage ?? []).filter(e => e.voyageId === id),
+    // Par rang, puis par création, comme la base : une catégorie rétablie retrouve sa place.
+    categories: trierParOrdre((donnees.categoriesDuVoyage ?? []).filter(c => c.voyageId === id)),
+    objets: (donnees.objetsDuVoyage ?? []).filter(o => o.voyageId === id),
+    // Un voyage d'avant la phase 11 n'a pas la clé : liste vide.
+    ecartes: (donnees.objetsEcartes ?? [])
+      .filter(e => e.voyageId === id)
+      .map(e => e.modeleId)
+      .sort(),
+  };
+}

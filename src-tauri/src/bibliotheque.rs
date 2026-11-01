@@ -1,7 +1,7 @@
 // La bibliothèque de l'utilisateur : installée une seule fois depuis la bibliothèque de départ
 // (construite par le modèle, src/modele/bibliotheque.js), puis lue pour générer les voyages.
 use crate::base::{en_texte, lire_lignes, Base};
-use rusqlite::{params, Connection, Row};
+use rusqlite::{params, Connection, Row, Transaction};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -62,7 +62,8 @@ pub struct Bibliotheque {
     pub objets: Vec<ObjetModele>,
 }
 
-const INSTALLEE: &str = "bibliotheque_installee";
+pub(crate) const INSTALLEE: &str = "bibliotheque_installee";
+pub(crate) const LANGUE: &str = "langue_bibliotheque";
 
 fn est_installee(connexion: &Connection) -> Result<bool, String> {
     connexion
@@ -73,6 +74,16 @@ fn est_installee(connexion: &Connection) -> Result<bool, String> {
         )
         .map(|n| n > 0)
         .map_err(en_texte)
+}
+
+// Marque la bibliothèque installée et retient sa langue.
+pub(crate) fn poser_installee(tx: &Transaction, langue: &str) -> Result<(), String> {
+    tx.execute(
+        "INSERT INTO meta (cle, valeur) VALUES (?1, '1'), (?2, ?3)",
+        params![INSTALLEE, LANGUE, langue],
+    )
+    .map_err(en_texte)?;
+    Ok(())
 }
 
 fn categorie_depuis(r: &Row<'_>) -> rusqlite::Result<CategorieModele> {
@@ -138,6 +149,124 @@ fn liens(
     )
 }
 
+// Écrit les groupes, étiquettes, catégories, objets et leurs liens ; partagé avec la restauration
+// (sauvegarde.rs). Les liens viennent après les modèles et les étiquettes qu'ils relient.
+pub(crate) fn inserer_bibliotheque(
+    tx: &Transaction,
+    bibliotheque: &Bibliotheque,
+) -> Result<(), String> {
+    for g in &bibliotheque.groupes {
+        tx.execute(
+            "INSERT INTO groupe_etiquettes (id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4)",
+            params![g.id, g.nom, g.ordre, g.modifie_le],
+        )
+        .map_err(en_texte)?;
+    }
+    for e in &bibliotheque.etiquettes {
+        tx.execute(
+                "INSERT INTO etiquette (id, groupe_id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![e.id, e.groupe_id, e.nom, e.ordre, e.modifie_le],
+            )
+            .map_err(en_texte)?;
+    }
+    for c in &bibliotheque.categories {
+        tx.execute(
+                "INSERT INTO categorie_modele (id, nom, icone, couleur, ordre, toujours_incluse, modifie_le)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![c.id, c.nom, c.icone, c.couleur, c.ordre, c.toujours_incluse, c.modifie_le],
+            )
+            .map_err(en_texte)?;
+    }
+    for o in &bibliotheque.objets {
+        tx.execute(
+            "INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
+                   consommable, toujours_inclus, note, modifie_le)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params![
+                o.id,
+                o.categorie_id,
+                o.nom,
+                o.regle,
+                o.valeur,
+                o.plafond,
+                o.par_personne,
+                o.consommable,
+                o.toujours_inclus,
+                o.note,
+                o.modifie_le
+            ],
+        )
+        .map_err(en_texte)?;
+    }
+    for c in &bibliotheque.categories {
+        for etiquette in &c.etiquettes {
+            tx.execute(
+                    "INSERT INTO categorie_modele_etiquette (categorie_id, etiquette_id) VALUES (?1, ?2)",
+                    params![c.id, etiquette],
+                )
+                .map_err(en_texte)?;
+        }
+    }
+    for o in &bibliotheque.objets {
+        for etiquette in &o.etiquettes {
+            tx.execute(
+                "INSERT INTO objet_modele_etiquette (objet_id, etiquette_id) VALUES (?1, ?2)",
+                params![o.id, etiquette],
+            )
+            .map_err(en_texte)?;
+        }
+    }
+    Ok(())
+}
+
+// La bibliothèque sous une connexion déjà tenue (partagé avec la lecture de toutes les données).
+pub(crate) fn lire_bibliotheque_de(connexion: &Connection) -> Result<Bibliotheque, String> {
+    let groupes = lire_lignes(
+        connexion,
+        "SELECT id, nom, ordre, modifie_le FROM groupe_etiquettes ORDER BY ordre, rowid",
+        [],
+        groupe_depuis,
+    )?;
+    let etiquettes = lire_lignes(
+        connexion,
+        "SELECT id, groupe_id, nom, ordre, modifie_le FROM etiquette ORDER BY ordre, rowid",
+        [],
+        etiquette_depuis,
+    )?;
+    let mut categories = lire_lignes(
+        connexion,
+        "SELECT id, nom, icone, couleur, ordre, toujours_incluse, modifie_le
+         FROM categorie_modele ORDER BY ordre, rowid",
+        [],
+        categorie_depuis,
+    )?;
+    let mut objets = lire_lignes(
+        connexion,
+        "SELECT o.id, o.categorie_id, o.nom, o.regle, o.valeur, o.plafond, o.par_personne,
+                o.consommable, o.toujours_inclus, o.note, o.modifie_le
+         FROM objet_modele o JOIN categorie_modele c ON c.id = o.categorie_id
+         ORDER BY c.ordre, o.rowid",
+        [],
+        objet_depuis,
+    )?;
+    for (categorie, etiquette) in liens(connexion, "categorie_modele_etiquette", "categorie_id")? {
+        if let Some(c) = categories.iter_mut().find(|c| c.id == categorie) {
+            c.etiquettes.push(etiquette);
+        }
+    }
+    for (objet, etiquette) in liens(connexion, "objet_modele_etiquette", "objet_id")? {
+        if let Some(o) = objets.iter_mut().find(|o| o.id == objet) {
+            o.etiquettes.push(etiquette);
+        }
+    }
+    Ok(Bibliotheque {
+        groupes,
+        etiquettes,
+        categories,
+        objets,
+    })
+}
+
 impl Base {
     pub fn bibliotheque_installee(&self) -> Result<bool, String> {
         let connexion = self.connexion()?;
@@ -157,125 +286,15 @@ impl Base {
         if est_installee(&tx)? {
             return Ok(false);
         }
-        for g in &bibliotheque.groupes {
-            tx.execute(
-                "INSERT INTO groupe_etiquettes (id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4)",
-                params![g.id, g.nom, g.ordre, g.modifie_le],
-            )
-            .map_err(en_texte)?;
-        }
-        for e in &bibliotheque.etiquettes {
-            tx.execute(
-                "INSERT INTO etiquette (id, groupe_id, nom, ordre, modifie_le) VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![e.id, e.groupe_id, e.nom, e.ordre, e.modifie_le],
-            )
-            .map_err(en_texte)?;
-        }
-        for c in &bibliotheque.categories {
-            tx.execute(
-                "INSERT INTO categorie_modele (id, nom, icone, couleur, ordre, toujours_incluse, modifie_le)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                params![c.id, c.nom, c.icone, c.couleur, c.ordre, c.toujours_incluse, c.modifie_le],
-            )
-            .map_err(en_texte)?;
-        }
-        for o in &bibliotheque.objets {
-            tx.execute(
-                "INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
-                   consommable, toujours_inclus, note, modifie_le)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-                params![
-                    o.id,
-                    o.categorie_id,
-                    o.nom,
-                    o.regle,
-                    o.valeur,
-                    o.plafond,
-                    o.par_personne,
-                    o.consommable,
-                    o.toujours_inclus,
-                    o.note,
-                    o.modifie_le
-                ],
-            )
-            .map_err(en_texte)?;
-        }
-        // Les liens viennent après les modèles et les étiquettes qu'ils relient.
-        for c in &bibliotheque.categories {
-            for etiquette in &c.etiquettes {
-                tx.execute(
-                    "INSERT INTO categorie_modele_etiquette (categorie_id, etiquette_id) VALUES (?1, ?2)",
-                    params![c.id, etiquette],
-                )
-                .map_err(en_texte)?;
-            }
-        }
-        for o in &bibliotheque.objets {
-            for etiquette in &o.etiquettes {
-                tx.execute(
-                    "INSERT INTO objet_modele_etiquette (objet_id, etiquette_id) VALUES (?1, ?2)",
-                    params![o.id, etiquette],
-                )
-                .map_err(en_texte)?;
-            }
-        }
-        tx.execute(
-            "INSERT INTO meta (cle, valeur) VALUES (?1, '1'), ('langue_bibliotheque', ?2)",
-            params![INSTALLEE, langue],
-        )
-        .map_err(en_texte)?;
+        inserer_bibliotheque(&tx, bibliotheque)?;
+        poser_installee(&tx, langue)?;
         tx.commit().map_err(en_texte)?;
         Ok(true)
     }
 
     pub fn lire_bibliotheque(&self) -> Result<Bibliotheque, String> {
         let connexion = self.connexion()?;
-        let groupes = lire_lignes(
-            &connexion,
-            "SELECT id, nom, ordre, modifie_le FROM groupe_etiquettes ORDER BY ordre, rowid",
-            [],
-            groupe_depuis,
-        )?;
-        let etiquettes = lire_lignes(
-            &connexion,
-            "SELECT id, groupe_id, nom, ordre, modifie_le FROM etiquette ORDER BY ordre, rowid",
-            [],
-            etiquette_depuis,
-        )?;
-        let mut categories = lire_lignes(
-            &connexion,
-            "SELECT id, nom, icone, couleur, ordre, toujours_incluse, modifie_le
-             FROM categorie_modele ORDER BY ordre, rowid",
-            [],
-            categorie_depuis,
-        )?;
-        let mut objets = lire_lignes(
-            &connexion,
-            "SELECT o.id, o.categorie_id, o.nom, o.regle, o.valeur, o.plafond, o.par_personne,
-                    o.consommable, o.toujours_inclus, o.note, o.modifie_le
-             FROM objet_modele o JOIN categorie_modele c ON c.id = o.categorie_id
-             ORDER BY c.ordre, o.rowid",
-            [],
-            objet_depuis,
-        )?;
-        for (categorie, etiquette) in
-            liens(&connexion, "categorie_modele_etiquette", "categorie_id")?
-        {
-            if let Some(c) = categories.iter_mut().find(|c| c.id == categorie) {
-                c.etiquettes.push(etiquette);
-            }
-        }
-        for (objet, etiquette) in liens(&connexion, "objet_modele_etiquette", "objet_id")? {
-            if let Some(o) = objets.iter_mut().find(|o| o.id == objet) {
-                o.etiquettes.push(etiquette);
-            }
-        }
-        Ok(Bibliotheque {
-            groupes,
-            etiquettes,
-            categories,
-            objets,
-        })
+        lire_bibliotheque_de(&connexion)
     }
 }
 

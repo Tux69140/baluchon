@@ -18,6 +18,7 @@ const AUTRES = [
   'lireVoyage',
   'etatsDesObjets',
   'lireFiltre',
+  'lireTout',
   // Les écritures d'un voyage ou d'une préférence : elles ne touchent pas la bibliothèque.
   'creerVoyage',
   'reglerDansLeSac',

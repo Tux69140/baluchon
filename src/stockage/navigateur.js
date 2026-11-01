@@ -15,12 +15,12 @@ import {
   ecritureDe,
   verifierAchetes,
   verifierSac,
+  trierParOrdre,
+  voyageComplet,
 } from './navigateur-outils.js';
 import { ajustementsNavigateur } from './navigateur-voyages.js';
 import { modificationNavigateur } from './navigateur-modification.js';
-
-// La base relit par rang puis par ordre de création ; le tri est stable, comme ORDER BY ordre, rowid.
-const trierParOrdre = liste => [...liste].sort((a, b) => a.ordre - b.ordre);
+import { sauvegardeNavigateur } from './navigateur-sauvegarde.js';
 
 const trouver = (liste, id) => liste.find(x => x.id === id);
 
@@ -236,21 +236,7 @@ export function creerStockageNavigateur() {
       await lenteur(lire(), 'lireVoyage');
       const donnees = lire();
       panne(donnees, 'lireVoyage');
-      const voyage = (donnees.voyages ?? []).find(v => v.id === id);
-      if (!voyage) return null;
-      return {
-        voyage,
-        // Un voyage enregistré avant les étiquettes n'a pas la clé : liste vide.
-        etiquettes: (donnees.etiquettesDuVoyage ?? []).filter(e => e.voyageId === id),
-        // Par rang, puis par création, comme la base : une catégorie rétablie retrouve sa place.
-        categories: trierParOrdre((donnees.categoriesDuVoyage ?? []).filter(c => c.voyageId === id)),
-        objets: (donnees.objetsDuVoyage ?? []).filter(o => o.voyageId === id),
-        // Un voyage d'avant la phase 11 n'a pas la clé : liste vide.
-        ecartes: (donnees.objetsEcartes ?? [])
-          .filter(e => e.voyageId === id)
-          .map(e => e.modeleId)
-          .sort(),
-      };
+      return voyageComplet(donnees, id);
     },
     async reglerDansLeSac(id, dansLeSac, achetes, modifieLe) {
       const donnees = lire();
@@ -276,6 +262,7 @@ export function creerStockageNavigateur() {
     },
     ...ajustementsNavigateur,
     ...modificationNavigateur,
+    ...sauvegardeNavigateur,
     lireFiltre,
     ecrireFiltre,
   });

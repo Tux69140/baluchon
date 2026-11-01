@@ -7,6 +7,7 @@ mod edition;
 mod essais;
 mod etiquettes;
 mod modification;
+mod sauvegarde;
 mod suppressions;
 mod voyages;
 
@@ -14,6 +15,7 @@ use ajustements::{AjoutALaBibliotheque, AjoutAuVoyage};
 use base::Base;
 use bibliotheque::{Bibliotheque, CategorieModele, Etiquette, GroupeEtiquettes, ObjetModele};
 use modification::ModificationDuVoyage;
+use sauvegarde::ContenuComplet;
 use std::fs;
 use tauri::{AppHandle, Manager, State};
 use voyages::{EtatObjet, Voyage, VoyageComplet};
@@ -46,6 +48,16 @@ fn installer_bibliotheque(
 #[tauri::command]
 fn lire_bibliotheque(base: State<'_, Base>) -> Result<Bibliotheque, String> {
     base.lire_bibliotheque()
+}
+
+#[tauri::command]
+fn lire_tout(base: State<'_, Base>) -> Result<ContenuComplet, String> {
+    base.lire_tout()
+}
+
+#[tauri::command]
+fn remplacer_tout(base: State<'_, Base>, contenu: ContenuComplet) -> Result<(), String> {
+    base.remplacer_tout(&contenu)
 }
 
 #[tauri::command]
@@ -246,6 +258,8 @@ pub fn run() {
             bibliotheque_installee,
             installer_bibliotheque,
             lire_bibliotheque,
+            lire_tout,
+            remplacer_tout,
             enregistrer_categorie,
             enregistrer_objet,
             ranger_categories,

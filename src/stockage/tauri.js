@@ -40,6 +40,8 @@ export function creerStockageTauri() {
     marquerRetire: (id, modifieLe) => invoke('marquer_retire', { id, modifieLe }),
     garderDansLeVoyage: (id, quantite, quantiteManuelle, achetes, modifieLe) =>
       invoke('garder_dans_le_voyage', { id, quantite, quantiteManuelle, achetes, modifieLe }),
+    lireTout: () => invoke('lire_tout'),
+    remplacerTout: contenu => invoke('remplacer_tout', { contenu }),
     lireFiltre,
     ecrireFiltre,
   });

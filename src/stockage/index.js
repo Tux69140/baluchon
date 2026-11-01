@@ -18,6 +18,8 @@ export const ECRITURES_BIBLIOTHEQUE = Object.freeze([
   'supprimerEtiquette',
   'supprimerGroupe',
   'ajouterALaBibliotheque',
+  // La restauration remplace tout : plus rien à rétablir dans des données remplacées.
+  'remplacerTout',
 ]);
 
 const dansTauri = () => typeof window.__TAURI_INTERNALS__?.invoke === 'function';

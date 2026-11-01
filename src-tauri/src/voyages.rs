@@ -3,7 +3,7 @@
 // qui n'écrit rien si une seule ligne est refusée.
 use crate::ajustements::verifier_sac;
 use crate::base::{en_texte, lire_lignes, Base};
-use rusqlite::{params, OptionalExtension, Row, Transaction};
+use rusqlite::{params, Connection, OptionalExtension, Row, Transaction};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -201,6 +201,92 @@ pub(crate) fn inserer_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), S
     Ok(())
 }
 
+// Écrit un voyage entier (partagé avec la restauration, sauvegarde.rs).
+pub(crate) fn inserer_voyage(tx: &Transaction, contenu: &VoyageComplet) -> Result<(), String> {
+    let v = &contenu.voyage;
+    tx.execute(
+        &format!("INSERT INTO voyage ({COLONNES_VOYAGE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"),
+        params![
+            v.id,
+            v.nom,
+            v.destination,
+            v.depart,
+            v.retour,
+            v.voyageurs,
+            v.modifie_le
+        ],
+    )
+    .map_err(en_texte)?;
+    for e in &contenu.etiquettes {
+        inserer_etiquette(tx, e)?;
+    }
+    for c in &contenu.categories {
+        inserer_categorie(tx, c)?;
+    }
+    for o in &contenu.objets {
+        inserer_objet(tx, o)?;
+    }
+    for modele_id in &contenu.ecartes {
+        tx.execute(
+            "INSERT INTO objet_ecarte (voyage_id, modele_id) VALUES (?1, ?2)",
+            params![v.id, modele_id],
+        )
+        .map_err(en_texte)?;
+    }
+    Ok(())
+}
+
+// Un voyage complet sous une connexion déjà tenue (partagé avec la lecture de toutes les données).
+pub(crate) fn lire_voyage_de(
+    connexion: &Connection,
+    id: &str,
+) -> Result<Option<VoyageComplet>, String> {
+    let voyage = connexion
+        .query_row(
+            &format!("SELECT {COLONNES_VOYAGE} FROM voyage WHERE id = ?1"),
+            [id],
+            voyage_depuis,
+        )
+        .optional()
+        .map_err(en_texte)?;
+    let Some(voyage) = voyage else {
+        return Ok(None);
+    };
+    let etiquettes = lire_lignes(
+        connexion,
+        &format!("SELECT {COLONNES_ETIQUETTE} FROM etiquette_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
+        [id],
+        etiquette_depuis,
+    )?;
+    let categories = lire_lignes(
+        connexion,
+        &format!("SELECT {COLONNES_CATEGORIE} FROM categorie_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
+        [id],
+        categorie_depuis,
+    )?;
+    let objets = lire_lignes(
+        connexion,
+        &format!(
+            "SELECT {COLONNES_OBJET} FROM objet_du_voyage WHERE voyage_id = ?1 ORDER BY rowid"
+        ),
+        [id],
+        objet_depuis,
+    )?;
+    let ecartes = lire_lignes(
+        connexion,
+        "SELECT modele_id FROM objet_ecarte WHERE voyage_id = ?1 ORDER BY modele_id",
+        [id],
+        |r| r.get(0),
+    )?;
+    Ok(Some(VoyageComplet {
+        voyage,
+        etiquettes,
+        categories,
+        objets,
+        ecartes,
+    }))
+}
+
 impl Base {
     pub fn lister_voyages(&self) -> Result<Vec<Voyage>, String> {
         let connexion = self.connexion()?;
@@ -215,36 +301,7 @@ impl Base {
     pub fn creer_voyage(&self, contenu: &VoyageComplet) -> Result<(), String> {
         let connexion = self.connexion()?;
         let tx = connexion.unchecked_transaction().map_err(en_texte)?;
-        let v = &contenu.voyage;
-        tx.execute(
-            &format!("INSERT INTO voyage ({COLONNES_VOYAGE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"),
-            params![
-                v.id,
-                v.nom,
-                v.destination,
-                v.depart,
-                v.retour,
-                v.voyageurs,
-                v.modifie_le
-            ],
-        )
-        .map_err(en_texte)?;
-        for e in &contenu.etiquettes {
-            inserer_etiquette(&tx, e)?;
-        }
-        for c in &contenu.categories {
-            inserer_categorie(&tx, c)?;
-        }
-        for o in &contenu.objets {
-            inserer_objet(&tx, o)?;
-        }
-        for modele_id in &contenu.ecartes {
-            tx.execute(
-                "INSERT INTO objet_ecarte (voyage_id, modele_id) VALUES (?1, ?2)",
-                params![v.id, modele_id],
-            )
-            .map_err(en_texte)?;
-        }
+        inserer_voyage(&tx, contenu)?;
         // Sans ce commit (erreur plus haut), la transaction abandonnée n'a rien écrit.
         tx.commit().map_err(en_texte)
     }
@@ -288,50 +345,7 @@ impl Base {
 
     pub fn lire_voyage(&self, id: &str) -> Result<Option<VoyageComplet>, String> {
         let connexion = self.connexion()?;
-        let voyage = connexion
-            .query_row(
-                &format!("SELECT {COLONNES_VOYAGE} FROM voyage WHERE id = ?1"),
-                [id],
-                voyage_depuis,
-            )
-            .optional()
-            .map_err(en_texte)?;
-        let Some(voyage) = voyage else {
-            return Ok(None);
-        };
-        let etiquettes = lire_lignes(
-            &connexion,
-            &format!("SELECT {COLONNES_ETIQUETTE} FROM etiquette_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
-            [id],
-            etiquette_depuis,
-        )?;
-        let categories = lire_lignes(
-            &connexion,
-            &format!("SELECT {COLONNES_CATEGORIE} FROM categorie_du_voyage WHERE voyage_id = ?1 ORDER BY ordre, rowid"),
-            [id],
-            categorie_depuis,
-        )?;
-        let objets = lire_lignes(
-            &connexion,
-            &format!(
-                "SELECT {COLONNES_OBJET} FROM objet_du_voyage WHERE voyage_id = ?1 ORDER BY rowid"
-            ),
-            [id],
-            objet_depuis,
-        )?;
-        let ecartes = lire_lignes(
-            &connexion,
-            "SELECT modele_id FROM objet_ecarte WHERE voyage_id = ?1 ORDER BY modele_id",
-            [id],
-            |r| r.get(0),
-        )?;
-        Ok(Some(VoyageComplet {
-            voyage,
-            etiquettes,
-            categories,
-            objets,
-            ecartes,
-        }))
+        lire_voyage_de(&connexion, id)
     }
 
     // Efface le voyage ; les ON DELETE CASCADE emportent ses étiquettes, catégories, objets et écartés.
