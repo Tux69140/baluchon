@@ -14,6 +14,7 @@
 //   focus sur le nom ; « Pâtes », par jour → rangé entre Gourde et Repas, éclairé, enregistré ;
 // - Review Focus 1 : un objet nommé <i>Pâtes</i> & "riz" reste du texte dans sa ligne et le titre de
 //   sa fiche.
+import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -33,7 +34,7 @@ import {
   segment,
   toucher,
 } from './outils/fiches.mjs';
-import { creerJuge } from './outils/page.mjs';
+import { CAPTURES, creerJuge } from './outils/page.mjs';
 
 const juge = creerJuge();
 const serveur = await demarrerServeur();
@@ -102,18 +103,16 @@ async function essaiRepas() {
   await enregistrer(page);
   const vide = await lireFiche(page);
   const apres = await places(page);
+  await page.screenshot({ path: join(CAPTURES, 'fiche-objet-quantite-videe-telephone.png') });
   juge.exige(
     vu(vide?.erreurs) === vu([o.erreurs.valeurManquante]) &&
       vide.focus === 'valeur' &&
       vu(vide.lecture) === vu([o.aIndiquer, o.aIndiquerAide]),
     `${cas} : valeur vide ${vu(vide)}`,
   );
-  // Le nom, les segments et l'encadré restent en place ; l'encadré lui-même change de hauteur (l'exemple chiffré
-  // fait deux lignes, « Quantité à indiquer » une seule), ce qui n'a rien à voir avec le message.
-  juge.exige(
-    vu(apres.slice(0, 3)) === vu(avant.slice(0, 3)),
-    `${cas} : le message a déplacé la fiche ${vu({ avant, apres })}`,
-  );
+  // Le nom, les segments, l'encadré et le message restent en place : l'encadré garde sa hauteur, que son
+  // exemple chiffré fasse deux lignes ou « Quantité à indiquer » une seule.
+  juge.exige(vu(apres) === vu(avant), `${cas} : le message a déplacé la fiche ${vu({ avant, apres })}`);
   const repasStocke = (await bibliothequeStockee(page)).objets.find(x => x.nom === 'Repas');
   juge.exige(repasStocke?.valeur === 2 && repasStocke.regle === 'par_jour', `${cas} : écrit ${vu(repasStocke)}`);
   for (const [tape, lu] of [

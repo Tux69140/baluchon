@@ -3,6 +3,8 @@
 // Les champs de chaque sorte de ligne sont décrits une seule fois, dans TABLES, calquées sur
 // tests/contrat/stockage.json.
 
+import { POUR_QUI, validerComposition } from './composition.js';
+
 export const FORMAT_SAUVEGARDE = 'baluchon-sauvegarde';
 export const VERSION_SAUVEGARDE = 2;
 
@@ -20,8 +22,6 @@ export function nomDeSauvegarde(date, { avantRestauration = false, numero = 1 } 
 export function construireSauvegarde({ bibliotheque, voyages, langue }, creeLe) {
   return { format: FORMAT_SAUVEGARDE, version: VERSION_SAUVEGARDE, creeLe, langue, bibliotheque, voyages };
 }
-
-import { POUR_QUI, validerComposition } from './composition.js';
 
 // Types : t texte, q groupe de « Pour qui », e entier, b booléen, en entier ou null, tn texte ou null, l liste de textes.
 const TYPES = {

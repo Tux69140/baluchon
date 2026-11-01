@@ -3,7 +3,7 @@
 // exemple correct passe aussi), un exemple fautif rougit pour sa propre raison.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -159,9 +159,18 @@ test('format : un code formaté passe, un code mal formaté rougit', async () =>
 // Langues : le français sert de référence (docs/TRADUIRE.md).
 const REF = {
   voyages: { titre: 'Voyages', compte: { one: '{n} voyage', other: '{n} voyages' } },
-  depart: { groupes: { transport: 'Transport' }, objets: { cle: { nom: 'Clés', note: 'Penser aux clés' } } },
+  depart: {
+    groupes: { transport: 'Transport' },
+    categories: { sacs: 'Sacs' },
+    objets: { cle: { nom: 'Clés', note: 'Penser aux clés' } },
+  },
 };
-const faute = (traduction, langue = 'en') => verifierLangue(REF, traduction, langue);
+// La structure de la bibliothèque de départ qui correspond à REF.depart (la vraie : src/modele/depart).
+const DEPART_ESSAI = {
+  groupes: [{ cle: 'transport', etiquettes: [] }],
+  categories: [{ cle: 'sacs', objets: [{ cle: 'cle', note: true }] }],
+};
+const faute = (traduction, langue = 'en') => verifierLangue(REF, traduction, langue, DEPART_ESSAI);
 
 test('langues : une traduction partielle sans bibliothèque ne donne aucune faute', () => {
   assert.deepEqual(faute({ voyages: { titre: 'Trips' } }, 'en'), []);
@@ -188,8 +197,22 @@ test('langues : une forme de pluriel de la langue manque', () => {
 
 test('langues : la bibliothèque est complète ou absente, jamais à moitié traduite', () => {
   const demi = { depart: { groupes: { transport: 'Transport' } } };
-  assert.match(faute(demi).join(), /bibliothèque à moitié traduite, 2 texte\(s\) manquant\(s\)/);
-  const sansNote = { depart: { groupes: { transport: 'T' }, objets: { cle: { nom: 'K' } } } };
-  assert.match(faute(sansNote).join(), /depart\.objets\.cle\.note/);
+  assert.match(faute(demi).join(), /bibliothèque à moitié traduite/);
+  const sansNote = { depart: { ...REF.depart, objets: { cle: { nom: 'K' } } } };
+  assert.match(faute(sansNote).join(), /bibliothèque à moitié traduite/);
   assert.deepEqual(faute({ depart: REF.depart }), []);
+});
+
+test('langues : la structure de départ décide de ce qui est exigé, pas le fichier français', () => {
+  // La structure annonce une note pour « cle » ; le français de l'exemple n'en a pas : la traduction n'a donc
+  // pas tout ce que l'installation exige.
+  const exigeUneNote = { ...DEPART_ESSAI, categories: [{ cle: 'sacs', objets: [{ cle: 'sans-note', note: true }] }] };
+  const fr = { depart: { ...REF.depart, objets: { 'sans-note': { nom: 'X' } } } };
+  assert.match(verifierLangue(fr, fr, 'en', exigeUneNote).join(), /moitié traduite/);
+});
+
+test('langues : sans structure donnée, la vraie bibliothèque de départ fait foi', async () => {
+  const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
+  assert.deepEqual(verifierLangue(fr, { depart: fr.depart }, 'en'), []);
+  assert.match(verifierLangue(fr, { depart: { groupes: fr.depart.groupes } }, 'en').join(), /moitié traduite/);
 });

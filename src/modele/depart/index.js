@@ -1,7 +1,8 @@
 // La bibliothèque de départ complète : 4 groupes d’étiquettes et 16 catégories, une par fichier de ce
 // dossier. Au premier lancement, construireBibliotheque (src/modele/bibliotheque.js) la combine aux
 // textes de la langue pour en faire les lignes de la bibliothèque de l’utilisateur. Les clés sont
-// uniques dans tout l’ensemble : elles servent aussi de clés de traduction.
+// uniques dans tout l’ensemble : elles servent aussi de clés de traduction. Le suffixe « -categorie » de
+// trois clés (plage, sport, travail) évite la collision avec une étiquette de même nom.
 import { GROUPES } from './groupes.js';
 import { papiersEtArgent } from './papiers-et-argent.js';
 import { vetements } from './vetements.js';

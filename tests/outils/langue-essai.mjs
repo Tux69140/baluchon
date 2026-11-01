@@ -15,6 +15,11 @@ const marquer = valeur => {
 
 export async function ecrireLangueEssai() {
   const francais = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
+  const fichier = join(RACINE, 'tests/langues/eo.json');
+  const contenu = JSON.stringify(marquer(francais), null, 2) + '\n';
+  // Réécrit seulement s'il manque ou diffère : les serveurs d'essai déjà lancés surveillent ce dossier, et
+  // une réécriture identique rechargerait leurs pages en plein test.
+  if ((await readFile(fichier, 'utf8').catch(() => null)) === contenu) return;
   await mkdir(join(RACINE, 'tests/langues'), { recursive: true });
-  await writeFile(join(RACINE, 'tests/langues/eo.json'), JSON.stringify(marquer(francais), null, 2) + '\n');
+  await writeFile(fichier, contenu);
 }

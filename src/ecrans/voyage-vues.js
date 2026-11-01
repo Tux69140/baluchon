@@ -8,7 +8,7 @@
 // l'ordre, les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les
 // pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
-import { totalVoyageurs } from '../modele/composition.js';
+import { personnes } from '../modele/composition.js';
 import { estAAcheter, resteAAcheter } from '../modele/courses.js';
 import { appuiSurCase, estComplet, estRetire, etatDansLeSac, piecesASortir, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
@@ -126,7 +126,7 @@ const signeDeCase = etat =>
 const eclairage = (objet, recent) =>
   recent?.id === objet.id ? ` data-recent style="--eclairage-ecoule: ${-Math.round(recent.ecoule)}ms"` : '';
 
-function vueObjet({ t, langue }, objet, voyageurs, recent) {
+function vueObjet({ t, langue }, objet, voyage, recent) {
   const etat = etatDansLeSac(objet);
   const entame = etat === 'entame';
   // Retiré, il n'attend plus que la sortie de ses pièces : plus de quantité prévue à montrer.
@@ -135,9 +135,9 @@ function vueObjet({ t, langue }, objet, voyageurs, recent) {
   let quantiteDite = entame ? `${objet.dansLeSac} / ${objet.quantite}` : `${objet.quantite}`;
   if (retire) [quantite, quantiteDite] = ['', t('voyage.retire')];
   const note = objet.note ? `, ${t('voyage.avecNote')}` : '';
-  // « partagé » : la quantité vaut pour tout le groupe, pas par personne (docs/PRD.md, US-3) ; seul en
-  // voyage, il n'y a personne avec qui partager, le mot ne dirait rien.
-  const partage = objet.parPersonne || voyageurs < 2 ? '' : t('voyage.partage');
+  // « partagé » : la quantité vaut pour tout le groupe, pas par personne (docs/PRD.md, US-3) ; seule dans
+  // son groupe (« Pour qui »), une personne n'a personne avec qui partager, le mot ne dirait rien.
+  const partage = objet.parPersonne || personnes(objet.pourQui, voyage) < 2 ? '' : t('voyage.partage');
   // La marque « à acheter » : un mot et une icône, jamais la couleur seule (docs/DESIGN.md) ; après un achat
   // partiel, ce qui reste (phase 9).
   const reste = resteAAcheter(objet);
@@ -175,7 +175,7 @@ const vueLigneAjout = (t, categorieId) => `
 
 // Une catégorie ouverte dont le filtre masque tout le dit en toutes lettres, plutôt que d'être vide.
 // ajout : l'id de la catégorie dont la liste finit par « Ajouter un objet » (grand format).
-function vueLignes({ t, langue, voyageurs, recent }, { objets }, nombre, ajout = null) {
+function vueLignes({ t, langue, voyage, recent }, { objets }, nombre, ajout = null) {
   const fin = ajout ? vueLigneAjout(t, ajout) : '';
   if (!objets.length) {
     const info = `<p class="ligne-info">${pluriel(t, 'voyage.categorieMasquee', nombre, langue)}</p>`;
@@ -184,7 +184,7 @@ function vueLignes({ t, langue, voyageurs, recent }, { objets }, nombre, ajout =
         </ul>`
       : info;
   }
-  return `<ul class="objets">${objets.map(o => vueObjet({ t, langue }, o, voyageurs, recent)).join('')}${fin}
+  return `<ul class="objets">${objets.map(o => vueObjet({ t, langue }, o, voyage, recent)).join('')}${fin}
         </ul>`;
 }
 
@@ -275,8 +275,8 @@ const vueFlottant = t => `
 // liste : les catégories du voyage et leurs pièces (listeParCategorie) ; poses : les tampons et le
 // bandeau qui viennent d'apparaître, animés une seule fois ; recent : l'objet à éclairer ({ id, ecoule }).
 export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, recent, grandFormat, troisColonnes }) {
-  // Le nombre de voyageurs et l'objet à éclairer suivent le contexte jusqu'aux lignes (« partagé »).
-  const contexte = { ...contexteDeLAppli, voyageurs: totalVoyageurs(contenu.voyage), recent };
+  // Le voyage (sa composition) et l'objet à éclairer suivent le contexte jusqu'aux lignes (« partagé »).
+  const contexte = { ...contexteDeLAppli, voyage: contenu.voyage, recent };
   const { t, langue } = contexte;
   // Le lien retour vient en tête, hors du voyage : en grand format, il est seul sur sa ligne.
   const lien = `

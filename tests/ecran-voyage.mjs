@@ -298,6 +298,32 @@ try {
   );
   await seul.contexte.close();
 
+  // « partagé » dépend du groupe de l'objet, pas du total : Café soluble « pour les enfants » ne se partage
+  // pas avec un seul enfant, même à trois voyageurs ; avec deux enfants, il se partage (témoin).
+  for (const [enfants, partage] of [
+    [1, false],
+    [2, true],
+  ]) {
+    const groupe = await ouvrir(navigateur, serveur.url, {
+      taille: FORMATS.telephone,
+      theme: 'light',
+      donnees: {
+        ...DONNEES,
+        voyages: DONNEES.voyages.map(v => (v.id === 'v1' ? { ...v, enfants } : v)),
+        objetsDuVoyage: DONNEES.objetsDuVoyage.map(o => (o.id === 'o-caf' ? { ...o, pourQui: 'enfants' } : o)),
+      },
+      adresse: '#/voyage/v1',
+    });
+    const vuGroupe = await lire(groupe.page);
+    const partages = vuGroupe.categories.flatMap(c => c[4]).filter(o => o[4]);
+    juge.exige(
+      partages.length === (partage ? 1 : 0) &&
+        (vuGroupe.libelles['o-caf']?.[1] === fiche(`Café soluble, ${fr.voyage.partage}`, '1')) === partage,
+      `${enfants} enfant(s), Café soluble pour les enfants : « partagé » sous ${JSON.stringify(partages)}`,
+    );
+    await groupe.contexte.close();
+  }
+
   // Voyage inconnu, ou adresse mal formée : titre, message et retour.
   for (const [cas, adresse] of [
     ['voyage inconnu', '#/voyage/inconnu'],

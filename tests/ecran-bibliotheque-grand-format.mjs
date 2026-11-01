@@ -24,7 +24,7 @@ import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import { supprimerCategorie } from './outils/annulation.mjs';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
-import { DEPART, DONNEES, fermerEssai, fr, lire, ouvrirBibliotheque, remplir, vu } from './outils/bibliotheque.mjs';
+import { MINI_NOMS, DONNEES, fermerEssai, fr, lire, ouvrirBibliotheque, remplir, vu } from './outils/bibliotheque.mjs';
 import {
   FICHE,
   attendreFermee,
@@ -180,7 +180,7 @@ async function essaiFormat(format, theme) {
   juge.exige(
     d.classe === 'grand-format' &&
       v.cartes.length === 0 &&
-      vu(v.choix) === vu(DEPART) &&
+      vu(v.choix) === vu(MINI_NOMS) &&
       v.choisie === 'Vêtements' &&
       v.detail === 'Vêtements' &&
       v.detailObjets.length === 7 &&
@@ -214,7 +214,7 @@ async function essaiFormat(format, theme) {
         d.pistes.startsWith('320px 360px ') &&
         !d.titreVisible &&
         Math.abs(d.marges[0] - d.marges[1]) <= 1 &&
-        vu(v.crayons) === vu(DEPART.map(nom => remplir(b.modifierCategorie, { nom }))) &&
+        vu(v.crayons) === vu(MINI_NOMS.map(nom => remplir(b.modifierCategorie, { nom }))) &&
         cartes.crayonsDansLaCarte.length === 5 &&
         cartes.crayonsDansLaCarte.every(Boolean) &&
         cartes.nouvelleDessous &&
@@ -337,7 +337,7 @@ async function essaiRangerEtSupprimer(format) {
   juge.exige(
     rangement.choix.length === 0 &&
       dansLeMenu === 5 &&
-      vu(rangement.rangement.map(l => l.nom)) === vu(DEPART) &&
+      vu(rangement.rangement.map(l => l.nom)) === vu(MINI_NOMS) &&
       rangement.detail === 'Vêtements',
     `${cas} : rangement ${vu({ ...rangement, dansLeMenu })}`,
   );
@@ -346,7 +346,7 @@ async function essaiRangerEtSupprimer(format) {
   await calme(page);
   const termine = await lire(page);
   juge.exige(
-    vu(termine.choix) === vu(DEPART) && termine.rangement.length === 0 && termine.focus.action === 'ranger',
+    vu(termine.choix) === vu(MINI_NOMS) && termine.rangement.length === 0 && termine.focus.action === 'ranger',
     `${cas} : Terminé ${vu(termine)}`,
   );
 
@@ -357,7 +357,7 @@ async function essaiRangerEtSupprimer(format) {
   const focus = await focusActuel(page);
   juge.exige(
     avant.choisie === 'Camping' &&
-      vu(apres.choix) === vu(DEPART.slice(0, 4)) &&
+      vu(apres.choix) === vu(MINI_NOMS.slice(0, 4)) &&
       apres.choisie === 'Vêtements' &&
       apres.detail === 'Vêtements' &&
       apres.detailObjets.length === 7 &&

@@ -12,7 +12,7 @@ export const compter = (cle, n) => remplir(fr.bibliotheque[cle][n === 1 ? 'one' 
 export { remplir };
 export const vu = e => JSON.stringify(e);
 // La mini-bibliothèque, dans son ordre.
-export const DEPART = ['Vêtements', 'Toilette', 'Alimentation', 'Papiers', 'Camping'];
+export const MINI_NOMS = ['Vêtements', 'Toilette', 'Alimentation', 'Papiers', 'Camping'];
 // La mini-bibliothèque est déposée d'office : sans elle, le premier lancement installerait la vraie.
 export const DONNEES = { toucheRetour: true, ...graineMini() };
 // Les formats de cette phase : ceux de tous les écrans, plus le téléphone étroit et son paysage, et

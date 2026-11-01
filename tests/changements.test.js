@@ -321,6 +321,19 @@ test('un enfant de plus fait entrer l’objet « enfants », le dernier enfant p
   assert.equal(ligne(changer(avec, infos({ enfants: 2 }), []), 'Sirop pour enfants'), undefined);
 });
 
+test('le dernier enfant parti fait sortir l’objet « enfants » même si son modèle a disparu de la bibliothèque', () => {
+  const avec = creer({ i: infos({ enfants: 1 }) });
+  const sansModele = { ...bibliotheque(), objets: bibliotheque().objets.filter(o => o.id !== 'o-sirop') };
+  const sortie = ligne(changer(avec, infos(), [], sansModele), 'Sirop pour enfants');
+  assert.equal(sortie.genre, 'sortie');
+  assert.deepEqual(sortie.raison, { genre: 'groupe', pourQui: 'enfants' });
+  // Témoin : un enfant reste, l'objet reste.
+  assert.equal(
+    ligne(changer(creer({ i: infos({ enfants: 2 }) }), infos({ enfants: 1 }), [], sansModele), 'Sirop pour enfants'),
+    undefined,
+  );
+});
+
 test('de 1 femme + 1 homme à 2 femmes, aucune quantité « tous » ne change', () => {
   const contenu = creer();
   assert.deepEqual(changer(contenu, infos({ femmes: 2, hommes: 0 }), []), []);

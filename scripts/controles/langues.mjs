@@ -3,6 +3,8 @@
 // pluriel manquante pour la langue, texte vide, bibliothèque de départ à moitié traduite.
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { bibliothequeComplete } from '../../src/modele/bibliotheque.js';
+import { DEPART } from '../../src/modele/depart/index.js';
 
 const estTexte = valeur => typeof valeur === 'string';
 const estBranche = valeur => valeur !== null && typeof valeur === 'object';
@@ -65,27 +67,14 @@ function parcourir(reference, trad, chemin, langue, fautes) {
     parcourir(reference[cle], valeur, `${chemin}.${cle}`, langue, fautes);
 }
 
-const feuilles = (branche, chemin = []) =>
-  Object.entries(branche).flatMap(([cle, valeur]) =>
-    estBranche(valeur) && !estPluriel(valeur) ? feuilles(valeur, [...chemin, cle]) : [[...chemin, cle]],
-  );
-const lireChemin = (branche, chemin) => chemin.reduce((b, cle) => b?.[cle], branche);
-
 // Les fautes lisibles d'une traduction (vide si tout va bien). La bibliothèque de départ est tout ou rien :
-// absente, l'appareil installe le français ; présente, chaque nom et chaque note doivent y être.
-export function verifierLangue(reference, traduction, langue) {
+// absente, l'appareil installe le français ; présente, elle doit être complète selon la règle même de
+// l'installation (bibliothequeComplete), appliquée à la structure de départ (depart, la vraie par défaut).
+export function verifierLangue(reference, traduction, langue, depart = DEPART) {
   const fautes = [];
   parcourir(reference, traduction, langue, langue, fautes);
-  if (traduction.depart !== undefined) {
-    const manquants = feuilles(reference.depart).filter(chemin => {
-      const texte = lireChemin(traduction.depart, chemin);
-      return !estTexte(texte) || texte.trim() === '';
-    });
-    if (manquants.length)
-      fautes.push(
-        `${langue}.depart : bibliothèque à moitié traduite, ${manquants.length} texte(s) manquant(s) (par exemple depart.${manquants[0].join('.')}) : à traduire en entier ou à retirer`,
-      );
-  }
+  if (traduction.depart !== undefined && !bibliothequeComplete(depart, traduction.depart))
+    fautes.push(`${langue}.depart : bibliothèque à moitié traduite : à traduire en entier ou à retirer`);
   return fautes;
 }
 

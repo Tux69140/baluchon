@@ -90,6 +90,16 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
       ajouter('sortie', objet.nom, objet.quantite, 0, false, { cle, objet, raison });
       continue;
     }
+    // Un objet dont le modèle a disparu ou dérivé n'est pas dans `avant` : son groupe tombé à 0 personne
+    // le fait sortir quand même (le dernier enfant parti emporte le sirop).
+    if (objet.modeleId && sortants.has(objet.pourQui)) {
+      ajouter('sortie', objet.nom, objet.quantite, 0, false, {
+        cle,
+        objet,
+        raison: { genre: 'groupe', pourQui: objet.pourQui },
+      });
+      continue;
+    }
     if (!aUneFormuleInitiale(objet)) continue;
     const calcul = recalculer(objet, infos);
     if (calcul === 0 || calcul === objet.quantite) continue;

@@ -176,6 +176,9 @@
   border-radius: var(--r-md);
   background: var(--releve);
   font-size: var(--taille-libelle);
+  /* Hauteur réservée : le titre et deux lignes d'exemple. Vider la quantité ne laisse que « Quantité à
+     indiquer » et une courte aide : l'encadré ne rétrécit pas, rien dessous ne saute. */
+  min-height: calc(24px + 2 * var(--e-2xs) + 1.15lh + 2lh);
 }
 
 .lecture b {

@@ -34,7 +34,7 @@ import {
   versMesVoyages,
 } from './outils/annulation.mjs';
 import { avecBibliotheque } from './outils/assistant.mjs';
-import { DEPART, fermerEssai, fr, lire, remplir, vu } from './outils/bibliotheque.mjs';
+import { MINI_NOMS, fermerEssai, fr, lire, remplir, vu } from './outils/bibliotheque.mjs';
 import { libererEcritures } from './outils/etiquettes.mjs';
 import {
   attendreFermee,
@@ -170,7 +170,7 @@ async function essaiCategorie(format) {
     ? vue.choisie === 'Camping' && vue.detail === 'Camping'
     : vue.cartes.find(c => c.nom === 'Camping')?.ouverte === 'true';
   juge.exige(
-    vu(categoriesVues(vue)) === vu(DEPART) &&
+    vu(categoriesVues(vue)) === vu(MINI_NOMS) &&
       ouverte &&
       recent === 'Camping' &&
       vu(objetsVus(vue, 'Camping')) === vu(nomsDe('Camping')),

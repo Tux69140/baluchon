@@ -18,7 +18,7 @@ import { chromium } from 'playwright';
 import { calme, attendreQue } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
-  DEPART,
+  MINI_NOMS,
   attendreOrdre,
   commande,
   fermerEssai,
@@ -51,7 +51,7 @@ async function essaiRangement() {
   await calme(page);
   const liste = await lire(page);
   juge.exige(
-    vu(liste.rangement.map(l => l.nom)) === vu(DEPART) &&
+    vu(liste.rangement.map(l => l.nom)) === vu(MINI_NOMS) &&
       liste.cartes.length === 0 &&
       !liste.ranger &&
       liste.rangement[0].monterInactif &&
@@ -198,7 +198,7 @@ async function essaiAppuisRapidesEtPanne() {
     `${casPanne} : message ${vu(message)}`,
   );
   juge.exige(
-    vu(vue.rangement.map(l => l.nom)) === vu(DEPART) && vu(await ordreStocke(p)) === vu(DEPART),
+    vu(vue.rangement.map(l => l.nom)) === vu(MINI_NOMS) && vu(await ordreStocke(p)) === vu(MINI_NOMS),
     `${casPanne} : ordre ${vu(vue.rangement.map(l => l.nom))}`,
   );
   // Rien d'autre ne s'affiche en erreur : la panne simulée est au journal, c'est attendu.
@@ -283,7 +283,7 @@ async function essaiLigneDeplaceeVisible() {
     };
   });
   juge.exige(derniere.nom && derniere.animations, `${cas} : départ ${vu(derniere)}`);
-  const ordre = [...DEPART];
+  const ordre = [...MINI_NOMS];
   const place = ordre.indexOf(derniere.nom);
   ordre.splice(place, 2, ordre[place + 1], derniere.nom);
   await page.click(commande('descendre', derniere.id));

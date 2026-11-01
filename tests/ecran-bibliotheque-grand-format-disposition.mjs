@@ -12,7 +12,7 @@ import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
-  DEPART,
+  MINI_NOMS,
   changerDeFormat,
   commande,
   fermerEssai,
@@ -133,7 +133,7 @@ async function essaiRangerEnChangeant() {
     const v = await lire(page);
     const focus = await focusActuel(page);
     juge.exige(
-      vu(v.rangement.map(l => l.nom)) === vu(DEPART) &&
+      vu(v.rangement.map(l => l.nom)) === vu(MINI_NOMS) &&
         v.choix.length === 0 &&
         v.cartes.length === 0 &&
         focus === depart &&

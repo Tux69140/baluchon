@@ -19,7 +19,7 @@ import { demarrerServeur } from './outils/serveur.mjs';
 import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import {
   DONNEES,
-  DEPART,
+  MINI_NOMS,
   TOUS_FORMATS,
   commande,
   compter,
@@ -109,7 +109,7 @@ async function essaiLecture() {
       vue.disposition === 'telephone',
     `${cas} : en-tête ${vu({ ...vue, cartes: undefined })}`,
   );
-  juge.exige(vu(vue.cartes.map(c => c.nom)) === vu(DEPART), `${cas} : ordre ${vu(vue.cartes.map(c => c.nom))}`);
+  juge.exige(vu(vue.cartes.map(c => c.nom)) === vu(MINI_NOMS), `${cas} : ordre ${vu(vue.cartes.map(c => c.nom))}`);
   juge.exige(
     vue.cartes.every(c => c.ouverte === 'false' && c.objets.length === 0),
     `${cas} : cartes repliées ${vu(vue.cartes)}`,
@@ -160,7 +160,7 @@ async function essaiTelephoneCouche() {
   const ouvert = await ouvrirBibliotheque('telephone-etroit-paysage');
   const vue = await lire(ouvert.page);
   juge.exige(
-    vue.disposition === 'telephone' && vu(vue.cartes.map(c => c.nom)) === vu(DEPART) && vue.choix.length === 0,
+    vue.disposition === 'telephone' && vu(vue.cartes.map(c => c.nom)) === vu(MINI_NOMS) && vue.choix.length === 0,
     `${cas} : ${vu({ disposition: vue.disposition, cartes: vue.cartes.map(c => c.nom), choix: vue.choix })}`,
   );
   await fermer(cas, ouvert);
