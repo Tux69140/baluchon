@@ -28,6 +28,8 @@ pub struct ObjetModele {
     pub valeur: i64,
     pub plafond: Option<i64>,
     pub par_personne: bool,
+    // Le groupe visé : tous, adultes, femmes, hommes ou enfants (toujours renseigné).
+    pub pour_qui: String,
     pub consommable: bool,
     pub toujours_inclus: bool,
     pub note: String,
@@ -108,10 +110,11 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetModele> {
         valeur: r.get(4)?,
         plafond: r.get(5)?,
         par_personne: r.get(6)?,
-        consommable: r.get(7)?,
-        toujours_inclus: r.get(8)?,
-        note: r.get(9)?,
-        modifie_le: r.get(10)?,
+        pour_qui: r.get(7)?,
+        consommable: r.get(8)?,
+        toujours_inclus: r.get(9)?,
+        note: r.get(10)?,
+        modifie_le: r.get(11)?,
         etiquettes: vec![],
     })
 }
@@ -180,8 +183,8 @@ pub(crate) fn inserer_bibliotheque(
     for o in &bibliotheque.objets {
         tx.execute(
             "INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
-                   consommable, toujours_inclus, note, modifie_le)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                   pour_qui, consommable, toujours_inclus, note, modifie_le)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             params![
                 o.id,
                 o.categorie_id,
@@ -190,6 +193,7 @@ pub(crate) fn inserer_bibliotheque(
                 o.valeur,
                 o.plafond,
                 o.par_personne,
+                o.pour_qui,
                 o.consommable,
                 o.toujours_inclus,
                 o.note,
@@ -243,7 +247,7 @@ pub(crate) fn lire_bibliotheque_de(connexion: &Connection) -> Result<Bibliothequ
     let mut objets = lire_lignes(
         connexion,
         "SELECT o.id, o.categorie_id, o.nom, o.regle, o.valeur, o.plafond, o.par_personne,
-                o.consommable, o.toujours_inclus, o.note, o.modifie_le
+                o.pour_qui, o.consommable, o.toujours_inclus, o.note, o.modifie_le
          FROM objet_modele o JOIN categorie_modele c ON c.id = o.categorie_id
          ORDER BY c.ordre, o.rowid",
         [],

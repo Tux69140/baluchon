@@ -127,11 +127,11 @@ test('un JSON lisible qui n’est pas une sauvegarde a un autre format', () => {
 });
 
 test('une version future est refusée, même si le reste est abîmé', () => {
-  assert.equal(raison(fichier(s => (s.version = 2))), 'version');
+  assert.equal(raison(fichier(s => (s.version = 3))), 'version');
   assert.equal(
     raison(
       fichier(s => {
-        s.version = 2;
+        s.version = 3;
         delete s.bibliotheque;
       }),
     ),
@@ -144,4 +144,46 @@ test('la sauvegarde construite porte son format et sa version', () => {
   assert.equal(s.format, FORMAT_SAUVEGARDE);
   assert.equal(s.version, VERSION_SAUVEGARDE);
   assert.equal(s.creeLe, CREE);
+});
+
+// Une sauvegarde d'avant la phase 13 : des voyageurs, pas de « pour qui ».
+const fichierV1 = (voyageurs = 3) =>
+  fichier(s => {
+    s.version = 1;
+    const voyage = { ...s.voyages[0].voyage, voyageurs };
+    for (const g of ['femmes', 'hommes', 'enfants']) delete voyage[g];
+    s.voyages[0].voyage = voyage;
+    for (const o of [...s.bibliotheque.objets, ...s.voyages[0].objets]) delete o.pourQui;
+  });
+
+test('une sauvegarde de version 1 est rendue au format 2 : femmes, hommes, enfants et « tous »', () => {
+  const lu = lireSauvegarde(fichierV1(3));
+  assert.equal(lu.ok, true);
+  const { voyage, objets } = lu.contenu.voyages[0];
+  assert.deepEqual(
+    { femmes: voyage.femmes, hommes: voyage.hommes, enfants: voyage.enfants },
+    { femmes: 2, hommes: 1, enfants: 0 },
+  );
+  assert.equal('voyageurs' in voyage, false);
+  assert.ok(objets.every(o => o.pourQui === 'tous'));
+  assert.ok(lu.contenu.bibliotheque.objets.every(o => o.pourQui === 'tous'));
+  assert.equal(lireSauvegarde(fichierV1(1)).contenu.voyages[0].voyage.femmes, 1);
+  assert.equal(lireSauvegarde(fichierV1(1)).contenu.voyages[0].voyage.hommes, 0);
+});
+
+test('une version 1 aux voyageurs absurdes est abîmée', () => {
+  assert.equal(raison(fichierV1(0)), 'abime');
+  assert.equal(raison(fichierV1(21)), 'abime');
+  assert.equal(raison(fichierV1('3')), 'abime');
+});
+
+test('une version 2 sans « pour qui », ou avec un groupe inconnu, est abîmée', () => {
+  assert.equal(raison(fichier(s => delete s.bibliotheque.objets[0].pourQui)), 'abime');
+  assert.equal(raison(fichier(s => delete s.voyages[0].objets[0].pourQui)), 'abime');
+  assert.equal(raison(fichier(s => (s.voyages[0].objets[0].pourQui = 'chiens'))), 'abime');
+});
+
+test('une composition hors des bornes est abîmée', () => {
+  assert.equal(raison(fichier(s => Object.assign(s.voyages[0].voyage, { femmes: 0, hommes: 0 }))), 'abime');
+  assert.equal(raison(fichier(s => (s.voyages[0].voyage.enfants = 21))), 'abime');
 });

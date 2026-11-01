@@ -49,10 +49,11 @@ pub(crate) fn ecrire_categorie(
 pub(crate) fn ecrire_objet(tx: &Transaction, objet: &ObjetModele) -> Result<(), String> {
     tx.execute(
         "INSERT INTO objet_modele (id, categorie_id, nom, regle, valeur, plafond, par_personne,
-           consommable, toujours_inclus, note, modifie_le)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+           pour_qui, consommable, toujours_inclus, note, modifie_le)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
          ON CONFLICT(id) DO UPDATE SET nom = excluded.nom, regle = excluded.regle,
            valeur = excluded.valeur, plafond = excluded.plafond, par_personne = excluded.par_personne,
+           pour_qui = excluded.pour_qui,
            consommable = excluded.consommable, toujours_inclus = excluded.toujours_inclus,
            note = excluded.note, modifie_le = excluded.modifie_le",
         params![
@@ -63,6 +64,7 @@ pub(crate) fn ecrire_objet(tx: &Transaction, objet: &ObjetModele) -> Result<(), 
             objet.valeur,
             objet.plafond,
             objet.par_personne,
+            objet.pour_qui,
             objet.consommable,
             objet.toujours_inclus,
             objet.note,

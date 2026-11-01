@@ -6,7 +6,7 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 
-const MIGRATIONS: [&str; 7] = [
+const MIGRATIONS: [&str; 8] = [
     include_str!("../migrations/001_initial.sql"),
     include_str!("../migrations/002_bibliotheque_et_voyages.sql"),
     include_str!("../migrations/003_dans_le_sac_en_pieces.sql"),
@@ -14,6 +14,7 @@ const MIGRATIONS: [&str; 7] = [
     include_str!("../migrations/005_achats_en_pieces.sql"),
     include_str!("../migrations/006_pieces_a_sortir.sql"),
     include_str!("../migrations/007_objets_ecartes.sql"),
+    include_str!("../migrations/008_composition_et_semaine.sql"),
 ];
 
 pub struct Base(Mutex<Connection>);
@@ -48,25 +49,48 @@ fn version_du_schema(connexion: &Connection) -> i64 {
 }
 
 // Chaque migration s'applique en une seule opération avec son numéro : interrompue, elle ne laisse
-// rien de partiel, et elle sera rejouée entière au lancement suivant.
+// rien de partiel, et elle sera rejouée entière au lancement suivant. Les clés étrangères sont suspendues
+// pendant une migration (une table reconstruite ne doit pas emporter ses enfants par cascade), puis
+// revérifiées avant de valider et toujours rétablies.
 fn migrer(connexion: &Connection) -> Result<(), String> {
     for (indice, sql) in MIGRATIONS.iter().enumerate() {
         let version = indice as i64 + 1;
         if version_du_schema(connexion) >= version {
             continue;
         }
-        let tx = connexion
-            .unchecked_transaction()
+        connexion
+            .execute_batch("PRAGMA foreign_keys = OFF;")
             .map_err(|e| e.to_string())?;
-        tx.execute_batch(sql).map_err(|e| e.to_string())?;
-        tx.execute(
-            "INSERT INTO schema_migrations (version) VALUES (?1)",
-            [version],
-        )
-        .map_err(|e| e.to_string())?;
-        tx.commit().map_err(|e| e.to_string())?;
+        let resultat = appliquer(connexion, sql, version);
+        connexion
+            .execute_batch("PRAGMA foreign_keys = ON;")
+            .map_err(|e| e.to_string())?;
+        resultat?;
     }
     Ok(())
+}
+
+fn appliquer(connexion: &Connection, sql: &str, version: i64) -> Result<(), String> {
+    let tx = connexion
+        .unchecked_transaction()
+        .map_err(|e| e.to_string())?;
+    tx.execute_batch(sql).map_err(|e| e.to_string())?;
+    let orphelines: i64 = tx
+        .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |r| {
+            r.get(0)
+        })
+        .map_err(|e| e.to_string())?;
+    if orphelines > 0 {
+        return Err(format!(
+            "La migration {version} laisse {orphelines} ligne(s) sans parent."
+        ));
+    }
+    tx.execute(
+        "INSERT INTO schema_migrations (version) VALUES (?1)",
+        [version],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())
 }
 
 impl Base {
@@ -115,8 +139,8 @@ mod tests {
             base.connexion()
                 .unwrap()
                 .execute(
-                    "INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
-                     VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 2, '2026-10-06T09:00:00Z')",
+                    "INSERT INTO voyage (id, nom, depart, retour, femmes, hommes, enfants, modifie_le)
+                     VALUES ('v1', 'Vercors', '2026-10-10', '2026-10-13', 1, 1, 0, '2026-10-06T09:00:00Z')",
                     [],
                 )
                 .unwrap();
@@ -124,22 +148,6 @@ mod tests {
         let base = Base::ouvrir(&chemin).unwrap();
         assert_eq!(base.lister_voyages().unwrap().len(), 1);
         assert_eq!(version(&base), MIGRATIONS.len() as i64);
-    }
-
-    #[test]
-    fn le_nombre_de_voyageurs_reste_entre_1_et_20() {
-        let (_dossier, base) = base_jetable();
-        let inserer = |voyageurs: i64| {
-            base.connexion().unwrap().execute(
-                "INSERT INTO voyage (id, nom, depart, retour, voyageurs, modifie_le)
-                 VALUES (?1, 'V', '2026-10-10', '2026-10-13', ?2, 'x')",
-                rusqlite::params![format!("v{voyageurs}"), voyageurs],
-            )
-        };
-        assert!(inserer(1).is_ok());
-        assert!(inserer(20).is_ok());
-        assert!(inserer(0).is_err());
-        assert!(inserer(21).is_err());
     }
 
     #[test]
@@ -395,9 +403,13 @@ mod tests {
                 .unwrap();
         }
         let base = Base::ouvrir(&chemin).unwrap();
-        assert_eq!(version(&base), 7);
+        assert_eq!(version(&base), MIGRATIONS.len() as i64);
         let voyage = base.lire_voyage("v1").unwrap().unwrap();
         assert_eq!(voyage.voyage.nom, "Vercors");
         assert_eq!(voyage.ecartes, Vec::<String>::new());
     }
 }
+
+#[cfg(test)]
+#[path = "base_essais_008.rs"]
+mod essais_008;

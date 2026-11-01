@@ -75,8 +75,8 @@ fn un_voyage_enregistre_est_relu_tel_quel() {
     base.connexion()
         .unwrap()
         .execute(
-            "INSERT INTO voyage (id, nom, destination, depart, retour, voyageurs, modifie_le)
-             VALUES ('v1', 'Vercors', 'Autrans', '2026-10-10', '2026-10-13', 2, '2026-10-06T09:00:00Z')",
+            "INSERT INTO voyage (id, nom, destination, depart, retour, femmes, hommes, enfants, modifie_le)
+             VALUES ('v1', 'Vercors', 'Autrans', '2026-10-10', '2026-10-13', 1, 1, 0, '2026-10-06T09:00:00Z')",
             [],
         )
         .unwrap();
@@ -88,7 +88,9 @@ fn un_voyage_enregistre_est_relu_tel_quel() {
             destination: "Autrans".into(),
             depart: "2026-10-10".into(),
             retour: "2026-10-13".into(),
-            voyageurs: 2,
+            femmes: 1,
+            hommes: 1,
+            enfants: 0,
             modifie_le: "2026-10-06T09:00:00Z".into(),
         }]
     );

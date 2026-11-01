@@ -58,9 +58,9 @@ fn reecrire_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), String> {
     let modifiees = tx
         .execute(
             "UPDATE objet_du_voyage SET categorie_id = ?3, modele_id = ?4, nom = ?5, regle = ?6,
-               valeur = ?7, plafond = ?8, par_personne = ?9, consommable = ?10, quantite = ?11,
-               quantite_manuelle = ?12, dans_le_sac = ?13, a_acheter = ?14, achetes = ?15, note = ?16,
-               modifie_le = ?17
+               valeur = ?7, plafond = ?8, par_personne = ?9, pour_qui = ?10, consommable = ?11, quantite = ?12,
+               quantite_manuelle = ?13, dans_le_sac = ?14, a_acheter = ?15, achetes = ?16, note = ?17,
+               modifie_le = ?18
              WHERE id = ?1 AND voyage_id = ?2",
             params![
                 o.id,
@@ -72,6 +72,7 @@ fn reecrire_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), String> {
                 o.valeur,
                 o.plafond,
                 o.par_personne,
+                o.pour_qui,
                 o.consommable,
                 o.quantite,
                 o.quantite_manuelle,
@@ -95,14 +96,16 @@ impl Base {
         let modifiees = tx
             .execute(
                 "UPDATE voyage SET nom = ?2, destination = ?3, depart = ?4, retour = ?5,
-                   voyageurs = ?6, modifie_le = ?7 WHERE id = ?1",
+                   femmes = ?6, hommes = ?7, enfants = ?8, modifie_le = ?9 WHERE id = ?1",
                 params![
                     v.id,
                     v.nom,
                     v.destination,
                     v.depart,
                     v.retour,
-                    v.voyageurs,
+                    v.femmes,
+                    v.hommes,
+                    v.enfants,
                     v.modifie_le
                 ],
             )

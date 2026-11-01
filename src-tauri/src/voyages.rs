@@ -14,7 +14,10 @@ pub struct Voyage {
     pub destination: String,
     pub depart: String,
     pub retour: String,
-    pub voyageurs: i64,
+    // Qui voyage : trois groupes, au moins une personne et vingt au plus (phase 13).
+    pub femmes: i64,
+    pub hommes: i64,
+    pub enfants: i64,
     pub modifie_le: String,
 }
 
@@ -55,6 +58,8 @@ pub struct ObjetDuVoyage {
     pub valeur: i64,
     pub plafond: Option<i64>,
     pub par_personne: bool,
+    // Le groupe visé : tous, adultes, femmes, hommes ou enfants (toujours renseigné).
+    pub pour_qui: String,
     pub consommable: bool,
     pub quantite: i64,
     pub quantite_manuelle: bool,
@@ -86,12 +91,13 @@ pub struct VoyageComplet {
     pub ecartes: Vec<String>,
 }
 
-const COLONNES_VOYAGE: &str = "id, nom, destination, depart, retour, voyageurs, modifie_le";
+const COLONNES_VOYAGE: &str =
+    "id, nom, destination, depart, retour, femmes, hommes, enfants, modifie_le";
 const COLONNES_ETIQUETTE: &str = "id, voyage_id, modele_id, nom, ordre, modifie_le";
 const COLONNES_CATEGORIE: &str = "id, voyage_id, modele_id, nom, icone, couleur, ordre, modifie_le";
 const COLONNES_OBJET: &str =
     "id, voyage_id, categorie_id, modele_id, nom, regle, valeur, plafond, par_personne,
-    consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achetes, note, modifie_le";
+    pour_qui, consommable, quantite, quantite_manuelle, dans_le_sac, a_acheter, achetes, note, modifie_le";
 
 fn voyage_depuis(r: &Row<'_>) -> rusqlite::Result<Voyage> {
     Ok(Voyage {
@@ -100,8 +106,10 @@ fn voyage_depuis(r: &Row<'_>) -> rusqlite::Result<Voyage> {
         destination: r.get(2)?,
         depart: r.get(3)?,
         retour: r.get(4)?,
-        voyageurs: r.get(5)?,
-        modifie_le: r.get(6)?,
+        femmes: r.get(5)?,
+        hommes: r.get(6)?,
+        enfants: r.get(7)?,
+        modifie_le: r.get(8)?,
     })
 }
 
@@ -140,14 +148,15 @@ fn objet_depuis(r: &Row<'_>) -> rusqlite::Result<ObjetDuVoyage> {
         valeur: r.get(6)?,
         plafond: r.get(7)?,
         par_personne: r.get(8)?,
-        consommable: r.get(9)?,
-        quantite: r.get(10)?,
-        quantite_manuelle: r.get(11)?,
-        dans_le_sac: r.get(12)?,
-        a_acheter: r.get(13)?,
-        achetes: r.get(14)?,
-        note: r.get(15)?,
-        modifie_le: r.get(16)?,
+        pour_qui: r.get(9)?,
+        consommable: r.get(10)?,
+        quantite: r.get(11)?,
+        quantite_manuelle: r.get(12)?,
+        dans_le_sac: r.get(13)?,
+        a_acheter: r.get(14)?,
+        achetes: r.get(15)?,
+        note: r.get(16)?,
+        modifie_le: r.get(17)?,
     })
 }
 
@@ -175,7 +184,7 @@ pub(crate) fn inserer_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), S
     tx.execute(
         &format!(
             "INSERT INTO objet_du_voyage ({COLONNES_OBJET})
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)"
         ),
         params![
             o.id,
@@ -187,6 +196,7 @@ pub(crate) fn inserer_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), S
             o.valeur,
             o.plafond,
             o.par_personne,
+            o.pour_qui,
             o.consommable,
             o.quantite,
             o.quantite_manuelle,
@@ -205,14 +215,18 @@ pub(crate) fn inserer_objet(tx: &Transaction, o: &ObjetDuVoyage) -> Result<(), S
 pub(crate) fn inserer_voyage(tx: &Transaction, contenu: &VoyageComplet) -> Result<(), String> {
     let v = &contenu.voyage;
     tx.execute(
-        &format!("INSERT INTO voyage ({COLONNES_VOYAGE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"),
+        &format!(
+            "INSERT INTO voyage ({COLONNES_VOYAGE}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
+        ),
         params![
             v.id,
             v.nom,
             v.destination,
             v.depart,
             v.retour,
-            v.voyageurs,
+            v.femmes,
+            v.hommes,
+            v.enfants,
             v.modifie_le
         ],
     )
