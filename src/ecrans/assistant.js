@@ -65,8 +65,8 @@ export function basculerCategorie(etat, ids) {
 }
 
 // Ce qui, en changeant, peut faire entrer ou sortir des objets de l'aperçu. Le nom n'y est pour rien.
-export const signatureDe = ({ depart, retour, voyageurs }, choisies) =>
-  JSON.stringify([[...choisies].sort(), depart, retour, voyageurs]);
+export const signatureDe = ({ depart, retour, femmes, hommes, enfants }, choisies) =>
+  JSON.stringify([[...choisies].sort(), depart, retour, femmes, hommes, enfants]);
 
 // Les objets écartés à nommer : ceux encore présents dans l'aperçu, seulement si les choix ont changé
 // depuis le dernier aperçu vu. Un objet écarté qui a quitté l'aperçu reste écarté, sans être nommé.

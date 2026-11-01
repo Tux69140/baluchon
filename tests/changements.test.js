@@ -4,6 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { appliquerChangements, calculerChangements, choisiesDuVoyage } from '../src/modele/changements.js';
+import { totalVoyageurs } from '../src/modele/composition.js';
 import { genererVoyage } from '../src/modele/voyage.js';
 
 const MAINTENANT = '2026-10-29T10:00:00.000Z';
@@ -29,6 +30,7 @@ const objet = (id, categorieId, nom, regle, valeur, autres = {}) => ({
   valeur,
   plafond: null,
   parPersonne: false,
+  pourQui: 'tous',
   consommable: false,
   toujoursInclus: !autres.etiquettes?.length,
   note: '',
@@ -59,6 +61,7 @@ const bibliotheque = () => ({
     objet('o-repas', 'c-ali', 'Repas', 'par_jour', 2, { parPersonne: true, consommable: true }),
     objet('o-gaz', 'c-camp', 'Cartouches de gaz', 'par_nuit', 1, { consommable: true, etiquettes: ['e-camping'] }),
     objet('o-lampe', 'c-camp', 'Lampe frontale', 'fixe', 1, { etiquettes: ['e-camping'] }),
+    objet('o-sirop', 'c-ali', 'Sirop pour enfants', 'fixe', 1, { pourQui: 'enfants' }),
   ],
 });
 // Du 10 au 13 : 4 jours, 3 nuits.
@@ -67,7 +70,9 @@ const infos = (autres = {}) => ({
   destination: 'Bretagne',
   depart: '2026-10-10',
   retour: '2026-10-13',
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   ...autres,
 });
 const creer = ({ i = infos(), choisies = [], ecartes = [] } = {}) =>
@@ -115,21 +120,21 @@ test('choisiesDuVoyage : les étiquettes du voyage qui existent encore dans la b
 
 test('critère : de 2 à 3 voyageurs, Repas 16 → 24, accepté par défaut', () => {
   const contenu = creer();
-  const repas = ligne(changer(contenu, infos({ voyageurs: 3 }), []), 'Repas');
+  const repas = ligne(changer(contenu, infos({ femmes: 2 }), []), 'Repas');
   assert.deepEqual([repas.genre, repas.avant, repas.apres, repas.defaut], ['quantite', 16, 24, true]);
-  const { modification } = appliquer(contenu, infos({ voyageurs: 3 }), []);
+  const { modification } = appliquer(contenu, infos({ femmes: 2 }), []);
   assert.equal(modifie(modification, 'Repas').quantite, 24);
-  assert.equal(modification.voyage.voyageurs, 3);
+  assert.equal(totalVoyageurs(modification.voyage), 3);
   assert.equal(modification.voyage.modifieLe, MAINTENANT);
 });
 
 test('critère : une quantité fixée manuellement est gardée par défaut, recalculée sur demande', () => {
   const contenu = retoucher(creer(), 'Pull', { quantite: 5, quantiteManuelle: true });
-  const pull = ligne(changer(contenu, infos({ voyageurs: 3 }), []), 'Pull');
+  const pull = ligne(changer(contenu, infos({ femmes: 2 }), []), 'Pull');
   assert.deepEqual([pull.genre, pull.avant, pull.apres, pull.defaut], ['manuelle', 5, 3, false]);
-  const garde = appliquer(contenu, infos({ voyageurs: 3 }), []).modification;
+  const garde = appliquer(contenu, infos({ femmes: 2 }), []).modification;
   assert.equal(modifie(garde, 'Pull'), undefined);
-  const recalcule = appliquer(contenu, infos({ voyageurs: 3 }), [], ch => lignes(ch).map(l => l.cle)).modification;
+  const recalcule = appliquer(contenu, infos({ femmes: 2 }), [], ch => lignes(ch).map(l => l.cle)).modification;
   assert.deepEqual([modifie(recalcule, 'Pull').quantite, modifie(recalcule, 'Pull').quantiteManuelle], [3, false]);
 });
 
@@ -267,7 +272,7 @@ test('un objet ajouté à la main n’est jamais dans les changements', () => {
   const contenu = creer();
   const gourde = { ...contenu.objets[0], id: 'main', nom: 'Gourde', modeleId: null, valeur: 0, quantiteManuelle: true };
   const avecGourde = { ...contenu, objets: [...contenu.objets, gourde] };
-  assert.equal(ligne(changer(avecGourde, infos({ voyageurs: 3 }), []), 'Gourde'), undefined);
+  assert.equal(ligne(changer(avecGourde, infos({ femmes: 2 }), []), 'Gourde'), undefined);
 });
 
 test('un objet retiré en attente de sortie revient quand son étiquette revient', () => {
@@ -292,12 +297,33 @@ test('des informations invalides sont refusées', () => {
 test('chaque entrée ou sortie nomme l’étiquette qui la cause', () => {
   const contenu = creer({ choisies: ['e-rando'] });
   const changements = changer(contenu, infos(), ['e-pluie']);
-  assert.equal(ligne(changements, 'Poncho').raison, 'Pluie');
-  assert.equal(ligne(changements, 'Chaussures de marche').raison, 'Randonnée');
+  assert.deepEqual(ligne(changements, 'Poncho').raison, { genre: 'etiquette', nom: 'Pluie' });
+  assert.deepEqual(ligne(changements, 'Chaussures de marche').raison, { genre: 'etiquette', nom: 'Randonnée' });
   const camping = changer(creer(), infos(), ['e-camping']);
-  assert.equal(ligne(camping, 'Lampe frontale').raison, 'Camping');
+  assert.deepEqual(ligne(camping, 'Lampe frontale').raison, { genre: 'etiquette', nom: 'Camping' });
   const long = creer({ i: infos({ retour: '2026-10-11' }), choisies: ['e-camping'] });
   assert.equal(ligne(changer(long, infos({ retour: '2026-10-10' }), ['e-camping']), 'Cartouches de gaz').raison, null);
+});
+
+// Un groupe de « Pour qui » qui passe de 0 à au moins 1 personne fait entrer ses objets, et l'inverse les
+// fait sortir ; la raison est alors le groupe, pas une étiquette.
+test('un enfant de plus fait entrer l’objet « enfants », le dernier enfant parti le fait sortir', () => {
+  const sans = creer();
+  assert.equal(ligne(changer(sans, infos(), []), 'Sirop pour enfants'), undefined);
+  const entree = ligne(changer(sans, infos({ enfants: 1 }), []), 'Sirop pour enfants');
+  assert.equal(entree.genre, 'entree');
+  assert.deepEqual(entree.raison, { genre: 'groupe', pourQui: 'enfants' });
+  const avec = creer({ i: infos({ enfants: 1 }) });
+  const sortie = ligne(changer(avec, infos(), []), 'Sirop pour enfants');
+  assert.equal(sortie.genre, 'sortie');
+  assert.deepEqual(sortie.raison, { genre: 'groupe', pourQui: 'enfants' });
+  // Témoin : un deuxième enfant ne fait ni entrer ni sortir.
+  assert.equal(ligne(changer(avec, infos({ enfants: 2 }), []), 'Sirop pour enfants'), undefined);
+});
+
+test('de 1 femme + 1 homme à 2 femmes, aucune quantité « tous » ne change', () => {
+  const contenu = creer();
+  assert.deepEqual(changer(contenu, infos({ femmes: 2, hommes: 0 }), []), []);
 });
 
 // Trouvé par le test d'écran : une quantité fixée manuellement n'est proposée que si le calcul change
@@ -306,7 +332,7 @@ test('une quantité fixée manuellement ne figure pas quand ni dates ni voyageur
   const contenu = retoucher(creer({ choisies: ['e-rando'] }), 'Pull', { quantite: 5, quantiteManuelle: true });
   assert.deepEqual(changer(contenu, infos({ nom: 'Autre' }), ['e-rando']), []);
   assert.equal(ligne(changer(contenu, infos(), ['e-rando', 'e-pluie']), 'Pull'), undefined);
-  assert.equal(ligne(changer(contenu, infos({ voyageurs: 3 }), ['e-rando']), 'Pull').genre, 'manuelle');
+  assert.equal(ligne(changer(contenu, infos({ femmes: 2 }), ['e-rando']), 'Pull').genre, 'manuelle');
 });
 
 // Relecture finale, défaut 1 : remplacer une étiquette par une autre dans une même catégorie. L'objet qui

@@ -1,13 +1,7 @@
 // Un voyage : validation, génération depuis la bibliothèque, classement (docs/PLAN.md, phase 2).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  classerVoyages,
-  genererVoyage,
-  listeParCategorie,
-  validerInformations,
-  VOYAGEURS,
-} from '../src/modele/voyage.js';
+import { classerVoyages, genererVoyage, listeParCategorie, validerInformations } from '../src/modele/voyage.js';
 
 const MAINTENANT = '2026-10-06T08:00:00.000Z';
 function compteur() {
@@ -32,6 +26,7 @@ const objet = (id, categorieId, nom, regle, valeur, autres = {}) => ({
   valeur,
   plafond: null,
   parPersonne: false,
+  pourQui: 'tous',
   consommable: false,
   toujoursInclus: !autres.etiquettes?.length,
   note: '',
@@ -72,22 +67,28 @@ const infos = (autres = {}) => ({
   destination: 'Autrans',
   depart: '2026-10-10',
   retour: '2026-10-13',
-  voyageurs: 2,
+  femmes: 1,
+  hommes: 1,
+  enfants: 0,
   ...autres,
 });
 const SANS = { choisies: new Set(), ecartes: new Set() };
 const generer = (i = infos(), choix = SANS) =>
   genererVoyage(bibliotheque(), i, choix, { nouvelId: compteur(), maintenant: MAINTENANT });
 
-test('le nombre de voyageurs par défaut est 2', () => {
-  assert.equal(VOYAGEURS.parDefaut, 2);
+test('le voyage et ses objets portent la composition et « pour qui »', () => {
+  const contenu = generer(infos({ femmes: 2, hommes: 0, enfants: 1 }));
+  const { voyage, objets } = contenu;
+  assert.deepEqual([voyage.femmes, voyage.hommes, voyage.enfants], [2, 0, 1]);
+  assert.equal('voyageurs' in voyage, false);
+  assert.ok(objets.every(o => o.pourQui === 'tous'));
 });
 
 test('des informations complètes ne portent aucune erreur', () => {
   assert.deepEqual(validerInformations(infos()), {});
   assert.deepEqual(validerInformations(infos({ destination: '' })), {});
-  assert.deepEqual(validerInformations(infos({ voyageurs: VOYAGEURS.min })), {});
-  assert.deepEqual(validerInformations(infos({ voyageurs: VOYAGEURS.max })), {});
+  assert.deepEqual(validerInformations(infos({ femmes: 0, hommes: 1, enfants: 0 })), {});
+  assert.deepEqual(validerInformations(infos({ femmes: 20, hommes: 0, enfants: 0 })), {});
 });
 
 test('chaque information fautive a son code d’erreur', () => {
@@ -95,10 +96,10 @@ test('chaque information fautive a son code d’erreur', () => {
   assert.deepEqual(validerInformations(infos({ retour: null })), { dates: 'datesManquantes' });
   assert.deepEqual(validerInformations(infos({ depart: '2026-02-30' })), { dates: 'datesInvalides' });
   assert.deepEqual(validerInformations(infos({ retour: '2026-10-09' })), { dates: 'retourAvantDepart' });
-  assert.deepEqual(validerInformations(infos({ voyageurs: VOYAGEURS.min - 1 })), { voyageurs: 'voyageursHorsLimites' });
-  assert.deepEqual(validerInformations(infos({ voyageurs: VOYAGEURS.max + 1 })), { voyageurs: 'voyageursHorsLimites' });
-  assert.deepEqual(validerInformations(infos({ voyageurs: 2.5 })), { voyageurs: 'voyageursHorsLimites' });
-  assert.deepEqual(validerInformations(infos({ voyageurs: '2' })), { voyageurs: 'voyageursHorsLimites' });
+  assert.deepEqual(validerInformations(infos({ femmes: 0, hommes: 0 })), { composition: 'aucunVoyageur' });
+  assert.deepEqual(validerInformations(infos({ femmes: 20, hommes: 1 })), { composition: 'tropDeVoyageurs' });
+  assert.deepEqual(validerInformations(infos({ femmes: 2.5 })), { composition: 'aucunVoyageur' });
+  assert.deepEqual(validerInformations(infos({ femmes: '2' })), { composition: 'aucunVoyageur' });
 });
 
 test('un an pile est accepté, un jour de plus est refusé, 29 février compris', () => {
@@ -210,6 +211,7 @@ test('le voyage est une copie : champs copiés, modèle d’origine noté, marqu
     valeur: 2,
     plafond: null,
     parPersonne: true,
+    pourQui: 'tous',
     consommable: true,
     quantite: 16,
     quantiteManuelle: false,

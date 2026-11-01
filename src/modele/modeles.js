@@ -18,7 +18,7 @@ export const COULEURS = Object.freeze([
 
 export const BORNES_QUANTITE = Object.freeze({ min: 1, max: 999 });
 // Période de l'exemple chiffré montré sous la règle d'un objet.
-export const PERIODE_EXEMPLE = Object.freeze({ jours: 4, nuits: 3, voyageurs: 2 });
+export const PERIODE_EXEMPLE = Object.freeze({ jours: 10, nuits: 9, femmes: 1, hommes: 1, enfants: 1 });
 
 export const saisieDeCategorie = categorie => ({
   nom: categorie?.nom ?? '',
@@ -35,6 +35,7 @@ export const saisieDObjet = objet => ({
   plafondActif: objet ? objet.plafond !== null : false,
   plafond: objet?.plafond ?? null,
   parPersonne: objet?.parPersonne ?? true,
+  pourQui: objet?.pourQui ?? 'tous',
   consommable: objet?.consommable ?? false,
   selonEtiquettes: objet ? !objet.toujoursInclus : false,
   etiquettes: [...(objet?.etiquettes ?? [])],
@@ -95,6 +96,7 @@ export const regleDeSaisie = saisie => ({
   valeur: saisie.valeur,
   plafond: saisie.plafondActif && plafondPossible(saisie) ? (saisie.plafond ?? null) : null,
   parPersonne: saisie.parPersonne,
+  pourQui: saisie.pourQui,
 });
 
 // Changer de règle : « Fixe » efface le plafond (spec de la phase 5). Rend une nouvelle saisie.

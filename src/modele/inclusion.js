@@ -1,6 +1,7 @@
 // Quelles catégories et quels objets de la bibliothèque entrent dans un voyage, selon les étiquettes
 // choisies (docs/PRD.md, « Inclusion »). Seul endroit où cette règle existe : l'aperçu de l'assistant
 // et la génération du voyage s'y appuient tous les deux.
+import { composition } from './composition.js';
 import { joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
 
@@ -28,8 +29,8 @@ export const etiquettesChoisies = (bibliotheque, choisies) =>
 // Ce que le voyage contiendrait : catégories dans l'ordre de la bibliothèque, objets par nom, avec
 // leur quantité. Un objet n'entre que si sa catégorie entre ; un objet à 0 n'apparaît pas, ni une
 // catégorie restée vide. `infos` est supposée valide (l'assistant l'a vérifiée avant).
-export function genererApercu(bibliotheque, { depart, retour, voyageurs }, choisies) {
-  const periode = { ...joursEtNuits(depart, retour), voyageurs };
+export function genererApercu(bibliotheque, infos, choisies) {
+  const periode = { ...joursEtNuits(infos.depart, infos.retour), ...composition(infos) };
   const apercu = [];
   for (const categorie of [...bibliotheque.categories].sort(parOrdre)) {
     if (!estInclus({ toujours: categorie.toujoursIncluse, etiquettes: categorie.etiquettes }, choisies)) continue;

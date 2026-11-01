@@ -24,7 +24,7 @@ test('la bibliothèque construite a les champs attendus par la base', () => {
 test('le voyage généré a les champs attendus par la base', () => {
   const contenu = genererVoyage(
     bibliotheque,
-    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 },
+    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', femmes: 1, hommes: 1, enfants: 0 },
     { choisies: new Set([bibliotheque.etiquettes[0].id]), ecartes: new Set() },
     { nouvelId, maintenant: 'x' },
   );
@@ -39,14 +39,22 @@ test('le voyage généré a les champs attendus par la base', () => {
 test('la modification calculée par le modèle a les champs attendus par la base', () => {
   const contenu = genererVoyage(
     bibliotheque,
-    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 },
+    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', femmes: 1, hommes: 1, enfants: 0 },
     { choisies: new Set(), ecartes: new Set() },
     { nouvelId, maintenant: 'x' },
   );
   const entree = {
     contenu,
     bibliotheque,
-    infos: { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 3 },
+    infos: {
+      nom: 'Vercors',
+      destination: '',
+      depart: '2026-10-10',
+      retour: '2026-10-13',
+      femmes: 2,
+      hommes: 1,
+      enfants: 0,
+    },
     choisies: new Set(),
   };
   const changements = calculerChangements(entree);

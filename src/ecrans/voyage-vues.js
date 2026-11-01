@@ -8,6 +8,7 @@
 // l'ordre, les masqués et les replis viennent de l'état d'affichage (src/ecrans/rangement.js), les
 // pièces du voyage lui-même.
 import { remplir } from '../i18n/traduction.js';
+import { totalVoyageurs } from '../modele/composition.js';
 import { estAAcheter, resteAAcheter } from '../modele/courses.js';
 import { appuiSurCase, estComplet, estRetire, etatDansLeSac, piecesASortir, progression } from '../modele/sac.js';
 import { detailsVoyage, pluriel } from './format.js';
@@ -275,7 +276,7 @@ const vueFlottant = t => `
 // bandeau qui viennent d'apparaître, animés une seule fois ; recent : l'objet à éclairer ({ id, ecoule }).
 export function vueVoyage(contexteDeLAppli, { contenu, liste, etat, poses, recent, grandFormat, troisColonnes }) {
   // Le nombre de voyageurs et l'objet à éclairer suivent le contexte jusqu'aux lignes (« partagé »).
-  const contexte = { ...contexteDeLAppli, voyageurs: contenu.voyage.voyageurs, recent };
+  const contexte = { ...contexteDeLAppli, voyageurs: totalVoyageurs(contenu.voyage), recent };
   const { t, langue } = contexte;
   // Le lien retour vient en tête, hors du voyage : en grand format, il est seul sur sa ligne.
   const lien = `

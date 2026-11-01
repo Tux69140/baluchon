@@ -26,7 +26,7 @@ const pates = { ...saisieDObjet(null), nom: 'Pâtes' };
 
 test('les constantes de la phase', () => {
   assert.deepEqual(BORNES_QUANTITE, { min: 1, max: 999 });
-  assert.deepEqual(PERIODE_EXEMPLE, { jours: 4, nuits: 3, voyageurs: 2 });
+  assert.deepEqual(PERIODE_EXEMPLE, { jours: 10, nuits: 9, femmes: 1, hommes: 1, enfants: 1 });
 });
 
 test('saisies par défaut', () => {
@@ -37,6 +37,7 @@ test('saisies par défaut', () => {
     plafondActif: false,
     plafond: null,
     parPersonne: true,
+    pourQui: 'tous',
     consommable: false,
     selonEtiquettes: false,
     etiquettes: [],
@@ -60,6 +61,7 @@ test('saisies tirées d’un modèle existant', () => {
     valeur: 1,
     plafond: 5,
     parPersonne: true,
+    pourQui: 'enfants',
     consommable: false,
     toujoursInclus: false,
     note: 'n',
@@ -73,6 +75,7 @@ test('saisies tirées d’un modèle existant', () => {
     plafondActif: true,
     plafond: 5,
     parPersonne: true,
+    pourQui: 'enfants',
     consommable: false,
     selonEtiquettes: true,
     etiquettes: ['camping'],
@@ -213,10 +216,12 @@ test('deplacerDansListe : échange avec le voisin, inchangé aux bords', () => {
   assert.deepEqual(ids, ['a', 'b']);
 });
 
-test('exempleQuantite : 4 jours, 3 nuits, 2 voyageurs', () => {
-  const repas = { regle: 'par_jour', valeur: 2, plafond: null, parPersonne: true };
-  assert.equal(exempleQuantite(repas), 16);
-  assert.equal(exempleQuantite({ ...repas, plafond: 6 }), 12);
+test('exempleQuantite : 10 jours, 9 nuits, 1 femme, 1 homme, 1 enfant', () => {
+  const repas = { regle: 'par_jour', valeur: 2, plafond: null, parPersonne: true, pourQui: 'tous' };
+  assert.equal(exempleQuantite(repas), 60);
+  assert.equal(exempleQuantite({ ...repas, plafond: 6 }), 18);
+  assert.equal(exempleQuantite({ ...repas, pourQui: 'adultes' }), 40);
+  assert.equal(exempleQuantite({ ...repas, regle: 'par_semaine', pourQui: 'enfants' }), 4);
 });
 
 // Les règles de la fiche d'un objet vivent dans le modèle : l'écran (− / +, phrase de quantité,
@@ -230,14 +235,26 @@ test('bornerQuantite : ramenée de 1 à 999', () => {
 
 test('regleDeSaisie : la règle enregistrée, plafond seulement s’il est actif et possible', () => {
   const jour = { ...pates, regle: 'par_jour', valeur: 2, plafondActif: true, plafond: 6 };
-  assert.deepEqual(regleDeSaisie(jour), { regle: 'par_jour', valeur: 2, plafond: 6, parPersonne: true });
+  assert.deepEqual(regleDeSaisie(jour), {
+    regle: 'par_jour',
+    valeur: 2,
+    plafond: 6,
+    parPersonne: true,
+    pourQui: 'tous',
+  });
   assert.equal(regleDeSaisie({ ...jour, plafondActif: false }).plafond, null);
   assert.equal(regleDeSaisie({ ...jour, regle: 'fixe' }).plafond, null);
   assert.equal(regleDeSaisie({ ...jour, plafond: null }).plafond, null);
   // preparerObjet écrit la même règle.
   const ecrit = preparerObjet(jour, { ...contexte, categorieId: 'c1' });
   assert.deepEqual(
-    { regle: ecrit.regle, valeur: ecrit.valeur, plafond: ecrit.plafond, parPersonne: ecrit.parPersonne },
+    {
+      regle: ecrit.regle,
+      valeur: ecrit.valeur,
+      plafond: ecrit.plafond,
+      parPersonne: ecrit.parPersonne,
+      pourQui: ecrit.pourQui,
+    },
     regleDeSaisie(jour),
   );
 });

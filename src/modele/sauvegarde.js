@@ -31,7 +31,16 @@ const TYPES = {
   l: v => Array.isArray(v) && v.every(x => typeof x === 'string'),
 };
 
-const REGLE = { id: 't', nom: 't', regle: 't', valeur: 'e', plafond: 'en', parPersonne: 'b', consommable: 'b' };
+const REGLE = {
+  id: 't',
+  nom: 't',
+  regle: 't',
+  valeur: 'e',
+  plafond: 'en',
+  parPersonne: 'b',
+  pourQui: 't',
+  consommable: 'b',
+};
 const TABLES = {
   groupe: { id: 't', nom: 't', ordre: 'e', modifieLe: 't' },
   etiquetteModele: { id: 't', groupeId: 't', nom: 't', ordre: 'e', modifieLe: 't' },
@@ -53,7 +62,17 @@ const TABLES = {
     modifieLe: 't',
     etiquettes: 'l',
   },
-  voyage: { id: 't', nom: 't', destination: 't', depart: 't', retour: 't', voyageurs: 'e', modifieLe: 't' },
+  voyage: {
+    id: 't',
+    nom: 't',
+    destination: 't',
+    depart: 't',
+    retour: 't',
+    femmes: 'e',
+    hommes: 'e',
+    enfants: 'e',
+    modifieLe: 't',
+  },
   etiquetteVoyage: { id: 't', voyageId: 't', modeleId: 'tn', nom: 't', ordre: 'e', modifieLe: 't' },
   categorieVoyage: {
     id: 't',

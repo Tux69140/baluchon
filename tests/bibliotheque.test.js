@@ -113,7 +113,7 @@ test('dix-sept objets rattachés à leur catégorie, avec leurs règles et leurs
 test('sans étiquette choisie, du 10 au 13 à deux : Repas 16, T-shirts 8, Pyjama 2, Dentifrice 1', () => {
   const contenu = genererVoyage(
     construire(),
-    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 },
+    { nom: 'Vercors', destination: '', depart: '2026-10-10', retour: '2026-10-13', femmes: 1, hommes: 1, enfants: 0 },
     { choisies: new Set(), ecartes: new Set() },
     { nouvelId, maintenant: MAINTENANT },
   );

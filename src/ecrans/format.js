@@ -1,6 +1,7 @@
 // Mise en forme des dates et des nombres pour l'écran, dans la langue de l'appli : les noms des jours
 // et des mois viennent du navigateur (Intl), il n'y a donc rien à traduire de notre côté.
 import { remplir } from '../i18n/traduction.js';
+import { totalVoyageurs } from '../modele/composition.js';
 
 // Une date de calendrier se lit à midi UTC et se formate en UTC : aucun fuseau ne la décale.
 const enDate = date => new Date(`${date}T12:00:00Z`);
@@ -36,7 +37,7 @@ export function pluriel(t, cle, n, langue) {
 export const detailsVoyage = (t, voyage, langue) =>
   remplir(t('voyages.details'), {
     periode: formaterPeriode(t, voyage.depart, voyage.retour, langue),
-    voyageurs: pluriel(t, 'voyages.voyageurs', voyage.voyageurs, langue),
+    voyageurs: pluriel(t, 'voyages.voyageurs', totalVoyageurs(voyage), langue),
   });
 
 // « 2 par jour et par personne, au plus 5 par personne » : la règle de quantité d'un objet, dite en

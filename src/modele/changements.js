@@ -3,6 +3,7 @@
 // lignes acceptées. Décisions du chef de projet du 2026-10-29 ;
 // docs/superpowers/specs/2026-10-29-phase-10-plans-changent-design.md. Règles pures.
 import { aUneFormuleInitiale } from './ajustements.js';
+import { composition, personnes, POUR_QUI } from './composition.js';
 import { achetesApresQuantite, achetesApresSac } from './courses.js';
 import { etiquettesChoisies, genererApercu, parOrdre } from './inclusion.js';
 import { refuser } from './modeles.js';
@@ -26,20 +27,29 @@ const inclus = (bibliotheque, infos, choisies) =>
     ),
   );
 
-// L'étiquette ajoutée (ou retirée) qui fait entrer (ou sortir) un objet modèle : la première, dans
-// l'ordre des groupes, parmi les siennes et celles de sa catégorie ; null si ce sont les dates (une
-// quantité tombée à 0, ou revenue).
-function raisonDe(bibliotheque, modeleId, changees) {
+// Les groupes de « Pour qui » que la modification fait passer de 0 à au moins 1 personne (`entrants`),
+// ou d'au moins 1 à 0 (`sortants`) : ce qui fait entrer ou sortir les objets qui les visent.
+function groupesChanges(avant, apres) {
+  const bascule = (de, vers) => new Set(POUR_QUI.filter(g => personnes(g, de) === 0 && personnes(g, vers) > 0));
+  return { entrants: bascule(avant, apres), sortants: bascule(apres, avant) };
+}
+
+// Ce qui fait entrer (ou sortir) un objet modèle : l'étiquette ajoutée (ou retirée), la première dans
+// l'ordre des groupes parmi les siennes et celles de sa catégorie ; sinon le groupe de « Pour qui »
+// devenu non vide (ou vide) ; null si ce sont les dates (une quantité tombée à 0, ou revenue).
+function raisonDe(bibliotheque, modeleId, changees, groupes) {
   const modele = bibliotheque.objets.find(o => o.id === modeleId);
   const categorie = bibliotheque.categories.find(c => c.id === modele?.categorieId);
   const siennes = new Set([...(modele?.etiquettes ?? []), ...(categorie?.etiquettes ?? [])]);
-  return etiquettesChoisies(bibliotheque, changees).find(e => siennes.has(e.id))?.nom ?? null;
+  const etiquette = etiquettesChoisies(bibliotheque, changees).find(e => siennes.has(e.id));
+  if (etiquette) return { genre: 'etiquette', nom: etiquette.nom };
+  return groupes.has(modele?.pourQui) ? { genre: 'groupe', pourQui: modele.pourQui } : null;
 }
 
 const difference = (a, b) => new Set([...a].filter(x => !b.has(x)));
 
-const recalculer = (objet, { depart, retour, voyageurs }) =>
-  calculerQuantite(objet, { ...joursEtNuits(depart, retour), voyageurs });
+const recalculer = (objet, infos) =>
+  calculerQuantite(objet, { ...joursEtNuits(infos.depart, infos.retour), ...composition(infos) });
 
 // Ce qui ne dépend que des informations du voyage : on ne compare que ce que la modification change,
 // jamais la bibliothèque entière (un objet décoché à la création, ou ajouté depuis à la bibliothèque,
@@ -50,6 +60,7 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
   const apres = inclus(bibliotheque, infos, choisies);
   const ajoutees = difference(choisies, choisiesAvant);
   const retirees = difference(choisiesAvant, choisies);
+  const { entrants, sortants } = groupesChanges(composition(contenu.voyage), composition(infos));
   const modeles = new Set(bibliotheque.objets.map(o => o.id));
   const parModele = new Map(contenu.objets.filter(o => o.modeleId).map(o => [o.modeleId, o]));
   const ecartes = new Set(contenu.ecartes ?? []);
@@ -68,13 +79,13 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
         ajouter('retour', objet.nom, 0, quantite, true, {
           cle,
           objet,
-          raison: raisonDe(bibliotheque, objet.modeleId, ajoutees),
+          raison: raisonDe(bibliotheque, objet.modeleId, ajoutees, entrants),
         });
       }
       continue;
     }
     if (connu && avant.has(objet.modeleId) && !apres.has(objet.modeleId)) {
-      const raison = raisonDe(bibliotheque, objet.modeleId, retirees);
+      const raison = raisonDe(bibliotheque, objet.modeleId, retirees, sortants);
       ajouter('sortie', objet.nom, objet.quantite, 0, false, { cle, objet, raison });
       continue;
     }
@@ -93,7 +104,7 @@ function lignesDesChangements({ contenu, bibliotheque, infos, choisies }) {
       ajouter('entree', modele.nom, 0, quantite, !ecartes.has(id), {
         cle: `entree:${id}`,
         modele,
-        raison: raisonDe(bibliotheque, id, ajoutees),
+        raison: raisonDe(bibliotheque, id, ajoutees, entrants),
         retire: ecartes.has(id),
       });
   return lignes;
@@ -166,7 +177,7 @@ export function appliquerChangements(entree, ids) {
     destination: String(infos.destination ?? '').trim(),
     depart: infos.depart,
     retour: infos.retour,
-    voyageurs: infos.voyageurs,
+    ...composition(infos),
     modifieLe: ids.maintenant,
   };
   const modification = {

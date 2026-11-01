@@ -25,7 +25,7 @@ import {
 const depart = () => construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: 'x' });
 const idDe = (bibliotheque, nom) => bibliotheque.objets.find(o => o.nom === nom).id;
 const types = bibliotheque => etapesDe(bibliotheque).map(e => e.type);
-const infos = { nom: '', destination: '', depart: '', retour: '', voyageurs: 2 };
+const infos = { nom: '', destination: '', depart: '', retour: '', femmes: 1, hommes: 1, enfants: 0 };
 const troisJours = { ...infos, nom: 'Test', depart: '2026-10-10', retour: '2026-10-12' };
 const unJour = { ...troisJours, retour: '2026-10-10' };
 
@@ -105,12 +105,12 @@ test('remettre reprend les objets nommés', () => {
   assert.equal(etat.ecartes.size, 2);
 });
 
-test('signatureDe : dates, voyageurs, étiquettes ; pas le nom', () => {
+test('signatureDe : dates, composition, étiquettes ; pas le nom', () => {
   const base = signatureDe(troisJours, new Set(['a', 'b']));
   assert.equal(signatureDe({ ...troisJours, nom: 'Autre' }, new Set(['b', 'a'])), base);
   assert.notEqual(signatureDe({ ...troisJours, retour: '2026-10-13' }, new Set(['a', 'b'])), base);
   assert.notEqual(signatureDe({ ...troisJours, depart: '2026-10-09' }, new Set(['a', 'b'])), base);
-  assert.notEqual(signatureDe({ ...troisJours, voyageurs: 3 }, new Set(['a', 'b'])), base);
+  assert.notEqual(signatureDe({ ...troisJours, enfants: 1 }, new Set(['a', 'b'])), base);
   assert.notEqual(signatureDe(troisJours, new Set(['a'])), base);
 });
 

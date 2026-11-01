@@ -43,6 +43,7 @@ export function construireBibliotheque(depart, { nouvelId, maintenant }) {
         valeur: o.valeur,
         plafond: o.plafond ?? null,
         parPersonne: o.parPersonne,
+        pourQui: o.pourQui ?? 'tous',
         consommable: o.consommable ?? false,
         toujoursInclus: siennes.length === 0,
         note: o.note ?? '',

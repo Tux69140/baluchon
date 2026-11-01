@@ -38,6 +38,7 @@ const objet = (id, categorieId, extra = {}) => ({
   valeur: 1,
   plafond: 5,
   parPersonne: true,
+  pourQui: 'tous',
   consommable: true,
   quantite: 4,
   quantiteManuelle: false,
@@ -72,6 +73,7 @@ test('un objet ajouté est fixé manuellement et ne dit pas partagé', () => {
     valeur: 0,
     plafond: null,
     parPersonne: true,
+    pourQui: 'tous',
     consommable: false,
     quantite: 3,
     quantiteManuelle: true,
@@ -172,6 +174,7 @@ test('les saisies préremplies passent la validation des fiches une fois une ét
     valeur: 999,
     plafond: null,
     parPersonne: false,
+    pourQui: 'tous',
     consommable: false,
     selonEtiquettes: true,
     etiquettes: [],
@@ -197,7 +200,7 @@ test('baisser avec « Plus tard » garde le sac tel quel', () => {
 // « Le garder dans le voyage » (phase 10) : la quantité que donne sa formule pour ce voyage, sinon ses
 // pièces dans le sac, fixées manuellement.
 test('un objet retiré gardé reprend sa formule, ou ses pièces faute de formule', () => {
-  const voyage = { depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 };
+  const voyage = { depart: '2026-10-10', retour: '2026-10-13', femmes: 1, hommes: 1, enfants: 0 };
   const retire = objet('o1', 'c1', { quantite: 0, dansLeSac: 3, plafond: null });
   assert.deepEqual(quantiteGardee(retire, voyage), { quantite: 8, quantiteManuelle: false, achetes: 0 });
   // Relecture finale, défaut 2 : tout entier dans le sac, un objet à acheter compte comme acheté.

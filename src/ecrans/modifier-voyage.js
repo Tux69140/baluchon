@@ -7,6 +7,7 @@
 // reste des pièces à sortir du sac, l'écran du voyage pose la question (src/ecrans/sortie-du-sac.js).
 // Sans aucun objet qui change, on enregistre directement. La bibliothèque n'est jamais touchée.
 import { appliquerChangements, calculerChangements, choisiesDuVoyage } from '../modele/changements.js';
+import { composition } from '../modele/composition.js';
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { creerAssistant, etapesDe } from './assistant.js';
@@ -28,15 +29,15 @@ const REMPLACES = {
   'nouveauVoyage.erreurs.enregistrement': 'modifierVoyage.erreur',
 };
 
-const signature = ({ nom, destination, depart, retour, voyageurs }, choisies) =>
-  JSON.stringify([nom, destination, depart, retour, voyageurs, [...choisies].sort()]);
+const signature = ({ nom, destination, depart, retour, femmes, hommes, enfants }, choisies) =>
+  JSON.stringify([nom, destination, depart, retour, femmes, hommes, enfants, [...choisies].sort()]);
 
 function modeModification({ contenu, bibliotheque, filtre, aujourdhui }, contexte) {
   const { t, langue, stockage, revenir } = contexte;
   const { voyage } = contenu;
   const adresse = `#/voyage/${encodeURIComponent(voyage.id)}`;
-  const { nom, destination, depart, retour, voyageurs } = voyage;
-  const infos = { nom, destination, depart, retour, voyageurs };
+  const { nom, destination, depart, retour } = voyage;
+  const infos = { nom, destination, depart, retour, ...composition(voyage) };
   const choisies = choisiesDuVoyage(bibliotheque, contenu.etiquettes);
   const depuis = signature(infos, choisies);
   // Toutes les étapes sont déjà connues : on peut toucher n'importe laquelle de la rangée.

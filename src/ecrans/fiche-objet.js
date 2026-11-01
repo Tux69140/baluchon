@@ -6,6 +6,7 @@
 // change pas. La mécanique est celle de toute fiche de modèle
 // (src/ecrans/fiche-modele.js).
 import { remplir } from '../i18n/traduction.js';
+import { totalVoyageurs } from '../modele/composition.js';
 import {
   PERIODE_EXEMPLE,
   activerPlafond,
@@ -41,7 +42,7 @@ function lecture(t, langue, brouillon) {
   const exemple = remplir(t('modele.objet.exemple'), {
     jours: pluriel(t, 'duree.jours', PERIODE_EXEMPLE.jours, langue),
     nuits: pluriel(t, 'duree.nuits', PERIODE_EXEMPLE.nuits, langue),
-    voyageurs: pluriel(t, 'voyages.voyageurs', PERIODE_EXEMPLE.voyageurs, langue),
+    voyageurs: pluriel(t, 'voyages.voyageurs', totalVoyageurs(PERIODE_EXEMPLE), langue),
     quantite: exempleQuantite(regle),
   });
   return `<b>${echapper(decrireRegle(t, regle))}</b><span>${echapper(exemple)}</span>`;

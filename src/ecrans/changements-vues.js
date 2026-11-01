@@ -6,6 +6,7 @@
 // viennent du modèle (src/modele/changements.js) ; rien ne vit ici que du dessin.
 import { remplir } from '../i18n/traduction.js';
 import { choisiesDuVoyage } from '../modele/changements.js';
+import { totalVoyageurs } from '../modele/composition.js';
 import { etiquettesChoisies } from '../modele/inclusion.js';
 import { joursEtNuits } from '../modele/periode.js';
 import { detailsVoyage, pluriel } from './format.js';
@@ -31,6 +32,10 @@ function effetSurLeSac(t, langue, apres, dansLeSac) {
   return mention(t('modifierVoyage.ligne.toutDansLeSac'));
 }
 
+// L'étiquette qui explique une ligne ; un groupe de « Pour qui » n'a pas encore son texte (phase 13,
+// tâche 3), la ligne se lit alors sans raison.
+const etiquetteDe = ({ raison }) => (raison?.genre === 'etiquette' ? raison.nom : null);
+
 function sousTexte(t, langue, ligne, accepte) {
   const l = cle => t(`modifierVoyage.ligne.${cle}`);
   const dansLeSac = ligne.objet?.dansLeSac ?? 0;
@@ -40,12 +45,14 @@ function sousTexte(t, langue, ligne, accepte) {
       : mention(remplir(l('resteA'), { n: ligne.avant }));
   if (ligne.genre === 'entree') {
     if (!accepte) return `${mention(l('pasAjoute'))}${ligne.retire ? pastilleMention(l('retire')) : ''}`;
-    return mention(ligne.raison ? remplir(l('nouveauPour'), { etiquette: ligne.raison }) : l('nouveau'));
+    return mention(etiquetteDe(ligne) ? remplir(l('nouveauPour'), { etiquette: etiquetteDe(ligne) }) : l('nouveau'));
   }
   if (ligne.genre === 'retour') return mention(l(accepte ? 'revient' : 'resteRetire'));
   // Une sortie : rien n'est retiré d'office (US-27) ; cochée, l'objet sort de la liste, ou reste barré
   // tant que ses pièces sont dans le sac.
-  const raison = ligne.raison ? remplir(l('etiquetteRetiree'), { etiquette: ligne.raison }) : l('plusPrevu');
+  const raison = etiquetteDe(ligne)
+    ? remplir(l('etiquetteRetiree'), { etiquette: etiquetteDe(ligne) })
+    : l('plusPrevu');
   if (!accepte) return mention(remplir(l('resteDansLeVoyage'), { raison }));
   return `${mention(remplir(l('seraRetire'), { raison }))}${dansLeSac ? pastilleSortir(t, dansLeSac, langue) : ''}`;
 }
@@ -114,8 +121,8 @@ function modifications(t, langue, { contenu, bibliotheque, infos, choisies }) {
   const [jours, joursAvant] = [infos, voyage].map(v => joursEtNuits(v.depart, v.retour).jours);
   if (jours !== joursAvant) puces.push(remplir(pluriel(t, m('jours'), jours, langue), { avant: joursAvant }));
   else if (infos.depart !== voyage.depart) puces.push(t(m('datesDecalees')));
-  if (infos.voyageurs !== voyage.voyageurs)
-    puces.push(remplir(pluriel(t, m('voyageurs'), infos.voyageurs, langue), { avant: voyage.voyageurs }));
+  if (totalVoyageurs(infos) !== totalVoyageurs(voyage))
+    puces.push(remplir(pluriel(t, m('voyageurs'), totalVoyageurs(infos), langue), { avant: totalVoyageurs(voyage) }));
   const avant = choisiesDuVoyage(bibliotheque, contenu.etiquettes);
   for (const e of etiquettesChoisies(bibliotheque, choisies))
     if (!avant.has(e.id)) puces.push(remplir(t(m('ajoutee')), { nom: e.nom }));

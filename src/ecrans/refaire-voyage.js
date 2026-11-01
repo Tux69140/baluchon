@@ -8,6 +8,7 @@
 // objets retirés la dernière fois et les quantités fixées (src/ecrans/refaire-vues.js). « Créer le voyage »
 // crée un voyage neuf et ouvre sa liste ; le voyage d'origine n'est jamais touché.
 import { remplir } from '../i18n/traduction.js';
+import { composition } from '../modele/composition.js';
 import { dateDuJour } from '../modele/dates.js';
 import { nouvelId } from '../modele/identifiant.js';
 import { apercuRefait, repriseDe } from '../modele/refaire.js';
@@ -53,7 +54,7 @@ function modeRefaire({ origine, bibliotheque, accueil, filtre, aujourdhui }, con
   return {
     t: cle => (cle === 'nouveauVoyage.titre' ? titre : t(cle)),
     classe: 'assistant-refaire',
-    infos: { nom: '', destination: '', depart: '', retour: '', voyageurs: voyage.voyageurs },
+    infos: { nom: '', destination: '', depart: '', retour: '', ...composition(voyage) },
     etat: {
       ...creerAssistant(),
       choisies: new Set(reprise.choisies),

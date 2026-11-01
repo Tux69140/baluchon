@@ -50,10 +50,10 @@ test('pluriel choisit la forme selon le nombre et la langue, et y pose le nombre
 });
 
 test('detailsVoyage assemble la période et les voyageurs avec le séparateur de fr.json', () => {
-  const voyage = { depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 };
+  const voyage = { depart: '2026-10-10', retour: '2026-10-13', femmes: 1, hommes: 1, enfants: 0 };
   assert.equal(detailsVoyage(t, voyage, 'fr'), 'du sam. 10 oct. au mar. 13 oct. 2026 · 2\u00a0voyageurs');
   assert.equal(
-    detailsVoyage(t, { ...voyage, voyageurs: 1 }, 'fr'),
+    detailsVoyage(t, { ...voyage, hommes: 0 }, 'fr'),
     'du sam. 10 oct. au mar. 13 oct. 2026 · 1\u00a0voyageur',
   );
 });

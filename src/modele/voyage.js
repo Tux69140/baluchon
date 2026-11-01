@@ -1,26 +1,23 @@
 // Un voyage : validation des informations saisies, génération depuis la bibliothèque, ordre de sa
 // liste et classement des voyages (docs/PLAN.md, phase 2).
+import { composition, validerComposition } from './composition.js';
 import { estDate } from './dates.js';
 import { etiquettesChoisies, genererApercu, parOrdre } from './inclusion.js';
 import { rangSuivant } from './modeles.js';
 import { dateLimite } from './periode.js';
 import { ordreDansLeSac } from './sac.js';
 
-export const VOYAGEURS = Object.freeze({ min: 1, max: 20, parDefaut: 2 });
-
 // Les erreurs, rangées par champ ; un objet vide quand tout est bon. Chaque code a son texte dans
 // fr.json (nouveauVoyage.erreurs.*). L'écran rend la plupart impossibles (calendrier, − / +), mais
 // la règle vit ici : c'est elle qui refuse un voyage absurde, d'où qu'il vienne.
-export function validerInformations({ nom, depart, retour, voyageurs }) {
+export function validerInformations({ nom, depart, retour, femmes, hommes, enfants }) {
   const erreurs = {};
   if (!String(nom ?? '').trim()) erreurs.nom = 'nomManquant';
   if (!depart || !retour) erreurs.dates = 'datesManquantes';
   else if (!estDate(depart) || !estDate(retour)) erreurs.dates = 'datesInvalides';
   else if (retour < depart) erreurs.dates = 'retourAvantDepart';
   else if (retour > dateLimite(depart)) erreurs.dates = 'tropLong';
-  if (!Number.isInteger(voyageurs) || voyageurs < VOYAGEURS.min || voyageurs > VOYAGEURS.max)
-    erreurs.voyageurs = 'voyageursHorsLimites';
-  return erreurs;
+  return { ...erreurs, ...validerComposition({ femmes, hommes, enfants }) };
 }
 
 const parNom = (a, b) => a.nom.localeCompare(b.nom);
@@ -35,14 +32,14 @@ export function genererVoyage(bibliotheque, infos, { choisies, ecartes, apercu }
   const erreurs = validerInformations(infos);
   if (Object.keys(erreurs).length)
     throw Object.assign(new Error(`Voyage refusé : ${Object.values(erreurs).join(', ')}`), { erreurs });
-  const { depart, retour, voyageurs } = infos;
+  const { depart, retour } = infos;
   const voyage = {
     id: nouvelId(),
     nom: infos.nom.trim(),
     destination: String(infos.destination ?? '').trim(),
     depart,
     retour,
-    voyageurs,
+    ...composition(infos),
     modifieLe: maintenant,
   };
   const ids = { nouvelId, maintenant };
@@ -103,6 +100,7 @@ export function copierObjet(
     valeur: modele.valeur,
     plafond: modele.plafond,
     parPersonne: modele.parPersonne,
+    pourQui: modele.pourQui,
     consommable: modele.consommable,
     quantite,
     quantiteManuelle,

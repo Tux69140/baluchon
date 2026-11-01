@@ -12,7 +12,8 @@
 // saisieCommencee(infos, etat), quitter({ enFenetre }), terminer(outils) → adresse ou null, allerA(adresse)
 // (facultatif : par défaut, l'adresse remplace celle de l'assistant), derniere: { vue(outils) → HTML, grise(outils), entrer(outils) → suite ou
 // 'terminer' ou null, clic(cible, outils) → true si pris en charge } } ; outils : voir plus bas.
-import { VOYAGEURS, validerInformations } from '../modele/voyage.js';
+import { BORNES_COMPOSITION, totalVoyageurs } from '../modele/composition.js';
+import { validerInformations } from '../modele/voyage.js';
 import { allerA, basculerEtiquette, etapesDe, reprendreEtapes } from './assistant.js';
 import {
   ID_TITRE,
@@ -118,9 +119,14 @@ export function ouvrirAssistant(app, contexte, mode) {
 
   function rafraichirInfos() {
     element('#resume-dates').textContent = resumeDates(infos, t, langue);
-    element('.compteur-valeur').textContent = infos.voyageurs;
-    element('[data-voyageurs="-1"]').setAttribute('aria-disabled', infos.voyageurs <= VOYAGEURS.min);
-    element('[data-voyageurs="1"]').setAttribute('aria-disabled', infos.voyageurs >= VOYAGEURS.max);
+    // Provisoire (jusqu'à la tâche 3 de la phase 13) : un seul compteur, qui règle les femmes.
+    const total = totalVoyageurs(infos);
+    element('.compteur-valeur').textContent = total;
+    element('[data-voyageurs="-1"]').setAttribute(
+      'aria-disabled',
+      total <= 1 || infos.femmes <= BORNES_COMPOSITION.min,
+    );
+    element('[data-voyageurs="1"]').setAttribute('aria-disabled', total >= BORNES_COMPOSITION.total);
     peindreRangee();
     suivreGarde();
     if (!essaye) return;
@@ -400,8 +406,9 @@ export function ouvrirAssistant(app, contexte, mode) {
     const { aller: indice, action, etiquette, voyageurs } = cible.dataset;
     if (indice !== undefined && cible.getAttribute('aria-disabled') !== 'true') aller(Number(indice));
     else if (voyageurs) {
-      const voulu = infos.voyageurs + Number(voyageurs);
-      infos.voyageurs = Math.min(VOYAGEURS.max, Math.max(VOYAGEURS.min, voulu));
+      const voulu = infos.femmes + Number(voyageurs);
+      const total = totalVoyageurs(infos) + Number(voyageurs);
+      if (voulu >= BORNES_COMPOSITION.min && total >= 1 && total <= BORNES_COMPOSITION.total) infos.femmes = voulu;
       rafraichirInfos();
     } else if (etiquette) basculerPuce(cible);
     else if (action === 'precedent') aller(etat.etape - 1);

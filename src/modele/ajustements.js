@@ -2,6 +2,7 @@
 // fiches de la bibliothèque depuis ce qu'on vient d'ajouter (docs/PLAN.md, phase 8). Règles pures :
 // le stockage n'y est pour rien.
 import { BORNES_QUANTITE, bornerQuantite, nomVide, rangSuivant, refuser } from './modeles.js';
+import { composition } from './composition.js';
 import { achetesApresSac } from './courses.js';
 import { joursEtNuits } from './periode.js';
 import { calculerQuantite } from './quantites.js';
@@ -52,6 +53,7 @@ export function preparerAjout(saisie, { voyage, categories }, { nouvelId, mainte
     valeur: 0,
     plafond: null,
     parPersonne: true,
+    pourQui: 'tous',
     consommable: false,
     quantite,
     quantiteManuelle: true,
@@ -85,9 +87,9 @@ export const reglageDeQuantite = (objet, quantite, { plusTard = false } = {}) =>
 // « Le garder dans le voyage », pour un objet retiré qui attend la sortie de ses pièces (phase 10) : la
 // quantité que donne sa formule pour ce voyage ; sans formule (ajouté à la main), ou si elle donne 0, ses
 // pièces dans le sac, fixées manuellement ; et les pièces achetées qui vont avec.
-export function quantiteGardee(objet, { depart, retour, voyageurs }) {
+export function quantiteGardee(objet, voyage) {
   const calcul = aUneFormuleInitiale(objet)
-    ? calculerQuantite(objet, { ...joursEtNuits(depart, retour), voyageurs })
+    ? calculerQuantite(objet, { ...joursEtNuits(voyage.depart, voyage.retour), ...composition(voyage) })
     : 0;
   const reprise =
     calcul > 0 ? { quantite: calcul, quantiteManuelle: false } : { quantite: objet.dansLeSac, quantiteManuelle: true };
@@ -110,6 +112,7 @@ export const saisieObjetPourLaBibliotheque = objet => ({
   valeur: Math.min(objet.quantite, BORNES_QUANTITE.max),
   plafond: null,
   parPersonne: false,
+  pourQui: 'tous',
   consommable: false,
   selonEtiquettes: true,
   etiquettes: [],

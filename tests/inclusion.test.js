@@ -21,6 +21,7 @@ const objet = (id, categorieId, nom, regle, valeur, etiquettes = [], autres = {}
   valeur,
   plafond: null,
   parPersonne: false,
+  pourQui: 'tous',
   consommable: false,
   toujoursInclus: etiquettes.length === 0,
   note: '',
@@ -53,9 +54,10 @@ const bibliotheque = () => ({
     objet('o-parasol', 'c-plage', 'Parasol', 'fixe', 1, ['chaud']),
     // Deux étiquettes pour le même objet : une seule ligne même si les deux sont choisies.
     objet('o-veste', 'c-camping', 'Veste', 'fixe', 1, ['camping', 'froid']),
+    objet('o-sirop', 'c-vet', 'Sirop', 'fixe', 1, [], { pourQui: 'enfants' }),
   ],
 });
-const infos = { depart: '2026-10-10', retour: '2026-10-13', voyageurs: 2 };
+const infos = { depart: '2026-10-10', retour: '2026-10-13', femmes: 1, hommes: 1, enfants: 0 };
 const lignes = apercu => apercu.map(({ categorie: c, objets }) => [c.nom, objets.map(l => [l.objet.nom, l.quantite])]);
 
 test('un modèle toujours inclus entre sans étiquette choisie ; sinon il lui en faut une', () => {
@@ -119,4 +121,11 @@ test('les étiquettes choisies, dans l’ordre des groupes puis de leurs étique
     ['Plage', 'Chaud', 'Froid'],
   );
   assert.deepEqual(etiquettesChoisies(bibliotheque(), new Set()), []);
+});
+
+test('un objet « enfants » est absent de l’aperçu sans enfant, présent avec', () => {
+  const noms = i =>
+    genererApercu(bibliotheque(), i, new Set()).flatMap(({ objets }) => objets.map(({ objet }) => objet.nom));
+  assert.ok(!noms(infos).includes('Sirop'));
+  assert.ok(noms({ ...infos, enfants: 1 }).includes('Sirop'));
 });
