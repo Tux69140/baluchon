@@ -340,13 +340,13 @@ Une bibliothèque de départ complète remplace la mini-bibliothèque : groupes 
 
 ### Critères d'acceptation
 
-- [ ] Au premier lancement, un voyage se crée sans aucune saisie dans la bibliothèque.
-- [ ] Aucun texte, aucune image ni aucun code de BagPacker n'est repris.
+- [x] Au premier lancement, un voyage se crée sans aucune saisie dans la bibliothèque.
+- [x] Aucun texte, aucune image ni aucun code de BagPacker n'est repris.
 - [ ] Avec une traduction d'essai ajoutée par le seul fichier de langue, l'interface et la bibliothèque s'affichent dans cette langue sur un appareil réglé ainsi.
-- [ ] Sur un appareil dans une langue non traduite, tout s'affiche en français.
-- [ ] Changer la langue de l'appareil après le premier lancement ne modifie pas la bibliothèque déjà installée.
-- [ ] Pour 2 femmes et 1 enfant, les objets « hommes » ne sont pas proposés et les objets « enfants » le sont ; les voyages créés avant la mise à jour gardent leurs quantités.
-- [ ] « À propos » s'ouvre depuis le menu et ses deux liens ouvrent le navigateur, sur ordinateur comme sur Android.
+- [x] Sur un appareil dans une langue non traduite, tout s'affiche en français.
+- [x] Changer la langue de l'appareil après le premier lancement ne modifie pas la bibliothèque déjà installée.
+- [x] Pour 2 femmes et 1 enfant, les objets « hommes » ne sont pas proposés et les objets « enfants » le sont ; les voyages créés avant la mise à jour gardent leurs quantités.
+- [x] « À propos » s'ouvre depuis le menu et ses deux liens ouvrent le navigateur, sur ordinateur comme sur Android.
 
 ## Bloquée par
 
