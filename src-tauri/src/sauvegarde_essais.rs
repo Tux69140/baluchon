@@ -104,3 +104,36 @@ fn une_ligne_refusee_ne_change_rien() {
     assert!(base.remplacer_tout(&contenu).is_err());
     assert_eq!(base.lire_tout().unwrap(), avant);
 }
+
+#[test]
+fn deposer_ecrit_le_texte() {
+    let dossier = crate::essais::Dossier::nouveau();
+    assert_eq!(
+        deposer(
+            &dossier.chemin,
+            "baluchon-2026-11-01-10h00.json",
+            "{\"a\":1}"
+        ),
+        Ok("depose")
+    );
+    let lu =
+        std::fs::read_to_string(dossier.chemin.join("baluchon-2026-11-01-10h00.json")).unwrap();
+    assert_eq!(lu, "{\"a\":1}");
+}
+
+#[test]
+fn deposer_ne_remplace_jamais_un_fichier_existant() {
+    let dossier = crate::essais::Dossier::nouveau();
+    deposer(&dossier.chemin, "a.json", "origine").unwrap();
+    assert_eq!(deposer(&dossier.chemin, "a.json", "autre"), Ok("existe"));
+    assert_eq!(
+        std::fs::read_to_string(dossier.chemin.join("a.json")).unwrap(),
+        "origine"
+    );
+}
+
+#[test]
+fn deposer_dans_un_dossier_absent_est_une_erreur() {
+    let dossier = crate::essais::Dossier::nouveau();
+    assert!(deposer(&dossier.chemin.join("absent"), "a.json", "x").is_err());
+}

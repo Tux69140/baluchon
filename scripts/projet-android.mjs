@@ -42,6 +42,26 @@ function imposerJackson(gradle) {
   return gradle.replace('\nrust {', `\n${BLOC_JACKSON}\nrust {`);
 }
 
+// Déposer un fichier dans Téléchargements (phase 12) : jusqu'à Android 9, écrire demande l'autorisation
+// d'écrire ; et déclarer le fichier comme téléchargement terminé (DownloadManager.addCompletedDownload,
+// sans quoi le raccourci « Téléchargements » du sélecteur ne le montre pas) lève une SecurityException
+// sans la seconde (essai du 31 octobre 2026). Le manifeste est recréé par « tauri android init ».
+const MANIFESTE = join('src-tauri', 'gen', 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+const PERMISSIONS = [
+  '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />',
+  '<uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />',
+];
+
+// Pose celles qui manquent juste avant « <application » ; une déjà présente (ajoutée à la main) reste seule.
+function ajouterPermissions(manifeste) {
+  const manquantes = PERMISSIONS.filter(permission => !manifeste.includes(permission));
+  if (!manquantes.length) return manifeste;
+  if (!manifeste.includes('<application'))
+    throw new Error(`${enClair(MANIFESTE)} : repère « <application » introuvable.`);
+  const lignes = manquantes.map(permission => `    ${permission}\n`).join('');
+  return manifeste.replace(/^( *)<application/m, `${lignes}\n$1<application`);
+}
+
 async function lister(dossier) {
   const entrees = await readdir(dossier, { withFileTypes: true, recursive: true }).catch(() => []);
   return entrees
@@ -56,6 +76,8 @@ export async function copierPersonnalisations(racine) {
   }
   const gradle = await readFile(join(racine, GRADLE), 'utf8');
   await writeFile(join(racine, GRADLE), imposerJackson(gradle));
+  const manifeste = await readFile(join(racine, MANIFESTE), 'utf8');
+  await writeFile(join(racine, MANIFESTE), ajouterPermissions(manifeste));
 }
 
 // Chaque fichier de nos sources doit se retrouver à l'identique dans le projet Android.
@@ -73,5 +95,9 @@ export async function verifierPersonnalisations(racine) {
   }
   const gradle = await readFile(join(racine, GRADLE), 'utf8').catch(() => '');
   if (!gradle.includes(BLOC_JACKSON)) fautes.push('build.gradle.kts : Jackson n’est pas imposé (Android 7)');
+  const manifeste = await readFile(join(racine, MANIFESTE), 'utf8').catch(() => '');
+  for (const permission of PERMISSIONS)
+    if (!manifeste.includes(permission))
+      fautes.push(`AndroidManifest.xml : ${permission.match(/android\.permission\.(\w+)/)[1]} absente`);
   return fautes;
 }

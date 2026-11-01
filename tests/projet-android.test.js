@@ -35,11 +35,15 @@ const GRADLE = 'src-tauri/gen/android/app/build.gradle.kts';
 // Le fichier de construction tel que « tauri android init » l'écrit, réduit à l'essentiel.
 const GRADLE_TAURI =
   'android {\n    defaultConfig {\n        minSdk = 24\n    }\n}\n\nrust {\n    rootDirRel = "../../../"\n}\n';
+const MANIFESTE = 'src-tauri/gen/android/app/src/main/AndroidManifest.xml';
+const MANIFESTE_TAURI =
+  '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET" />\n\n    <application/>\n</manifest>\n';
 const SOURCES = {
   [`${NOS_ICONES}/mipmap-hdpi/ic_launcher.png`]: 'baluchon',
   [`${NOS_ICONES}/mipmap-anydpi-v26/ic_launcher.xml`]: '<adaptive-icon/>',
   [`${NOTRE_JAVA}/${ACTIVITE}`]: 'class MainActivity /* recolore les barres */',
   [GRADLE]: GRADLE_TAURI,
+  [MANIFESTE]: MANIFESTE_TAURI,
 };
 const PIECES_JACKSON = [
   'com.fasterxml.jackson.core:jackson-databind',
@@ -67,7 +71,12 @@ test('un projet Android tout juste recréé rougit sur chaque retouche manquante
 
 test('une source manquante rougit au lieu de laisser passer', () =>
   avecProjet(
-    { [`${NOTRE_JAVA}/${ACTIVITE}`]: 'x', [`${GEN}/java/${ACTIVITE}`]: 'x', [GRADLE]: GRADLE_TAURI },
+    {
+      [`${NOTRE_JAVA}/${ACTIVITE}`]: 'x',
+      [`${GEN}/java/${ACTIVITE}`]: 'x',
+      [GRADLE]: GRADLE_TAURI,
+      [MANIFESTE]: MANIFESTE_TAURI,
+    },
     async racine => {
       assert.match((await verifierPersonnalisations(racine)).join('\n'), /src-tauri\/icons\/android/);
     },
@@ -132,4 +141,67 @@ test('l’activité ne s’étend sous les barres système qu’à partir d’An
   // Sur des barres noires, l'heure reste claire : la recoloration selon le thème attend Android 11.
   assert.match(source, /if \(!sousLesBarres\) return/);
   assert.equal(source.match(/enableEdgeToEdge\(\)/g).length, 1);
+});
+
+// Déposer un fichier dans Téléchargements : Android 7 à 9 demande l'autorisation d'écrire, et la
+// déclaration du fichier comme téléchargement terminé lève une SecurityException sans la seconde
+// permission (essai du 31 octobre 2026). Le manifeste est régénéré : la retouche vit ici.
+const PERMISSIONS = [
+  /<uses-permission android:name="android\.permission\.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" \/>/g,
+  /<uses-permission android:name="android\.permission\.DOWNLOAD_WITHOUT_NOTIFICATION" \/>/g,
+];
+
+test('le manifeste reçoit les deux autorisations du dépôt dans Téléchargements, une seule fois', () =>
+  avecProjet(SOURCES, async racine => {
+    const { readFile } = await import('node:fs/promises');
+    assert.match(
+      (await verifierPersonnalisations(racine)).join('\n'),
+      /AndroidManifest\.xml : .*WRITE_EXTERNAL_STORAGE/,
+    );
+    assert.match(
+      (await verifierPersonnalisations(racine)).join('\n'),
+      /AndroidManifest\.xml : .*DOWNLOAD_WITHOUT_NOTIFICATION/,
+    );
+    await copierPersonnalisations(racine);
+    const manifeste = await readFile(join(racine, MANIFESTE), 'utf8');
+    for (const permission of PERMISSIONS) assert.equal(manifeste.match(permission)?.length, 1);
+    // Témoin : le reste du manifeste est intact.
+    assert.ok(manifeste.includes('android.permission.INTERNET') && manifeste.includes('<application/>'));
+    await copierPersonnalisations(racine);
+    assert.equal(await readFile(join(racine, MANIFESTE), 'utf8'), manifeste);
+    assert.deepEqual(await verifierPersonnalisations(racine), []);
+  }));
+
+test('un manifeste qui porte déjà les autorisations (ajoutées à la main) n’en reçoit pas de double', () =>
+  avecProjet(
+    {
+      ...SOURCES,
+      [MANIFESTE]: MANIFESTE_TAURI.replace(
+        '\n    <application/>',
+        '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />\n\n    <application/>',
+      ),
+    },
+    async racine => {
+      const { readFile } = await import('node:fs/promises');
+      const avant = await readFile(join(racine, MANIFESTE), 'utf8');
+      await copierPersonnalisations(racine);
+      assert.equal(await readFile(join(racine, MANIFESTE), 'utf8'), avant);
+      assert.deepEqual(await verifierPersonnalisations(racine), []);
+    },
+  ));
+
+test('un manifeste sans repère « <application » est refusé', () =>
+  avecProjet({ ...SOURCES, [MANIFESTE]: '<manifest/>' }, async racine => {
+    await assert.rejects(copierPersonnalisations(racine), /<application/);
+  }));
+
+test('l’activité dépose un fichier dans Téléchargements sans jamais écraser, hors du fil de l’interface', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL(`../${NOTRE_JAVA}/${ACTIVITE}`, import.meta.url), 'utf8');
+  assert.match(source, /@JavascriptInterface\s+fun deposer\(numero: String, nom: String, texte: String\)/);
+  assert.match(source, /MediaStore\.Downloads\.EXTERNAL_CONTENT_URI/);
+  assert.match(source, /override fun onRequestPermissionsResult/);
+  assert.match(source, /addCompletedDownload\(/);
+  assert.match(source, /MediaScannerConnection\.scanFile/);
+  assert.match(source, /baluchonDepose\(/);
 });

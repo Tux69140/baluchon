@@ -33,6 +33,8 @@ const AUTRES = [
   'marquerRetire',
   'garderDansLeVoyage',
   'ecrireFiltre',
+  // Un fichier posé dans Téléchargements : ni la base ni la bibliothèque ne bougent.
+  'deposerFichier',
   // L'installation n'a lieu qu'au premier lancement, avant toute suppression ; le rétablissement est
   // « Annuler » lui-même.
   'installerBibliotheque',

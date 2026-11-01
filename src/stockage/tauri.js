@@ -42,8 +42,37 @@ export function creerStockageTauri() {
       invoke('garder_dans_le_voyage', { id, quantite, quantiteManuelle, achetes, modifieLe }),
     lireTout: () => invoke('lire_tout'),
     remplacerTout: contenu => invoke('remplacer_tout', { contenu }),
+    deposerFichier: deposerDansTelechargements,
     lireFiltre,
     ecrireFiltre,
+  });
+}
+
+// Déposer un fichier texte dans Téléchargements sans jamais en remplacer un : 'depose', 'existe', ou
+// 'refuse' (autorisation d'écrire refusée, Android 7 à 9) ; toute autre panne rejette. Sur Android,
+// l'activité travaille hors du fil de l'interface et répond plus tard par window.baluchonDepose
+// (src-tauri/android/java) ; sur l'ordinateur, c'est une commande de la base.
+const enAttente = new Map();
+let dernierNumero = 0;
+
+export function deposerDansTelechargements(nom, texte, fenetre = window) {
+  if (!fenetre.BaluchonAndroid?.deposer) return invoke('deposer_dans_telechargements', { nom, texte });
+  fenetre.baluchonDepose = (numero, reponse) => {
+    const attente = enAttente.get(numero);
+    if (!attente) return;
+    enAttente.delete(numero);
+    if (reponse.startsWith('erreur:')) attente.reject(new Error(reponse.slice('erreur:'.length)));
+    else attente.resolve(reponse);
+  };
+  return new Promise((resolve, reject) => {
+    const numero = String(++dernierNumero);
+    enAttente.set(numero, { resolve, reject });
+    try {
+      fenetre.BaluchonAndroid.deposer(numero, nom, texte);
+    } catch (erreur) {
+      enAttente.delete(numero);
+      reject(erreur);
+    }
   });
 }
 

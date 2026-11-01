@@ -17,6 +17,10 @@ export function panne(donnees, operation) {
   if (donnees.pannes?.includes(operation)) throw new Error(`Panne simulée : ${operation}`);
 }
 
+// Un refus simulé : l'appareil refuse l'autorisation que l'opération demande (écrire dans Téléchargements,
+// Android 7 à 9). Même mécanisme que les pannes : une marque « refus » dans les données du navigateur.
+export const refusee = (donnees, operation) => Boolean(donnees.refus?.includes(operation));
+
 // Une opération lente reste en attente jusqu'à ce que le test la libère : de quoi toucher l'écran pendant
 // l'enregistrement, sans pause fixe.
 export async function lenteur(donnees, operation) {

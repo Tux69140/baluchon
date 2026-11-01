@@ -1,7 +1,16 @@
 // Lire et remplacer toutes les données dans la variante navigateur du stockage (tests d'écran) : même
 // résultat et mêmes refus que la base (src-tauri/src/sauvegarde.rs). Le résultat entier est calculé et
 // vérifié avant d'écrire : refusé, le remplacement ne laisse rien.
-import { lire, ecrire, panne, lenteur, ecritureDe, bibliothequeDe, voyageComplet } from './navigateur-outils.js';
+import {
+  lire,
+  ecrire,
+  panne,
+  refusee,
+  lenteur,
+  ecritureDe,
+  bibliothequeDe,
+  voyageComplet,
+} from './navigateur-outils.js';
 
 const refus = texte => new Error(texte);
 
@@ -43,5 +52,15 @@ export const sauvegardeNavigateur = {
       objetsDuVoyage: voyages.flatMap(v => v.objets),
       objetsEcartes: voyages.flatMap(v => v.ecartes.map(modeleId => ({ voyageId: v.voyage.id, modeleId }))),
     });
+  },
+  // Un « Téléchargements » simulé : les fichiers déposés restent lisibles par les tests d'écran. Comme
+  // l'appareil, il ne remplace jamais un fichier de même nom.
+  async deposerFichier(nom, texte) {
+    const donnees = await ecritureDe('deposerFichier');
+    if (refusee(donnees, 'deposerFichier')) return 'refuse';
+    const telechargements = donnees.telechargements ?? [];
+    if (telechargements.some(f => f.nom === nom)) return 'existe';
+    ecrire({ ...donnees, telechargements: [...telechargements, { nom, texte }] });
+    return 'depose';
   },
 };

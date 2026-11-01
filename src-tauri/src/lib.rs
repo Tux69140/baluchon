@@ -60,6 +60,18 @@ fn remplacer_tout(base: State<'_, Base>, contenu: ContenuComplet) -> Result<(), 
     base.remplacer_tout(&contenu)
 }
 
+// Ordinateur seulement : sur Android, la page passe par l'activité (window.BaluchonAndroid.deposer).
+#[cfg(desktop)]
+#[tauri::command]
+fn deposer_dans_telechargements(
+    app: AppHandle,
+    nom: String,
+    texte: String,
+) -> Result<&'static str, String> {
+    let dossier = app.path().download_dir().map_err(|e| e.to_string())?;
+    sauvegarde::deposer(&dossier, &nom, &texte)
+}
+
 #[tauri::command]
 fn enregistrer_categorie(base: State<'_, Base>, categorie: CategorieModele) -> Result<(), String> {
     base.enregistrer_categorie(&categorie)
@@ -260,6 +272,8 @@ pub fn run() {
             lire_bibliotheque,
             lire_tout,
             remplacer_tout,
+            #[cfg(desktop)]
+            deposer_dans_telechargements,
             enregistrer_categorie,
             enregistrer_objet,
             ranger_categories,

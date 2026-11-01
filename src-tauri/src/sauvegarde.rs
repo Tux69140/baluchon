@@ -6,6 +6,8 @@ use crate::bibliotheque::{
 };
 use crate::voyages::{inserer_voyage, lire_voyage_de, VoyageComplet};
 use serde::{Deserialize, Serialize};
+use std::io::{ErrorKind, Write};
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -73,6 +75,27 @@ impl Base {
         }
         poser_installee(&tx, &contenu.langue)?;
         tx.commit().map_err(en_texte)
+    }
+}
+
+// Dépose un fichier texte dans un dossier sans jamais en remplacer un autre : create_new refuse net un
+// nom déjà pris (« existe »), et l'appelant choisit un autre nom. Sur ordinateur, le dossier est
+// Téléchargements ; sur Android, l'activité fait ce travail (MainActivity.kt), d'où le dead_code permis.
+#[cfg_attr(mobile, allow(dead_code))]
+pub fn deposer(dossier: &Path, nom: &str, texte: &str) -> Result<&'static str, String> {
+    let ouverture = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(dossier.join(nom));
+    match ouverture {
+        Ok(mut fichier) => {
+            fichier
+                .write_all(texte.as_bytes())
+                .map_err(|e| e.to_string())?;
+            Ok("depose")
+        }
+        Err(e) if e.kind() == ErrorKind::AlreadyExists => Ok("existe"),
+        Err(e) => Err(e.to_string()),
     }
 }
 

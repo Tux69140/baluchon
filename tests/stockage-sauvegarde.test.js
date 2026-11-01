@@ -91,3 +91,26 @@ test('une panne simulée fait échouer lireTout et remplacerTout', async () => {
     /Panne simulée : remplacerTout/,
   );
 });
+
+const donneesBrutes = () => JSON.parse(localStorage.getItem('baluchon-essai'));
+const poser = ajout => localStorage.setItem('baluchon-essai', JSON.stringify({ ...donneesBrutes(), ...ajout }));
+
+test('déposer garde le fichier dans les données du navigateur, sans écraser un nom déjà pris', async () => {
+  const stockage = creerStockageNavigateur();
+  assert.equal(await stockage.deposerFichier('a.json', 'un'), 'depose');
+  assert.equal(await stockage.deposerFichier('b.json', 'deux'), 'depose');
+  assert.equal(await stockage.deposerFichier('a.json', 'trois'), 'existe');
+  assert.deepEqual(donneesBrutes().telechargements, [
+    { nom: 'a.json', texte: 'un' },
+    { nom: 'b.json', texte: 'deux' },
+  ]);
+});
+
+test('un refus programmé rend « refuse » et ne dépose rien ; une panne programmée rejette', async () => {
+  const stockage = creerStockageNavigateur();
+  poser({ refus: ['deposerFichier'] });
+  assert.equal(await stockage.deposerFichier('a.json', 'un'), 'refuse');
+  assert.deepEqual(donneesBrutes().telechargements ?? [], []);
+  poser({ refus: [], pannes: ['deposerFichier'] });
+  await assert.rejects(stockage.deposerFichier('a.json', 'un'), /Panne simulée : deposerFichier/);
+});
