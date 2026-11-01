@@ -3,7 +3,14 @@
 // chargement de la page ; « pannes » y simule une erreur de lecture ou d’enregistrement, « lenteurs » une
 // écriture (ou une lecture de la bibliothèque ou de la liste des voyages) qui n'aboutit que lorsque le test appelle
 // window.debloquerStockage(), « toucheRetour » la touche retour d'Android (ecouterRetourNavigateur).
-import { lireFiltre, ecrireFiltre } from './preferences.js';
+import {
+  lireFiltre,
+  ecrireFiltre,
+  lireTheme,
+  ecrireTheme,
+  lireDerniereSauvegarde,
+  ecrireDerniereSauvegarde,
+} from './preferences.js';
 import {
   lire,
   ecrire,
@@ -41,6 +48,12 @@ function sansEtiquettes(bibliotheque, retirees) {
     categories: bibliotheque.categories.map(retire),
     objets: bibliotheque.objets.map(retire),
   };
+}
+
+// Un navigateur n'a pas de barres système : l'appel est seulement compté (window.barresReglees), pour
+// que les tests d'écran voient les valeurs reçues.
+function reglerBarres(sombre) {
+  (window.barresReglees ??= []).push(sombre);
 }
 
 export function creerStockageNavigateur() {
@@ -265,6 +278,11 @@ export function creerStockageNavigateur() {
     ...sauvegardeNavigateur,
     lireFiltre,
     ecrireFiltre,
+    lireTheme,
+    ecrireTheme,
+    lireDerniereSauvegarde,
+    ecrireDerniereSauvegarde,
+    reglerBarres,
   });
 }
 

@@ -143,6 +143,22 @@ test('l’activité ne s’étend sous les barres système qu’à partir d’An
   assert.equal(source.match(/enableEdgeToEdge\(\)/g).length, 1);
 });
 
+// Les barres système suivent le thème réellement affiché, choisi par la page (phase 12) : sans effet
+// sous Android 11 (barres noires, icônes claires : l'heure y disparaîtrait autrement). Dès que la page
+// a réglé les barres, l'activité ne le fait plus d'elle-même au changement de thème de l'appareil.
+test('la page règle les couleurs des barres système, et l’activité lui laisse la main', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL(`../${NOTRE_JAVA}/${ACTIVITE}`, import.meta.url), 'utf8');
+  assert.match(source, /@JavascriptInterface\s+fun reglerBarres\(sombre: Boolean\)/);
+  const corps = source.match(/fun reglerBarres\(sombre: Boolean\) \{([\s\S]*?)\n {4}\}\n/)?.[1] ?? '';
+  assert.match(corps, /if \(!sousLesBarres\) return/);
+  assert.match(corps, /pageReglesLesBarres = true/);
+  assert.match(corps, /runOnUiThread/);
+  assert.match(source, /if \(!sousLesBarres \|\| pageReglesLesBarres\) return/);
+  // Une seule définition de la couleur des barres, partagée par la page et par le changement de thème.
+  assert.equal(source.match(/isAppearanceLightStatusBars =/g).length, 1);
+});
+
 // Déposer un fichier dans Téléchargements : Android 7 à 9 demande l'autorisation d'écrire, et la
 // déclaration du fichier comme téléchargement terminé lève une SecurityException sans la seconde
 // permission (essai du 31 octobre 2026). Le manifeste est régénéré : la retouche vit ici.

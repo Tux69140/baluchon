@@ -58,12 +58,32 @@ class MainActivity : TauriActivity() {
       runOnUiThread { moveTaskToBack(true) }
     }
 
+    // Les barres système prennent la couleur du thème réellement affiché par la page (phase 12) : icônes
+    // sombres sur fond clair, claires sur fond sombre. Sans effet sous Android 11, où les barres restent
+    // noires à icônes claires (sinon l'heure disparaît). Une fois la page à la barre, l'activité ne
+    // règle plus rien d'elle-même au changement de thème de l'appareil : la page le suit et renvoie ici.
+    @JavascriptInterface
+    fun reglerBarres(sombre: Boolean) {
+      if (!sousLesBarres) return
+      pageReglesLesBarres = true
+      runOnUiThread { colorerBarres(sombre) }
+    }
+
     // Dépose un fichier texte dans Téléchargements sans jamais en remplacer un (sauvegarde, phase 12).
     // La page n'attend pas : la réponse revient par window.baluchonDepose(numero, reponse), « depose »,
     // « existe », « refuse » (autorisation d'écrire refusée) ou « erreur:… ».
     @JavascriptInterface
     fun deposer(numero: String, nom: String, texte: String) {
       Thread { deposerOuDemander(Depot(numero, nom, texte)) }.start()
+    }
+  }
+
+  private var pageReglesLesBarres = false
+
+  private fun colorerBarres(sombre: Boolean) {
+    WindowCompat.getInsetsController(window, window.decorView).apply {
+      isAppearanceLightStatusBars = !sombre
+      isAppearanceLightNavigationBars = !sombre
     }
   }
 
@@ -188,11 +208,8 @@ class MainActivity : TauriActivity() {
   override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)
     // Sur des barres noires, l'heure et les boutons restent clairs, quel que soit le thème.
-    if (!sousLesBarres) return
+    if (!sousLesBarres || pageReglesLesBarres) return
     val sombre = (newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-    WindowCompat.getInsetsController(window, window.decorView).apply {
-      isAppearanceLightStatusBars = !sombre
-      isAppearanceLightNavigationBars = !sombre
-    }
+    colorerBarres(sombre)
   }
 }

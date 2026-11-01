@@ -43,6 +43,7 @@ import { ecranBibliotheque } from './ecrans/bibliotheque.js';
 import { ecranEtiquettes } from './ecrans/etiquettes.js';
 import { retourDansLAppli } from './ecrans/retour-systeme.js';
 import { surveillerEcritures } from './ecrans/annulation.js';
+import { appliquerTheme } from './ecrans/theme.js';
 
 // Une seule langue pour l'instant ; celle de l'appareil viendra avec les traductions (phase 13).
 const LANGUE = 'fr';
@@ -193,6 +194,8 @@ async function afficher() {
 async function demarrer() {
   // Toute écriture dans la bibliothèque, hors rétablissement, retire d'abord le bandeau « Annuler ».
   stockage = surveillerEcritures(await ouvrirStockage());
+  // Le thème choisi, posé avant tout dessin : aucun éclair du mauvais thème au lancement.
+  appliquerTheme(stockage);
   // La bibliothèque de départ s'installe une seule fois, dans la langue du premier lancement ; elle
   // appartient ensuite à l'utilisateur (docs/PRD.md, « Données »).
   if (!(await stockage.bibliothequeInstallee()))

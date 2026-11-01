@@ -1,6 +1,6 @@
 /* Jetons du système de design (docs/DESIGN.md). Chaque couleur n'est écrite qu'une fois, en clair
    et en sombre, avec light-dark() : le thème suit l'appareil (color-scheme), et un choix manuel
-   (phase 12) n'aura qu'à poser data-theme sur la racine.
+   (phase 12) pose data-theme sur la racine (src/ecrans/theme.js).
    Le voile des fenêtres (::backdrop) les reçoit lui-même : les moteurs d'avant Chrome 122 (Android 7)
    ne les lui transmettent pas, et l'écran ne s'assombrissait plus derrière la fiche. */
 :root,

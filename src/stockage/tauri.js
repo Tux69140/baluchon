@@ -2,7 +2,14 @@
 // plus bas, la touche retour d’Android (ecouterRetourTauri, sortirDeLAppli).
 import { exit, onBackButtonPress } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
-import { lireFiltre, ecrireFiltre } from './preferences.js';
+import {
+  lireFiltre,
+  ecrireFiltre,
+  lireTheme,
+  ecrireTheme,
+  lireDerniereSauvegarde,
+  ecrireDerniereSauvegarde,
+} from './preferences.js';
 
 export function creerStockageTauri() {
   return Object.freeze({
@@ -45,7 +52,18 @@ export function creerStockageTauri() {
     deposerFichier: deposerDansTelechargements,
     lireFiltre,
     ecrireFiltre,
+    lireTheme,
+    ecrireTheme,
+    lireDerniereSauvegarde,
+    ecrireDerniereSauvegarde,
+    reglerBarres,
   });
+}
+
+// Les barres système d'Android (heure, batterie, boutons) prennent la couleur du thème réellement affiché :
+// c'est l'activité qui les règle (src-tauri/android/java) ; ailleurs (Debian), il n'y en a pas.
+function reglerBarres(sombre, fenetre = window) {
+  fenetre.BaluchonAndroid?.reglerBarres?.(sombre);
 }
 
 // Déposer un fichier texte dans Téléchargements sans jamais en remplacer un : 'depose', 'existe', ou

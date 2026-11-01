@@ -33,6 +33,12 @@ const AUTRES = [
   'marquerRetire',
   'garderDansLeVoyage',
   'ecrireFiltre',
+  // Les préférences de l'appareil (thème, date de dernière sauvegarde) et la couleur des barres système.
+  'lireTheme',
+  'ecrireTheme',
+  'lireDerniereSauvegarde',
+  'ecrireDerniereSauvegarde',
+  'reglerBarres',
   // Un fichier posé dans Téléchargements : ni la base ni la bibliothèque ne bougent.
   'deposerFichier',
   // L'installation n'a lieu qu'au premier lancement, avant toute suppression ; le rétablissement est
