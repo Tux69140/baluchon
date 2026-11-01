@@ -28,7 +28,7 @@
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { bibliothequeDeNoms, graineMini, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
 import { nouvelId } from '../src/modele/identifiant.js';
 import { genererApercu } from '../src/modele/inclusion.js';
 import { attendreQue, calme } from './outils/attente.mjs';
@@ -66,10 +66,10 @@ const { ecartes } = nv;
 // Gourde (toujours incluse) et sa catégorie, sous des noms qui seraient pris pour du HTML.
 const GOURDE = 'Gourde <i>&"';
 const ALIMENTATION = 'Alimentation <b>&';
-const PIEGEE = construireBibliotheque(
+const PIEGEE = bibliothequeDeNoms(
   {
-    ...fr.bibliothequeDeDepart,
-    categories: fr.bibliothequeDeDepart.categories.map(c =>
+    ...miniAvecNoms(),
+    categories: miniAvecNoms().categories.map(c =>
       c.nom !== 'Alimentation'
         ? c
         : { ...c, nom: ALIMENTATION, objets: c.objets.map(o => (o.nom === 'Gourde' ? { ...o, nom: GOURDE } : o)) },
@@ -128,6 +128,7 @@ async function ouvrirAssistant(navigateur, url, { taille = FORMATS['tablette-pay
     theme: 'light',
     maintenant: MAINTENANT,
     adresse: '#/nouveau-voyage',
+    donnees: graineMini(),
     ...options,
   });
   await attendreEcran(ouvert.page, 'nouveau-voyage');
@@ -360,7 +361,7 @@ try {
   // Rien n'entre : l'aperçu vide, et le retour aux étiquettes.
   {
     const { contexte, page, erreurs } = await ouvrirAssistant(navigateur, serveur.url, {
-      donnees: avecBibliotheque(rienNEntre(fr.bibliothequeDeDepart)),
+      donnees: avecBibliotheque(rienNEntre(miniAvecNoms())),
     });
     await versApercu(page);
     const a = await lireApercu(page);
@@ -464,7 +465,7 @@ try {
       for (const etat of ['apercu', 'tout-ecarte', 'vide']) {
         const { contexte, page, sorties, erreurs } = await ouvrirAssistant(navigateur, serveur.url, {
           ...options,
-          ...(etat === 'vide' && { donnees: avecBibliotheque(rienNEntre(fr.bibliothequeDeDepart)) }),
+          ...(etat === 'vide' && { donnees: avecBibliotheque(rienNEntre(miniAvecNoms())) }),
         });
         await versApercu(page, { nom: 'Week-end au Vercors', etiquettes: etat === 'vide' ? [] : CHOISIES });
         const { bibliotheque } = await lireStockage(page);

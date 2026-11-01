@@ -1,8 +1,7 @@
 // L'état de l'assistant « Nouveau voyage », sans navigateur (docs/PRD.md, « Écrans et gestes »).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fr from '../src/i18n/fr.json' with { type: 'json' };
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import { nouvelId } from '../src/modele/identifiant.js';
 import { genererApercu } from '../src/modele/inclusion.js';
 import {
@@ -22,7 +21,7 @@ import {
   signatureDe,
 } from '../src/ecrans/assistant.js';
 
-const depart = () => construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: 'x' });
+const depart = () => miniBibliotheque({ nouvelId, maintenant: 'x' });
 const idDe = (bibliotheque, nom) => bibliotheque.objets.find(o => o.nom === nom).id;
 const types = bibliotheque => etapesDe(bibliotheque).map(e => e.type);
 const infos = { nom: '', destination: '', depart: '', retour: '', femmes: 1, hommes: 1, enfants: 0 };

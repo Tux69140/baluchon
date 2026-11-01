@@ -15,10 +15,10 @@
 // - les traits passent au gris des contours quand la rangée défile ;
 // 6 formats × 2 thèmes, au milieu de la rangée : cibles de 44 px, pas de défilement de côté, rien sous
 // les barres système ; captures assistant-rangee-<étape>-<format>-<thème>.png.
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { bibliothequeDeNoms, graineMini, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
 import { nouvelId } from '../src/modele/identifiant.js';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { avecBibliotheque } from './outils/assistant.mjs';
@@ -27,7 +27,6 @@ import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
   NOMS_THEME,
-  RACINE,
   attendreEcran,
   creerJuge,
   ouvrir,
@@ -35,22 +34,21 @@ import {
   verifierCommandes,
 } from './outils/page.mjs';
 
-const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const MAINTENANT = new Date('2026-10-06T10:00:00');
 const NOM_PIEGE = '<b>&"x';
 const groupe = (nom, noms) => ({ nom, etiquettes: noms.map(n => ({ cle: `${nom}-${n}`, nom: n })) });
 // Les trois groupes de départ, puis quatre de plus : 9 étapes. Le groupe piégé est la 5e étape.
 const SEPT_GROUPES = avecBibliotheque(
-  construireBibliotheque(
+  bibliothequeDeNoms(
     {
       groupes: [
-        ...fr.bibliothequeDeDepart.groupes,
+        ...miniAvecNoms().groupes,
         groupe(NOM_PIEGE, ['Un', 'Deux']),
         groupe('Saison', ['Printemps', 'Été', 'Automne', 'Hiver']),
         groupe('Compagnie', ['En couple', 'Avec les enfants']),
         groupe('Repas', ['Restaurant', 'Pique-nique']),
       ],
-      categories: fr.bibliothequeDeDepart.categories,
+      categories: miniAvecNoms().categories,
     },
     { nouvelId, maintenant: 'x' },
   ),
@@ -62,7 +60,11 @@ const FORMATS = {
   'telephone-etroit': { ...TOUS_FORMATS['telephone-etroit'], ecran: { width: 360, height: 640 } },
 };
 
-async function ouvrirAssistant(navigateur, url, { format = 'telephone-etroit', theme = 'light', donnees } = {}) {
+async function ouvrirAssistant(
+  navigateur,
+  url,
+  { format = 'telephone-etroit', theme = 'light', donnees = graineMini() } = {},
+) {
   const { taille, ecran, tactile } = FORMATS[format];
   const ouvert = await ouvrir(navigateur, url, {
     taille,

@@ -1,7 +1,7 @@
 // Outils des tests d'écran de l'assistant « Nouveau voyage » (phase 4) : remplir les informations,
-// passer à l'aperçu, créer le voyage, des bibliothèques d'essai tirées de celle de départ, le retour
+// passer à l'aperçu, créer le voyage, des bibliothèques d'essai tirées de la mini-bibliothèque, le retour
 // système et les questions posées par-dessus (abandon, objets écartés).
-import { construireBibliotheque } from '../../src/modele/bibliotheque.js';
+import { bibliothequeDeNoms } from './mini-bibliotheque.mjs';
 import { nouvelId } from '../../src/modele/identifiant.js';
 import { attendreQue, calme } from './attente.mjs';
 
@@ -24,9 +24,9 @@ export const avecBibliotheque = bibliotheque => ({
   meta: { bibliothequeInstallee: true, langueBibliotheque: 'fr' },
 });
 
-const construire = depart => construireBibliotheque(depart, { nouvelId, maintenant: 'x' });
+const construire = description => bibliothequeDeNoms(description, { nouvelId, maintenant: 'x' });
 
-// L'ancienne mini-bibliothèque (phase 2) : aucun groupe, aucune étiquette, tout est « toujours inclus ».
+// Une mini-bibliothèque sans groupe (miniAvecNoms()) : aucun groupe, aucune étiquette, tout est « toujours inclus ».
 export const sansGroupe = depart =>
   construire({
     groupes: [],

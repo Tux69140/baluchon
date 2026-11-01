@@ -20,7 +20,7 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import { supprimerCategorie } from './outils/annulation.mjs';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
@@ -56,7 +56,7 @@ const PAR_RANGEE = { 'tablette-paysage': 4, 'tablette-portrait': 2 };
 // La bibliothèque de départ et des catégories ajoutées après elle : toujours incluses, leurs objets
 // « 1 en tout ». [clé, nom, picto, couleur, [[nom…]]], comme les catégories des voyages d'essai.
 let numero = 0;
-const base = construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId: () => `id-${++numero}`, maintenant: 'x' });
+const base = miniBibliotheque({ nouvelId: () => `id-${++numero}`, maintenant: 'x' });
 function avec(categories) {
   const ajoutees = categories.map(([cle, nom, icone, couleur], rang) => ({
     id: `c-${cle}`,

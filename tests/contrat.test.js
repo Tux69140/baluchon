@@ -4,14 +4,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import contrat from './contrat/stockage.json' with { type: 'json' };
-import fr from '../src/i18n/fr.json' with { type: 'json' };
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import { nouvelId } from '../src/modele/identifiant.js';
 import { appliquerChangements, calculerChangements } from '../src/modele/changements.js';
 import { genererVoyage } from '../src/modele/voyage.js';
 
 const champs = objet => Object.keys(objet).sort();
-const bibliotheque = construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: 'x' });
+const bibliotheque = miniBibliotheque({ nouvelId, maintenant: 'x' });
 
 test('la bibliothèque construite a les champs attendus par la base', () => {
   assert.deepEqual(champs(bibliotheque), champs(contrat.bibliotheque));

@@ -3,7 +3,7 @@
 // modèle de la maquette validée, docs/maquettes/suppressions/donnees.js), déposée dans le stockage du
 // navigateur avec des voyages ; l'écran Étiquettes ouvert dessus ; la fenêtre de refus et la fiche
 // ouverte depuis elle, lues et touchées.
-import { construireBibliotheque } from '../../src/modele/bibliotheque.js';
+import { bibliothequeDeNoms, miniAvecNoms } from './mini-bibliotheque.mjs';
 import { avecBibliotheque } from './assistant.mjs';
 import { attendreQue, calme } from './attente.mjs';
 import { DONNEES as DONNEES_BIBLIOTHEQUE, commande, fr } from './bibliotheque.mjs';
@@ -31,7 +31,7 @@ const objet = (nom, etiquettes = []) => ({
 // Les groupes de départ (Activités, Climat, Hébergement) ; Baignade porte Plage, Camping porte
 // Camping et Tente ; un modèle sans étiquette est « toujours inclus ».
 export const depart = () => ({
-  groupes: structuredClone(fr.bibliothequeDeDepart.groupes),
+  groupes: structuredClone(miniAvecNoms().groupes),
   categories: [
     {
       nom: 'Vêtements',
@@ -70,7 +70,7 @@ export const depart = () => ({
 // Les groupes de départ ; chaque objet garde une étiquette hors de Climat, sauf Bouillotte (Froid
 // seule) : présente, elle fait refuser la suppression de Climat (constat C1 de la relecture finale).
 export const climat = ({ bouillotte }) => ({
-  groupes: structuredClone(fr.bibliothequeDeDepart.groupes),
+  groupes: structuredClone(miniAvecNoms().groupes),
   categories: [
     {
       nom: 'Vêtements',
@@ -89,7 +89,7 @@ export const climat = ({ bouillotte }) => ({
 // Les voyages d'essai, et la bibliothèque décrite par description (depart() par défaut).
 export function donnees(description = depart()) {
   let n = 0;
-  const bibliotheque = construireBibliotheque(description, { nouvelId: () => `id-${++n}`, maintenant: 'x' });
+  const bibliotheque = bibliothequeDeNoms(description, { nouvelId: () => `id-${++n}`, maintenant: 'x' });
   return { ...DONNEES_VOYAGE, ...DONNEES_BIBLIOTHEQUE, ...avecBibliotheque(bibliotheque) };
 }
 

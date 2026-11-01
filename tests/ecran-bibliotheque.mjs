@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import {
   DONNEES,
   DEPART,
@@ -40,7 +40,7 @@ const GRANDS = new Set(['tablette-portrait', 'tablette-paysage', 'portable', 'or
 // bibliothèque de départ.
 const PIEGE = { categorie: '<b>Été & "co"</b>', etiquette: '<i>Pluie & "x"</i>', objet: '<u>Sac & "y"</u>' };
 let numero = 0;
-const base = construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId: () => `id-${++numero}`, maintenant: 'x' });
+const base = miniBibliotheque({ nouvelId: () => `id-${++numero}`, maintenant: 'x' });
 const DONNEES_PIEGE = {
   ...DONNEES,
   meta: { bibliothequeInstallee: true, langueBibliotheque: 'fr' },

@@ -1,13 +1,12 @@
-// La mini-bibliothèque de départ (spec phase 2) : décrite dans fr.json, installée une fois.
+// La mini-bibliothèque des tests (tests/outils/mini-bibliotheque.mjs), au format de la bibliothèque de départ.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fr from '../src/i18n/fr.json' with { type: 'json' };
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import { nouvelId } from '../src/modele/identifiant.js';
 import { genererVoyage } from '../src/modele/voyage.js';
 
 const MAINTENANT = '2026-10-06T08:00:00.000Z';
-const construire = () => construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId, maintenant: MAINTENANT });
+const construire = () => miniBibliotheque({ nouvelId, maintenant: MAINTENANT });
 
 test('trois groupes d’étiquettes, rangés et nommés comme prévu', () => {
   const { groupes, etiquettes } = construire();

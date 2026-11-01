@@ -6,7 +6,7 @@
 // - les polices sont celles de l'appli, chargées sans aucune requête hors de l'appli (hors ligne) ;
 // - toute commande offre 44 × 44 px, rien ne défile de côté ; avec des barres système simulées,
 //   rien ne passe dessous ;
-// - le premier lancement installe la bibliothèque de départ de fr.json, en français.
+// - le premier lancement installe les 16 catégories de la bibliothèque de départ, en français.
 // Témoin : un stockage qui contient un voyage ne montre pas l'écran vide, mais ce voyage — l'écran
 // lit donc bien le stockage, et l'écran vide n'est pas affiché d'office.
 // Une bibliothèque déjà installée (celle de l'utilisateur) n'est jamais remplacée par celle de départ.
@@ -15,6 +15,7 @@
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { DEPART } from '../src/modele/depart/index.js';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
@@ -84,8 +85,8 @@ try {
       const stocke = await lireStockage(page);
       juge.exige(
         stocke.bibliotheque?.categories.map(c => c.nom).join() ===
-          fr.bibliothequeDeDepart.categories.map(c => c.nom).join() && stocke.meta?.langueBibliotheque === 'fr',
-        `${cas} : bibliothèque de départ non installée (${JSON.stringify(stocke.meta)})`,
+          DEPART.categories.map(c => fr.depart.categories[c.cle]).join() && stocke.meta?.langueBibliotheque === 'fr',
+        `${cas} : bibliothèque de départ complète non installée (${JSON.stringify(stocke.meta)})`,
       );
       await verifierCommandes(page, juge, cas);
       if (format === 'tablette-portrait')

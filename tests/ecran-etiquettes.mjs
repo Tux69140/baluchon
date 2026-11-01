@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { miniBibliotheque } from './outils/mini-bibliotheque.mjs';
 import { DONNEES, TOUS_FORMATS, commande, fermerEssai, fr, remplir, toucheRetour, vu } from './outils/bibliotheque.mjs';
 import { attendreFermee, attendreOuverte, enregistrer, saisir, toucher } from './outils/fiches.mjs';
 import {
@@ -47,7 +47,7 @@ const LARGES = new Set(['tablette-portrait', 'tablette-paysage', 'portable', 'or
 // Une étiquette et un groupe aux noms piégés (Review Focus 1), ajoutés à la bibliothèque de départ.
 const PIEGE = { etiquette: '<b>&"x', groupe: '<i>&"g' };
 let numero = 0;
-const base = construireBibliotheque(fr.bibliothequeDeDepart, { nouvelId: () => `id-${++numero}`, maintenant: 'x' });
+const base = miniBibliotheque({ nouvelId: () => `id-${++numero}`, maintenant: 'x' });
 const DONNEES_PIEGE = {
   ...DONNEES,
   meta: { bibliothequeInstallee: true, langueBibliotheque: 'fr' },

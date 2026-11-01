@@ -16,7 +16,7 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { bibliothequeDeNoms, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { avecBibliotheque } from './outils/assistant.mjs';
 import {
@@ -53,13 +53,13 @@ const FORMATS = ['telephone-etroit', 'tablette-paysage'];
 const PIEGE = 'Sacs <&">';
 
 // Une seule catégorie, au nom piégé, et son seul objet, au même nom (Review Focus 1).
-const depart = fr.bibliothequeDeDepart;
+const depart = miniAvecNoms();
 const papiers = depart.categories.find(c => c.nom === 'Papiers');
 let numero = 0;
 const DONNEES_PIEGE = {
   ...DONNEES,
   ...avecBibliotheque(
-    construireBibliotheque(
+    bibliothequeDeNoms(
       {
         groupes: depart.groupes,
         categories: [{ ...papiers, nom: PIEGE, objets: [{ ...papiers.objets[0], nom: PIEGE }] }],

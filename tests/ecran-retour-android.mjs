@@ -19,6 +19,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { attendreQuestion, etapeAffichee, ligneObjet, question, repondre } from './outils/assistant.mjs';
+import { graineMini } from './outils/mini-bibliotheque.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { FORMATS, RACINE, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
 import { DONNEES as DONNEES_VOYAGE, montrerCategorie } from './outils/voyage-essai.mjs';
@@ -27,6 +28,7 @@ const fr = JSON.parse(await readFile(join(RACINE, 'src/i18n/fr.json'), 'utf8'));
 const { abandon } = fr.nouveauVoyage;
 const MAINTENANT = new Date('2026-10-06T10:00:00');
 const DONNEES_ASSISTANT = {
+  ...graineMini(),
   voyages: [
     {
       id: 'v1',

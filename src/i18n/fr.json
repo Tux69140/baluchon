@@ -285,211 +285,618 @@
   "erreurs": {
     "lecture": "Vos voyages n’ont pas pu être lus. Rien n’a été modifié ; fermez puis rouvrez Baluchon."
   },
-  "bibliothequeDeDepart": {
-    "groupes": [
-      {
-        "nom": "Activités",
-        "etiquettes": [
-          {
-            "cle": "randonnee",
-            "nom": "Randonnée"
-          },
-          {
-            "cle": "camping",
-            "nom": "Camping"
-          },
-          {
-            "cle": "plage",
-            "nom": "Plage"
-          }
-        ]
+  "depart": {
+    "groupes": {
+      "activites": "Activités",
+      "destination": "Destination",
+      "transport": "Transport",
+      "hebergement": "Hébergement"
+    },
+    "etiquettes": {
+      "randonnee": "Randonnée",
+      "itinerance": "Itinérance sac au dos",
+      "plage": "Plage",
+      "ville": "Ville",
+      "sports-hiver": "Sports d’hiver",
+      "sport": "Sport",
+      "festival": "Festival",
+      "soirees": "Soirées",
+      "detente": "Détente",
+      "thalasso": "Thalasso ou thermalisme",
+      "travail": "Travail",
+      "photo": "Photo et vidéo",
+      "chaud": "Chaud",
+      "froid": "Froid",
+      "pluie": "Pluie",
+      "etranger": "À l’étranger",
+      "avion": "Avion",
+      "train": "Train ou car",
+      "voiture": "Voiture",
+      "hotel": "Hôtel",
+      "location": "Location ou gîte",
+      "chez-l-habitant": "Chez l’habitant",
+      "camping": "Camping"
+    },
+    "categories": {
+      "papiers-et-argent": "Papiers et argent",
+      "vetements": "Vêtements",
+      "chaussures": "Chaussures",
+      "toilette": "Toilette",
+      "pharmacie": "Pharmacie",
+      "electronique": "Électronique",
+      "bagages-et-rangement": "Bagages et rangement",
+      "alimentation": "Alimentation",
+      "confort-en-route": "Confort en route",
+      "plein-air": "Plein air",
+      "plage-categorie": "Plage",
+      "sports-d-hiver": "Sports d’hiver",
+      "sport-categorie": "Sport",
+      "loisirs": "Loisirs",
+      "travail-categorie": "Travail",
+      "photo-et-video": "Photo et vidéo"
+    },
+    "objets": {
+      "carte-d-identite": {
+        "nom": "Carte d’identité",
+        "note": "Vérifiez sa date de validité quelques semaines avant le départ : un renouvellement prend du temps."
       },
-      {
-        "nom": "Climat",
-        "etiquettes": [
-          {
-            "cle": "chaud",
-            "nom": "Chaud"
-          },
-          {
-            "cle": "froid",
-            "nom": "Froid"
-          },
-          {
-            "cle": "pluie",
-            "nom": "Pluie"
-          }
-        ]
+      "cles-de-la-maison": {
+        "nom": "Clés de la maison"
       },
-      {
-        "nom": "Hébergement",
-        "etiquettes": [
-          {
-            "cle": "hotel",
-            "nom": "Hôtel"
-          },
-          {
-            "cle": "tente",
-            "nom": "Tente"
-          },
-          {
-            "cle": "chez-l-habitant",
-            "nom": "Chez l’habitant"
-          }
-        ]
+      "passeport": {
+        "nom": "Passeport"
+      },
+      "carte-vitale": {
+        "nom": "Carte Vitale"
+      },
+      "carte-europeenne-d-assurance-maladie": {
+        "nom": "Carte européenne d’assurance maladie",
+        "note": "Gratuite, elle se demande en ligne à l’Assurance maladie au moins deux semaines avant ; elle vaut dans toute l’Union européenne."
+      },
+      "carnet-de-sante": {
+        "nom": "Carnet de santé"
+      },
+      "carnet-de-vaccination": {
+        "nom": "Carnet de vaccination",
+        "note": "Certains pays exigent un vaccin : renseignez-vous un à deux mois avant."
+      },
+      "autorisation-de-sortie-du-territoire": {
+        "nom": "Autorisation de sortie du territoire",
+        "note": "Obligatoire pour un mineur qui part à l’étranger sans ses parents."
+      },
+      "permis-de-conduire": {
+        "nom": "Permis de conduire"
+      },
+      "papiers-de-la-voiture": {
+        "nom": "Papiers de la voiture",
+        "note": "Carte grise et attestation d’assurance."
+      },
+      "cles-de-la-voiture": {
+        "nom": "Clés de la voiture"
+      },
+      "carte-bancaire": {
+        "nom": "Carte bancaire"
+      },
+      "especes": {
+        "nom": "Espèces",
+        "note": "Prévoir de partir avec environ 50 € par personne."
+      },
+      "billets-et-reservations": {
+        "nom": "Billets et réservations",
+        "note": "Gardez-en une copie lisible sans réseau sur le téléphone."
+      },
+      "copies-des-papiers-importants": {
+        "nom": "Copies des papiers importants",
+        "note": "Une photo de chaque papier, rangée à part des originaux, accélère les démarches en cas de perte."
+      },
+      "attestation-d-assurance-voyage": {
+        "nom": "Attestation d’assurance voyage",
+        "note": "Notez le numéro d’assistance ; votre carte bancaire en comprend parfois une."
+      },
+      "titre-de-transport-en-commun": {
+        "nom": "Titre de transport en commun"
+      },
+      "t-shirts": {
+        "nom": "T-shirts"
+      },
+      "culottes": {
+        "nom": "Culottes"
+      },
+      "slips-ou-calecons": {
+        "nom": "Slips ou caleçons"
+      },
+      "culottes-ou-slips": {
+        "nom": "Culottes ou slips"
+      },
+      "chaussettes": {
+        "nom": "Chaussettes"
+      },
+      "soutiens-gorge": {
+        "nom": "Soutiens-gorge"
+      },
+      "pyjama": {
+        "nom": "Pyjama"
+      },
+      "pantalons": {
+        "nom": "Pantalons"
+      },
+      "shorts-ou-jupes": {
+        "nom": "Shorts ou jupes"
+      },
+      "pull-ou-polaire": {
+        "nom": "Pull ou polaire"
+      },
+      "veste-chaude": {
+        "nom": "Veste chaude"
+      },
+      "veste-de-pluie": {
+        "nom": "Veste de pluie"
+      },
+      "poncho-de-pluie": {
+        "nom": "Poncho de pluie"
+      },
+      "parapluie-pliant": {
+        "nom": "Parapluie pliant"
+      },
+      "sous-vetements-thermiques": {
+        "nom": "Sous-vêtements thermiques",
+        "note": "Un haut et un bas : ils se portent sous les vêtements et sèchent en une nuit."
+      },
+      "bonnet": {
+        "nom": "Bonnet"
+      },
+      "gants": {
+        "nom": "Gants"
+      },
+      "echarpe-tour-de-cou-ou-buff": {
+        "nom": "Écharpe, tour de cou ou Buff"
+      },
+      "chapeau-ou-casquette": {
+        "nom": "Chapeau ou casquette"
+      },
+      "lunettes-de-soleil": {
+        "nom": "Lunettes de soleil"
+      },
+      "maillot-de-bain": {
+        "nom": "Maillot de bain"
+      },
+      "bonnet-de-bain": {
+        "nom": "Bonnet de bain",
+        "note": "Souvent obligatoire dans les piscines."
+      },
+      "tenue-confortable-pour-le-soir": {
+        "nom": "Tenue confortable pour le soir"
+      },
+      "tenue-habillee": {
+        "nom": "Tenue habillée"
+      },
+      "bijoux": {
+        "nom": "Bijoux"
+      },
+      "chaussures-confortables": {
+        "nom": "Chaussures confortables"
+      },
+      "sandales-ou-tongs": {
+        "nom": "Sandales ou tongs"
+      },
+      "chaussures-de-randonnee": {
+        "nom": "Chaussures de randonnée",
+        "note": "Jamais neuves pour une longue marche : portez-les quelques fois avant de partir."
+      },
+      "chaussures-chaudes-et-impermeables": {
+        "nom": "Chaussures chaudes et imperméables"
+      },
+      "chaussures-de-sport": {
+        "nom": "Chaussures de sport"
+      },
+      "chaussures-habillees": {
+        "nom": "Chaussures habillées"
+      },
+      "chaussons": {
+        "nom": "Chaussons"
+      },
+      "trousse-de-toilette": {
+        "nom": "Trousse de toilette"
+      },
+      "brosse-a-dents": {
+        "nom": "Brosse à dents"
+      },
+      "dentifrice": {
+        "nom": "Dentifrice"
+      },
+      "fil-dentaire": {
+        "nom": "Fil dentaire"
+      },
+      "gel-douche": {
+        "nom": "Gel douche",
+        "note": "En avion, les flacons de 100 mL au plus passent en cabine, dans un sac transparent."
+      },
+      "shampoing": {
+        "nom": "Shampoing"
+      },
+      "deodorant": {
+        "nom": "Déodorant"
+      },
+      "brosse-ou-peigne": {
+        "nom": "Brosse ou peigne"
+      },
+      "lunettes-de-vue-ou-lentilles-et-leur-produit": {
+        "nom": "Lunettes de vue ou lentilles et leur produit"
+      },
+      "creme-hydratante": {
+        "nom": "Crème hydratante"
+      },
+      "baume-a-levres": {
+        "nom": "Baume à lèvres"
+      },
+      "creme-solaire": {
+        "nom": "Crème solaire",
+        "note": "À la montagne aussi : la neige renvoie presque tout le soleil."
+      },
+      "apres-soleil": {
+        "nom": "Après-soleil"
+      },
+      "rasoir": {
+        "nom": "Rasoir"
+      },
+      "mousse-a-raser": {
+        "nom": "Mousse à raser"
+      },
+      "protections-periodiques": {
+        "nom": "Protections périodiques",
+        "note": "Prévoyez-en même hors des dates attendues : le voyage dérègle parfois le cycle."
+      },
+      "coupe-ongles-et-pince-a-epiler": {
+        "nom": "Coupe-ongles et pince à épiler"
+      },
+      "paquets-de-mouchoirs": {
+        "nom": "Paquets de mouchoirs"
+      },
+      "paquets-de-mouchoirs-en-plus": {
+        "nom": "Paquets de mouchoirs en plus"
+      },
+      "serviette-de-bain": {
+        "nom": "Serviette de bain",
+        "note": "Pour la sortie de douche."
+      },
+      "lingettes": {
+        "nom": "Lingettes"
+      },
+      "serviette-de-toilette": {
+        "nom": "Serviette de toilette",
+        "note": "Pour les mains et le visage."
+      },
+      "trousse-de-secours": {
+        "nom": "Trousse de secours",
+        "note": "Pansements, désinfectant, compresses, bande : vérifiez les dates une fois par an."
+      },
+      "medicaments-habituels": {
+        "nom": "Médicaments habituels",
+        "note": "Avec l’ordonnance, et de quoi tenir quelques jours de plus que prévu."
+      },
+      "comprimes-antidouleur": {
+        "nom": "Comprimés antidouleur"
+      },
+      "comprimes-antidouleur-pour-enfant": {
+        "nom": "Comprimés antidouleur pour enfant",
+        "note": "Dosé selon le poids : vérifiez qu’il convient encore."
+      },
+      "thermometre": {
+        "nom": "Thermomètre"
+      },
+      "preservatifs": {
+        "nom": "Préservatifs"
+      },
+      "anti-moustiques": {
+        "nom": "Anti-moustiques"
+      },
+      "pince-a-tiques": {
+        "nom": "Pince à tiques",
+        "note": "Retirez une tique au plus vite, en tournant, sans l’écraser."
+      },
+      "comprimes-contre-le-mal-des-transports": {
+        "nom": "Comprimés contre le mal des transports",
+        "note": "À prendre une demi-heure avant le départ."
+      },
+      "sels-de-rehydratation": {
+        "nom": "Sels de réhydratation"
+      },
+      "comprimes-de-charbon-contre-les-maux-de-ventre": {
+        "nom": "Comprimés de charbon contre les maux de ventre"
+      },
+      "gel-hydroalcoolique": {
+        "nom": "Gel hydroalcoolique"
+      },
+      "telephone": {
+        "nom": "Téléphone"
+      },
+      "chargeurs-et-cables": {
+        "nom": "Chargeurs et câbles"
+      },
+      "batterie-externe": {
+        "nom": "Batterie externe",
+        "note": "En avion, elle voyage en cabine, jamais en soute."
+      },
+      "ecouteurs": {
+        "nom": "Écouteurs"
+      },
+      "adaptateur-de-prise": {
+        "nom": "Adaptateur de prise",
+        "note": "Vérifiez le type de prise du pays : il en existe une quinzaine dans le monde."
+      },
+      "multiprise": {
+        "nom": "Multiprise",
+        "note": "Elle dépanne dans les chambres à prise unique."
+      },
+      "ordinateur-portable-et-son-chargeur": {
+        "nom": "Ordinateur portable et son chargeur"
+      },
+      "valise-ou-sac-de-voyage": {
+        "nom": "Valise ou sac de voyage"
+      },
+      "sac-a-dos-de-journee": {
+        "nom": "Sac à dos de journée"
+      },
+      "sacs-de-rangement": {
+        "nom": "Sacs de rangement",
+        "note": "Un sac par personne ou par type de vêtements : on fouille moins la valise."
+      },
+      "sac-a-linge-sale": {
+        "nom": "Sac à linge sale"
+      },
+      "lessive-de-voyage": {
+        "nom": "Lessive de voyage",
+        "note": "Laver un peu chaque soir permet de partir avec moitié moins de vêtements."
+      },
+      "cadenas": {
+        "nom": "Cadenas",
+        "note": "De préférence aux normes des douanes (TSA) : ouvrable au contrôle sans être cassé, surtout en avion et à l’étranger."
+      },
+      "sac-de-courses-pliable": {
+        "nom": "Sac de courses pliable"
+      },
+      "pochette-etanche": {
+        "nom": "Pochette étanche"
+      },
+      "sac-banane": {
+        "nom": "Sac banane"
+      },
+      "gourde": {
+        "nom": "Gourde",
+        "note": "Comptez un litre et demi par jour et par personne, davantage par forte chaleur."
+      },
+      "en-cas": {
+        "nom": "En-cas",
+        "note": "Fruits secs et barres de céréales supportent bien le sac."
+      },
+      "petits-dejeuners": {
+        "nom": "Petits-déjeuners"
+      },
+      "pique-niques": {
+        "nom": "Pique-niques"
+      },
+      "diners": {
+        "nom": "Dîners",
+        "note": "Prévoyez un repas de secours par personne en plus."
+      },
+      "cafe-ou-the": {
+        "nom": "Café ou thé"
+      },
+      "sel-poivre-et-huile": {
+        "nom": "Sel, poivre et huile"
+      },
+      "glaciere": {
+        "nom": "Glacière"
+      },
+      "bouteille-isotherme": {
+        "nom": "Bouteille isotherme"
+      },
+      "gobelet-reutilisable": {
+        "nom": "Gobelet réutilisable"
+      },
+      "oreiller-de-voyage": {
+        "nom": "Oreiller de voyage"
+      },
+      "masque-de-nuit": {
+        "nom": "Masque de nuit"
+      },
+      "bouchons-d-oreilles": {
+        "nom": "Bouchons d’oreilles"
+      },
+      "siege-auto": {
+        "nom": "Siège auto",
+        "note": "Obligatoire en voiture pour les moins de 10 ans, adapté à la taille de l’enfant."
+      },
+      "jeux-pour-la-route": {
+        "nom": "Jeux pour la route"
+      },
+      "sac-a-dos-de-randonnee": {
+        "nom": "Sac à dos de randonnée",
+        "note": "Réglez-le sur les hanches : ce sont elles qui portent, pas les épaules."
+      },
+      "carte-de-randonnee": {
+        "nom": "Carte de randonnée",
+        "note": "Le réseau manque souvent en montagne : gardez une carte papier ou téléchargée."
+      },
+      "boussole": {
+        "nom": "Boussole"
+      },
+      "batons-de-marche": {
+        "nom": "Bâtons de marche"
+      },
+      "chaussettes-de-randonnee": {
+        "nom": "Chaussettes de randonnée"
+      },
+      "pantalon-de-randonnee": {
+        "nom": "Pantalon de randonnée"
+      },
+      "couverture-de-survie": {
+        "nom": "Couverture de survie",
+        "note": "Quelques grammes qui peuvent sauver une nuit imprévue dehors."
+      },
+      "jumelles": {
+        "nom": "Jumelles"
+      },
+      "lampe-frontale": {
+        "nom": "Lampe frontale"
+      },
+      "couteau-de-poche": {
+        "nom": "Couteau de poche",
+        "note": "Interdit en cabine d’avion, et parfois dans les lieux publics : en avion, il voyage dans la valise en soute."
+      },
+      "tente": {
+        "nom": "Tente",
+        "note": "Montez-la une fois chez vous avant le départ : il ne manquera ni piquet ni arceau."
+      },
+      "sac-de-couchage": {
+        "nom": "Sac de couchage",
+        "note": "Choisissez-le d’après sa température de confort, pas sa température extrême."
+      },
+      "matelas-de-sol": {
+        "nom": "Matelas de sol"
+      },
+      "oreiller-gonflable": {
+        "nom": "Oreiller gonflable"
+      },
+      "drap-de-sac": {
+        "nom": "Drap de sac",
+        "note": "Exigé dans la plupart des refuges et des gîtes d’étape."
+      },
+      "rechaud-et-cartouche-de-gaz": {
+        "nom": "Réchaud et cartouche de gaz",
+        "note": "Les cartouches de gaz sont interdites en avion : achetez-les sur place."
+      },
+      "popote": {
+        "nom": "Popote"
+      },
+      "couverts": {
+        "nom": "Couverts"
+      },
+      "briquet": {
+        "nom": "Briquet"
+      },
+      "liquide-vaisselle-et-eponge": {
+        "nom": "Liquide vaisselle et éponge"
+      },
+      "papier-toilette": {
+        "nom": "Papier toilette"
+      },
+      "sacs-poubelle": {
+        "nom": "Sacs poubelle"
+      },
+      "lanterne": {
+        "nom": "Lanterne"
+      },
+      "corde-a-linge-et-pinces": {
+        "nom": "Corde à linge et pinces"
+      },
+      "gourde-filtrante": {
+        "nom": "Gourde filtrante",
+        "note": "Elle permet de boire l’eau des sources et des fontaines."
+      },
+      "serviette-de-plage": {
+        "nom": "Serviette de plage"
+      },
+      "sac-de-plage": {
+        "nom": "Sac de plage"
+      },
+      "parasol": {
+        "nom": "Parasol"
+      },
+      "masque-et-tuba": {
+        "nom": "Masque et tuba"
+      },
+      "jeux-de-plage": {
+        "nom": "Jeux de plage"
+      },
+      "pantalon-de-ski": {
+        "nom": "Pantalon de ski"
+      },
+      "veste-de-ski": {
+        "nom": "Veste de ski"
+      },
+      "masque-de-ski": {
+        "nom": "Masque de ski"
+      },
+      "casque": {
+        "nom": "Casque"
+      },
+      "chaussettes-de-ski": {
+        "nom": "Chaussettes de ski"
+      },
+      "chaufferettes": {
+        "nom": "Chaufferettes"
+      },
+      "apres-ski": {
+        "nom": "Après-ski"
+      },
+      "tenues-de-sport": {
+        "nom": "Tenues de sport"
+      },
+      "brassiere-de-sport": {
+        "nom": "Brassière de sport"
+      },
+      "serviette-de-sport": {
+        "nom": "Serviette de sport"
+      },
+      "livre-ou-liseuse": {
+        "nom": "Livre ou liseuse"
+      },
+      "carnet-et-stylo": {
+        "nom": "Carnet et stylo",
+        "note": "Le stylo sert aussi aux formulaires des frontières."
+      },
+      "guide-de-voyage": {
+        "nom": "Guide de voyage"
+      },
+      "jeu-de-cartes": {
+        "nom": "Jeu de cartes"
+      },
+      "cadeau-pour-vos-hotes": {
+        "nom": "Cadeau pour vos hôtes",
+        "note": "Une spécialité de votre région fait toujours plaisir."
+      },
+      "doudou": {
+        "nom": "Doudou",
+        "note": "Et son remplaçant s’il en a un : un doudou perdu gâche un voyage."
+      },
+      "veilleuse": {
+        "nom": "Veilleuse"
+      },
+      "tenues-de-travail": {
+        "nom": "Tenues de travail"
+      },
+      "documents-de-travail": {
+        "nom": "Documents de travail"
+      },
+      "badge-ou-cartes-de-visite": {
+        "nom": "Badge ou cartes de visite"
+      },
+      "appareil-photo": {
+        "nom": "Appareil photo"
+      },
+      "chargeur-de-l-appareil": {
+        "nom": "Chargeur de l’appareil"
+      },
+      "batteries-de-rechange": {
+        "nom": "Batteries de rechange",
+        "note": "Le froid les vide vite : gardez-les dans une poche intérieure."
+      },
+      "cartes-memoire": {
+        "nom": "Cartes mémoire",
+        "note": "Videz-les avant de partir."
+      },
+      "disque-dur-externe": {
+        "nom": "Disque dur externe",
+        "note": "Copiez les photos chaque soir : une carte perdue ne coûte plus qu’une journée."
+      },
+      "trepied-de-voyage": {
+        "nom": "Trépied de voyage"
+      },
+      "micro-externe": {
+        "nom": "Micro externe"
       }
-    ],
-    "categories": [
-      {
-        "nom": "Vêtements",
-        "icone": "t-shirt",
-        "couleur": "ciel",
-        "objets": [
-          {
-            "nom": "T-shirts",
-            "regle": "par_jour",
-            "valeur": 1,
-            "plafond": 5,
-            "parPersonne": true
-          },
-          {
-            "nom": "Sous-vêtements",
-            "regle": "par_jour",
-            "valeur": 1,
-            "parPersonne": true
-          },
-          {
-            "nom": "Pyjama",
-            "regle": "par_nuit",
-            "valeur": 1,
-            "plafond": 1,
-            "parPersonne": true
-          },
-          {
-            "nom": "Maillot de bain",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true,
-            "etiquettes": ["plage"]
-          },
-          {
-            "nom": "Doudoune",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true,
-            "etiquettes": ["froid"]
-          },
-          {
-            "nom": "Bonnet",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true,
-            "etiquettes": ["froid"]
-          },
-          {
-            "nom": "Cape de pluie",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true,
-            "etiquettes": ["pluie"]
-          }
-        ]
-      },
-      {
-        "nom": "Toilette",
-        "icone": "tooth",
-        "couleur": "lagon",
-        "objets": [
-          {
-            "nom": "Brosse à dents",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true
-          },
-          {
-            "nom": "Dentifrice",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": false
-          },
-          {
-            "nom": "Crème solaire",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": false,
-            "etiquettes": ["plage", "chaud"]
-          }
-        ]
-      },
-      {
-        "nom": "Alimentation",
-        "icone": "fork-knife",
-        "couleur": "pomme",
-        "objets": [
-          {
-            "nom": "Repas",
-            "regle": "par_jour",
-            "valeur": 2,
-            "parPersonne": true,
-            "consommable": true,
-            "note": "Prévoir un repas de secours par personne en plus."
-          },
-          {
-            "nom": "Gourde",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true
-          }
-        ]
-      },
-      {
-        "nom": "Papiers",
-        "icone": "identification-card",
-        "couleur": "tournesol",
-        "objets": [
-          {
-            "nom": "Pièce d’identité",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true,
-            "note": "Vérifier la date de validité avant de partir : certaines démarches prennent des semaines."
-          },
-          {
-            "nom": "Chargeur de téléphone",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": false,
-            "note": "Une multiprise de voyage dépanne dans les chambres à prise unique."
-          }
-        ]
-      },
-      {
-        "nom": "Camping",
-        "icone": "tent",
-        "couleur": "abricot",
-        "etiquettes": ["camping", "tente"],
-        "objets": [
-          {
-            "nom": "Lampe frontale",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true
-          },
-          {
-            "nom": "Sac de couchage",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": true
-          },
-          {
-            "nom": "Réchaud",
-            "regle": "fixe",
-            "valeur": 1,
-            "parPersonne": false
-          }
-        ]
-      }
-    ]
+    }
   },
   "menu": {
     "ouvrir": "Menu",

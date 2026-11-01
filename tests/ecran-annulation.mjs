@@ -19,7 +19,7 @@
 //   demande moins d'animations.
 // L'aspect et la place, à tous les formats, sont dans tests/ecran-annulation-place.mjs.
 import { chromium } from 'playwright';
-import { construireBibliotheque } from '../src/modele/bibliotheque.js';
+import { bibliothequeDeNoms, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
 import { attendreQue, calme } from './outils/attente.mjs';
 import {
   DONNEES,
@@ -54,7 +54,7 @@ const navigateur = await chromium.launch();
 const FORMATS = ['telephone-etroit', 'tablette-paysage'];
 const QUESTION = 'dialog[role="alertdialog"]';
 const PIEGE = 'Sacs <&">';
-const depart = fr.bibliothequeDeDepart;
+const depart = miniAvecNoms();
 const nomsDe = nom =>
   depart.categories
     .find(c => c.nom === nom)
@@ -67,7 +67,7 @@ let numero = 0;
 const DONNEES_PIEGE = {
   ...DONNEES,
   ...avecBibliotheque(
-    construireBibliotheque(
+    bibliothequeDeNoms(
       {
         groupes: depart.groupes,
         categories: [{ ...papiers, nom: PIEGE, objets: [{ ...papiers.objets[0], nom: PIEGE }] }],

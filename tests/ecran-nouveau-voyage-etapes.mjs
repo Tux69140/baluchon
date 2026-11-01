@@ -26,6 +26,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { avecBibliotheque, question, retourDansLAssistant, sansGroupe } from './outils/assistant.mjs';
+import { graineMini, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
@@ -44,7 +45,7 @@ const COCHE = await readFile(join(RACINE, 'node_modules/@phosphor-icons/core/ass
 const TRACE_COCHE = COCHE.match(/\bd="([^"]+)"/)[1];
 const nv = fr.nouveauVoyage;
 const MAINTENANT = new Date('2026-10-06T10:00:00');
-const NOMS = [nv.etape.informations, ...fr.bibliothequeDeDepart.groupes.map(g => g.nom), nv.etape.apercu];
+const NOMS = [nv.etape.informations, ...miniAvecNoms().groupes.map(g => g.nom), nv.etape.apercu];
 const TOUS_FORMATS = {
   ...Object.fromEntries(Object.entries(FORMATS).map(([nom, taille]) => [nom, { taille }])),
   ordinateur: { taille: { width: 1440, height: 900 }, ecran: { width: 1920, height: 1080 }, tactile: false },
@@ -107,6 +108,7 @@ async function ouvrirAssistant(navigateur, url, { taille = FORMATS['tablette-pay
     theme: 'light',
     maintenant: MAINTENANT,
     adresse: '#/nouveau-voyage',
+    donnees: graineMini(),
     ...options,
   });
   await attendreEcran(ouvert.page, 'nouveau-voyage');
@@ -294,7 +296,7 @@ try {
   // Bibliothèque sans aucun groupe (Review Focus 1).
   {
     const { contexte, page, erreurs } = await ouvrirAssistant(navigateur, serveur.url, {
-      donnees: avecBibliotheque(sansGroupe(fr.bibliothequeDeDepart)),
+      donnees: avecBibliotheque(sansGroupe(miniAvecNoms())),
     });
     const r = await rangee(page);
     juge.exige(

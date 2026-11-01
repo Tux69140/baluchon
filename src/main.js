@@ -32,7 +32,8 @@ import { DICTIONNAIRES } from './i18n/dictionnaires.js';
 import { choisirLangue } from './i18n/langue.js';
 import { creerTraducteur } from './i18n/traduction.js';
 import { ecouterRetourSysteme, lireTheme, ouvrirStockage } from './stockage/index.js';
-import { construireBibliotheque } from './modele/bibliotheque.js';
+import { construireBibliotheque, langueDeLaBibliotheque } from './modele/bibliotheque.js';
+import { DEPART } from './modele/depart/index.js';
 import { nouvelId } from './modele/identifiant.js';
 import { poserLangueDuTri } from './modele/tri.js';
 import { ecranVoyages, vueErreur } from './ecrans/voyages.js';
@@ -205,13 +206,16 @@ async function demarrer() {
   stockage = surveillerEcritures(await ouvrirStockage());
   // Suivi de l'appareil et couleur des barres système, qui ont besoin du stockage.
   appliquerTheme(stockage);
-  // La bibliothèque de départ s'installe une seule fois, dans la langue du premier lancement ; elle
-  // appartient ensuite à l'utilisateur (docs/PRD.md, « Données »).
-  if (!(await stockage.bibliothequeInstallee()))
+  // La bibliothèque de départ s'installe une seule fois, dans la langue du premier lancement si sa
+  // bibliothèque y est complète, en français sinon ; elle appartient ensuite à l'utilisateur
+  // (docs/PRD.md, « Données »).
+  if (!(await stockage.bibliothequeInstallee())) {
+    const langue = langueDeLaBibliotheque(LANGUE, DICTIONNAIRES, DEPART);
     await stockage.installerBibliotheque(
-      construireBibliotheque(DICTIONNAIRES.fr.bibliothequeDeDepart, { nouvelId, maintenant: new Date().toISOString() }),
-      LANGUE,
+      construireBibliotheque(DEPART, DICTIONNAIRES[langue].depart, { nouvelId, maintenant: new Date().toISOString() }),
+      langue,
     );
+  }
   // La touche retour d'Android remonte l'historique par la page elle-même (src/ecrans/retour-systeme.js) :
   // tout ce qui suit le retour (niveaux, garde de l'assistant, routeur) reste fondé sur popstate.
   // history.back() n'aboutit qu'au popstate suivant : d'ici là, history.state est l'ancien, et un second

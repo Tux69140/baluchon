@@ -38,6 +38,7 @@ import {
   verifierPiedQuestion,
   verifierQuestion,
 } from './outils/assistant.mjs';
+import { graineMini } from './outils/mini-bibliotheque.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { CAPTURES, FORMATS, NOMS_THEME, RACINE, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
 
@@ -47,6 +48,7 @@ const { abandon } = fr.nouveauVoyage;
 const HORS = 'hors de l’appli';
 const MAINTENANT = new Date('2026-10-06T10:00:00');
 const DONNEES = {
+  ...graineMini(),
   voyages: [
     {
       id: 'v1',

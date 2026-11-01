@@ -25,6 +25,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { creerDepuisLAssistant } from './outils/assistant.mjs';
+import { MINI_DEPART, graineMini } from './outils/mini-bibliotheque.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   CAPTURES,
@@ -115,6 +116,7 @@ async function nouveauFormulaire(navigateur, url, options = {}) {
     theme: 'light',
     maintenant: MAINTENANT,
     adresse: '#/nouveau-voyage',
+    donnees: graineMini(),
     ...options,
   });
   await attendreEcran(ouvert.page, 'nouveau-voyage');
@@ -141,7 +143,7 @@ try {
       taille: FORMATS['tablette-portrait'],
       theme: 'light',
       maintenant: MAINTENANT,
-      donnees: { voyages: [PAQUES] },
+      donnees: { ...graineMini(), voyages: [PAQUES] },
     });
     await attendreEcran(page, 'voyages');
     await page.click('.bouton-flottant');
@@ -203,7 +205,7 @@ try {
     juge.exige((await objetsAffiches(page)).Repas === '16', 'parcours : le voyage ne survit pas au rechargement');
     const idsApres = await idsCategories();
     juge.exige(
-      idsAvant.split(',').length === fr.bibliothequeDeDepart.categories.length && idsApres === idsAvant,
+      idsAvant.split(',').length === MINI_DEPART.categories.length && idsApres === idsAvant,
       `parcours : bibliothèque réinstallée (${idsAvant} → ${idsApres})`,
     );
     await page.goBack();
