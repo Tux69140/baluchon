@@ -11,6 +11,7 @@ import { verifierTaille } from '../scripts/controles/taille-fichiers.mjs';
 import { verifierTextes } from '../scripts/controles/textes-hors-traduction.mjs';
 import { verifierExports } from '../scripts/controles/exports-inutilises.mjs';
 import { verifierCouches } from '../scripts/controles/frontiere-couches.mjs';
+import { verifierLangue, verifierLangues } from '../scripts/controles/langues.mjs';
 import { verifierLint, verifierFormat } from '../scripts/controles/lint-format.mjs';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,6 +42,7 @@ test('le projet réel passe tous les contrôles', async () => {
   assert.deepEqual(await verifierTextes(RACINE), []);
   assert.deepEqual(await verifierExports(RACINE), []);
   assert.deepEqual(await verifierCouches(RACINE), []);
+  assert.deepEqual(await verifierLangues(RACINE), []);
 });
 
 test('taille : 500 lignes passent, 501 rougissent', async () => {
@@ -152,4 +154,39 @@ test('lint : un code propre passe, une variable inutilisée rougit', async () =>
 test('format : un code formaté passe, un code mal formaté rougit', async () => {
   assert.equal(await verifierFormat(RACINE, 'src/essai.js', "export const a = { b: 'c' };\n"), true);
   assert.equal(await verifierFormat(RACINE, 'src/essai.js', 'export const a={b:"c"}\n'), false);
+});
+
+// Langues : le français sert de référence (docs/TRADUIRE.md).
+const REF = {
+  voyages: { titre: 'Voyages', compte: { one: '{n} voyage', other: '{n} voyages' } },
+  depart: { groupes: { transport: 'Transport' }, objets: { cle: { nom: 'Clés', note: 'Penser aux clés' } } },
+};
+const faute = (traduction, langue = 'en') => verifierLangue(REF, traduction, langue);
+
+test('langues : une traduction partielle sans bibliothèque ne donne aucune faute', () => {
+  assert.deepEqual(faute({ voyages: { titre: 'Trips' } }, 'en'), []);
+  assert.deepEqual(faute(REF), []);
+});
+
+test('langues : clé inconnue, {valeur} oubliée ou changée, texte vide rougissent', () => {
+  assert.match(faute({ voyages: { inconnue: 'x' } }).join(), /voyages\.inconnue : clé absente du français/);
+  assert.match(faute({ voyages: { compte: { one: 'un', other: 'beaucoup' } } }).join(), /voyages\.compte : valeurs/);
+  assert.match(faute({ voyages: { compte: { one: '{m}', other: '{m}' } } }).join(), /voyages\.compte : valeurs/);
+  assert.match(faute({ voyages: { titre: '  ' } }).join(), /voyages\.titre : texte vide/);
+  assert.equal(faute({ voyages: { compte: { one: '1 voyage', other: '{n} voyages' } } }).length, 0);
+});
+
+test('langues : une forme de pluriel de la langue manque', () => {
+  const pl = { voyages: { compte: { one: '{n} podróż', other: '{n} podróży' } } };
+  assert.match(faute(pl, 'pl').join(), /voyages\.compte : forme\(s\) de pluriel manquante\(s\).*few/);
+  const complet = { voyages: { compte: { one: '{n} a', few: '{n} b', many: '{n} c', other: '{n} d' } } };
+  assert.deepEqual(faute(complet, 'pl'), []);
+});
+
+test('langues : la bibliothèque est complète ou absente, jamais à moitié traduite', () => {
+  const demi = { depart: { groupes: { transport: 'Transport' } } };
+  assert.match(faute(demi).join(), /bibliothèque à moitié traduite, 2 texte\(s\) manquant\(s\)/);
+  const sansNote = { depart: { groupes: { transport: 'T' }, objets: { cle: { nom: 'K' } } } };
+  assert.match(faute(sansNote).join(), /depart\.objets\.cle\.note/);
+  assert.deepEqual(faute({ depart: REF.depart }), []);
 });

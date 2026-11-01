@@ -8,6 +8,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ecrireLangueEssai } from './outils/langue-essai.mjs';
 
 const dossier = dirname(fileURLToPath(import.meta.url));
 const PARALLELES = Math.max(1, Math.min(4, Math.floor(cpus().length / 3)));
@@ -34,6 +35,8 @@ function lancer(test) {
   });
 }
 
+// La langue d'essai (tests/langues/, ignorée par git) doit exister avant que le premier serveur ne démarre.
+await ecrireLangueEssai();
 const durees = lireDurees();
 const tests = readdirSync(dossier)
   .filter(nom => /^ecran-.*\.mjs$/.test(nom))

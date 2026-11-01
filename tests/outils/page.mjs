@@ -60,12 +60,13 @@ export function creerJuge() {
 export async function ouvrir(
   navigateur,
   url,
-  { taille, theme, donnees, maintenant, adresse = '', ecran, tactile = true, horloge = false },
+  { taille, theme, donnees, maintenant, adresse = '', ecran, tactile = true, horloge = false, locale },
 ) {
   const contexte = await navigateur.newContext({
     viewport: taille,
     colorScheme: theme,
     hasTouch: tactile,
+    ...(locale && { locale }),
     ...(ecran && { screen: ecran }),
   });
   const page = await contexte.newPage();

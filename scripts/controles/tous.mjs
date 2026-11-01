@@ -7,6 +7,7 @@ import { verifierTaille } from './taille-fichiers.mjs';
 import { verifierTextes } from './textes-hors-traduction.mjs';
 import { verifierExports } from './exports-inutilises.mjs';
 import { verifierCouches } from './frontiere-couches.mjs';
+import { verifierLangues } from './langues.mjs';
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const controles = {
@@ -14,6 +15,7 @@ const controles = {
   'Textes hors traduction': verifierTextes,
   'Exports inutilisés': verifierExports,
   'Frontière des couches': verifierCouches,
+  'Fichiers de langue': verifierLangues,
 };
 
 let total = 0;

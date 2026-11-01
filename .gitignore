@@ -19,3 +19,4 @@ apk/
 *.jks
 *.keystore
 keystore.properties
+tests/langues/
