@@ -181,6 +181,14 @@ test('le manifeste reçoit les deux autorisations du dépôt dans Téléchargeme
     await copierPersonnalisations(racine);
     const manifeste = await readFile(join(racine, MANIFESTE), 'utf8');
     for (const permission of PERMISSIONS) assert.equal(manifeste.match(permission)?.length, 1);
+    // Les autorisations suivent celle d'Internet, sans ligne vide de trop avant « <application ».
+    assert.equal(
+      manifeste,
+      MANIFESTE_TAURI.replace(
+        '\n\n    <application/>',
+        '\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />\n\n    <application/>',
+      ),
+    );
     // Témoin : le reste du manifeste est intact.
     assert.ok(manifeste.includes('android.permission.INTERNET') && manifeste.includes('<application/>'));
     await copierPersonnalisations(racine);
@@ -220,6 +228,21 @@ test('l’activité dépose un fichier dans Téléchargements sans jamais écras
   assert.match(source, /addCompletedDownload\(/);
   assert.match(source, /MediaScannerConnection\.scanFile/);
   assert.match(source, /baluchonDepose\(/);
+});
+
+// Le nom vient de la page : jamais un chemin. Et si seule la déclaration comme téléchargement échoue, le
+// fichier est bien écrit : on répond « depose » (il se retrouve par le gestionnaire de fichiers).
+test('l’activité refuse un nom qui est un chemin, et garde le fichier écrit si la déclaration échoue', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(new URL(`../${NOTRE_JAVA}/${ACTIVITE}`, import.meta.url), 'utf8');
+  const corps = source.match(/private fun deposerOuDemander\(depot: Depot\) \{([\s\S]*?)\n {2}\}\n/)?.[1] ?? '';
+  assert.match(corps, /depot\.nom\.contains\('\/'\) \|\| depot\.nom\.contains\("\.\."\)/);
+  assert.match(corps, /repondre\(depot, "erreur:/);
+  assert.match(
+    source,
+    /try \{\s*\(getSystemService\(DOWNLOAD_SERVICE\) as DownloadManager\)\.addCompletedDownload\([\s\S]*?\} catch \(e: Exception\) \{\s*Log\.w\(/,
+  );
+  assert.match(source, /@Volatile\s+private var pageReglesLesBarres = false/);
 });
 
 // Un second dépôt pendant que la boîte d'autorisation est ouverte ne la redemande pas : Android répondrait

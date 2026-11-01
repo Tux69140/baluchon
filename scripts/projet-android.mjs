@@ -58,8 +58,9 @@ function ajouterPermissions(manifeste) {
   if (!manquantes.length) return manifeste;
   if (!manifeste.includes('<application'))
     throw new Error(`${enClair(MANIFESTE)} : repère « <application » introuvable.`);
-  const lignes = manquantes.map(permission => `    ${permission}\n`).join('');
-  return manifeste.replace(/^( *)<application/m, `${lignes}\n$1<application`);
+  const lignes = manquantes.map(permission => `    ${permission}`).join('\n');
+  // Une seule ligne vide avant « <application » : celle qui y était déjà est refaite après les autorisations.
+  return manifeste.replace(/\n*^( *)<application/m, `\n${lignes}\n\n$1<application`);
 }
 
 async function lister(dossier) {

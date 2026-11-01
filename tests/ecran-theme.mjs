@@ -7,6 +7,7 @@
 // - « Appareil » (ou aucun choix, ou choix inconnu) : aucun attribut data-theme ; la page suit
 //   l'appareil en direct (page.emulateMedia), et reglerBarres reçoit la bonne valeur à chaque
 //   changement, une seule fois par changement.
+// - Rappeler appliquerTheme n'empile pas d'écouteur : un changement de l'appareil règle les barres une fois.
 // - Un choix forcé n'est pas bousculé par l'appareil : reglerBarres ne reçoit rien de plus.
 // Le thème du bureau Debian n'est jamais touché : seul emulateMedia de Playwright change de thème.
 import { chromium } from 'playwright';
@@ -135,10 +136,23 @@ for (const [cas, choix] of [
     const stockage = await ouvrirStockage();
     stockage.ecrireTheme('appareil');
     appliquerTheme(stockage);
-    return { theme: document.documentElement.dataset.theme ?? null, barres: window.barresReglees };
+    const barres = [...window.barresReglees];
+    // Rappelé une seconde fois : le suivi de l'appareil ne doit pas s'empiler.
+    appliquerTheme(stockage);
+    return { theme: document.documentElement.dataset.theme ?? null, barres };
   });
   juge.exige(bascule.theme === null, `Bascule : attribut resté ${bascule.theme}`);
   juge.exige(JSON.stringify(bascule.barres) === '[true,false]', `Bascule : barres ${JSON.stringify(bascule.barres)}`);
+  // Le second rappel règle les barres une fois (false) ; un écouteur empilé ferait régler « true » deux fois
+  // au changement de l'appareil : il le règle une seule fois.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForFunction(() => window.barresReglees.length === 4);
+  await page.waitForTimeout(300);
+  const suivi = await page.evaluate(() => window.barresReglees);
+  juge.exige(
+    JSON.stringify(suivi) === '[true,false,false,true]',
+    `Bascule : barres après changement ${JSON.stringify(suivi)}`,
+  );
   await contexte.close();
 }
 

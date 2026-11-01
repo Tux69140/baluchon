@@ -137,3 +137,39 @@ fn deposer_dans_un_dossier_absent_est_une_erreur() {
     let dossier = crate::essais::Dossier::nouveau();
     assert!(deposer(&dossier.chemin.join("absent"), "a.json", "x").is_err());
 }
+
+#[test]
+fn sans_ligne_de_langue_la_langue_de_depart_est_francais() {
+    let (_dossier, base) = base_jetable();
+    assert_eq!(base.lire_tout().unwrap().langue, "fr");
+}
+
+#[test]
+fn une_langue_illisible_est_une_erreur() {
+    let (_dossier, base) = base_remplie();
+    // Une valeur qui n'est pas du texte : la ligne existe mais ne se lit pas.
+    base.connexion()
+        .unwrap()
+        .execute("UPDATE meta SET valeur = x'00' WHERE cle = ?1", [LANGUE])
+        .unwrap();
+    assert!(base.lire_tout().is_err());
+}
+
+#[test]
+fn deposer_supprime_le_fichier_partiel_si_l_ecriture_echoue() {
+    let dossier = crate::essais::Dossier::nouveau();
+    let echec = deposer_avec(&dossier.chemin, "a.json", |_| {
+        Err(std::io::Error::other("disque plein"))
+    });
+    assert!(echec.is_err());
+    assert!(!dossier.chemin.join("a.json").exists());
+}
+
+#[test]
+fn deposer_refuse_un_nom_qui_sort_du_dossier() {
+    let dossier = crate::essais::Dossier::nouveau();
+    for nom in ["../a.json", "sous/a.json", "sous\\a.json", "..", ""] {
+        assert!(deposer(&dossier.chemin, nom, "x").is_err(), "{nom}");
+    }
+    assert_eq!(std::fs::read_dir(&dossier.chemin).unwrap().count(), 0);
+}

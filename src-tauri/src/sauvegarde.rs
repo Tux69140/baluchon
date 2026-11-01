@@ -5,6 +5,7 @@ use crate::bibliotheque::{
     inserer_bibliotheque, lire_bibliotheque_de, poser_installee, Bibliotheque, INSTALLEE, LANGUE,
 };
 use crate::voyages::{inserer_voyage, lire_voyage_de, VoyageComplet};
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use std::io::{ErrorKind, Write};
 use std::path::Path;
@@ -37,7 +38,9 @@ impl Base {
             .query_row("SELECT valeur FROM meta WHERE cle = ?1", [LANGUE], |r| {
                 r.get(0)
             })
-            .unwrap_or_else(|_| "fr".to_owned());
+            .optional()
+            .map_err(en_texte)?
+            .unwrap_or_else(|| "fr".to_owned());
         Ok(ContenuComplet {
             bibliotheque,
             voyages,
@@ -83,15 +86,33 @@ impl Base {
 // Téléchargements ; sur Android, l'activité fait ce travail (MainActivity.kt), d'où le dead_code permis.
 #[cfg_attr(mobile, allow(dead_code))]
 pub fn deposer(dossier: &Path, nom: &str, texte: &str) -> Result<&'static str, String> {
+    deposer_avec(dossier, nom, |f| f.write_all(texte.as_bytes()))
+}
+
+// L'écriture est passée en paramètre pour pouvoir essayer son échec. Un fichier laissé à moitié écrit
+// serait pris pour une vraie sauvegarde : on le retire avant de rendre l'erreur.
+#[cfg_attr(mobile, allow(dead_code))]
+fn deposer_avec(
+    dossier: &Path,
+    nom: &str,
+    ecrire: impl FnOnce(&mut std::fs::File) -> std::io::Result<()>,
+) -> Result<&'static str, String> {
+    // Le nom vient de la page : jamais un chemin, qui sortirait du dossier.
+    if nom.is_empty() || nom.contains(['/', '\\']) || nom.contains("..") {
+        return Err("nom de fichier refusé".to_owned());
+    }
+    let chemin = dossier.join(nom);
     let ouverture = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(dossier.join(nom));
+        .open(&chemin);
     match ouverture {
         Ok(mut fichier) => {
-            fichier
-                .write_all(texte.as_bytes())
-                .map_err(|e| e.to_string())?;
+            if let Err(e) = ecrire(&mut fichier) {
+                drop(fichier);
+                let _ = std::fs::remove_file(&chemin);
+                return Err(e.to_string());
+            }
             Ok("depose")
         }
         Err(e) if e.kind() == ErrorKind::AlreadyExists => Ok("existe"),

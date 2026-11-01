@@ -1,6 +1,7 @@
-// Préférences de l’appareil, hors base et hors sauvegarde : pour l’instant le filtre « Reste à
-// emballer » (retenu voyage par voyage), le thème choisi et la date de la dernière sauvegarde. Défini ici une seule fois, les deux variantes du stockage
-// le reprennent. Un navigateur qui refuse l’accès est un filtre éteint : l’écran bascule quand même.
+// Préférences de l’appareil, hors base et hors sauvegarde : le filtre « Reste à emballer » (retenu
+// voyage par voyage), le thème choisi et la date de la dernière sauvegarde. Défini ici une seule fois,
+// les deux variantes du stockage le reprennent. Un navigateur qui refuse l’accès est un filtre éteint :
+// l’écran bascule quand même.
 const CLE_FILTRE = 'baluchon-filtre-reste';
 
 function lireFiltres() {

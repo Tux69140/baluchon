@@ -117,15 +117,14 @@ function voyageValide(contenu, vus) {
   if (!estObjet(contenu) || !ligneValide(contenu.voyage, TABLES.voyage)) return false;
   const id = contenu.voyage.id;
   if (vus.voyages.has(id)) return false;
-  vus.voyages.add(id);
   const ecartes = contenu.ecartes === undefined ? [] : contenu.ecartes;
   if (!TYPES.l(ecartes)) return false;
-  const categoriesIds = new Set();
   const etiquettes = lignesValides(contenu.etiquettes, TABLES.etiquetteVoyage, vus.etiquettes);
   const categories = lignesValides(contenu.categories, TABLES.categorieVoyage, vus.categories);
   const objets = lignesValides(contenu.objets, TABLES.objetVoyage, vus.objets);
   if (!etiquettes || !categories || !objets) return false;
-  for (const c of categories) categoriesIds.add(c.id);
+  const categoriesIds = new Set(categories.map(c => c.id));
+  vus.voyages.add(id);
   return (
     [...etiquettes, ...categories, ...objets].every(l => l.voyageId === id) &&
     objets.every(o => categoriesIds.has(o.categorieId))

@@ -33,6 +33,12 @@ test('le nom du fichier prévoit le doublon et l’avant-restauration', () => {
   assert.equal(nomDeSauvegarde(d, { avantRestauration: true }), 'baluchon-avant-restauration-2026-10-31-18h40.json');
 });
 
+test('un numéro de doublon de 1 ou de 0 ne met pas de suffixe', () => {
+  const d = new Date('2026-10-31T18:40:12');
+  assert.equal(nomDeSauvegarde(d, { numero: 1 }), 'baluchon-2026-10-31-18h40.json');
+  assert.equal(nomDeSauvegarde(d, { numero: 0 }), 'baluchon-2026-10-31-18h40.json');
+});
+
 test('une sauvegarde construite est relue à l’identique', () => {
   const lu = lireSauvegarde(fichier());
   assert.equal(lu.ok, true);
@@ -70,6 +76,35 @@ test('un identifiant en double dans une table est abîmé', () => {
   assert.equal(raison(fichier(s => s.voyages[0].objets.push(copie(s.voyages[0].objets[0])))), 'abime');
 });
 
+test('un identifiant d’objet repris par un autre voyage est abîmé', () => {
+  const second = s => {
+    const v = copie(s.voyages[0]);
+    v.voyage.id = 'v-autre';
+    for (const l of [...v.etiquettes, ...v.categories, ...v.objets]) l.voyageId = 'v-autre';
+    for (const l of [...v.etiquettes, ...v.categories]) l.id += '-2';
+    for (const o of v.objets) o.categorieId += '-2';
+    return v;
+  };
+  // Témoin : un second voyage aux identifiants tous différents est accepté.
+  assert.equal(
+    lireSauvegarde(
+      fichier(s => {
+        const v = second(s);
+        v.objets.forEach(o => (o.id += '-2'));
+        s.voyages.push(v);
+      }),
+    ).ok,
+    true,
+  );
+  assert.equal(raison(fichier(s => s.voyages.push(second(s)))), 'abime');
+});
+
+test('un voyage sans sa clé « voyage », ou des « écartés » mal typés, est abîmé', () => {
+  assert.equal(raison(fichier(s => delete s.voyages[0].voyage)), 'abime');
+  assert.equal(raison(fichier(s => (s.voyages[0].ecartes = 'om-chargeur'))), 'abime');
+  assert.equal(raison(fichier(s => (s.voyages[0].ecartes = [3]))), 'abime');
+});
+
 test('des liens vers des lignes inconnues sont abîmés', () => {
   assert.equal(raison(fichier(s => (s.voyages[0].objets[0].categorieId = 'cm-vetements'))), 'abime');
   assert.equal(raison(fichier(s => (s.bibliotheque.etiquettes[0].groupeId = 'inconnu'))), 'abime');
@@ -82,6 +117,8 @@ test('une version non entière est abîmée', () => {
   assert.equal(raison(fichier(s => (s.version = '1'))), 'abime');
   assert.equal(raison(fichier(s => (s.version = 1.5))), 'abime');
   assert.equal(raison(fichier(s => delete s.version)), 'abime');
+  assert.equal(raison(fichier(s => (s.version = 0))), 'abime');
+  assert.equal(raison(fichier(s => (s.version = -1))), 'abime');
 });
 
 test('un JSON lisible qui n’est pas une sauvegarde a un autre format', () => {

@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -78,6 +79,8 @@ class MainActivity : TauriActivity() {
     }
   }
 
+  // Écrit par le pont de la page, lu sur le fil de l'interface.
+  @Volatile
   private var pageReglesLesBarres = false
 
   private fun colorerBarres(sombre: Boolean) {
@@ -97,6 +100,10 @@ class MainActivity : TauriActivity() {
   // après l'accord (onRequestPermissionsResult). Recette vérifiée sur cinq appareils le 31 octobre 2026.
   private fun deposerOuDemander(depot: Depot) {
     try {
+      // Le nom vient de la page : jamais un chemin, qui sortirait de Téléchargements.
+      if (depot.nom.isEmpty() || depot.nom.contains('/') || depot.nom.contains("..")) {
+        throw Exception("nom de fichier refusé")
+      }
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         repondre(depot, deposerParLeMagasin(depot))
       } else if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
@@ -191,9 +198,14 @@ class MainActivity : TauriActivity() {
       throw e
     }
     MediaScannerConnection.scanFile(this, arrayOf(fichier.absolutePath), arrayOf("application/json"), null)
-    (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).addCompletedDownload(
-      depot.nom, depot.nom, true, "application/json", fichier.absolutePath, octets.size.toLong(), false,
-    )
+    // Le fichier est écrit : si seule la déclaration échoue, il se retrouve par le gestionnaire de fichiers.
+    try {
+      (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).addCompletedDownload(
+        depot.nom, depot.nom, true, "application/json", fichier.absolutePath, octets.size.toLong(), false,
+      )
+    } catch (e: Exception) {
+      Log.w("Baluchon", "Déclaration du téléchargement impossible", e)
+    }
     return "depose"
   }
 
