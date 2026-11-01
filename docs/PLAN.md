@@ -380,7 +380,7 @@ La disposition grand écran du voyage et de la Bibliothèque (trois colonnes ou 
 
 ### Ce qu'on livre
 
-Un paquet Android signé (tablette et téléphone) et un paquet Debian sont construits par des scripts reproductibles. La clé de signature est conservée en lieu sûr. On fait une recette complète en mode avion, puis le couple prépare son prochain voyage réel avec Baluchon. La construction et la diffusion n'ont lieu que sur demande explicite du chef de projet.
+Un paquet Android signé (tablette et téléphone) et les paquets Debian, rpm, appimage et windows sont construits par des scripts reproductibles. La clé de signature est conservée en lieu sûr. On fait une recette complète en mode avion, puis le couple prépare son prochain voyage réel avec Baluchon. La construction et la diffusion n'ont lieu que sur demande explicite du chef de projet.
 
 ### Critères d'acceptation
 
