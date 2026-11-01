@@ -60,7 +60,18 @@ export function creerJuge() {
 export async function ouvrir(
   navigateur,
   url,
-  { taille, theme, donnees, maintenant, adresse = '', ecran, tactile = true, horloge = false, locale },
+  {
+    taille,
+    theme,
+    donnees,
+    maintenant,
+    adresse = '',
+    ecran,
+    tactile = true,
+    horloge = false,
+    locale,
+    composition = { femmes: 1, hommes: 1, enfants: 0 },
+  },
 ) {
   const contexte = await navigateur.newContext({
     viewport: taille,
@@ -100,6 +111,14 @@ export async function ouvrir(
       },
       { cle: CLE, d: donnees },
     );
+  // Les tests de parcours partent d'un appareil qui a déjà fait un voyage à 1, 1, 0 ; `composition: null` :
+  // appareil neuf (compteurs à 0).
+  if (composition)
+    await page.addInitScript(c => {
+      if (location.protocol !== 'http:' || sessionStorage.getItem('graine-composition')) return;
+      localStorage.setItem('baluchon-derniere-composition', JSON.stringify(c));
+      sessionStorage.setItem('graine-composition', '1');
+    }, composition);
   await page.goto(url + adresse);
   await calme(page);
   return { contexte, page, sorties, erreurs };

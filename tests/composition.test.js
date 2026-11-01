@@ -14,7 +14,7 @@ import {
 
 test('les constantes de la composition', () => {
   assert.deepEqual(BORNES_COMPOSITION, { min: 0, max: 20, total: 20 });
-  assert.deepEqual(COMPOSITION_INITIALE, { femmes: 1, hommes: 1, enfants: 0 });
+  assert.deepEqual(COMPOSITION_INITIALE, { femmes: 0, hommes: 0, enfants: 0 });
 });
 
 test('personnes par groupe', () => {

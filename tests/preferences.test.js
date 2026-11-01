@@ -65,8 +65,8 @@ test('un stockage refusé donne les défauts et n’empêche rien', () => {
   assert.doesNotThrow(() => ecrireDerniereSauvegarde('2026-10-31T14:05:00.000Z'));
 });
 
-test('la dernière composition est retenue ; sans elle, ou abîmée, c’est la composition initiale', () => {
-  const initiale = { femmes: 1, hommes: 1, enfants: 0 };
+test('la dernière composition est retenue ; sans elle, ou abîmée, tout est à zéro', () => {
+  const initiale = { femmes: 0, hommes: 0, enfants: 0 };
   assert.deepEqual(lireDerniereComposition(), initiale);
   ecrireDerniereComposition({ femmes: 2, hommes: 0, enfants: 1 });
   assert.deepEqual(lireDerniereComposition(), { femmes: 2, hommes: 0, enfants: 1 });

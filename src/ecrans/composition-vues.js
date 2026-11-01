@@ -25,21 +25,23 @@ function vueLigne(t, groupe, n, plein) {
 
 // Le message : l'erreur (aucune personne) en rouge, la limite atteinte en encre douce ; chacun avec son
 // picto, jamais la couleur seule.
-function vueMessage(t, n) {
-  if (n < 1) return `${iconeInterface('erreur')}<span>${t(k('aucun'))}</span>`;
+// L'erreur n'est dite qu'une fois le passage à l'étape suivante tenté (`essaye`), comme celles du nom
+// et des dates : un départ à 0 n'est pas une faute.
+function vueMessage(t, n, essaye) {
+  if (n < 1) return !essaye ? '' : `${iconeInterface('erreur')}<span>${t(k('aucun'))}</span>`;
   if (n >= BORNES_COMPOSITION.total) return `${iconeInterface('info')}<span>${t(k('max'))}</span>`;
   return '';
 }
 
-export function vueComposition(t, c) {
+export function vueComposition(t, c, essaye) {
   const n = totalVoyageurs(c);
   const plein = n >= BORNES_COMPOSITION.total;
-  const etat = n < 1 ? 'erreur' : plein ? 'limite' : '';
+  const etat = n < 1 ? (essaye ? 'erreur' : '') : plein ? 'limite' : '';
   return `
           <fieldset class="champ champ-composition" aria-describedby="message-composition">
             <legend><span>${t(k('legende'))}</span><span class="composition-total">${remplir(t(k('total')), { n })}</span></legend>
             <ul class="composition">${GROUPES_COMPOSITION.map(g => vueLigne(t, g, c[g], plein)).join('')}
             </ul>
-            <p class="erreur-champ composition-message" id="message-composition" data-etat="${etat}" aria-live="polite">${vueMessage(t, n)}</p>
+            <p class="erreur-champ composition-message" id="message-composition" data-etat="${etat}" aria-live="polite">${vueMessage(t, n, essaye)}</p>
           </fieldset>`;
 }

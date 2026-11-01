@@ -6,7 +6,8 @@ export const POUR_QUI = Object.freeze(['tous', 'adultes', 'femmes', 'hommes', 'e
 
 // Chaque compteur va de 0 à 20 ; le total, de 1 à 20.
 export const BORNES_COMPOSITION = Object.freeze({ min: 0, max: 20, total: 20 });
-export const COMPOSITION_INITIALE = Object.freeze({ femmes: 1, hommes: 1, enfants: 0 });
+// Après l'installation, rien n'est supposé : les trois compteurs partent à 0 (chef de projet, 2026-11-01).
+export const COMPOSITION_INITIALE = Object.freeze({ femmes: 0, hommes: 0, enfants: 0 });
 
 // Les trois nombres d'un objet qui les porte (informations saisies, voyage, période).
 export const composition = ({ femmes, hommes, enfants }) => ({ femmes, hommes, enfants });

@@ -1,8 +1,8 @@
 // Phase 13 (spec 2026-11-01, « Maquette validée ») : les trois compteurs Femmes, Hommes, Enfants de
 // l'étape Informations. Le 6 octobre 2026 (horloge fixée), bibliothèque de départ installée par l'appli :
-// - au premier voyage : 1, 1, 0 et « 2 en tout » ; chaque bouton est nommé (« Un enfant de plus »…) ;
-// - tout à 0 : le message « Ajoutez au moins une personne. » apparaît dans sa ligne réservée (rien ne
-//   bouge sous lui), « Suivant » est refusé et le focus va au « + » de la première ligne ; témoin : une
+// - au premier voyage : 0, 0, 0 et « 0 en tout », sans message d'erreur ; chaque bouton est nommé (« Un enfant de plus »…) ;
+// - tout à 0 : le message « Ajoutez au moins une personne. » n'apparaît qu'après un « Suivant » refusé,
+//   dans sa ligne réservée (rien ne bouge sous lui) ; le focus va et le focus va au « + » de la première ligne ; témoin : une
 //   personne de plus, le message part et « Suivant » mène à l'étape suivante ;
 // - à 20 en tout : les trois « + » sont inactifs (aria-disabled), le message dit la limite, les « − »
 //   restent actifs ; Playwright tient un bouton aria-disabled pour inactif : les appuis qui doivent être
@@ -60,6 +60,7 @@ const appuyer = async (page, groupe, pas, fois = 1) => {
 
 async function ouvrirNouveau(navigateur, url, options = {}) {
   const ouvert = await ouvrir(navigateur, url, {
+    composition: null,
     taille: FORMATS.telephone,
     theme: 'light',
     maintenant: MAINTENANT,
@@ -76,12 +77,12 @@ const navigateur = await chromium.launch();
 try {
   await mkdir(CAPTURES, { recursive: true });
 
-  // Premier voyage : 1, 1, 0 ; boutons nommés ; tout à 0 et le témoin.
+  // Premier voyage : 0, 0, 0 sans erreur ; boutons nommés ; « Suivant » refusé révèle le message ; le témoin.
   {
     const { contexte, page } = await ouvrirNouveau(navigateur, serveur.url);
-    juge.exige(JSON.stringify(await valeurs(page)) === '["1","1","0"]', `départ : ${await valeurs(page)}`);
+    juge.exige(JSON.stringify(await valeurs(page)) === '["0","0","0"]', `départ : ${await valeurs(page)}`);
     const total = await page.textContent('.composition-total');
-    juge.exige(total === c.total.replace('{n}', 2), `départ : total « ${total} »`);
+    juge.exige(total === c.total.replace('{n}', 0), `départ : total « ${total} »`);
     for (const g of GROUPES)
       for (const [pas, cle] of [
         [-1, 'moins'],
@@ -95,20 +96,19 @@ try {
     await page.click('[data-jour="2026-10-10"]');
     await page.click('[data-jour="2026-10-13"]');
     const avant = await message(page);
-    await appuyer(page, 'femmes', -1);
-    await appuyer(page, 'hommes', -1);
-    const zero = await message(page);
-    juge.exige(
-      zero.texte === c.aucun && zero.etat === 'erreur' && JSON.stringify(await valeurs(page)) === '["0","0","0"]',
-      `zéro : ${JSON.stringify(zero)}`,
-    );
-    juge.exige(zero.haut === avant.haut, `zéro : les dates ont bougé ${avant.haut} → ${zero.haut}`);
+    juge.exige(avant.texte === '' && avant.etat === '', `départ : message avant essai ${JSON.stringify(avant)}`);
     juge.exige(
       (await inactifs(page)).join() === 'femmes-1,hommes-1,enfants-1',
       `zéro : inactifs ${await inactifs(page)}`,
     );
     await page.click('[data-action="suivant"]');
     await calme(page);
+    const zero = await message(page);
+    juge.exige(
+      zero.texte === c.aucun && zero.etat === 'erreur' && JSON.stringify(await valeurs(page)) === '["0","0","0"]',
+      `zéro : ${JSON.stringify(zero)}`,
+    );
+    juge.exige(zero.haut === avant.haut, `zéro : les dates ont bougé ${avant.haut} → ${zero.haut}`);
     juge.exige(
       (await page.evaluate(() => document.querySelector('.formulaire-corps').dataset.etape)) === 'infos',
       'zéro : « Suivant » n’a pas été refusé',
@@ -133,14 +133,14 @@ try {
   {
     const { contexte, page } = await ouvrirNouveau(navigateur, serveur.url);
     await appuyer(page, 'femmes', 1, 30);
-    await appuyer(page, 'enfants', 1, 3);
+    await appuyer(page, 'hommes', 1, 3);
     const v = await valeurs(page);
-    juge.exige(JSON.stringify(v) === '["19","1","0"]', `limite : valeurs ${v}`);
+    juge.exige(JSON.stringify(v) === '["20","0","0"]', `limite : valeurs ${v}`);
     const m = await message(page);
     juge.exige(m.texte === c.max && m.etat === 'limite', `limite : message ${JSON.stringify(m)}`);
-    // Les trois « + » sont inactifs ; seul le « − » d'enfants (à 0) l'est aussi.
+    // Les trois « + » sont inactifs ; les « − » des groupes à 0 le sont aussi.
     const hors = (await inactifs(page)).join();
-    juge.exige(hors === 'femmes1,hommes1,enfants-1,enfants1', `limite : inactifs ${hors}`);
+    juge.exige(hors === 'femmes1,hommes-1,hommes1,enfants-1,enfants1', `limite : inactifs ${hors}`);
     await appuyer(page, 'femmes', -1);
     juge.exige((await message(page)).texte === '', 'limite : le message devrait partir après un « − »');
     await contexte.close();
@@ -149,8 +149,7 @@ try {
   // Un voyage à 2 femmes et 1 enfant : la composition est retenue pour le suivant.
   {
     const { contexte, page } = await ouvrirNouveau(navigateur, serveur.url);
-    await appuyer(page, 'femmes', 1);
-    await appuyer(page, 'hommes', -1);
+    await appuyer(page, 'femmes', 1, 2);
     await appuyer(page, 'enfants', 1);
     await page.fill('#nom', 'Vercors');
     await page.click('[data-jour="2026-10-10"]');

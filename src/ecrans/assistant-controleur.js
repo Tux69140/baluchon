@@ -120,7 +120,7 @@ export function ouvrirAssistant(app, contexte, mode) {
 
   function rafraichirInfos() {
     element('#resume-dates').textContent = resumeDates(infos, t, langue);
-    element('.place-composition').innerHTML = vueComposition(t, infos);
+    element('.place-composition').innerHTML = vueComposition(t, infos, essaye);
     peindreRangee();
     suivreGarde();
     if (!essaye) return;
