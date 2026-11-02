@@ -1,7 +1,8 @@
 // Témoin de l'outillage de la grille (phase 14) : deux états sur l'écran Réglages.
 // - « propre » : rien d'ajouté, aucune faute à aucun format.
 // - « fautif » : une petite cible et un bloc trop large, ajoutés à la page ; chaque format bloquant
-//   les relève dans le juge, le format en rapport seulement (telephone-paysage) les met au rapport.
+//   les relève dans le juge ; les formats en rapport seulement (telephone-paysage, telephone-etroit) les
+//   mettent au rapport, en clair et en sombre, avec une capture de l'état fautif pour chaque thème.
 // Le juge et la fabrique de rapport sont des espions : ils reçoivent les fautes au lieu de conclure. Les
 // captures du témoin vont dans un dossier de passage, effacé à la fin : le dossier des rapports, montré au
 // chef de projet, n'en reçoit aucune. Le vrai rapport (creerRapport) est essayé à part, dans ce même
@@ -11,7 +12,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parcourirGrille, FORMATS_BLOQUANTS } from './outils/grille.mjs';
-import { RAPPORTS, creerRapport } from './outils/page.mjs';
+import { NOMS_THEME, RAPPORTS, creerRapport } from './outils/page.mjs';
+
+const EN_RAPPORT = ['telephone-paysage', 'telephone-etroit'];
 
 const fautesJuge = [];
 const fautesRapport = [];
@@ -54,7 +57,12 @@ const verdict = [];
 const attend = (condition, message) => !condition && verdict.push(message);
 const temoinsDansRapports = (existsSync(RAPPORTS) ? readdirSync(RAPPORTS) : []).filter(nom => nom.startsWith('temoin'));
 attend(temoinsDansRapports.length === 0, `le témoin laisse dans les rapports : ${temoinsDansRapports.join(', ')}`);
-attend(existsSync(join(passage, 'temoin-telephone-paysage-fautif.png')), 'aucune capture de l’état fautif au rapport');
+for (const format of EN_RAPPORT)
+  for (const theme of Object.values(NOMS_THEME))
+    attend(
+      existsSync(join(passage, `temoin-${format}-${theme}-fautif.png`)),
+      `${format}, ${theme} : aucune capture de l’état fautif au rapport`,
+    );
 
 // Le vrai rapport : écrit quand il y a des fautes, effacé par une exécution propre.
 const fautif = creerRapport('temoin-rapport', passage);
@@ -85,14 +93,14 @@ for (const format of FORMATS_BLOQUANTS) {
       `${format} : aucune faute de contenu trop large`,
     );
 }
-attend(
-  !fautesJuge.some(f => f.includes('telephone-paysage')),
-  'telephone-paysage ne doit pas être dans le juge bloquant',
-);
-attend(
-  fautesRapport.some(f => f.includes('telephone-paysage') && f.startsWith('fautif')),
-  'telephone-paysage : aucune faute au rapport',
-);
+for (const format of EN_RAPPORT) {
+  attend(!fautesJuge.some(f => f.includes(format)), `${format} ne doit pas être dans le juge bloquant`);
+  for (const theme of Object.keys(NOMS_THEME))
+    attend(
+      fautesRapport.some(f => f.startsWith(`fautif · ${format} · ${theme}`)),
+      `${format}, ${theme} : aucune faute au rapport`,
+    );
+}
 attend(!fautesRapport.some(f => f.startsWith('propre')), "l'état propre a des fautes au rapport");
 
 if (verdict.length) {
