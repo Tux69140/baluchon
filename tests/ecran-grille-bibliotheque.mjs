@@ -99,6 +99,7 @@ const retirerObjet = async page => {
   await installerHorloge(page);
   await supprimerObjet(page, 'Toilette', 'Crème solaire');
   await figerHorloge(page);
+  await bandeauEntierEtTouchable(page, BANDEAU, "bandeau « Annuler » absent ou perdu après l'arrêt de l'horloge");
 };
 // Review Focus 3 : le bandeau apparu, une fiche s'ouvre ; il se range dans la fenêtre, entier et touchable.
 const bandeauFicheOuverte = async page => {

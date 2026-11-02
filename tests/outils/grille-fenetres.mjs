@@ -89,6 +89,6 @@ export async function installerHorloge(page) {
   await page.evaluate(() => (window.requestAnimationFrame = window.__vraieImage));
 }
 export async function figerHorloge(page) {
-  const maintenant = (await page.evaluate(() => Date.now())) + 20;
+  const maintenant = (await page.evaluate(() => Date.now())) + 100;
   await page.clock.pauseAt(maintenant);
 }
