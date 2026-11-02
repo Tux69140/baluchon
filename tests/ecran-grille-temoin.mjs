@@ -2,8 +2,16 @@
 // - « propre » : rien d'ajouté, aucune faute à aucun format.
 // - « fautif » : une petite cible et un bloc trop large, ajoutés à la page ; chaque format bloquant
 //   les relève dans le juge, le format en rapport seulement (telephone-paysage) les met au rapport.
-// Le juge et la fabrique de rapport sont des espions : ils reçoivent les fautes au lieu de conclure.
+// Le juge et la fabrique de rapport sont des espions : ils reçoivent les fautes au lieu de conclure. Les
+// captures du témoin vont dans un dossier de passage, effacé à la fin : le dossier des rapports, montré au
+// chef de projet, n'en reçoit aucune. Le vrai rapport (creerRapport) est essayé à part, dans ce même
+// dossier : des fautes l'écrivent, une exécution propre efface celui d'avant.
+import { existsSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parcourirGrille, FORMATS_BLOQUANTS } from './outils/grille.mjs';
+import { CAPTURES, creerRapport } from './outils/page.mjs';
 
 const fautesJuge = [];
 const fautesRapport = [];
@@ -39,10 +47,25 @@ const etats = [
   },
 ];
 
-await parcourirGrille({ titre: 'temoin', etats, juge, fabriquerRapport });
+const RAPPORTS = join(CAPTURES, 'phase-14', 'rapports');
+const passage = await mkdtemp(join(tmpdir(), 'baluchon-temoin-'));
+await parcourirGrille({ titre: 'temoin', etats, juge, fabriquerRapport, dossier: passage });
 
 const verdict = [];
 const attend = (condition, message) => !condition && verdict.push(message);
+const temoinsDansRapports = (existsSync(RAPPORTS) ? readdirSync(RAPPORTS) : []).filter(nom => nom.startsWith('temoin'));
+attend(temoinsDansRapports.length === 0, `le témoin laisse dans les rapports : ${temoinsDansRapports.join(', ')}`);
+attend(existsSync(join(passage, 'temoin-telephone-paysage-fautif.png')), 'aucune capture de l’état fautif au rapport');
+
+// Le vrai rapport : écrit quand il y a des fautes, effacé par une exécution propre.
+const fautif = creerRapport('temoin-rapport', passage);
+fautif.exige(false, 'une faute');
+fautif.conclure();
+attend(existsSync(join(passage, 'temoin-rapport.txt')), 'creerRapport : des fautes, et aucun rapport écrit');
+writeFileSync(join(passage, 'temoin-propre.txt'), 'un ancien rapport\n');
+creerRapport('temoin-propre', passage).conclure();
+attend(!existsSync(join(passage, 'temoin-propre.txt')), 'creerRapport : une exécution propre garde l’ancien rapport');
+await rm(passage, { recursive: true, force: true });
 attend(
   fautesJuge.every(f => f.startsWith('fautif')),
   `l'état propre a des fautes : ${fautesJuge.filter(f => !f.startsWith('fautif')).join(' | ')}`,
