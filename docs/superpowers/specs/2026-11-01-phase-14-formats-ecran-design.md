@@ -78,6 +78,20 @@ La liste à tenir à jour vit dans le test, pas ici ; elle part de celle-ci (cho
     conception (section « Défauts acceptés », à créer alors), jamais caché. Les autres formats du tableau
     restent bloquants. Un défaut qu'il choisit de corriger passe dans un test bloquant ordinaire.
 
+13. **Texte agrandi : ce qu'on corrige** (2026-11-02, au vu du rapport). Corrigés, et devenus bloquants
+    au téléphone : le choix du thème dans Réglages (« Sombre » débordait de sa carte) et la fiche d'objet
+    de la Bibliothèque avec un nom long (le titre recouvrait la phrase dessous). Laissés : voir
+    « Défauts acceptés ». Le téléphone en paysage n'a montré aucun défaut.
+
+## Défauts acceptés
+
+Défauts vus pendant la phase et laissés par décision du chef de projet (décision 12), jamais cachés :
+
+1. **Tablette en portrait, texte agrandi à 130 %, écran d'un voyage** : un nom fait d'un seul mot de
+   30 lettres déborde à droite ; la page défile de côté de 28 px. Décision 13 : laissé (un tel mot
+   n'existe pas en pratique).
+2. **Tablette en portrait, texte agrandi à 130 %, Bibliothèque** : même défaut, même décision.
+
 ## Choix de l'agent annoncés pendant l'étude
 
 (Numérotation commune avec les décisions du chef de projet : 1–4 et 12 sont à lui, 5–11 sont de l'agent.)
@@ -95,8 +109,10 @@ La liste à tenir à jour vit dans le test, pas ici ; elle part de celle-ci (cho
 
 9. **Barres système simulées** : les mesures actuelles (64 px en haut, 48 en bas, 24 de chaque côté)
    restent partout, ordinateur compris (plus strictes que la réalité, donc sans risque). Le téléphone en
-   paysage reçoit en plus ses propres mesures de côté (encoche de la caméra et barre des boutons sur un
-   bord), relevées sur le Xiaomi.
+   paysage reçoit en plus ses propres mesures (encoche de la caméra et barre des boutons sur un bord) :
+   48 px en haut, 24 en bas, 56 de chaque côté, valables pour tous les téléphones courants avec marge.
+   Le Xiaomi du chef de projet, mesuré (35 en haut, 0 en bas, 48 sur les côtés), n'est qu'un point de
+   contrôle : « tout le monde n'utilise pas ce même modèle » (consigne du 2026-11-02).
 10. **Langue** : la grille tourne en français seulement. Les textes plus longs d'une autre langue
     relèvent de la traduction de la phase 13.
 11. **« Contenu » du plafond de 1544 px** : la partie principale de chaque écran (trois colonnes du
