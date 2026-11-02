@@ -103,9 +103,12 @@
   border-left: 0;
 }
 
-/* « Femmes » et « Hommes » tiennent à 1 px de leur case : cinq cases de 62 px au téléphone. */
+/* « Femmes » et « Hommes » tiennent à 1 px de leur case : cinq cases de 62 px au téléphone. Les coins sont
+   ceux du cadre (overflow) : aucune case n'arrondit les siens, qui laisseraient une encoche contre la ligne
+   voisine quand la rangée passe sur deux lignes. */
 .segments-pour-qui .segment span {
   padding-inline: 1px;
+  border-radius: 0;
 }
 
 .segments-pour-qui .segment:has(input:focus-visible) {
