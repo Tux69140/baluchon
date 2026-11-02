@@ -49,10 +49,10 @@ const agrandirLePage = facteur => {
   };
   tout();
   const estFeuille = n => n.nodeName === 'STYLE' || n.nodeName === 'LINK';
-  new MutationObserver(m => m.some(x => [...x.addedNodes].some(estFeuille)) && tout()).observe(
-    document.documentElement,
-    { childList: true, subtree: true },
-  );
+  new MutationObserver(m => m.some(x => [...x.addedNodes].some(estFeuille)) && tout()).observe(document, {
+    childList: true,
+    subtree: true,
+  });
   addEventListener('DOMContentLoaded', tout);
   addEventListener('load', tout);
 };
@@ -82,8 +82,14 @@ async function mesurerTemoin(navigateur, url, avecFeuille) {
   });
   try {
     await attendreEcran(page, 'voyage');
+    const mesure = () =>
+      page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.objet-nom')).fontSize));
     if (avecFeuille) await agrandir(page);
-    return await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.objet-nom')).fontSize));
+    const avant = await mesure();
+    // La simulation doit survivre à un rechargement (un état qui navigue dans la page).
+    await page.reload();
+    await attendreEcran(page, 'voyage');
+    return [avant, await mesure()];
   } finally {
     await contexte.close();
   }
@@ -94,8 +100,8 @@ async function verifierTemoin(juge, { avecFeuille = true } = {}) {
   const serveur = await demarrerServeur();
   const navigateur = await chromium.launch();
   try {
-    const sans = await mesurerTemoin(navigateur, serveur.url, false);
-    const avec = await mesurerTemoin(navigateur, serveur.url, avecFeuille);
+    const [sans] = await mesurerTemoin(navigateur, serveur.url, false);
+    const [avec, apres] = await mesurerTemoin(navigateur, serveur.url, avecFeuille);
     juge.exige(
       Math.abs(sans - 17) <= 0.1,
       `témoin : le nom d'un objet mesure ${sans} px sans la feuille (17 attendus)`,
@@ -104,11 +110,18 @@ async function verifierTemoin(juge, { avecFeuille = true } = {}) {
       Math.abs(avec - 22.1) <= 0.1,
       `témoin : le nom d'un objet mesure ${avec} px avec la feuille (22,1 attendus)`,
     );
+    juge.exige(
+      Math.abs(apres - 22.1) <= 0.1,
+      `témoin : le nom d'un objet mesure ${apres} px après un rechargement (22,1 attendus)`,
+    );
   } finally {
     await navigateur.close();
     await serveur.fermer();
   }
 }
+
+// Le juge des familles ne voit rien (aucun format bloquant) : il ne dit rien ; les défauts sont au rapport.
+const JUGE_MUET = { exige() {}, conclure() {} };
 
 const juge = creerJuge();
 await verifierTemoin(juge);
@@ -119,6 +132,6 @@ for (const [famille, etats] of Object.entries(FAMILLES))
     etats: agrandis(etats),
     formats: [],
     rapport: FORMATS_AGRANDIS,
-    juge: creerJuge(),
+    juge: JUGE_MUET,
   });
 juge.conclure('texte agrandi à 130 %', 'témoin tenu ; défauts au rapport');
