@@ -12,7 +12,14 @@ import { toucherAjouter } from './outils/ajouter.mjs';
 import { attendreQuestion, fr, ouvrirFiche, repondre, toucherFiche } from './outils/ajuster.mjs';
 import { avecMarques } from './outils/courses.mjs';
 import { FORMATS_BLOQUANTS, parcourirGrille } from './outils/grille.mjs';
-import { LONG } from './outils/grille-fenetres.mjs';
+import {
+  LONG,
+  bandeauEntierEtTouchable,
+  dernierBoutonAtteignable,
+  fenetreEntiere,
+  figerHorloge,
+  installerHorloge,
+} from './outils/grille-fenetres.mjs';
 import { creerJuge, attendreEcran, ouvrir, verifierCommandes } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { DONNEES, avecPieces } from './outils/voyage-essai.mjs';
@@ -41,15 +48,18 @@ const AVEC_EXCEDENT = {
   ],
 };
 
-const sur = (nom, adresse, donnees, preparer) => ({ nom, adresse, donnees, maintenant: MAINTENANT, preparer });
+// sansHeure : pas d'heure imposée à la page (une heure fixée empêche l'horloge simulée du bandeau de tourner).
+const sur = (nom, adresse, donnees, preparer, { sansHeure = false } = {}) => ({
+  nom,
+  adresse,
+  donnees,
+  ...(!sansHeure && { maintenant: MAINTENANT }),
+  preparer,
+});
 const voyage = async page => attendreEcran(page, 'voyage');
 const courses = async page => attendreEcran(page, 'courses');
 const bandeauVenu = page =>
   attendreQue(page, s => document.querySelector(s)?.matches(':popover-open') ?? false, BANDEAU);
-
-// Un manquement jugé dans la page : la grille compte toute erreur de page comme une faute.
-const exigerDansLaPage = (page, condition, message) =>
-  page.evaluate(([ok, texte]) => ok || console.error(texte), [condition, message]);
 
 const menuOuvert = async page => {
   await voyage(page);
@@ -68,31 +78,7 @@ const fiche = id => async page => {
 // Review Focus 1 : la fiche défilée jusqu'en bas ; son dernier bouton est dans l'écran, hors de la barre du bas.
 const ficheDefilee = async page => {
   await fiche('o-rep')(page);
-  const dernier = await page.evaluate(() => {
-    const d = document.querySelector('dialog.fiche-voyage[open]');
-    for (const el of [d, ...d.querySelectorAll('*')])
-      if (el.scrollHeight > el.clientHeight && /auto|scroll/.test(getComputedStyle(el).overflowY))
-        el.scrollTop = el.scrollHeight;
-    const boutons = [...d.querySelectorAll('button')].filter(b => b.getBoundingClientRect().width > 0);
-    const bas = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zone-bas'));
-    return { bas: Math.max(...boutons.map(b => b.getBoundingClientRect().bottom)), limite: innerHeight - bas };
-  });
-  await exigerDansLaPage(
-    page,
-    dernier.bas <= dernier.limite + 0.5,
-    `fiche défilée : le dernier bouton finit à ${dernier.bas} px, sous la barre du bas (${dernier.limite} px)`,
-  );
-};
-// Review Focus 2 : rien de la fenêtre ouverte ne dépasse son bord (la grille ne mesure que la page entière).
-const fenetreEntiere = async page => {
-  const coupes = await page.evaluate(() => {
-    const d = [...document.querySelectorAll('dialog[open]')].at(-1);
-    const bord = d.getBoundingClientRect();
-    return [...d.querySelectorAll('*')]
-      .filter(el => el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().right > bord.right + 0.5)
-      .map(el => `${el.tagName.toLowerCase()} « ${el.textContent.trim().slice(0, 20)} »`);
-  });
-  await exigerDansLaPage(page, coupes.length === 0, `fenêtre : rien ne doit dépasser son bord : ${coupes.join(', ')}`);
+  await dernierBoutonAtteignable(page, 'dialog.fiche-voyage[open]');
 };
 const ficheNomsLongs = async page => {
   await fiche('o-tsh')(page);
@@ -120,6 +106,7 @@ const ficheAchat = id => async page => {
 // Retirer Dentifrice (rien dans le sac) du voyage : la fiche se ferme, le bandeau « Annuler » vient.
 const retirerDentifrice = async page => {
   await voyage(page);
+  await installerHorloge(page);
   await ouvrirFiche(page, 'o-den');
   await toucherFiche(page, 'retirer');
   await attendreQuestion(page);
@@ -127,28 +114,16 @@ const retirerDentifrice = async page => {
   await bandeauVenu(page);
   await calme(page);
 };
+const bandeauFige = async page => {
+  await retirerDentifrice(page);
+  await figerHorloge(page);
+};
 // Review Focus 3 : le bandeau apparu, une fiche s'ouvre ; il reste entier et touchable.
 const bandeauFicheOuverte = async page => {
   await retirerDentifrice(page);
   await ouvrirFiche(page, 'o-rep');
-  const b = await page.evaluate(selecteur => {
-    const el = document.querySelector(selecteur);
-    if (!el?.matches(':popover-open')) return null;
-    const r = el.getBoundingClientRect();
-    const bouton = el.querySelector('button').getBoundingClientRect();
-    const touche = document.elementFromPoint(bouton.left + bouton.width / 2, bouton.top + bouton.height / 2);
-    const bas = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zone-bas'));
-    const haut = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--zone-haut'));
-    return {
-      entier: r.left >= 0 && r.right <= innerWidth && r.top >= haut - 0.5 && r.bottom <= innerHeight - bas + 0.5,
-      touchable: el.querySelector('button').contains(touche),
-    };
-  }, BANDEAU);
-  await exigerDansLaPage(
-    page,
-    Boolean(b?.entier && b.touchable),
-    `bandeau « Annuler » sous une fiche : ${JSON.stringify(b)}`,
-  );
+  await figerHorloge(page);
+  await bandeauEntierEtTouchable(page, BANDEAU, 'bandeau « Annuler » sous une fiche');
 };
 
 export const ETATS = [
@@ -164,8 +139,8 @@ export const ETATS = [
   sur('a-sortir-fiche', VOYAGE, AVEC_EXCEDENT, fiche('o-tsh')),
   sur('courses', COURSES, avecMarques(), courses),
   sur('courses-fiche-achat', COURSES, avecMarques(), ficheAchat('o-rep')),
-  sur('bandeau-annuler', VOYAGE, DONNEES, retirerDentifrice),
-  sur('bandeau-fiche-ouverte', VOYAGE, DONNEES, bandeauFicheOuverte),
+  sur('bandeau-annuler', VOYAGE, DONNEES, bandeauFige, { sansHeure: true }),
+  sur('bandeau-fiche-ouverte', VOYAGE, DONNEES, bandeauFicheOuverte, { sansHeure: true }),
   sur('noms-longs', VOYAGE, NOMS_LONGS, voyage),
   sur('noms-longs-fiche', VOYAGE, NOMS_LONGS, ficheNomsLongs),
   sur('noms-longs-courses', COURSES, NOMS_LONGS, courses),
