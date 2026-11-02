@@ -364,9 +364,10 @@ La disposition grand écran du voyage et de la Bibliothèque (trois colonnes ou 
 
 ### Critères d'acceptation
 
-- [ ] À 393×873, 800×1280, 1280×800 et sur ordinateur, en clair comme en sombre, aucun écran ne défile de côté, rien ne passe sous les barres système et chaque commande fait au moins 44×44 px (critère de succès 8).
-- [ ] Tourner la tablette conserve la catégorie choisie et les coches.
-- [ ] Le contenu ne dépasse pas 1544 px de large sur ordinateur (les trois colonnes).
+- [x] À 393×873, 800×1280, 1280×800 et sur ordinateur, en clair comme en sombre, aucun écran ne défile de côté, rien ne passe sous les barres système et chaque commande fait au moins 44×44 px (critère de succès 8).
+- [x] Tourner la tablette conserve la catégorie choisie et les coches.
+- [x] Le contenu ne dépasse pas 1544 px de large sur ordinateur (les trois colonnes).
+- [x] Ajouts du chef de projet (conception du 2026-11-01) : téléphone en paysage, téléphone étroit (360×640) et texte agrandi à 130 % en rapport ; rotation pendant une saisie (fiche, assistant, question) au téléphone comme sur tablette ; clavier d'Android vérifié champ par champ sur les vrais appareils (le champ et « Enregistrer » restent visibles). Défauts laissés : conception de la phase, section « Défauts acceptés ».
 
 ## Bloquée par
 

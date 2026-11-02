@@ -91,6 +91,10 @@ Défauts vus pendant la phase et laissés par décision du chef de projet (déci
    30 lettres déborde à droite ; la page défile de côté de 28 px. Décision 13 : laissé (un tel mot
    n'existe pas en pratique).
 2. **Tablette en portrait, texte agrandi à 130 %, Bibliothèque** : même défaut, même décision.
+3. **Tablette couchée, clavier ouvert** (décision 14, 2026-11-02 : « 1 ») : la page s'arrêtant au bord du
+   clavier, elle passe sous 600 px de haut ; pendant la saisie, la fiche devient le panneau du bas et
+   l'écran derrière prend l'allure du téléphone. Le champ et « Enregistrer » restent visibles ; à la
+   fermeture du clavier, tout revient, liste à la même place, saisie conservée.
 
 ## Choix de l'agent annoncés pendant l'étude
 
