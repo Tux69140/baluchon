@@ -18,7 +18,9 @@ import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import java.io.File
 import org.json.JSONObject
 
@@ -41,6 +43,19 @@ class MainActivity : TauriActivity() {
       window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
     }
     super.onCreate(savedInstanceState)
+    if (sousLesBarres) laisserLaPlaceAuClavier()
+  }
+
+  // Sous les barres, Android ne réduit plus la fenêtre quand le clavier s'ouvre : il recouvrait le bas
+  // de la page, dont le bouton « Enregistrer » des fiches et « Suivant » de l'assistant (tablette et
+  // téléphone, phase 14). La page s'arrête donc au bord du clavier ; la barre du bas étant alors sous
+  // lui, le moteur de pages la compte à 0 (--zone-bas, src/styles/jetons.css) : rien n'est perdu.
+  private fun laisserLaPlaceAuClavier() {
+    val contenu = findViewById<android.view.View>(android.R.id.content)
+    ViewCompat.setOnApplyWindowInsetsListener(contenu) { vue, encarts ->
+      vue.setPadding(0, 0, 0, encarts.getInsets(WindowInsetsCompat.Type.ime()).bottom)
+      encarts
+    }
   }
 
   // À l'accueil, la touche retour met l'appli en arrière-plan, comme Android le fait depuis sa version 12,
