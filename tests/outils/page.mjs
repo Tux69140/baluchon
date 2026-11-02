@@ -1,13 +1,15 @@
 // Outils communs aux tests d'écran : ouvrir l'appli dans un format et un thème, juger les fautes, et
 // les vérifications que tout écran doit passer (cibles de 44 px, pas de défilement de côté, rien sous
 // les barres système, aucune requête hors de l'appli).
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calme } from './attente.mjs';
 
 export const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const CAPTURES = join(RACINE, 'captures-travail');
+// Les rapports des formats non bloquants, montrés au chef de projet.
+export const RAPPORTS = join(CAPTURES, 'phase-14', 'rapports');
 export const FORMATS = {
   telephone: { width: 393, height: 873 },
   'tablette-portrait': { width: 800, height: 1280 },
@@ -267,19 +269,19 @@ export async function verifierLargeur(page, juge, cas, plafond = 1544) {
   juge.exige(largeur <= plafond + 0.5, `${cas} : contenu principal trop large (${largeur} px, plafond ${plafond} px)`);
 }
 
-// Comme creerJuge, mais pour les défauts seulement notés : les fautes vont dans un fichier de
-// captures-travail/phase-14/rapports/, jamais dans le code de sortie.
-export function creerRapport(titre) {
+// Comme creerJuge, mais pour les défauts seulement notés : les fautes vont dans le fichier <titre>.txt du
+// dossier (par défaut RAPPORTS), jamais dans le code de sortie ; une exécution sans faute efface celui d'avant.
+export function creerRapport(titre, dossier = RAPPORTS) {
   const fautes = [];
   return {
     exige(condition, message) {
       if (!condition) fautes.push(message);
     },
     conclure() {
-      if (!fautes.length) return;
-      const dossier = join(CAPTURES, 'phase-14', 'rapports');
+      const fichier = join(dossier, `${titre}.txt`);
+      if (!fautes.length) return rmSync(fichier, { force: true });
       mkdirSync(dossier, { recursive: true });
-      writeFileSync(join(dossier, `${titre}.txt`), `${fautes.join('\n')}\n`);
+      writeFileSync(fichier, `${fautes.join('\n')}\n`);
       console.log(`⚠ ${titre} : ${fautes.length} défaut(s) rapporté(s)`);
     },
   };
