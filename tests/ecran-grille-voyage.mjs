@@ -117,6 +117,7 @@ const retirerDentifrice = async page => {
 const bandeauFige = async page => {
   await retirerDentifrice(page);
   await figerHorloge(page);
+  await bandeauEntierEtTouchable(page, BANDEAU, "bandeau « Annuler » absent ou perdu après l'arrêt de l'horloge");
 };
 // Review Focus 3 : le bandeau apparu, une fiche s'ouvre ; il reste entier et touchable.
 const bandeauFicheOuverte = async page => {
