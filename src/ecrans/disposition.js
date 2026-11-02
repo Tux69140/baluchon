@@ -17,12 +17,19 @@ const moinsDAnimations = () => matchMedia('(prefers-reduced-motion: reduce)');
 // Les colonnes qui défilent chacune (trois colonnes) ; en repli, c'est la page qui défile.
 const COLONNES = '.gf-gauche, .gf-menu, .gf-liste';
 
+// Le défilement de chaque colonne, dans l'ordre de COLONNES.
+const defilementsDes = main => [...main.querySelectorAll(COLONNES)].map(c => c.scrollTop);
+
+// Deux dispositions lues (grand format, trois colonnes) sont la même.
+const memeDisposition = (a, b) =>
+  Boolean(a && b) && a.grandFormat === b.grandFormat && a.troisColonnes === b.troisColonnes;
+
 // Pose un dessin dans main : sa classe, ses colonnes (data-colonnes : 3 ou « repli », rien hors du grand
 // format) et son HTML. Un dessin dans la même disposition laisse chaque colonne là où on l'avait menée ;
-// une autre disposition repart du haut.
-function poserDessin(main, { classe, colonnes, html }) {
-  const memeDisposition = classe === main.className && String(colonnes) === String(main.dataset.colonnes);
-  const defilements = memeDisposition ? [...main.querySelectorAll(COLONNES)].map(c => c.scrollTop) : [];
+// une autre disposition repart du haut, ou de `reprise` (le défilement de chaque colonne) quand on y revient.
+function poserDessin(main, { classe, colonnes, html }, reprise = []) {
+  const meme = classe === main.className && String(colonnes) === String(main.dataset.colonnes);
+  const defilements = meme ? defilementsDes(main) : reprise;
   main.className = classe;
   if (colonnes) main.dataset.colonnes = colonnes;
   else delete main.dataset.colonnes;
@@ -39,7 +46,11 @@ export const trouverCommande = (main, action, id) =>
 // (catégorie choisie, filtre, coches, rangement), une seule fois même si les deux seuils sont franchis
 // d'un coup. Le focus reste sur la même commande, ou sur la plus proche (commandeProche) si elle n'est
 // plus dessinée ; chaque colonne garde son défilement, sauf la liste d'une autre catégorie, qui se lit
-// depuis son début. Ce que l'écran fournit :
+// depuis son début. Revenir à la disposition qu'on vient de quitter rend la page et ses colonnes là où on
+// les avait laissées : le clavier d'une tablette couchée fait passer la page sous les 600 px du grand
+// format le temps d'une saisie (Android 11 et plus, la page s'arrête au bord du clavier : MainActivity.kt),
+// et la personne retrouve sa liste en le refermant (de même pour une fenêtre réduite puis rendue).
+// Ce que l'écran fournit :
 // - dessin({ grandFormat, troisColonnes }) : sa classe, ses colonnes et son HTML (poserDessin) ;
 // - choisie() : la catégorie choisie ;
 // - categorieDe(id) : la catégorie d'un objet ; rien si id n'est pas celui d'un objet ;
@@ -52,9 +63,20 @@ export function suivreDisposition(main, options) {
   // Créées ici, pas au chargement : le module reste importable sans navigateur (le test des seuils).
   const grandFormat = matchMedia(GRAND_FORMAT);
   const troisColonnes = matchMedia(TROIS_COLONNES);
+  const lue = () => ({ grandFormat: grandFormat.matches, troisColonnes: troisColonnes.matches });
   // La disposition et la catégorie du dernier dessin.
   let dessinee = null;
   let choisieDessinee = null;
+  // Où en sont la page et les colonnes de la disposition dessinée, noté à chaque défilement tant qu'elle
+  // est celle de l'écran : quand l'écran change de taille, la nouvelle mise en page les a déjà ramenées
+  // vers le haut avant que la disposition ne se redessine.
+  let place = null;
+  const noter = () => {
+    if (memeDisposition(dessinee, lue())) place = { page: scrollY, colonnes: defilementsDes(main) };
+  };
+  addEventListener('scroll', noter, { capture: true, passive: true, signal });
+  // La dernière disposition quittée : sa catégorie et sa place.
+  let quittee = null;
 
   // La commande qui reprend le focus quand celle d'avant n'est plus dessinée (ligne masquée, catégorie
   // repliée ou quittée, disposition changée, fiche fermée) : la même, sinon l'autre commande de la
@@ -79,21 +101,26 @@ export function suivreDisposition(main, options) {
     const avant = glissement ? places(main) : null;
     const focus = document.activeElement?.closest('[data-action]');
     const cle = focus && main.contains(focus) && { action: focus.dataset.action, id: focus.dataset.id };
-    dessinee = { grandFormat: grandFormat.matches, troisColonnes: troisColonnes.matches };
-    poserDessin(main, dessin(dessinee));
+    const disposition = lue();
+    const reprise = memeDisposition(quittee?.disposition, disposition) && quittee.choisie === choisie() && quittee;
+    if (dessinee && !memeDisposition(dessinee, disposition))
+      quittee = { disposition: dessinee, choisie: choisieDessinee, ...place };
+    dessinee = disposition;
+    poserDessin(main, dessin(dessinee), reprise?.colonnes);
+    if (reprise) scrollTo(0, reprise.page);
     if (choisie() !== choisieDessinee) main.querySelector('.gf-liste')?.scrollTo(0, 0);
     choisieDessinee = choisie();
     apresPose?.();
     if (cle) commandeProche(cle)?.focus({ preventScroll: true });
     if (enVue) main.querySelector(enVue)?.scrollIntoView({ block: 'nearest' });
+    noter();
     glisser(main, avant, animation);
   }
 
   // Les deux seuils franchis d'un coup préviennent chacun ; le second trouve la disposition déjà
   // dessinée.
   function suivre() {
-    if (parti() || !dessinee) return;
-    if (grandFormat.matches === dessinee.grandFormat && troisColonnes.matches === dessinee.troisColonnes) return;
+    if (parti() || !dessinee || memeDisposition(dessinee, lue())) return;
     peindre();
   }
   for (const requete of [grandFormat, troisColonnes]) requete.addEventListener('change', suivre, { signal });
