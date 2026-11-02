@@ -112,7 +112,8 @@ const bandeauFicheOuverte = async page => {
   await figerHorloge(page);
   await bandeauEntierEtTouchable(page, BANDEAU, 'bandeau « Annuler » dans une fenêtre');
 };
-const bandeauFenetreRefus = async page => {
+// Une catégorie supprimée, puis la fiche d'un objet ouverte : le bandeau se range dans la fiche.
+const bandeauFicheObjet = async page => {
   await bibliotheque(page);
   await installerHorloge(page);
   await supprimerCategorie(page, 'Camping');
@@ -157,7 +158,7 @@ export const ETATS = [
   sur('suppression-refus', ETIQUETTES, donneesSuppressions(), refus),
   sur('bandeau-annuler', BIBLIOTHEQUE, DONNEES_ANNULATION, retirerObjet),
   sur('bandeau-fiche-ouverte', BIBLIOTHEQUE, DONNEES_ANNULATION, bandeauFicheOuverte),
-  sur('bandeau-fiche-objet', BIBLIOTHEQUE, DONNEES_ANNULATION, bandeauFenetreRefus),
+  sur('bandeau-fiche-objet', BIBLIOTHEQUE, DONNEES_ANNULATION, bandeauFicheObjet),
   sur('noms-longs', BIBLIOTHEQUE, NOMS_LONGS, bibliotheque),
   sur('noms-longs-fiche-categorie', BIBLIOTHEQUE, NOMS_LONGS, ficheNomsLongs),
   sur('noms-longs-fiche-objet', BIBLIOTHEQUE, NOMS_LONGS, ficheObjetNomLong),
