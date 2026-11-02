@@ -12,6 +12,7 @@ import { toucherAjouter } from './outils/ajouter.mjs';
 import { attendreQuestion, fr, ouvrirFiche, repondre, toucherFiche } from './outils/ajuster.mjs';
 import { avecMarques } from './outils/courses.mjs';
 import { FORMATS_BLOQUANTS, parcourirGrille } from './outils/grille.mjs';
+import { LONG } from './outils/grille-fenetres.mjs';
 import { creerJuge, attendreEcran, ouvrir, verifierCommandes } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { DONNEES, avecPieces } from './outils/voyage-essai.mjs';
@@ -22,8 +23,6 @@ const COURSES = '#/voyage/v1/courses';
 const BANDEAU = '.bandeau-annuler';
 const FICHE_ACHAT = 'dialog.fiche-achat';
 
-// Un nom de 60 caractères dont un mot de 30 lettres sans espace.
-const LONG = `${'W'.repeat(30)} et des mots qui suivent encore et encore`.slice(0, 60);
 const NOMS_LONGS = {
   ...DONNEES,
   voyages: DONNEES.voyages.map(v => (v.id === 'v1' ? { ...v, nom: LONG } : v)),
