@@ -52,7 +52,7 @@ assert.ok(resume.ok && resume.resume.voyages === 4 && resume.resume.objets === 3
 
 // L'état de l'appareil au départ : les données de l'essai des annulations, dont les étiquettes de voyage reçoivent
 // la date de modification que l'appli écrit toujours (sans elle, la copie serait refusée à la relecture).
-const DEPART = {
+export const DEPART = {
   ...DONNEES,
   toucheRetour: true,
   etiquettesDuVoyage: DONNEES.etiquettesDuVoyage.map(e => ({ ...e, modifieLe: 'x' })),
