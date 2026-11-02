@@ -1,6 +1,7 @@
 // Outils communs aux tests d'écran : ouvrir l'appli dans un format et un thème, juger les fautes, et
 // les vérifications que tout écran doit passer (cibles de 44 px, pas de défilement de côté, rien sous
 // les barres système, aucune requête hors de l'appli).
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calme } from './attente.mjs';
@@ -13,10 +14,14 @@ export const FORMATS = {
   'tablette-paysage': { width: 1280, height: 800 },
   portable: { width: 1366, height: 768 },
   ordinateur: { width: 1920, height: 1080 },
+  'telephone-paysage': { width: 873, height: 393 },
 };
 export const NOMS_THEME = { light: 'clair', dark: 'sombre' };
 // Barres système d'une tablette Android : heure en haut, boutons en bas, encoches sur les côtés.
 const ZONES = { haut: 64, bas: 48, gauche: 24, droite: 24 };
+// Barres d'un téléphone tourné : valeurs provisoires, remplacées par les mesures du Xiaomi (phase 14).
+// Tout format absent d'ici prend ZONES.
+export const ZONES_PAR_FORMAT = { 'telephone-paysage': { haut: 32, bas: 24, gauche: 56, droite: 56 } };
 const VISIBLES =
   '#app h1, #app h2, #app h3, #app p, #app a, #app button, #app input, #app img, #app li, #app legend, #app label, #app output, #app dialog';
 const CLE = 'baluchon-essai';
@@ -158,11 +163,11 @@ export async function verifierCommandes(page, juge, cas) {
 // la page : ses deux bords sont jugés à chaque fois. Ce qui défile dans une boîte (corps d'une
 // fenêtre) est jugé sur sa seule partie visible, la boîte défilée en haut puis en bas. Une fenêtre
 // modale ouverte couvre les bandes de son voile, comme le reste de l'écran : c'est voulu.
-export async function verifierBarres(page, juge, cas) {
+export async function verifierBarres(page, juge, cas, zones = ZONES) {
   await page.evaluate(zones => {
     for (const [cote, taille] of Object.entries(zones))
       document.documentElement.style.setProperty(`--zone-${cote}`, `${taille}px`);
-  }, ZONES);
+  }, zones);
   const releve = async bord => {
     await calme(page);
     return page.evaluate(
@@ -216,7 +221,7 @@ export async function verifierBarres(page, juge, cas) {
         });
         return { empietes, bandes };
       },
-      { bord, zones: ZONES, visibles: VISIBLES },
+      { bord, zones, visibles: VISIBLES },
     );
   };
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -229,4 +234,28 @@ export async function verifierBarres(page, juge, cas) {
     enHaut.bandes.length === 0,
     `${cas} : bandes des barres système absentes ou recouvertes : ${enHaut.bandes.join(', ')}`,
   );
+}
+
+// Sur ordinateur et portable, le contenu principal ne s'étire pas au-delà du plafond (1544 px).
+export async function verifierLargeur(page, juge, cas, plafond = 1544) {
+  const largeur = await page.evaluate(() => document.querySelector('#app main').getBoundingClientRect().width);
+  juge.exige(largeur <= plafond + 0.5, `${cas} : contenu principal trop large (${largeur} px, plafond ${plafond} px)`);
+}
+
+// Comme creerJuge, mais pour les défauts seulement notés : les fautes vont dans un fichier de
+// captures-travail/phase-14/rapports/, jamais dans le code de sortie.
+export function creerRapport(titre) {
+  const fautes = [];
+  return {
+    exige(condition, message) {
+      if (!condition) fautes.push(message);
+    },
+    conclure() {
+      if (!fautes.length) return;
+      const dossier = join(CAPTURES, 'phase-14', 'rapports');
+      mkdirSync(dossier, { recursive: true });
+      writeFileSync(join(dossier, `${titre}.txt`), `${fautes.join('\n')}\n`);
+      console.log(`⚠ ${titre} : ${fautes.length} défaut(s) rapporté(s)`);
+    },
+  };
 }

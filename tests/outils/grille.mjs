@@ -1,0 +1,87 @@
+// La grille de la phase 14 : un même parcours de vérifications pour chaque écran, à chaque format et
+// chaque thème. Les formats bloquants jugent par le code de sortie ; les formats « en rapport » notent
+// leurs défauts dans captures-travail/phase-14/rapports/ avec une capture de l'état fautif.
+import { mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { chromium } from 'playwright';
+import {
+  CAPTURES,
+  FORMATS,
+  ZONES_PAR_FORMAT,
+  creerJuge,
+  creerRapport,
+  ouvrir,
+  verifierBarres,
+  verifierCommandes,
+  verifierLargeur,
+} from './page.mjs';
+import { demarrerServeur } from './serveur.mjs';
+
+export const FORMATS_BLOQUANTS = ['telephone', 'tablette-portrait', 'tablette-paysage', 'portable', 'ordinateur'];
+const AVEC_SOURIS = ['portable', 'ordinateur'];
+
+// Un état : { nom, adresse, donnees, composition, maintenant, preparer }. Si `capture` est donné, la page
+// en est photographiée quand cet état, à ce format et ce thème, a au moins une faute.
+async function verifierEtat(navigateur, url, etat, format, theme, juge, capture) {
+  const cas = `${etat.nom} · ${format} · ${theme}`;
+  const { adresse = '', donnees, composition, maintenant, preparer = async () => {} } = etat;
+  let fautes = 0;
+  const compte = {
+    exige(condition, message) {
+      if (!condition) fautes += 1;
+      juge.exige(condition, message);
+    },
+  };
+  const { contexte, page, sorties, erreurs } = await ouvrir(navigateur, url, {
+    taille: FORMATS[format],
+    theme,
+    donnees,
+    maintenant,
+    adresse,
+    tactile: !AVEC_SOURIS.includes(format),
+    ...(composition !== undefined && { composition }),
+  });
+  try {
+    await preparer(page);
+    await verifierCommandes(page, compte, cas);
+    await verifierBarres(page, compte, cas, ZONES_PAR_FORMAT[format]);
+    if (AVEC_SOURIS.includes(format)) await verifierLargeur(page, compte, cas);
+    compte.exige(erreurs.length === 0, `${cas} : erreurs de page : ${erreurs.join(' | ')}`);
+    compte.exige(sorties.length === 0, `${cas} : requêtes sortantes : ${sorties.join(', ')}`);
+    if (capture && fautes) {
+      await mkdir(dirname(capture), { recursive: true });
+      await page.screenshot({ path: capture });
+    }
+  } finally {
+    await contexte.close();
+  }
+}
+
+export async function parcourirGrille({
+  titre,
+  etats,
+  formats = FORMATS_BLOQUANTS,
+  rapport = ['telephone-paysage'],
+  juge = creerJuge(),
+  fabriquerRapport = creerRapport,
+}) {
+  const serveur = await demarrerServeur();
+  const navigateur = await chromium.launch();
+  try {
+    for (const format of formats)
+      for (const theme of ['light', 'dark'])
+        for (const etat of etats) await verifierEtat(navigateur, serveur.url, etat, format, theme, juge);
+    for (const format of rapport) {
+      const noteur = fabriquerRapport(`${titre}-${format}`);
+      for (const etat of etats) {
+        const capture = join(CAPTURES, 'phase-14', 'rapports', `${titre}-${format}-${etat.nom}.png`);
+        await verifierEtat(navigateur, serveur.url, etat, format, 'light', noteur, capture);
+      }
+      noteur.conclure(`${titre}-${format}`, '');
+    }
+  } finally {
+    await navigateur.close();
+    await serveur.fermer();
+  }
+  juge.conclure(titre, `${etats.length} état(s) vérifiés à ${formats.length} format(s), clair et sombre`);
+}
