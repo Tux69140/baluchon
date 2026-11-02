@@ -57,6 +57,11 @@ for (const format of FORMATS_BLOQUANTS) {
     siens.some(f => f.includes('défile de côté')),
     `${format} : aucune faute de défilement de côté`,
   );
+  if (['portable', 'ordinateur'].includes(format))
+    attend(
+      siens.some(f => f.includes('contenu principal trop large')),
+      `${format} : aucune faute de contenu trop large`,
+    );
 }
 attend(
   !fautesJuge.some(f => f.includes('telephone-paysage')),

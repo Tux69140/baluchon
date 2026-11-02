@@ -241,9 +241,26 @@ export async function verifierBarres(page, juge, cas, zones = ZONES) {
   );
 }
 
-// Sur ordinateur et portable, le contenu principal ne s'étire pas au-delà du plafond (1544 px).
+// Sur ordinateur et portable, le contenu ne s'étire pas au-delà du plafond (1544 px). On mesure le contenu
+// visible : l'étendue (du bord gauche le plus à gauche au bord droit le plus à droite) des enfants directs
+// visibles de `#app main`, non la boîte de `main` (en grand écran, une grille pleine largeur aux colonnes
+// centrées). Chaque enfant compte par sa boîte de contenu (sa boîte moins son remplissage gauche et droit) :
+// ce remplissage est une place invisible (contour du focus, cible tactile élargie), non du contenu dessiné.
 export async function verifierLargeur(page, juge, cas, plafond = 1544) {
-  const largeur = await page.evaluate(() => document.querySelector('#app main').getBoundingClientRect().width);
+  const largeur = await page.evaluate(() => {
+    const boites = [...document.querySelector('#app main').children]
+      .map(e => {
+        const r = e.getBoundingClientRect();
+        const style = getComputedStyle(e);
+        return {
+          visible: r.width > 0 && r.height > 0,
+          gauche: r.left + parseFloat(style.paddingLeft),
+          droite: r.right - parseFloat(style.paddingRight),
+        };
+      })
+      .filter(b => b.visible);
+    return boites.length ? Math.max(...boites.map(b => b.droite)) - Math.min(...boites.map(b => b.gauche)) : 0;
+  });
   juge.exige(largeur <= plafond + 0.5, `${cas} : contenu principal trop large (${largeur} px, plafond ${plafond} px)`);
 }
 
