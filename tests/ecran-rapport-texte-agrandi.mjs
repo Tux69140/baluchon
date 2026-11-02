@@ -133,6 +133,7 @@ for (const [famille, etats] of Object.entries(FAMILLES))
     etats: agrandis(etats),
     formats: [],
     rapport: FORMATS_AGRANDIS,
+    themesRapport: ['light'],
     juge: JUGE_MUET,
   });
 // Ruling 11 : deux défauts corrigés restent bloquants au téléphone (clair et sombre), jugés par le vrai juge.

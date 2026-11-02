@@ -17,8 +17,12 @@ export const FORMATS = {
   portable: { width: 1366, height: 768 },
   ordinateur: { width: 1920, height: 1080 },
 };
-// Téléphone en paysage : rapport non bloquant (décision 12), hors des tests d'écran qui parcourent FORMATS.
-export const FORMATS_RAPPORT = { 'telephone-paysage': { width: 873, height: 393 } };
+// Rapport non bloquant (décision 12), hors des tests d'écran qui parcourent FORMATS : le téléphone en paysage,
+// et le téléphone étroit (360 × 640, ruling 14 : « tous les téléphones »).
+export const FORMATS_RAPPORT = {
+  'telephone-paysage': { width: 873, height: 393 },
+  'telephone-etroit': { width: 360, height: 640 },
+};
 export const NOMS_THEME = { light: 'clair', dark: 'sombre' };
 // Barres système d'une tablette Android : heure en haut, boutons en bas, encoches sur les côtés.
 const ZONES = { haut: 64, bas: 48, gauche: 24, droite: 24 };

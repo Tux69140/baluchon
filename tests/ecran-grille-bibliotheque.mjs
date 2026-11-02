@@ -1,8 +1,8 @@
 // Grille de la phase 14 : la Bibliothèque (cartes, mode « Ranger », fiches de catégorie et d'objet), les
 // Étiquettes (cartes, mode « Ranger », fiches de groupe et d'étiquette), les suppressions (question
 // chiffrée, refus « N à régler ») et le bandeau « Annuler », à chaque format et chaque thème (voir
-// tests/outils/grille.mjs). Les formats bloquants jugent par le code de sortie ; telephone-paysage est
-// mis au rapport dans captures-travail/phase-14/rapports/.
+// tests/outils/grille.mjs). Les formats bloquants jugent par le code de sortie ; telephone-paysage et
+// telephone-etroit sont mis au rapport, en clair et en sombre, dans captures-travail/phase-14/rapports/.
 // Hors grille, la Bibliothèque dans une fenêtre Debian basse (1000 × 560, sans doigt) est jugée par ses
 // seules commandes : grand écran par la largeur, pas par la hauteur.
 import { chromium } from 'playwright';

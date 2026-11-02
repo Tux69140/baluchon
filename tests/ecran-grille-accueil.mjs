@@ -1,6 +1,7 @@
 // Grille de la phase 14 : l'accueil, les menus, Réglages (et le message après « Sauvegarder »), la restauration
 // et « À propos », à chaque format et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants jugent
-// par le code de sortie ; telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
+// par le code de sortie ; telephone-paysage et telephone-etroit sont mis au rapport, en clair et en sombre, dans
+// captures-travail/phase-14/rapports/.
 import { pathToFileURL } from 'node:url';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { FORMATS_BLOQUANTS, parcourirGrille } from './outils/grille.mjs';

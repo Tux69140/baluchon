@@ -1,7 +1,8 @@
 // Grille de la phase 14 : l'écran du voyage (liste, tuiles ou trois colonnes), son menu « ⋮ », la fiche d'objet,
 // les ajouts, les pièces à sortir du sac, les Courses, la fiche d'achat et le bandeau « Annuler » (d'un objet
 // retiré, d'un achat), à chaque format et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants
-// jugent par le code de sortie ; telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
+// jugent par le code de sortie ; telephone-paysage et telephone-etroit sont mis au rapport, en clair et en
+// sombre, dans captures-travail/phase-14/rapports/.
 // Hors grille, le voyage ouvert dans une fenêtre Debian basse et moyenne (1000 × 560, sans doigt) est jugé
 // par ses seules commandes : grand écran par la largeur, pas par la hauteur.
 import { chromium } from 'playwright';

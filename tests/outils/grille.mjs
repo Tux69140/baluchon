@@ -7,6 +7,7 @@ import { chromium } from 'playwright';
 import {
   FORMATS,
   FORMATS_RAPPORT,
+  NOMS_THEME,
   RAPPORTS,
   ZONES_PAR_FORMAT,
   creerJuge,
@@ -72,13 +73,15 @@ async function purgerRapports(titre, rapport, dossier) {
       await rm(join(dossier, nom));
 }
 
-// rapport : les formats seulement notés ; dossier : où vont leurs rapports et leurs captures (le témoin les
-// met dans un dossier de passage, hors du dossier montré au chef de projet).
+// rapport : les formats seulement notés (par défaut ceux de FORMATS_RAPPORT), dans les thèmes de themesRapport ;
+// dossier : où vont leurs rapports et leurs captures (le témoin les met dans un dossier de passage, hors du
+// dossier montré au chef de projet).
 export async function parcourirGrille({
   titre,
   etats,
   formats = FORMATS_BLOQUANTS,
-  rapport = ['telephone-paysage'],
+  rapport = Object.keys(FORMATS_RAPPORT),
+  themesRapport = ['light', 'dark'],
   juge = creerJuge(),
   fabriquerRapport = creerRapport,
   dossier = RAPPORTS,
@@ -92,10 +95,11 @@ export async function parcourirGrille({
         for (const etat of etats) await verifierEtat(navigateur, serveur.url, etat, format, theme, juge);
     for (const format of rapport) {
       const noteur = fabriquerRapport(`${titre}-${format}`, dossier);
-      for (const etat of etats) {
-        const capture = join(dossier, `${titre}-${format}-${etat.nom}.png`);
-        await verifierEtat(navigateur, serveur.url, etat, format, 'light', noteur, capture);
-      }
+      for (const theme of themesRapport)
+        for (const etat of etats) {
+          const capture = join(dossier, `${titre}-${format}-${NOMS_THEME[theme]}-${etat.nom}.png`);
+          await verifierEtat(navigateur, serveur.url, etat, format, theme, noteur, capture);
+        }
       noteur.conclure();
     }
   } finally {

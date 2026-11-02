@@ -1,7 +1,8 @@
 // Grille de la phase 14 : l'assistant « Nouveau voyage » (Informations, groupes d'étiquettes, Aperçu,
 // question d'abandon), « Modifier le voyage » (étape Changements) et « Refaire ce voyage », à chaque
 // format et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants jugent par le code de
-// sortie ; telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
+// sortie ; telephone-paysage et telephone-etroit sont mis au rapport, en clair et en sombre, dans
+// captures-travail/phase-14/rapports/.
 import { pathToFileURL } from 'node:url';
 import { attendreQue, calme } from './outils/attente.mjs';
 import { attendreQuestion } from './outils/assistant.mjs';
