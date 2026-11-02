@@ -35,12 +35,19 @@ export function vueMenuVoyage(t, voyage, actions, suffixe = '') {
         </div>`;
 }
 
-// Sous le bouton, bord droit contre son bord droit ; au-dessus quand le bas de l'écran est trop près.
+// Les barres du système (haut, bas) : le menu ne se place jamais dessous.
+const zone = cote => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--zone-${cote}`)) || 0;
+
+// Sous le bouton, bord droit contre son bord droit ; au-dessus quand le bas de l'écran est trop près. Quand le
+// défilement emporte le bouton sous une barre, le menu reste dans l'écran libre, au plus près de lui.
 function placer(menu, bouton) {
   const r = bouton.getBoundingClientRect();
   const hauteur = menu.offsetHeight;
-  const dessous = r.bottom + ECART + hauteur <= innerHeight - MARGE;
-  menu.style.top = `${dessous ? r.bottom + ECART : Math.max(MARGE, r.top - ECART - hauteur)}px`;
+  const haut = zone('haut') + MARGE;
+  const bas = innerHeight - zone('bas') - MARGE;
+  const dessous = r.bottom + ECART + hauteur <= bas;
+  const voulu = dessous ? r.bottom + ECART : r.top - ECART - hauteur;
+  menu.style.top = `${Math.max(haut, Math.min(voulu, bas - hauteur))}px`;
   menu.style.right = `${Math.max(MARGE, document.documentElement.clientWidth - r.right)}px`;
 }
 
