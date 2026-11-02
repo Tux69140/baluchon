@@ -13,7 +13,7 @@
 // seule l'allure du téléphone est notée dans captures-travail/phase-14/rapports/rotation.txt (décision 12).
 import { chromium } from 'playwright';
 import { attendreQue, calme } from './outils/attente.mjs';
-import { FICHE as FICHE_VOYAGE, RENOMMER, ouvrirFiche, ouvrirVoyage, toucherFiche } from './outils/ajuster.mjs';
+import { FICHE as FICHE_VOYAGE, RENOMMER, fr, ouvrirFiche, ouvrirVoyage, toucherFiche } from './outils/ajuster.mjs';
 import { attendreQuestion, question } from './outils/assistant.mjs';
 import { TOUS_FORMATS, fermerEssai, ouvrirBibliotheque } from './outils/bibliotheque.mjs';
 import { lireFiche, m, ouvrirNouvelObjet, saisir, segment } from './outils/fiches.mjs';
@@ -50,9 +50,10 @@ async function pivoter(page, appareil, format) {
 }
 
 // Un cas pour chaque appareil et chaque orientation de départ : `preparer` met l'écran dans l'état à
-// protéger (ouvert à la taille portrait, puis tourné au besoin) et rend ce qui le décrit ; `lire` le relit.
+// protéger (ouvert à la taille portrait, puis tourné au besoin) ; `lire` le décrit ; `departPose` exige que
+// l'état lu avant toute rotation soit bien celui attendu (sinon le test comparerait du vide à du vide).
 // Les rotations : départ → autre → départ.
-async function cas(nom, ouvrirA, preparer, lire) {
+async function cas(nom, ouvrirA, preparer, lire, departPose) {
   for (const [appareil, def] of Object.entries(APPAREILS)) {
     for (const depart of ['portrait', 'paysage']) {
       const autre = depart === 'portrait' ? 'paysage' : 'portrait';
@@ -62,7 +63,7 @@ async function cas(nom, ouvrirA, preparer, lire) {
       if (depart === 'paysage') await pivoter(page, appareil, def.paysage);
       await preparer(page);
       const avant = await lire(page);
-      juge.exige(avant !== null && avant !== undefined, `${titre} : l'état de départ n'est pas posé`);
+      juge.exige(Boolean(avant) && departPose(avant), `${titre} : l'état de départ n'est pas posé : ${vu(avant)}`);
       for (const [etape, format] of [
         [autre, def[autre]],
         [depart, def[depart]],
@@ -100,6 +101,7 @@ await cas(
       [FICHE_VOYAGE, RENOMMER],
     ),
   }),
+  ({ fiche }) => fiche.fiche && fiche.renommer && fiche.valeur === 'Gourde isot' && fiche.focus === 'f-nom',
 );
 
 // ---------- Fiche d'un objet modèle en création ----------
@@ -119,6 +121,7 @@ await cas(
     const f = await lireFiche(page);
     return f && { nom: f.nom, choix: f.choix };
   },
+  f => f.nom === 'Lampe fron' && f.choix.includes(m.objet.parJour),
 );
 
 // ---------- Assistant « Nouveau voyage », étape Activités ----------
@@ -159,17 +162,12 @@ await cas(
     for (const rang of [1, 2]) await page.click(`[data-etiquette]:nth-child(${rang})`);
     await calme(page);
   },
-  async page => {
-    const v = await lireAssistant(page);
-    juge.exige(
-      v.etape === 'groupe' &&
-        v.titre === 'Activités' &&
-        v.courante === 1 &&
-        v.puces.filter(p => p.endsWith(':true')).length >= 2,
-      `assistant : l'état posé n'est pas Activités avec deux étiquettes : ${vu(v)}`,
-    );
-    return v;
-  },
+  lireAssistant,
+  v =>
+    v.etape === 'groupe' &&
+    v.titre === 'Activités' &&
+    v.courante === 1 &&
+    v.puces.filter(p => p.endsWith(':true')).length === 2,
 );
 
 // ---------- Question d'abandon ----------
@@ -190,6 +188,7 @@ await cas(
     const dedans = await page.evaluate(() => document.activeElement?.closest('dialog[role="alertdialog"]') !== null);
     return q && { titre: q.titre, boutons: q.boutons, focusDedans: dedans };
   },
+  q => q.titre === fr.nouveauVoyage.abandon.titre && q.focusDedans,
 );
 
 // ---------- Écran du voyage : catégorie choisie et trois coches ----------
@@ -218,6 +217,7 @@ await cas(
         ),
       };
     }, OBJETS),
+  v => v.choisie !== null && v.choisie !== 'false' && v.quantites.every(q => q !== null && q !== '0 / 8' && q !== '0'),
 );
 
 // ---------- Review Focus 4 : rotation pendant l'ouverture animée de la fiche, au téléphone ----------
@@ -228,31 +228,10 @@ const montee = page =>
       document
         .querySelector(f)
         ?.getAnimations()
-        .some(a => a.playState === 'running'),
+        .some(a => a.playState === 'running') ?? false,
     FICHE_VOYAGE,
   );
-async function ouvrirEnMontant(ouvert) {
-  const { page } = ouvert;
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.addStyleTag({ content: '.fiche:modal { animation-duration: 3s !important; }' });
-  await calme(page);
-  await page.click('.objet[data-id="o-gou"] .objet-corps');
-}
-{
-  const def = APPAREILS.telephone;
-  const ouvert = await ouvrirVoyage(navigateur, serveur.url, { format: def.portrait });
-  const { page } = ouvert;
-  page.setDefaultTimeout(5000);
-  await ouvrirEnMontant(ouvert);
-  await attendreQue(page, f => document.querySelector(`${f}:modal`) !== null, FICHE_VOYAGE);
-  juge.exige(await montee(page), 'ouverture animée : l’animation ne tourne pas, le test ne prouve rien');
-  // Sans attendre sa fin : au paysage, puis de retour au portrait.
-  await page.setViewportSize(def.taille[def.paysage]);
-  await attendreQue(page, () => innerWidth === 873);
-  const enRoute = await montee(page);
-  juge.exige(enRoute, 'ouverture animée : l’animation était déjà finie à la rotation, le test ne prouve rien');
-  await page.setViewportSize(def.taille[def.portrait]);
-  await attendreQue(page, () => innerWidth === 393);
+const attendreFinDeMontee = async page => {
   await attendreQue(
     page,
     f =>
@@ -265,29 +244,62 @@ async function ouvrirEnMontant(ouvert) {
     FICHE_VOYAGE,
   );
   await calme(page);
-  const fiche = await lireFiche(page).catch(() => null);
-  const ouverte = await page.evaluate(
-    f => ({
-      modale: document.querySelector(f)?.matches(':modal') ?? false,
-      titre: document.querySelector(`${f} h2`)?.textContent.trim() ?? '',
-      corps: document.querySelector(`${f} .fiche-corps`)?.textContent.trim().length ?? 0,
-    }),
-    FICHE_VOYAGE,
-  );
-  juge.exige(
-    ouverte.modale && ouverte.titre !== '' && ouverte.corps > 0,
-    `ouverture animée, revenue en portrait : ${vu(ouverte)} ${vu(fiche)}`,
-  );
-  await fenetreEntiere(page, FICHE_VOYAGE);
-  const place = await page.evaluate(f => {
-    const r = document.querySelector(f).getBoundingClientRect();
+};
+// Où est la fiche, ou null si elle n'est plus ouverte.
+const placeDeLaFiche = page =>
+  page.evaluate(f => {
+    const d = document.querySelector(`${f}[open]`);
+    if (!d) return null;
+    const r = d.getBoundingClientRect();
     return { haut: r.top, bas: r.bottom, gauche: r.left, droite: r.right, l: innerWidth, h: innerHeight };
   }, FICHE_VOYAGE);
+const dansLEcran = p => p && p.haut >= -0.5 && p.gauche >= -0.5 && p.bas <= p.h + 0.5 && p.droite <= p.l + 0.5;
+async function ouvrirEnMontant(ouvert) {
+  const { page } = ouvert;
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addStyleTag({ content: '.fiche:modal { animation-duration: 3s !important; }' });
+  await calme(page);
+  await page.click('.objet[data-id="o-gou"] .objet-corps');
+  await attendreQue(page, f => document.querySelector(`${f}:modal`) !== null, FICHE_VOYAGE);
+}
+{
+  const def = APPAREILS.telephone;
+  const ouvert = await ouvrirVoyage(navigateur, serveur.url, { format: def.portrait });
+  const { page } = ouvert;
+  page.setDefaultTimeout(5000);
+  await ouvrirEnMontant(ouvert);
+  juge.exige(await montee(page), 'ouverture animée : l’animation ne tourne pas, le test ne prouve rien');
+  // Sans attendre sa fin : au paysage, puis de retour au portrait.
+  await page.setViewportSize(def.taille[def.paysage]);
+  await attendreQue(page, () => innerWidth === 873);
   juge.exige(
-    place.haut >= -0.5 && place.gauche >= -0.5 && place.bas <= place.h + 0.5 && place.droite <= place.l + 0.5,
-    `ouverture animée, revenue en portrait : la fiche sort de l'écran ${vu(place)}`,
+    await montee(page),
+    'ouverture animée : l’animation était déjà finie à la rotation, le test ne prouve rien',
   );
-  await verifierBarres(page, juge, 'ouverture animée, revenue en portrait');
+  await page.setViewportSize(def.taille[def.portrait]);
+  await attendreQue(page, () => innerWidth === 393);
+  await attendreFinDeMontee(page);
+  const place = await placeDeLaFiche(page);
+  juge.exige(place !== null, 'ouverture animée, revenue en portrait : la fiche n’est plus ouverte');
+  if (place) {
+    // Du contenu vraiment visible : un corps de hauteur non nulle, avec du texte rendu (innerText ignore le masqué).
+    const contenu = await page.evaluate(f => {
+      const corps = document.querySelector(`${f} .fiche-corps`);
+      return {
+        modale: document.querySelector(f).matches(':modal'),
+        titre: document.querySelector(`${f} h2`)?.innerText.trim() ?? '',
+        hauteur: corps?.getBoundingClientRect().height ?? 0,
+        texte: corps?.innerText.trim() ?? '',
+      };
+    }, FICHE_VOYAGE);
+    juge.exige(
+      contenu.modale && contenu.titre !== '' && contenu.hauteur > 0 && contenu.texte !== '',
+      `ouverture animée, revenue en portrait : fiche sans contenu visible ${vu(contenu)}`,
+    );
+    await fenetreEntiere(page, FICHE_VOYAGE);
+    juge.exige(dansLEcran(place), `ouverture animée, revenue en portrait : la fiche sort de l'écran ${vu(place)}`);
+    await verifierBarres(page, juge, 'ouverture animée, revenue en portrait');
+  }
   await fermerEssai(juge, 'ouverture animée', ouvert);
 }
 
@@ -298,31 +310,11 @@ async function ouvrirEnMontant(ouvert) {
   const { page } = ouvert;
   page.setDefaultTimeout(5000);
   await ouvrirEnMontant(ouvert);
-  await attendreQue(page, f => document.querySelector(`${f}:modal`) !== null, FICHE_VOYAGE);
   await page.setViewportSize(def.taille[def.paysage]);
   await attendreQue(page, () => innerWidth === 873);
-  await attendreQue(
-    page,
-    f =>
-      !(
-        document
-          .querySelector(f)
-          ?.getAnimations()
-          .some(a => a.playState === 'running') ?? true
-      ),
-    FICHE_VOYAGE,
-  );
-  await calme(page);
-  const place = await page.evaluate(f => {
-    const d = document.querySelector(f);
-    if (!d) return null;
-    const r = d.getBoundingClientRect();
-    return { haut: r.top, bas: r.bottom, gauche: r.left, droite: r.right, l: innerWidth, h: innerHeight };
-  }, FICHE_VOYAGE);
-  rapport.exige(
-    place && place.haut >= -0.5 && place.gauche >= -0.5 && place.bas <= place.h + 0.5 && place.droite <= place.l + 0.5,
-    `fiche du voyage ouverte en route, téléphone en paysage : sort de l'écran ${vu(place)}`,
-  );
+  await attendreFinDeMontee(page);
+  const place = await placeDeLaFiche(page);
+  rapport.exige(dansLEcran(place), `fiche du voyage ouverte en route, téléphone en paysage : ${vu(place)}`);
   await ouvert.contexte.close();
 }
 
