@@ -121,10 +121,11 @@ export async function segmentsBordsNets(page, selecteur) {
     const cases = [...rangee.querySelectorAll('.segment')];
     const cadre = rangee.getBoundingClientRect();
     const bord = (c, cote) => parseFloat(getComputedStyle(c)[`border${cote}Width`]) || 0;
-    const mal = [];
+    const mal = cases.length ? [] : ['aucune case'];
     cases.forEach((c, i) => {
       const r = c.getBoundingClientRect();
       const nom = c.textContent.trim().slice(0, 12);
+      if (r.right > cadre.right + 0.5 || r.left < cadre.left - 0.5) mal.push(`« ${nom} » : dépasse le cadre`);
       const debutDeLigne = i === 0 || r.left < cases[i - 1].getBoundingClientRect().right - 1;
       if (debutDeLigne) {
         if (bord(c, 'Left') > 0) mal.push(`« ${nom} » : trait gauche doublé avec le cadre`);
@@ -140,7 +141,6 @@ export async function segmentsBordsNets(page, selecteur) {
         if (trait < 1 || trait > 2) mal.push(`« ${nom} » : ${trait} px de trait au-dessus (1 à 2 attendus)`);
       }
     });
-    if (cases.length && cadre.width === 0) mal.push('rangée sans largeur');
     return mal;
   }, selecteur);
   await exigerDansLaPage(page, fautes.length === 0, `traits des segments : ${fautes.join(' ; ')}`);

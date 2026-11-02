@@ -20,9 +20,11 @@ import {
   fenetreEntiere,
   figerHorloge,
   installerHorloge,
+  segmentsBordsNets,
+  segmentsSansDebord,
 } from './outils/grille-fenetres.mjs';
 import { bibliothequeDeNoms, graineMini, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
-import { attendreEcran, creerJuge, ouvrir, verifierCommandes } from './outils/page.mjs';
+import { attendreEcran, creerJuge, ouvrir, poserZones, verifierCommandes } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   attendreQuestion,
@@ -126,6 +128,7 @@ const ficheNomsLongs = async page => {
 const ficheObjetNomLong = async page => {
   await ficheObjet(LONG, LONG)(page);
   await fenetreEntiere(page, FICHE);
+  await segmentsBordsNets(page, `${FICHE} .segments-pour-qui`);
 };
 const ficheEtiquetteNomLong = async page => {
   await etiquettes(page);
@@ -187,7 +190,42 @@ async function fenetreBasse() {
   juge.conclure('fenêtre basse', 'la Bibliothèque à 1000 × 560 : cibles de 44 px, rien ne défile de côté');
 }
 
+// Un téléphone étroit (360 × 640, texte normal) : la fiche d'objet, rangée « Pour qui » comprise, tient entière,
+// sans mot qui déborde de sa case, aux traits nets, avec des cibles de 44 px et rien qui défile de côté.
+async function ficheObjetEtroite() {
+  const juge = creerJuge();
+  const serveur = await demarrerServeur();
+  const navigateur = await chromium.launch();
+  try {
+    for (const theme of ['light', 'dark']) {
+      const { contexte, page, erreurs } = await ouvrir(navigateur, serveur.url, {
+        taille: { width: 360, height: 640 },
+        theme,
+        donnees: NOMS_LONGS,
+        adresse: BIBLIOTHEQUE,
+      });
+      const cas = `fiche d'objet · 360 × 640 · ${theme}`;
+      await poserZones(page);
+      await ficheObjet(LONG, LONG)(page);
+      await fenetreEntiere(page, FICHE);
+      await segmentsSansDebord(page, FICHE);
+      await segmentsBordsNets(page, `${FICHE} .segments-pour-qui`);
+      await verifierCommandes(page, juge, cas);
+      juge.exige(erreurs.length === 0, `${cas} : erreurs de page : ${erreurs.join(' | ')}`);
+      await contexte.close();
+    }
+  } finally {
+    await navigateur.close();
+    await serveur.fermer();
+  }
+  juge.conclure(
+    'fiche étroite',
+    "la fiche d'objet à 360 × 640 : entière, mots dans leur case, traits nets, cibles de 44 px",
+  );
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   await parcourirGrille({ titre: 'bibliotheque', etats: ETATS, formats: FORMATS_BLOQUANTS });
   await fenetreBasse();
+  await ficheObjetEtroite();
 }
