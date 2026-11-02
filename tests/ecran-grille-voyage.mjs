@@ -148,13 +148,13 @@ export const ETATS = [
 ];
 
 // Review Focus 5 : une fenêtre Debian de 1000 × 560, à la souris ; le voyage sans défilement de côté et
-// avec des cibles de 44 px (verifierCommandes, seule règle jugée ici).
+// avec des cibles de 44 px (verifierCommandes, seule règle jugée ici), sans erreur ni requête sortante.
 async function fenetreBasse() {
   const juge = creerJuge();
   const serveur = await demarrerServeur();
   const navigateur = await chromium.launch();
   try {
-    const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+    const { contexte, page, erreurs, sorties } = await ouvrir(navigateur, serveur.url, {
       taille: { width: 1000, height: 560 },
       theme: 'light',
       donnees: DONNEES,
@@ -162,8 +162,11 @@ async function fenetreBasse() {
       adresse: VOYAGE,
       tactile: false,
     });
+    const cas = 'voyage · 1000 × 560';
     await attendreEcran(page, 'voyage');
-    await verifierCommandes(page, juge, 'voyage · 1000 × 560');
+    await verifierCommandes(page, juge, cas);
+    juge.exige(erreurs.length === 0, `${cas} : erreurs de page : ${erreurs.join(' | ')}`);
+    juge.exige(sorties.length === 0, `${cas} : requêtes sortantes : ${sorties.join(', ')}`);
     await contexte.close();
   } finally {
     await navigateur.close();

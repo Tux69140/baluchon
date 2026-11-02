@@ -24,7 +24,7 @@ import {
   segmentsSansDebord,
 } from './outils/grille-fenetres.mjs';
 import { bibliothequeDeNoms, graineMini, miniAvecNoms } from './outils/mini-bibliotheque.mjs';
-import { attendreEcran, creerJuge, ouvrir, poserZones, verifierCommandes } from './outils/page.mjs';
+import { attendreEcran, creerJuge, ouvrir, poserZones, verifierBarres, verifierCommandes } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import {
   attendreQuestion,
@@ -167,21 +167,24 @@ export const ETATS = [
 ];
 
 // Review Focus 5 : une fenêtre Debian de 1000 × 560, à la souris ; la Bibliothèque sans défilement de côté
-// et avec des cibles de 44 px (verifierCommandes, seule règle jugée ici).
+// et avec des cibles de 44 px (verifierCommandes, seule règle jugée ici), sans erreur ni requête sortante.
 async function fenetreBasse() {
   const juge = creerJuge();
   const serveur = await demarrerServeur();
   const navigateur = await chromium.launch();
   try {
-    const { contexte, page } = await ouvrir(navigateur, serveur.url, {
+    const { contexte, page, erreurs, sorties } = await ouvrir(navigateur, serveur.url, {
       taille: { width: 1000, height: 560 },
       theme: 'light',
       donnees: DONNEES,
       adresse: BIBLIOTHEQUE,
       tactile: false,
     });
+    const cas = 'bibliothèque · 1000 × 560';
     await attendreEcran(page, 'bibliotheque');
-    await verifierCommandes(page, juge, 'bibliothèque · 1000 × 560');
+    await verifierCommandes(page, juge, cas);
+    juge.exige(erreurs.length === 0, `${cas} : erreurs de page : ${erreurs.join(' | ')}`);
+    juge.exige(sorties.length === 0, `${cas} : requêtes sortantes : ${sorties.join(', ')}`);
     await contexte.close();
   } finally {
     await navigateur.close();
@@ -191,14 +194,15 @@ async function fenetreBasse() {
 }
 
 // Un téléphone étroit (360 × 640, texte normal) : la fiche d'objet, rangée « Pour qui » comprise, tient entière,
-// sans mot qui déborde de sa case, aux traits nets, avec des cibles de 44 px et rien qui défile de côté.
+// sans mot qui déborde de sa case, aux traits nets, avec des cibles de 44 px, rien qui défile de côté ni ne passe
+// sous les barres système, sans erreur ni requête sortante.
 async function ficheObjetEtroite() {
   const juge = creerJuge();
   const serveur = await demarrerServeur();
   const navigateur = await chromium.launch();
   try {
     for (const theme of ['light', 'dark']) {
-      const { contexte, page, erreurs } = await ouvrir(navigateur, serveur.url, {
+      const { contexte, page, erreurs, sorties } = await ouvrir(navigateur, serveur.url, {
         taille: { width: 360, height: 640 },
         theme,
         donnees: NOMS_LONGS,
@@ -211,7 +215,9 @@ async function ficheObjetEtroite() {
       await segmentsSansDebord(page, FICHE);
       await segmentsBordsNets(page, `${FICHE} .segments-pour-qui`);
       await verifierCommandes(page, juge, cas);
+      await verifierBarres(page, juge, cas);
       juge.exige(erreurs.length === 0, `${cas} : erreurs de page : ${erreurs.join(' | ')}`);
+      juge.exige(sorties.length === 0, `${cas} : requêtes sortantes : ${sorties.join(', ')}`);
       await contexte.close();
     }
   } finally {
@@ -220,7 +226,7 @@ async function ficheObjetEtroite() {
   }
   juge.conclure(
     'fiche étroite',
-    "la fiche d'objet à 360 × 640 : entière, mots dans leur case, traits nets, cibles de 44 px",
+    "la fiche d'objet à 360 × 640 : entière, mots dans leur case, traits nets, cibles de 44 px, barres libres",
   );
 }
 
