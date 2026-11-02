@@ -17,6 +17,7 @@ import {
   verifierCommandes,
   verifierLargeur,
 } from './page.mjs';
+import { segmentsSansDebord } from './grille-fenetres.mjs';
 import { demarrerServeur } from './serveur.mjs';
 
 export const FORMATS_BLOQUANTS = ['telephone', 'tablette-portrait', 'tablette-paysage', 'portable', 'ordinateur'];
@@ -48,6 +49,7 @@ async function verifierEtat(navigateur, url, etat, format, theme, juge, capture)
     await poserZones(page, ZONES_PAR_FORMAT[format]);
     await preparer(page);
     await verifierCommandes(page, compte, cas);
+    await segmentsSansDebord(page);
     await verifierBarres(page, compte, cas, ZONES_PAR_FORMAT[format]);
     if (AVEC_SOURIS.includes(format)) await verifierLargeur(page, compte, cas);
     const imprevues = erreurs.filter(e => !erreursAttendues.some(a => e.includes(a)));

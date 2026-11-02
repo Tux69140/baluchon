@@ -10,6 +10,7 @@ import { ETATS as ASSISTANT } from './ecran-grille-assistant.mjs';
 import { ETATS as BIBLIOTHEQUE } from './ecran-grille-bibliotheque.mjs';
 import { ETATS as VOYAGE } from './ecran-grille-voyage.mjs';
 import { parcourirGrille } from './outils/grille.mjs';
+import { segmentsBordsNets, segmentsSansDebord } from './outils/grille-fenetres.mjs';
 import { FORMATS, attendreEcran, creerJuge, ouvrir } from './outils/page.mjs';
 import { demarrerServeur } from './outils/serveur.mjs';
 import { DONNEES } from './outils/voyage-essai.mjs';
@@ -139,9 +140,21 @@ const BLOQUANTS = [
   [ACCUEIL, 'reglages'],
   [BIBLIOTHEQUE, 'noms-longs-fiche-objet'],
 ];
+const bloquants = BLOQUANTS.map(([etats, nom]) => etats.find(e => e.nom === nom));
+// Le même état, jugé aussi sur la rangée « Pour qui » : traits nets quand elle passe sur deux lignes, mots dans leur case.
+const ficheObjet = bloquants.find(e => e.nom === 'noms-longs-fiche-objet');
+const rangeeNette = {
+  ...ficheObjet,
+  nom: 'noms-longs-fiche-objet-rangee-pour-qui',
+  preparer: async page => {
+    await ficheObjet.preparer(page);
+    await segmentsBordsNets(page, 'dialog.fiche-modele .segments-pour-qui');
+    await segmentsSansDebord(page, 'dialog.fiche-modele');
+  },
+};
 await parcourirGrille({
   titre: 'texte-agrandi-bloquant',
-  etats: agrandis(BLOQUANTS.map(([etats, nom]) => etats.find(e => e.nom === nom))),
+  etats: agrandis([...bloquants, rangeeNette]),
   formats: ['telephone'],
   rapport: [],
   juge,
