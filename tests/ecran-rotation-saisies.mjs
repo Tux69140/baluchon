@@ -192,32 +192,42 @@ await cas(
 );
 
 // ---------- Écran du voyage : catégorie choisie et trois coches ----------
-const OBJETS = ['o-tsh', 'o-sou', 'o-pan'];
+// La catégorie à choisir n'est jamais celle d'office : Alimentation en tuiles ou en colonnes (Vêtements est
+// choisie d'office), Papiers au téléphone, où l'accordéon la montre repliée. Trois coches sur Repas : 6 → 9 / 16.
+const REPAS = '.objet[data-id="o-rep"]';
+let visee = null;
+const etatChoix = (page, id) =>
+  page.evaluate(
+    id =>
+      document.querySelector(`.gf-menu [data-id="${id}"]`)?.getAttribute('aria-current') ??
+      document.querySelector(`[data-action="accordeon"][data-id="${id}"]`)?.getAttribute('aria-expanded') ??
+      null,
+    id,
+  );
 await cas(
   'Voyage, catégorie et coches',
   format => ouvrirVoyage(navigateur, serveur.url, { format }),
   async page => {
-    const menu = '.gf-menu [data-action="choisir"][data-id="c-vet"]';
-    if (await page.$(menu)) await page.click(menu);
-    else if ((await page.getAttribute('[data-action="accordeon"][data-id="c-vet"]', 'aria-expanded')) !== 'true')
-      await page.click('[data-action="accordeon"][data-id="c-vet"]');
+    const enTuiles = (await page.$('.gf-menu')) !== null;
+    visee = enTuiles ? 'c-ali' : 'c-pap';
+    const avantClic = await etatChoix(page, visee);
+    juge.exige(avantClic === 'false', `voyage : ${visee} est déjà choisie avant le clic (${avantClic})`);
+    await page.click(
+      enTuiles
+        ? `.gf-menu [data-action="choisir"][data-id="${visee}"]`
+        : `[data-action="accordeon"][data-id="${visee}"]`,
+    );
     await calme(page);
-    for (const id of OBJETS) await page.click(`.objet[data-id="${id}"] .case`);
+    // Les coches sont posées dans Alimentation, dépliée d'office au téléphone.
+    for (let i = 0; i < 3; i++) await page.click(`${REPAS} .case`);
     await calme(page);
   },
-  page =>
-    page.evaluate(ids => {
-      const choisie =
-        document.querySelector('.gf-menu [data-id="c-vet"]')?.getAttribute('aria-current') ??
-        document.querySelector('[data-action="accordeon"][data-id="c-vet"]')?.getAttribute('aria-expanded');
-      return {
-        choisie,
-        quantites: ids.map(
-          id => document.querySelector(`.objet[data-id="${id}"] .objet-quantite`)?.textContent ?? null,
-        ),
-      };
-    }, OBJETS),
-  v => v.choisie !== null && v.choisie !== 'false' && v.quantites.every(q => q !== null && q !== '0 / 8' && q !== '0'),
+  async page => ({
+    visee,
+    choisie: await etatChoix(page, visee),
+    repas: await page.evaluate(r => document.querySelector(`${r} .objet-quantite`)?.textContent.trim() ?? null, REPAS),
+  }),
+  v => v.choisie === 'true' && v.repas === '9 / 16',
 );
 
 // ---------- Review Focus 4 : rotation pendant l'ouverture animée de la fiche, au téléphone ----------
