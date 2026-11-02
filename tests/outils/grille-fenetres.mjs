@@ -113,7 +113,7 @@ export async function segmentsSansDebord(page, selecteur = 'body') {
 // Chaque rangée de segments qui passe sur plusieurs lignes a des traits nets : un seul trait entre deux
 // cases voisines (jamais deux, jamais aucun), entre deux lignes, et aucun trait en doublon avec le cadre
 // au début d'une ligne. Un trait est une bordure calculée ou l'écart laissé entre deux cases (le fond du
-// cadre fait le trait).
+// cadre fait le trait). Seuls les coins du cadre sont arrondis : aucune encoche entre deux lignes.
 export async function segmentsBordsNets(page, selecteur) {
   const fautes = await page.evaluate(selecteur => {
     const rangee = document.querySelector(selecteur);
@@ -121,6 +121,13 @@ export async function segmentsBordsNets(page, selecteur) {
     const cases = [...rangee.querySelectorAll('.segment')];
     const cadre = rangee.getBoundingClientRect();
     const bord = (c, cote) => parseFloat(getComputedStyle(c)[`border${cote}Width`]) || 0;
+    // L'intérieur du cadre, sa bordure ôtée.
+    const interieur = {
+      top: cadre.top + bord(rangee, 'Top'),
+      bottom: cadre.bottom - bord(rangee, 'Bottom'),
+      left: cadre.left + bord(rangee, 'Left'),
+      right: cadre.right - bord(rangee, 'Right'),
+    };
     const mal = cases.length ? [] : ['aucune case'];
     cases.forEach((c, i) => {
       const r = c.getBoundingClientRect();
@@ -139,6 +146,23 @@ export async function segmentsBordsNets(page, selecteur) {
       if (dessus.length) {
         const trait = bord(c, 'Top') + r.top - Math.max(...dessus.map(a => a.getBoundingClientRect().bottom));
         if (trait < 1 || trait > 2) mal.push(`« ${nom} » : ${trait} px de trait au-dessus (1 à 2 attendus)`);
+      }
+      // Un coin arrondi n'a sa place qu'à un coin du cadre : ailleurs (contre la ligne voisine), il laisse
+      // une encoche dans le fond de la case choisie.
+      const mot = c.querySelector('span');
+      const m = mot.getBoundingClientRect();
+      const contre = (a, b) => Math.abs(a - b) <= 1;
+      for (const [coin, haut, gauche] of [
+        ['TopLeft', true, true],
+        ['TopRight', true, false],
+        ['BottomLeft', false, true],
+        ['BottomRight', false, false],
+      ]) {
+        const rayon = parseFloat(getComputedStyle(mot)[`border${coin}Radius`]) || 0;
+        const auCoin =
+          contre(haut ? m.top : m.bottom, haut ? interieur.top : interieur.bottom) &&
+          contre(gauche ? m.left : m.right, gauche ? interieur.left : interieur.right);
+        if (rayon > 0 && !auCoin) mal.push(`« ${nom} » : coin ${coin} arrondi (${rayon} px) hors d'un coin du cadre`);
       }
     });
     return mal;
