@@ -42,6 +42,16 @@
     justify-self: start;
   }
 
+  /* Le bouton du menu garde ses 8 px de cible tactile hors de la colonne (l'icône reste alignée sur le
+     contenu) : c'est lui qui déborde, non la barre, pour que le contenu mesuré ne dépasse pas la page. */
+  main.grand-format > .barre-haut {
+    margin-left: 0;
+  }
+
+  main.grand-format > .barre-haut > :first-child {
+    margin-left: calc(-1 * var(--e-sm));
+  }
+
   main.grand-format .gf-menu,
   main.grand-format .gf-liste {
     min-width: 0;
