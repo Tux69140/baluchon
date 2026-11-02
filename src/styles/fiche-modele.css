@@ -59,73 +59,6 @@
   box-shadow: 0 -10px 18px -10px rgb(13 22 36 / 0.35);
 }
 
-/* Segments : de vrais boutons radio, côte à côte dans un même cadre. Le bouton, invisible, couvre
-   tout le segment : c'est lui qu'on touche, avec une cible de toute la taille du segment. */
-.segments {
-  display: flex;
-  border: 1.5px solid var(--contour);
-  border-radius: var(--r-md);
-  background: var(--carte);
-}
-
-.segment {
-  position: relative;
-  display: flex;
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.segment + .segment {
-  border-left: 1.5px solid var(--contour);
-}
-
-.segment input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.segment span {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 4px 10px;
-  color: var(--encre);
-  font: 600 var(--taille-libelle) / 1.2 var(--police);
-  text-align: center;
-  cursor: pointer;
-}
-
-.segment:first-child span {
-  border-radius: 10px 0 0 10px;
-}
-
-.segment:last-child span {
-  border-radius: 0 10px 10px 0;
-}
-
-.segment:hover span {
-  background: var(--releve);
-}
-
-.segment input:checked + span {
-  background: var(--encre);
-  color: var(--fond);
-}
-
-.segment:has(input:focus-visible) {
-  z-index: 1;
-  outline: 3px solid var(--encre);
-  outline-offset: 2px;
-}
-
 .fiche-modele .champ > .segments + .ligne-reglage,
 .fiche-modele .champ > .ligne-reglage + .segments {
   margin-top: var(--e-xs);
@@ -198,34 +131,6 @@
 
 .lecture .lecture-absent {
   font-style: italic;
-}
-
-/* Quatre règles et cinq groupes sur une ligne : au téléphone, les mots gardent leur taille et le segment
-   rogne son retrait ; « Par semaine » peut passer sur deux lignes, le segment garde sa hauteur. */
-.segments-regle .segment span,
-.segments-pour-qui .segment span {
-  padding-inline: 4px;
-}
-
-.segments-pour-qui {
-  flex-wrap: wrap;
-}
-
-/* Un groupe garde au moins 4 tailles de texte de large : à taille normale les cinq tiennent sur une ligne ;
-   le texte agrandi fait passer les derniers à la ligne suivante au lieu de les serrer les uns sur les autres. */
-.segments-pour-qui .segment {
-  min-width: calc(var(--taille-libelle) * 4);
-}
-
-.pour-qui {
-  display: grid;
-  gap: var(--e-sm);
-  margin-top: var(--e-sm);
-}
-
-.pour-qui-titre {
-  margin: 0;
-  font: 600 var(--taille-libelle) var(--police);
 }
 
 /* Interrupteur : la piste se dessine sur 52 × 32, la cible fait 60 × 44. */

@@ -18,6 +18,7 @@ import './styles/assistant-apercu.css';
 import './styles/assistant-questions.css';
 import './styles/menu.css';
 import './styles/bibliotheque.css';
+import './styles/segments.css';
 import './styles/fiche-modele.css';
 import './styles/etiquettes.css';
 import './styles/refus.css';

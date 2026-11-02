@@ -5,7 +5,7 @@
 export const LONG = `${'W'.repeat(30)} et des mots qui suivent encore et encore`.slice(0, 60);
 
 // Un manquement jugé dans la page : la grille compte toute erreur de page comme une faute.
-export const exigerDansLaPage = (page, condition, message) =>
+const exigerDansLaPage = (page, condition, message) =>
   page.evaluate(([ok, texte]) => ok || console.error(texte), [condition, message]);
 
 // Rien de la fenêtre du dessus ne dépasse l'un de ses quatre bords ; elle porte au moins un élément. Ce qui
