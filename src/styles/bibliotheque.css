@@ -134,6 +134,7 @@
 .aide {
   max-width: 62ch;
   margin: var(--e-xs) 0 0;
+  overflow-wrap: anywhere;
   color: var(--encre-douce);
   font-size: var(--taille-libelle);
   text-wrap: pretty;
