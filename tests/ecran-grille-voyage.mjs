@@ -1,7 +1,7 @@
 // Grille de la phase 14 : l'écran du voyage (liste, tuiles ou trois colonnes), son menu « ⋮ », la fiche d'objet,
-// les ajouts, les pièces à sortir du sac, les Courses, la fiche d'achat et le bandeau « Annuler », à chaque
-// format et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants jugent par le code de sortie ;
-// telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
+// les ajouts, les pièces à sortir du sac, les Courses, la fiche d'achat et le bandeau « Annuler » (d'un objet
+// retiré, d'un achat), à chaque format et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants
+// jugent par le code de sortie ; telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
 // Hors grille, le voyage ouvert dans une fenêtre Debian basse et moyenne (1000 × 560, sans doigt) est jugé
 // par ses seules commandes : grand écran par la largeur, pas par la hauteur.
 import { chromium } from 'playwright';
@@ -10,7 +10,7 @@ import { attendreQue, calme } from './outils/attente.mjs';
 import { ESSAI, ajouter, oui } from './outils/ajout-bibliotheque.mjs';
 import { toucherAjouter } from './outils/ajouter.mjs';
 import { attendreQuestion, fr, ouvrirFiche, repondre, toucherFiche } from './outils/ajuster.mjs';
-import { avecMarques } from './outils/courses.mjs';
+import { avecMarques, caseDe } from './outils/courses.mjs';
 import { FORMATS_BLOQUANTS, parcourirGrille } from './outils/grille.mjs';
 import {
   LONG,
@@ -126,6 +126,16 @@ const bandeauFicheOuverte = async page => {
   await figerHorloge(page);
   await bandeauEntierEtTouchable(page, BANDEAU, 'bandeau « Annuler » sous une fiche');
 };
+// Courses : le Café soluble (1 à acheter) acheté quitte l'écran, le bandeau « Annuler » vient.
+const bandeauAchat = async page => {
+  await courses(page);
+  await installerHorloge(page);
+  await page.click(caseDe('o-caf'));
+  await bandeauVenu(page);
+  await calme(page);
+  await figerHorloge(page);
+  await bandeauEntierEtTouchable(page, BANDEAU, 'bandeau « Annuler » après un achat');
+};
 
 export const ETATS = [
   sur('voyage', VOYAGE, DONNEES, voyage),
@@ -140,6 +150,7 @@ export const ETATS = [
   sur('a-sortir-fiche', VOYAGE, AVEC_EXCEDENT, fiche('o-tsh')),
   sur('courses', COURSES, avecMarques(), courses),
   sur('courses-fiche-achat', COURSES, avecMarques(), ficheAchat('o-rep')),
+  sur('courses-bandeau-annuler', COURSES, avecMarques(), bandeauAchat, { sansHeure: true }),
   sur('bandeau-annuler', VOYAGE, DONNEES, bandeauFige, { sansHeure: true }),
   sur('bandeau-fiche-ouverte', VOYAGE, DONNEES, bandeauFicheOuverte, { sansHeure: true }),
   sur('noms-longs', VOYAGE, NOMS_LONGS, voyage),

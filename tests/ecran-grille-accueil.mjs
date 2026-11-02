@@ -1,9 +1,10 @@
-// Grille de la phase 14 : l'accueil, les menus, Réglages, la restauration et « À propos », à chaque format
-// et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants jugent par le code de sortie ;
-// telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
+// Grille de la phase 14 : l'accueil, les menus, Réglages (et le message après « Sauvegarder »), la restauration
+// et « À propos », à chaque format et chaque thème (voir tests/outils/grille.mjs). Les formats bloquants jugent
+// par le code de sortie ; telephone-paysage est mis au rapport dans captures-travail/phase-14/rapports/.
 import { pathToFileURL } from 'node:url';
-import { attendreQue } from './outils/attente.mjs';
+import { attendreQue, calme } from './outils/attente.mjs';
 import { FORMATS_BLOQUANTS, parcourirGrille } from './outils/grille.mjs';
+import { bandeauEntier, figerHorloge, installerHorloge } from './outils/grille-fenetres.mjs';
 import { attendreEcran } from './outils/page.mjs';
 import { DEPART, FICHIERS_REFUSES, VALIDE, attendreFenetre, choisir } from './outils/restaurer.mjs';
 
@@ -46,6 +47,17 @@ const ouvrirMenuPrincipal = async page => {
   await page.click('[data-action="menu"]');
   await attendreQue(page, () => document.querySelector('dialog.tiroir[open]') !== null);
 };
+// Le message du bas après « Sauvegarder » (le fichier déposé) : entier, sur l'horloge simulée arrêtée dès
+// qu'il est là. Pas d'heure imposée à la page : elle empêcherait l'horloge simulée de tourner.
+const sauvegarder = async page => {
+  await attendreEcran(page, 'reglages');
+  await installerHorloge(page);
+  await page.click('[data-geste="sauvegarder"]');
+  await attendreQue(page, () => document.querySelector('.bandeau-annuler')?.matches(':popover-open') ?? false);
+  await calme(page);
+  await figerHorloge(page);
+  await bandeauEntier(page, '.bandeau-annuler', '« Sauvegarder » : message du fichier déposé absent ou coupé');
+};
 const restaurer = fichier => async page => {
   await attendreEcran(page, 'reglages');
   await choisir(page, fichier);
@@ -59,6 +71,7 @@ export const ETATS = [
   sur('menu-principal', '', AVEC_VOYAGES, ouvrirMenuPrincipal),
   sur('a-propos', '#/a-propos', SANS_VOYAGE, sansPreparation('a-propos')),
   sur('reglages', '#/reglages', DEPART, sansPreparation('reglages')),
+  { nom: 'reglages-sauvegarde-message', adresse: '#/reglages', donnees: DEPART, preparer: sauvegarder },
   sur('restauration-confirmation', '#/reglages', DEPART, restaurer(VALIDE)),
   sur('restauration-refus-abime', '#/reglages', DEPART, restaurer(FICHIERS_REFUSES.abime)),
   sur('restauration-refus-format', '#/reglages', DEPART, restaurer(FICHIERS_REFUSES.format)),

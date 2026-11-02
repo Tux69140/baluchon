@@ -59,14 +59,16 @@ export async function dernierBoutonAtteignable(page, selecteur) {
   );
 }
 
-// Le bandeau « Annuler » : entier dans la zone libre des barres, et son bouton touchable.
-export async function bandeauEntierEtTouchable(page, selecteur, message) {
-  const b = await page.evaluate(selecteur => {
+// Le bandeau du bas (« Annuler », ou un message) : entier s'il tient dans la zone libre des barres, touchable si
+// son bouton, s'il en a un, reçoit le doigt ; null s'il n'est pas montré.
+const placeDuBandeau = (page, selecteur) =>
+  page.evaluate(selecteur => {
     const el = document.querySelector(selecteur);
     if (!el?.matches(':popover-open')) return null;
     const r = el.getBoundingClientRect();
-    const bouton = el.querySelector('button').getBoundingClientRect();
-    const touche = document.elementFromPoint(bouton.left + bouton.width / 2, bouton.top + bouton.height / 2);
+    const bouton = el.querySelector('button');
+    const b = bouton?.getBoundingClientRect();
+    const touche = b && document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
     const zone = cote => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--zone-${cote}`));
     return {
       entier:
@@ -74,10 +76,20 @@ export async function bandeauEntierEtTouchable(page, selecteur, message) {
         r.right <= innerWidth - zone('droite') + 0.5 &&
         r.top >= zone('haut') - 0.5 &&
         r.bottom <= innerHeight - zone('bas') + 0.5,
-      touchable: el.querySelector('button').contains(touche),
+      touchable: Boolean(bouton?.contains(touche)),
     };
   }, selecteur);
+
+// Le bandeau « Annuler » : entier dans la zone libre des barres, et son bouton touchable.
+export async function bandeauEntierEtTouchable(page, selecteur, message) {
+  const b = await placeDuBandeau(page, selecteur);
   await exigerDansLaPage(page, Boolean(b?.entier && b.touchable), `${message} : ${JSON.stringify(b)}`);
+}
+
+// Un message sans bouton dans le même bandeau (le fichier déposé par « Sauvegarder ») : entier.
+export async function bandeauEntier(page, selecteur, message) {
+  const b = await placeDuBandeau(page, selecteur);
+  await exigerDansLaPage(page, Boolean(b?.entier), `${message} : ${JSON.stringify(b)}`);
 }
 
 // Le bandeau « Annuler » vit 10 s : la grille le juge sur une horloge de page simulée, posée juste avant
