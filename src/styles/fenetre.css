@@ -68,6 +68,11 @@ html:has(.fenetre:modal) {
   color: var(--encre-douce);
 }
 
+.fenetre-entete .bouton-fermer {
+  /* Un titre très long (mot de 30 lettres) ne rétrécit pas le « × » sous ses 44 px. */
+  flex: none;
+}
+
 .bouton-fermer:hover {
   background: var(--releve);
   color: var(--encre);
