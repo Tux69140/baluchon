@@ -20,6 +20,7 @@
 
 .fiche-regle {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--encre-douce);
   font-size: var(--taille-libelle);
 }
