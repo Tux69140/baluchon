@@ -20,9 +20,11 @@ export const FORMATS_RAPPORT = { 'telephone-paysage': { width: 873, height: 393 
 export const NOMS_THEME = { light: 'clair', dark: 'sombre' };
 // Barres système d'une tablette Android : heure en haut, boutons en bas, encoches sur les côtés.
 const ZONES = { haut: 64, bas: 48, gauche: 24, droite: 24 };
-// Barres d'un téléphone tourné : valeurs provisoires, remplacées par les mesures du Xiaomi (phase 14).
-// Tout format absent d'ici prend ZONES.
-export const ZONES_PAR_FORMAT = { 'telephone-paysage': { haut: 32, bas: 24, gauche: 56, droite: 56 } };
+// Barres d'un téléphone tourné, valables pour tous les téléphones courants avec marge (phase 14) :
+// barre d'état agrandie par une encoche en haut, navigation par gestes en bas, barre à trois boutons
+// ou encoche sur les côtés. Le téléphone du chef de projet, mesuré, n'est qu'un point de contrôle
+// (haut 35, bas 0, côtés 48) : ces valeurs sont au moins aussi strictes. Tout format absent d'ici prend ZONES.
+export const ZONES_PAR_FORMAT = { 'telephone-paysage': { haut: 48, bas: 24, gauche: 56, droite: 56 } };
 const VISIBLES =
   '#app h1, #app h2, #app h3, #app p, #app a, #app button, #app input, #app img, #app li, #app legend, #app label, #app output, #app dialog';
 const CLE = 'baluchon-essai';
