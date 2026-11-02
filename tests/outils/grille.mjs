@@ -11,6 +11,7 @@ import {
   creerJuge,
   creerRapport,
   ouvrir,
+  poserZones,
   verifierBarres,
   verifierCommandes,
   verifierLargeur,
@@ -20,11 +21,12 @@ import { demarrerServeur } from './serveur.mjs';
 export const FORMATS_BLOQUANTS = ['telephone', 'tablette-portrait', 'tablette-paysage', 'portable', 'ordinateur'];
 const AVEC_SOURIS = ['portable', 'ordinateur'];
 
-// Un état : { nom, adresse, donnees, composition, maintenant, preparer }. Si `capture` est donné, la page
+// Un état : { nom, adresse, donnees, composition, maintenant, preparer, erreursAttendues }. erreursAttendues :
+// les morceaux de message d'erreur de la page qu'une panne simulée provoque exprès (les autres restent des fautes). Si `capture` est donné, la page
 // en est photographiée quand cet état, à ce format et ce thème, a au moins une faute.
 async function verifierEtat(navigateur, url, etat, format, theme, juge, capture) {
   const cas = `${etat.nom} · ${format} · ${theme}`;
-  const { adresse = '', donnees, composition, maintenant, preparer = async () => {} } = etat;
+  const { adresse = '', donnees, composition, maintenant, preparer = async () => {}, erreursAttendues = [] } = etat;
   let fautes = 0;
   const compte = {
     exige(condition, message) {
@@ -42,11 +44,13 @@ async function verifierEtat(navigateur, url, etat, format, theme, juge, capture)
     ...(composition !== undefined && { composition }),
   });
   try {
+    await poserZones(page, ZONES_PAR_FORMAT[format]);
     await preparer(page);
     await verifierCommandes(page, compte, cas);
     await verifierBarres(page, compte, cas, ZONES_PAR_FORMAT[format]);
     if (AVEC_SOURIS.includes(format)) await verifierLargeur(page, compte, cas);
-    compte.exige(erreurs.length === 0, `${cas} : erreurs de page : ${erreurs.join(' | ')}`);
+    const imprevues = erreurs.filter(e => !erreursAttendues.some(a => e.includes(a)));
+    compte.exige(imprevues.length === 0, `${cas} : erreurs de page : ${imprevues.join(' | ')}`);
     compte.exige(sorties.length === 0, `${cas} : requêtes sortantes : ${sorties.join(', ')}`);
     if (capture && fautes) {
       await mkdir(dirname(capture), { recursive: true });

@@ -163,11 +163,16 @@ export async function verifierCommandes(page, juge, cas) {
 // la page : ses deux bords sont jugés à chaque fois. Ce qui défile dans une boîte (corps d'une
 // fenêtre) est jugé sur sa seule partie visible, la boîte défilée en haut puis en bas. Une fenêtre
 // modale ouverte couvre les bandes de son voile, comme le reste de l'écran : c'est voulu.
-export async function verifierBarres(page, juge, cas, zones = ZONES) {
-  await page.evaluate(zones => {
+// Les barres système simulées, posées comme l'appareil les donne : avant que l'écran ne s'ouvre, pour ce qui
+// se place en tenant compte d'elles (le menu « ⋮ »).
+export const poserZones = (page, zones = ZONES) =>
+  page.evaluate(zones => {
     for (const [cote, taille] of Object.entries(zones))
       document.documentElement.style.setProperty(`--zone-${cote}`, `${taille}px`);
   }, zones);
+
+export async function verifierBarres(page, juge, cas, zones = ZONES) {
+  await poserZones(page, zones);
   const releve = async bord => {
     await calme(page);
     return page.evaluate(
