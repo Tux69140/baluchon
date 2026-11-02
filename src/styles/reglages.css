@@ -35,7 +35,8 @@
 
 /* Les segments du thème : un picto devant chaque mot, qui dit aussi le choix sans la couleur. */
 .segments-theme .segment span {
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 2px 6px;
 }
 
 /* Le picto est un span dans le span du segment : les règles du segment (.segment span) ne le visent pas. */
