@@ -14,8 +14,9 @@ export const FORMATS = {
   'tablette-paysage': { width: 1280, height: 800 },
   portable: { width: 1366, height: 768 },
   ordinateur: { width: 1920, height: 1080 },
-  'telephone-paysage': { width: 873, height: 393 },
 };
+// Téléphone en paysage : rapport non bloquant (décision 12), hors des tests d'écran qui parcourent FORMATS.
+export const FORMATS_RAPPORT = { 'telephone-paysage': { width: 873, height: 393 } };
 export const NOMS_THEME = { light: 'clair', dark: 'sombre' };
 // Barres système d'une tablette Android : heure en haut, boutons en bas, encoches sur les côtés.
 const ZONES = { haut: 64, bas: 48, gauche: 24, droite: 24 };

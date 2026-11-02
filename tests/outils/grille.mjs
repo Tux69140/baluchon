@@ -7,6 +7,7 @@ import { chromium } from 'playwright';
 import {
   CAPTURES,
   FORMATS,
+  FORMATS_RAPPORT,
   ZONES_PAR_FORMAT,
   creerJuge,
   creerRapport,
@@ -35,7 +36,7 @@ async function verifierEtat(navigateur, url, etat, format, theme, juge, capture)
     },
   };
   const { contexte, page, sorties, erreurs } = await ouvrir(navigateur, url, {
-    taille: FORMATS[format],
+    taille: { ...FORMATS, ...FORMATS_RAPPORT }[format],
     theme,
     donnees,
     maintenant,
