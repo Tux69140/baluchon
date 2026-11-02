@@ -1,7 +1,7 @@
 // La grille de la phase 14 : un même parcours de vérifications pour chaque écran, à chaque format et
 // chaque thème. Les formats bloquants jugent par le code de sortie ; les formats « en rapport » notent
 // leurs défauts dans captures-travail/phase-14/rapports/ avec une capture de l'état fautif.
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import {
@@ -57,6 +57,15 @@ async function verifierEtat(navigateur, url, etat, format, theme, juge, capture)
   }
 }
 
+// Les rapports et captures d'une exécution précédente de ce titre : un état devenu propre n'en laisse pas.
+async function purgerRapports(titre, rapport) {
+  const dossier = join(CAPTURES, 'phase-14', 'rapports');
+  const anciens = await readdir(dossier).catch(() => []);
+  for (const nom of anciens)
+    if (rapport.some(f => nom === `${titre}-${f}.txt` || (nom.startsWith(`${titre}-${f}-`) && nom.endsWith('.png'))))
+      await rm(join(dossier, nom));
+}
+
 export async function parcourirGrille({
   titre,
   etats,
@@ -65,6 +74,7 @@ export async function parcourirGrille({
   juge = creerJuge(),
   fabriquerRapport = creerRapport,
 }) {
+  await purgerRapports(titre, rapport);
   const serveur = await demarrerServeur();
   const navigateur = await chromium.launch();
   try {
