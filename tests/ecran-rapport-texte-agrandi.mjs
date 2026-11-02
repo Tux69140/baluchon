@@ -134,4 +134,16 @@ for (const [famille, etats] of Object.entries(FAMILLES))
     rapport: FORMATS_AGRANDIS,
     juge: JUGE_MUET,
   });
+// Ruling 11 : deux défauts corrigés restent bloquants au téléphone (clair et sombre), jugés par le vrai juge.
+const BLOQUANTS = [
+  [ACCUEIL, 'reglages'],
+  [BIBLIOTHEQUE, 'noms-longs-fiche-objet'],
+];
+await parcourirGrille({
+  titre: 'texte-agrandi-bloquant',
+  etats: agrandis(BLOQUANTS.map(([etats, nom]) => etats.find(e => e.nom === nom))),
+  formats: ['telephone'],
+  rapport: [],
+  juge,
+});
 juge.conclure('texte agrandi à 130 %', 'témoin tenu ; défauts au rapport');
