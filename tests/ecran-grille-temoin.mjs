@@ -11,7 +11,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parcourirGrille, FORMATS_BLOQUANTS } from './outils/grille.mjs';
-import { CAPTURES, creerRapport } from './outils/page.mjs';
+import { RAPPORTS, creerRapport } from './outils/page.mjs';
 
 const fautesJuge = [];
 const fautesRapport = [];
@@ -47,7 +47,6 @@ const etats = [
   },
 ];
 
-const RAPPORTS = join(CAPTURES, 'phase-14', 'rapports');
 const passage = await mkdtemp(join(tmpdir(), 'baluchon-temoin-'));
 await parcourirGrille({ titre: 'temoin', etats, juge, fabriquerRapport, dossier: passage });
 

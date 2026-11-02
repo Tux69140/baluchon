@@ -5,9 +5,9 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import {
-  CAPTURES,
   FORMATS,
   FORMATS_RAPPORT,
+  RAPPORTS,
   ZONES_PAR_FORMAT,
   creerJuge,
   creerRapport,
@@ -65,14 +65,15 @@ async function verifierEtat(navigateur, url, etat, format, theme, juge, capture)
 }
 
 // Les rapports et captures d'une exécution précédente de ce titre : un état devenu propre n'en laisse pas.
-async function purgerRapports(titre, rapport) {
-  const dossier = join(CAPTURES, 'phase-14', 'rapports');
+async function purgerRapports(titre, rapport, dossier) {
   const anciens = await readdir(dossier).catch(() => []);
   for (const nom of anciens)
     if (rapport.some(f => nom === `${titre}-${f}.txt` || (nom.startsWith(`${titre}-${f}-`) && nom.endsWith('.png'))))
       await rm(join(dossier, nom));
 }
 
+// rapport : les formats seulement notés ; dossier : où vont leurs rapports et leurs captures (le témoin les
+// met dans un dossier de passage, hors du dossier montré au chef de projet).
 export async function parcourirGrille({
   titre,
   etats,
@@ -80,8 +81,9 @@ export async function parcourirGrille({
   rapport = ['telephone-paysage'],
   juge = creerJuge(),
   fabriquerRapport = creerRapport,
+  dossier = RAPPORTS,
 }) {
-  await purgerRapports(titre, rapport);
+  await purgerRapports(titre, rapport, dossier);
   const serveur = await demarrerServeur();
   const navigateur = await chromium.launch();
   try {
@@ -89,12 +91,12 @@ export async function parcourirGrille({
       for (const theme of ['light', 'dark'])
         for (const etat of etats) await verifierEtat(navigateur, serveur.url, etat, format, theme, juge);
     for (const format of rapport) {
-      const noteur = fabriquerRapport(`${titre}-${format}`);
+      const noteur = fabriquerRapport(`${titre}-${format}`, dossier);
       for (const etat of etats) {
-        const capture = join(CAPTURES, 'phase-14', 'rapports', `${titre}-${format}-${etat.nom}.png`);
+        const capture = join(dossier, `${titre}-${format}-${etat.nom}.png`);
         await verifierEtat(navigateur, serveur.url, etat, format, 'light', noteur, capture);
       }
-      noteur.conclure(`${titre}-${format}`, '');
+      noteur.conclure();
     }
   } finally {
     await navigateur.close();
