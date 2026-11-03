@@ -402,16 +402,17 @@ Un paquet Android signé (tablette et téléphone) et les paquets Debian, rpm, a
 
 ---
 
-## Phase 16 : Dons
+## Phase 16 : Pages web et dons
 
 **User stories** : aucune dans le PRD pour l'instant ; elle y sera ajoutée à la conception de la phase (décision du chef de projet, 2026-11-03).
 
 ### Ce qu'on livre
 
-« À propos » gagne un lien « Faire un don » qui ouvre dans le navigateur la page de dons du chef de projet ; la page web de présentation propose le même don. Le service de paiement (Stripe, PayPal, Liberapay…) se choisit à la conception de la phase. L'appli reste hors ligne et sans traceur : rien ne se connecte tant qu'on n'appuie pas sur le lien. Une future version pour le Play Store, dont les règles interdisent souvent les liens de paiement vers l'extérieur, pourra être livrée sans ce lien : on le décidera au moment de publier là-bas.
+Les deux pages web, présentation (https://baluchon.biovibralyon.fr/) et téléchargement (https://baluchon.biovibralyon.fr/telecharger), avec le lien vers le code source (renvoyées ici depuis la phase 15, décision du chef de projet, 2026-11-03). « À propos » gagne un lien « Faire un don » qui ouvre dans le navigateur la page de dons du chef de projet ; la page web de présentation propose le même don. Le service de paiement (Stripe, PayPal, Liberapay…) se choisit à la conception de la phase. L'appli reste hors ligne et sans traceur : rien ne se connecte tant qu'on n'appuie pas sur le lien. Une future version pour le Play Store, dont les règles interdisent souvent les liens de paiement vers l'extérieur, pourra être livrée sans ce lien : on le décidera au moment de publier là-bas.
 
 ### Critères d'acceptation
 
+- [ ] Les liens « Découvrir Baluchon » et « Nouvelles versions » d'« À propos » mènent à ces deux pages, et la page de téléchargement propose les paquets de la phase 15.
 - [ ] « Faire un don » ouvre la page de dons dans le navigateur, sur ordinateur comme sur Android.
 - [ ] La page web de présentation propose le même don.
 - [ ] Le texte du lien vient du fichier de langue et peut être traduit.
