@@ -14,7 +14,7 @@ mod suppressions;
 mod voyages;
 
 use ajustements::{AjoutALaBibliotheque, AjoutAuVoyage};
-use base::Base;
+use base::{ouvrir_ou_signaler, Base};
 use bibliotheque::{Bibliotheque, CategorieModele, Etiquette, GroupeEtiquettes, ObjetModele};
 use modification::ModificationDuVoyage;
 use sauvegarde::ContenuComplet;
@@ -270,8 +270,15 @@ fn garder_dans_le_voyage(
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let chemin = chemin_de_la_base(app.handle()).map_err(std::io::Error::other)?;
-            app.manage(Base::ouvrir(&chemin).map_err(std::io::Error::other)?);
+            let base = match chemin_de_la_base(app.handle()) {
+                Ok(chemin) => ouvrir_ou_signaler(|| Base::ouvrir(&chemin)),
+                Err(cause) => {
+                    let message = format!("La base locale n'a pas pu s'ouvrir : {cause}");
+                    eprintln!("{message}");
+                    Base::en_panne(message)
+                }
+            };
+            app.manage(base);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -2,8 +2,10 @@
 // (bibliotheque.rs, voyages.rs) ; les commandes Tauri (lib.rs) ne font que relayer.
 use rusqlite::{Connection, Params, Row};
 use std::{
+    ops::Deref,
     path::Path,
     sync::{Mutex, MutexGuard},
+    time::Duration,
 };
 
 const MIGRATIONS: [&str; 8] = [
@@ -17,7 +19,21 @@ const MIGRATIONS: [&str; 8] = [
     include_str!("../migrations/008_composition_et_semaine.sql"),
 ];
 
-pub struct Base(Mutex<Connection>);
+// Une base qui n'a pas pu s'ouvrir reste gérée par l'appli, avec sa cause : chaque lecture la rend
+// à l'écran au lieu d'une erreur obscure d'état absent.
+pub struct Base {
+    connexion: Mutex<Option<Connection>>,
+    panne: Option<String>,
+}
+
+pub struct Connexion<'a>(MutexGuard<'a, Option<Connection>>);
+
+impl Deref for Connexion<'_> {
+    type Target = Connection;
+    fn deref(&self) -> &Connection {
+        self.0.as_ref().expect("connexion présente hors panne")
+    }
+}
 
 // Les erreurs SQLite remontent à l'écran sous forme de texte : les commandes Tauri renvoient String.
 pub fn en_texte(erreur: rusqlite::Error) -> String {
@@ -100,13 +116,43 @@ impl Base {
             .execute_batch("PRAGMA foreign_keys = ON;")
             .map_err(|e| e.to_string())?;
         migrer(&connexion)?;
-        Ok(Base(Mutex::new(connexion)))
+        Ok(Base {
+            connexion: Mutex::new(Some(connexion)),
+            panne: None,
+        })
     }
 
-    pub fn connexion(&self) -> Result<MutexGuard<'_, Connection>, String> {
-        self.0
+    pub fn en_panne(cause: String) -> Base {
+        Base {
+            connexion: Mutex::new(None),
+            panne: Some(cause),
+        }
+    }
+
+    pub fn connexion(&self) -> Result<Connexion<'_>, String> {
+        if let Some(cause) = &self.panne {
+            return Err(cause.clone());
+        }
+        self.connexion
             .lock()
+            .map(Connexion)
             .map_err(|_| "La base locale est verrouillée.".to_owned())
+    }
+}
+
+// Essaie d'ouvrir la base, réessaie une fois après une courte pause ; après deux échecs, écrit la
+// cause sur la sortie d'erreur (journal d'Android) et rend une base en panne.
+pub fn ouvrir_ou_signaler(ouvrir: impl Fn() -> Result<Base, String>) -> Base {
+    match ouvrir() {
+        Ok(base) => base,
+        Err(_) => {
+            std::thread::sleep(Duration::from_millis(300));
+            ouvrir().unwrap_or_else(|cause| {
+                let message = format!("La base locale n'a pas pu s'ouvrir : {cause}");
+                eprintln!("{message}");
+                Base::en_panne(message)
+            })
+        }
     }
 }
 
@@ -408,8 +454,34 @@ mod tests {
         assert_eq!(voyage.voyage.nom, "Vercors");
         assert_eq!(voyage.ecartes, Vec::<String>::new());
     }
-}
 
-#[cfg(test)]
-#[path = "base_essais_008.rs"]
-mod essais_008;
+    #[test]
+    fn une_base_en_panne_rend_sa_cause_a_chaque_lecture() {
+        let base = Base::en_panne("disque plein".to_owned());
+        assert_eq!(base.lister_voyages().unwrap_err(), "disque plein");
+    }
+
+    #[test]
+    fn l_ouverture_est_retentee_une_fois() {
+        let dossier = Dossier::nouveau();
+        let essais = std::cell::Cell::new(0);
+        let base = ouvrir_ou_signaler(|| {
+            essais.set(essais.get() + 1);
+            if essais.get() == 1 {
+                Err("verrou".to_owned())
+            } else {
+                Base::ouvrir(&dossier.chemin.join("b.sqlite3"))
+            }
+        });
+        assert_eq!(essais.get(), 2);
+        assert!(base.lister_voyages().is_ok());
+    }
+
+    #[test]
+    fn deux_echecs_donnent_une_base_en_panne_avec_la_cause() {
+        let base = ouvrir_ou_signaler(|| Err("fichier abîmé".to_owned()));
+        let cause = base.lister_voyages().unwrap_err();
+        assert!(cause.starts_with("La base locale n'a pas pu s'ouvrir"));
+        assert!(cause.contains("fichier abîmé"));
+    }
+}
