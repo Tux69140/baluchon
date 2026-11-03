@@ -2,9 +2,10 @@
 // les deux paquets Android signés, puis Debian, rpm et AppImage (recompressée en zstd). Windows se fabrique
 // à part, sous Windows. Rien n'est fabriqué si une garde échoue.
 import { execFileSync } from 'node:child_process';
+import { rmSync } from 'node:fs';
 import { chmod, copyFile, mkdir, mkdtemp, open, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copierPersonnalisations, verifierPersonnalisations } from '../projet-android.mjs';
 import { CIBLES_ANDROID, codeVersionAndroid, lireVersion, nomPaquet, outilsAppimage, verifierCle } from './regles.mjs';
@@ -62,14 +63,15 @@ async function fabriquerAndroid(version, contenuCle) {
       const config = `{"bundle":{"android":{"versionCode":${code}}}}`;
       tauri('android', 'build', '--apk', '--ci', '--target', cible, '--config', config);
       const apks = (await fichiers(sorties)).filter(f => f.endsWith('.apk') && f.includes('release'));
-      if (apks.length !== 1) echec(`Un seul APK de version finale attendu pour ${cible}, trouvé : ${apks.length}.`);
+      if (apks.length !== 1)
+        throw new Error(`Un seul APK de version finale attendu pour ${cible}, trouvé : ${apks.length}.`);
       const destination = join(artifacts, nomPaquet(version, sorte));
       await copyFile(apks[0], destination);
       try {
         lancer(signer, ['verify', destination]);
       } catch {
         await rm(destination, { force: true });
-        echec(`Signature de ${nomPaquet(version, sorte)} invalide : paquet retiré.`);
+        throw new Error(`Signature de ${nomPaquet(version, sorte)} invalide : paquet retiré.`);
       }
     }
   } finally {
@@ -78,13 +80,9 @@ async function fabriquerAndroid(version, contenuCle) {
 }
 
 // Refait l'AppImage de Tauri en zstd niveau 22, blocs de 1 Mo, avec le même lanceur (runtime).
-async function recompresserAppimage(source, destination) {
-  const { appimagetool, dossierOutils } = await outilsAppimage();
-  // outilsAppimage extrait dans <temporaire>/squashfs-root/appimagetool-prefix/usr/bin et ne nettoie pas.
-  const travail = resolve(dossierOutils, '..', '..', '..', '..');
+async function recompresserAppimage(source, destination, { appimagetool, dossierOutils }) {
   const extraction = await mkdtemp(join(tmpdir(), 'baluchon-extraction-'));
   try {
-    if (!(await existe(appimagetool))) echec(`Outil introuvable après extraction : ${appimagetool}`);
     await chmod(source, 0o755);
     const decalage = Number(execFileSync(source, ['--appimage-offset'], { encoding: 'utf8' }).trim());
     lancer(source, ['--appimage-extract'], { cwd: extraction, stdio: 'ignore' });
@@ -110,22 +108,30 @@ async function recompresserAppimage(source, destination) {
     );
   } finally {
     await rm(extraction, { recursive: true, force: true });
-    if (basename(travail).startsWith('baluchon-appimage-')) await rm(travail, { recursive: true, force: true });
   }
 }
 
-async function fabriquerLinux(version) {
+async function fabriquerLinux(version, outils) {
   for (const sorte of ['deb', 'rpm', 'appimage']) await rm(join(bundle, sorte), { recursive: true, force: true });
   tauri('build', '--bundles', 'deb,rpm,appimage');
   const trouver = async (sorte, fin) => {
     const trouves = (await fichiers(join(bundle, sorte))).filter(f => f.endsWith(fin));
     if (trouves.length !== 1)
-      echec(`Un seul fichier ${fin} attendu dans ${join(bundle, sorte)}, trouvé : ${trouves.length}.`);
+      throw new Error(`Un seul fichier ${fin} attendu dans ${join(bundle, sorte)}, trouvé : ${trouves.length}.`);
     return trouves[0];
   };
   await copyFile(await trouver('deb', '.deb'), join(artifacts, nomPaquet(version, 'deb')));
   await copyFile(await trouver('rpm', '.rpm'), join(artifacts, nomPaquet(version, 'rpm')));
-  await recompresserAppimage(await trouver('appimage', '.AppImage'), join(artifacts, nomPaquet(version, 'appimage')));
+  outils ??= await outilsAppimage();
+  try {
+    await recompresserAppimage(
+      await trouver('appimage', '.AppImage'),
+      join(artifacts, nomPaquet(version, 'appimage')),
+      outils,
+    );
+  } finally {
+    await rm(outils.travail, { recursive: true, force: true });
+  }
 }
 
 // --- Gardes, avant toute fabrication ---
@@ -134,9 +140,35 @@ const contenuCle = await readFile(cle, 'utf8').catch(() => null);
 const fautesCle = verifierCle(contenuCle, cle);
 if (fautesCle.length) echec(`Fabrication refusée : la clé de signature n’est pas prête.\n  ${fautesCle.join('\n  ')}`);
 
-await mkdir(artifacts, { recursive: true });
-await fabriquerAndroid(version, contenuCle);
-await fabriquerLinux(version);
+// Le mot de passe en clair ne doit jamais rester sur le disque, même sur Ctrl-C.
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    rmSync(motDePasse, { force: true });
+    process.exit(1);
+  });
+}
+
+// Outils d'AppImage vérifiés avant les ~13 minutes de fabrication ; seul un cache vraiment vide (toute
+// première fabrication) reporte la vérification après la fabrication Linux de Tauri, qui le remplit.
+let outils = null;
+try {
+  outils = await outilsAppimage();
+} catch (erreur) {
+  if (erreur.code !== 'CACHE_VIDE') echec(`Fabrication refusée : ${erreur.message}`);
+  console.log(
+    'Cache de Tauri vide (première fabrication) : les outils d’AppImage seront vérifiés après la fabrication Linux.',
+  );
+}
+try {
+  await mkdir(artifacts, { recursive: true });
+  await fabriquerAndroid(version, contenuCle);
+  await fabriquerLinux(version, outils);
+  outils = null;
+} catch (erreur) {
+  console.error(`Fabrication arrêtée : ${erreur.message}`);
+  if (outils) await rm(outils.travail, { recursive: true, force: true });
+  process.exit(1);
+}
 
 console.log('\nPaquets fabriqués dans artifacts/ :');
 for (const sorte of ['android', 'android-anciens', 'deb', 'rpm', 'appimage']) {

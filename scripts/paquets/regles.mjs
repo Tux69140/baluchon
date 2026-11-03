@@ -1,7 +1,7 @@
 // Règles des paquets installables : version, numéro interne Android, noms, clé de signature, garde GitHub
 // et outils d'AppImage. Une seule définition de chaque règle, pour les scripts de fabrication.
 import { execFile } from 'node:child_process';
-import { access, mkdtemp, readFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -105,12 +105,23 @@ export async function outilsAppimage(cache = CACHE_TAURI) {
   try {
     await access(greffon);
   } catch {
-    throw new Error(
-      'Outils AppImage introuvables : lancer « pnpm paquets » avec le réseau ouvert : la première fabrication de Tauri remplit ce cache.',
+    throw Object.assign(
+      new Error(
+        'Outils AppImage introuvables : lancer « pnpm paquets » avec le réseau ouvert : la première fabrication de Tauri remplit ce cache.',
+      ),
+      { code: 'CACHE_VIDE' },
     );
   }
   const travail = await mkdtemp(join(tmpdir(), 'baluchon-appimage-'));
-  await executer(greffon, ['--appimage-extract'], { cwd: travail });
-  const dossierOutils = join(travail, 'squashfs-root', 'appimagetool-prefix', 'usr', 'bin');
-  return { appimagetool: join(dossierOutils, 'appimagetool'), dossierOutils };
+  try {
+    await executer(greffon, ['--appimage-extract'], { cwd: travail });
+    const dossierOutils = join(travail, 'squashfs-root', 'appimagetool-prefix', 'usr', 'bin');
+    const appimagetool = join(dossierOutils, 'appimagetool');
+    await access(appimagetool);
+    // `travail` : dossier temporaire à effacer par l'appelant quand il a fini.
+    return { appimagetool, dossierOutils, travail };
+  } catch (erreur) {
+    await rm(travail, { recursive: true, force: true });
+    throw new Error(`Outils AppImage inutilisables (extraction du cache de Tauri) : ${erreur.message}`);
+  }
 }
