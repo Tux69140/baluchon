@@ -28,7 +28,8 @@
   "bundle": {
     "active": true,
     "targets": ["deb"],
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"],
-    "android": { "debugApplicationIdSuffix": ".essai" }
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png", "icons/icon.ico"],
+    "android": { "debugApplicationIdSuffix": ".essai" },
+    "windows": { "nsis": { "languages": ["French"] } }
   }
 }
