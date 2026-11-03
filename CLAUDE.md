@@ -8,7 +8,7 @@
 
 Technique : Tauri 2 + JavaScript simple + Vite + SQLite, sur le modèle de Paré (`~/Documents/Evacuation/App_V2/appli`). Gestionnaire de paquets : **pnpm** (jamais npm/npx).
 
-Commandes : `pnpm verif` (lint, formatage, contrôles, tests, tests d'écran — tout doit être vert avant livraison), `pnpm tauri dev` (appli de bureau), `pnpm android:essai` (version d'essai Android), `pnpm icones` (régénère les icônes depuis `src-tauri/icons/source/`). Le projet Android (`src-tauri/gen/`) est régénéré : nos retouches (icônes, `MainActivity.kt`) vivent dans `src-tauri/icons/android` et `src-tauri/android/`, copiées et vérifiées à chaque construction.
+Commandes : `pnpm verif` (lint, formatage, contrôles, tests, tests d'écran — tout doit être vert avant livraison), `pnpm bureau` (essai de bureau « Baluchon essai », données à part ; `pnpm tauri dev` refuse de démarrer), `pnpm android:essai` (version d'essai Android installée à côté de la vraie), `pnpm paquets` (paquets Android signés et Linux dans `artifacts/`), `pnpm paquets:windows` (installateur Windows, à lancer sous Windows, seulement sur demande du chef de projet), `pnpm icones` (régénère les icônes depuis `src-tauri/icons/source/`). Le projet Android (`src-tauri/gen/`) est régénéré : nos retouches (icônes, `MainActivity.kt`) vivent dans `src-tauri/icons/android` et `src-tauri/android/`, copiées et vérifiées à chaque construction.
 
 ## État
 

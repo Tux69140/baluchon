@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "icones": "node scripts/icones.mjs",
     "android:essai": "node scripts/android.mjs",
+    "bureau": "tauri dev --config src-tauri/tauri.essai.conf.json",
     "paquets": "node scripts/paquets/fabriquer.mjs",
     "paquets:windows": "node scripts/paquets/windows.mjs",
     "test": "node --test tests/*.test.js",

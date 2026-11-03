@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -120,4 +120,13 @@ test('outilsAppimage dit quoi faire quand le cache de Tauri est vide', async () 
   await avecDossier(async cache => {
     await assert.rejects(() => outilsAppimage(cache), /pnpm paquets/);
   });
+});
+
+test("l'essai d'ordinateur a son propre identifiant et pnpm bureau l'utilise", async () => {
+  const racine = new URL('..', import.meta.url);
+  const essai = JSON.parse(await readFile(new URL('src-tauri/tauri.essai.conf.json', racine), 'utf8'));
+  assert.equal(essai.identifier, 'fr.biovibralyon.baluchon.essai');
+  assert.equal(essai.productName, 'Baluchon essai');
+  const paquet = JSON.parse(await readFile(new URL('package.json', racine), 'utf8'));
+  assert.equal(paquet.scripts.bureau, 'tauri dev --config src-tauri/tauri.essai.conf.json');
 });

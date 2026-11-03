@@ -270,6 +270,14 @@ fn garder_dans_le_voyage(
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            // Version de développement d'ordinateur : jamais sur les vraies données.
+            #[cfg(all(desktop, debug_assertions))]
+            if !app.config().identifier.ends_with(".essai") {
+                return Err(
+                    "Version de développement : lancer avec « pnpm bureau » pour ne pas toucher aux vraies données"
+                        .into(),
+                );
+            }
             let base = match chemin_de_la_base(app.handle()) {
                 Ok(chemin) => ouvrir_ou_signaler(|| Base::ouvrir(&chemin)),
                 Err(cause) => {

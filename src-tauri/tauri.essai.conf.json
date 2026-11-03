@@ -1,0 +1,16 @@
+{
+  "productName": "Baluchon essai",
+  "identifier": "fr.biovibralyon.baluchon.essai",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Baluchon essai",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 360,
+        "minHeight": 600
+      }
+    ]
+  }
+}
