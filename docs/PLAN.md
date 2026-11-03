@@ -394,6 +394,7 @@ Un paquet Android signé (tablette et téléphone) et les paquets Debian, rpm, a
 
 - L'ancienne tablette Samsung SM-T550 (Android 7.1) n'accepte que les applis 32 bits, alors que la version d'essai n'est construite qu'en 64 bits : décider des appareils visés et des paquets (un paquet par type d'appareil, ou un paquet commun plus lourd).
 - Sur cette tablette, Baluchon (construit aussi en 32 bits pour l'essai) n'ouvre pas sa base au premier lancement : « Vos voyages n'ont pas pu être lus » ; le journal dit que la base n'a jamais été prête. Il faut fermer et relancer l'appli pour atteindre le menu. L'ASUS, lui aussi sous Android 7 mais en 64 bits, n'a pas le défaut.
+- Réglé le 2026-11-03 (essai jetable, conception `docs/superpowers/specs/2026-11-03-phase-15-paquets-vrai-voyage-design.md`) : deux paquets Android, un normal en 64 bits (7 Mo) et un de secours pour les anciens appareils en 32 bits (5,5 Mo) ; le défaut de démarrage ne se reproduit pas avec la version finale, mais son erreur sera écrite dans le journal et l'ouverture retentée.
 
 ## Bloquée par
 

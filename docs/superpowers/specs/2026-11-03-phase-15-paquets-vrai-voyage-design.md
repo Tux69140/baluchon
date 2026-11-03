@@ -39,21 +39,51 @@ données, installe plus tard une version suivante par-dessus sans rien perdre, e
    La version finale passe par un réducteur de code (R8) que la version d'essai n'utilise pas : le pont
    `window.BaluchonAndroid` (Téléchargements, liens, barres système) est le premier suspect si quelque
    chose cesse de marcher.
-2. **Enquête sur la SM-T550** (décision 2), méthode du skill `investigue` : rendre visible l'erreur
-   aujourd'hui avalée au démarrage, reproduire, trouver la cause, corriger par un test qui échoue
-   d'abord. Ensuite le chef de projet décide si la SM-T550 reste visée (décision 1).
+2. **Enquête sur la SM-T550** (décision 2) : faite pendant l'essai, le défaut ne se reproduit pas
+   avec la version finale (voir « Résultats de l'essai jetable ») ; la SM-T550 reste visée avec le
+   paquet de secours (décision 1). Reste à rendre visible et à rattraper l'erreur si elle survenait
+   (choix 30).
 3. **Plan** (superpowers:writing-plans), puis construction : scripts, clé, données de développement à
    part, recette.
 4. **Mise à jour sans perte**, **recette en mode avion**, puis **vrai voyage**.
+
+## Résultats de l'essai jetable (2026-11-03)
+
+Version finale avec les réglages de poids (choix 14), signée d'une clé jetable, puis tout retiré.
+
+| Paquet                                | Poids                 |
+| ------------------------------------- | --------------------- |
+| Android 64 bits seuls                 | 7,0 Mo                |
+| Android 32 bits seuls                 | 5,5 Mo                |
+| Android commun 64 + 32 bits           | 11,0 Mo               |
+| Debian (.deb)                         | 2,3 Mo                |
+| rpm                                   | 2,3 Mo                |
+| AppImage (telle que Tauri la fabrique) | 103,4 Mo              |
+| AppImage recompressée (choix 15)      | 95,9 Mo               |
+
+- Sur la SM-X210, le Xiaomi, l'ASUS (Android 7, 64 bits) et la SM-T550 (Android 7, 32 bits) : ouverture,
+  sauvegarde dans Téléchargements (autorisation d'Android 7 comprise), sélecteur de fichiers pour
+  restaurer, liens d'« À propos » vers le navigateur : tout fonctionne. Le réducteur de code de la
+  version finale n'a rien cassé.
+- **SM-T550** : le défaut de premier lancement ne s'est pas reproduit (cinq premiers lancements,
+  données effacées à chaque fois). Il ne touchait peut-être que la version de développement, bien plus
+  lente ; l'erreur reste toutefois avalée si elle survient (choix 30).
+- **AppImage** : remplacer les copies en double ne gagne rien (le format les fusionne déjà) ; seule une
+  compression plus forte (zstd au plus haut niveau, blocs de 1 Mo) réduit le poids, sans ralentir le
+  démarrage (1 à 2 s dans les deux cas). Le reste est le moteur d'affichage, indispensable.
+- La 0.1.0 des tablettes d'essai a été désinstallée ; la SM-T550, débranchée avant le nettoyage, garde
+  la version de l'essai et une sauvegarde du 2026-11-03 dans Téléchargements, à retirer.
 
 ## Décisions du chef de projet
 
 Étude du 2026-11-02 :
 
 1. **Android, 32 bits** : un paquet commun (64 + 32 bits) seulement s'il ne coûte que quelques Mo de
-   plus. Or le cœur de l'appli existe en un exemplaire par type d'appareil et pèse l'essentiel du
-   paquet : le paquet commun pèserait presque le double (constat de Lumosphère, à confirmer par
-   l'essai). Si la SM-T550 reste visée, on fera donc **un paquet par type d'appareil**.
+   plus. L'essai l'a pesé à 11,0 Mo contre 7,0 Mo : chaque appareil garderait environ 4 Mo inutiles.
+   **Décision du 2026-11-03 : deux paquets Android**, la SM-T550 restant visée :
+   - le paquet **normal**, 64 bits (`baluchon-<version>.apk`), pour presque tous les appareils ;
+   - le paquet **de secours**, 32 bits (`baluchon-<version>-anciens-appareils.apk`), pour les
+     appareils anciens comme la SM-T550 ; on le prend seulement si Android refuse le normal.
 2. **Le défaut de la SM-T550 s'investigue d'abord** ; son résultat décidera du point 1.
 3. **Clé de signature** : nouvelle, propre à Baluchon (pas celle de Paré), rangée dans **KeePass**
    avec ses mots de passe.
@@ -87,8 +117,8 @@ Décisions du 2026-11-03 :
 14. **Réglages de poids** (Rust, profil de version finale) : suppression des symboles, optimisation
     pour la taille, optimisation à l'édition des liens, une seule unité de compilation. Vérifier en
     plus qu'aucune image, police ni icône inutile n'est embarquée.
-15. **AppImage allégée** : les copies en double des bibliothèques remplacées par des liens, compression
-    plus forte. Le moteur d'affichage et ce qu'il exige au démarrage (synthèse vocale, vidéo, formats
+15. **AppImage allégée** : compression plus forte (l'essai a montré que les copies en double sont déjà
+    fusionnées par le format). Le moteur d'affichage et ce qu'il exige au démarrage (synthèse vocale, vidéo, formats
     d'image récents) restent : sans eux il ne démarre pas.
 16. **Données de développement à part** : la version de développement sur ordinateur (`tauri dev`) et
     la version d'essai Android (`pnpm android:essai`) prennent un **identifiant distinct**
@@ -138,6 +168,18 @@ Décisions du 2026-11-03 :
     rpm est fabriqué, pesé et son contenu inspecté (dépendances, fichiers) ; aucun appareil Fedora ne
     sert d'essai.
 
+## Choix de l'agent après l'essai jetable
+
+29. **Numéro interne par architecture** : les deux paquets Android d'une même version portent des
+    numéros internes (versionCode) différents, dérivés du numéro affiché, celui du 64 bits plus élevé.
+    Une mise à jour reste reconnue comme plus récente, et F-Droid pourra un jour proposer les deux côte
+    à côte. Le numéro affiché reste le même (0.1.0).
+30. **Erreur de démarrage rendue visible et rattrapée** : si la base ne s'ouvre pas au démarrage, la
+    cause est écrite dans le journal d'Android (et du bureau) au lieu d'être avalée, et l'ouverture est
+    retentée une fois avant d'afficher le message d'erreur. Test qui échoue d'abord.
+31. **L'enquête sur la SM-T550 se réduit à cela** : le défaut ne se reproduit pas avec la version
+    finale ; la SM-T550 reçoit le paquet de secours et passe par la recette comme les autres appareils.
+
 ## Hors périmètre (ne pas construire)
 
 - Pages web de présentation et de téléchargement, dons : phase 16.
@@ -167,5 +209,5 @@ Ceux du plan, plus :
 - [ ] Chaque paquet est fabriqué par une seule commande, et son poids est annoncé au chef de projet.
 - [ ] Aucune version d'essai ne peut remplacer ni effacer la version signée, sur Android comme sur
       ordinateur.
-- [ ] Le défaut de la SM-T550 est compris et, si la tablette reste visée, corrigé et couvert par un
-      test.
+- [ ] Une base qui ne s'ouvre pas au démarrage laisse sa cause dans le journal et l'ouverture est
+      retentée une fois (choix 30) ; la SM-T550 passe la recette avec le paquet de secours.
