@@ -234,7 +234,7 @@ Les tâches 7 à 11 reviennent au contrôleur, avec le chef de projet et les app
 ### Task 9 : Mise à jour sans perte (critère 2 du plan, choix 20)
 
 - [ ] Sur la SM-X210, le Xiaomi et l'ordinateur (.deb et AppImage) : saisir un jeu qui touche tout (deux voyages, coches et pièces dans le sac, achats, objet écarté, catégorie et objet modèles modifiés, étiquette ajoutée, thème sombre), puis « Sauvegarder ».
-- [ ] Passer la version à 0.1.1 (`package.json` et `Cargo.toml`), commit `chore: version 0.1.1` ; refabriquer ; installer par-dessus sans désinstaller.
+- [ ] Passer la version à 0.1.1 (`package.json` et `Cargo.toml`), commit `chore: version 0.1.1` (avec `src-tauri/Cargo.lock`, mis à jour par `cargo update -p baluchon --manifest-path src-tauri/Cargo.toml`) ; refabriquer ; installer par-dessus sans désinstaller.
 - [ ] Refaire une sauvegarde et comparer les deux fichiers : identiques hormis la date de la sauvegarde. Le chef de projet fait de même sous Windows.
 
 ### Task 10 : Recette en mode avion (critère 1 du plan, choix 21)

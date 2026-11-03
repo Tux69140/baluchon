@@ -39,6 +39,8 @@ Puis, à chaque fabrication :
 2. Lancer `pnpm install`.
 3. Lancer `pnpm paquets:windows`.
 
+Les fois suivantes, dans le dossier déjà cloné : `git pull`, puis `pnpm install`, puis `pnpm paquets:windows`.
+
 Le fichier arrive dans `artifacts/`.
 
 ## La clé de signature Android
@@ -50,7 +52,7 @@ Elle vit hors du projet, dans deux fichiers :
 - `~/.local/share/baluchon/baluchon.jks` : la clé elle-même (alias `baluchon`) ;
 - `~/.local/share/baluchon/cle.properties` : trois lignes `storeFile`, `keyAlias` et `password`.
 
-Ces deux fichiers doivent être joints à une entrée KeePass. Pour les remettre en place sur un autre ordinateur : créer le dossier `~/.local/share/baluchon/`, y enregistrer les deux pièces jointes de l'entrée, puis restreindre les droits (`chmod 600` sur chacun) et vérifier que `storeFile` dans `cle.properties` désigne bien l'emplacement de `baluchon.jks`. Pour utiliser une clé rangée ailleurs, indiquer son fichier dans la variable `BALUCHON_CLE`.
+Ces deux fichiers doivent être joints à une entrée KeePass. Pour les remettre en place sur un autre ordinateur : créer le dossier `~/.local/share/baluchon/`, y enregistrer les deux pièces jointes de l'entrée, puis restreindre les droits (`chmod 600` sur chacun) et vérifier que `storeFile` dans `cle.properties` désigne bien l'emplacement de `baluchon.jks`. Pour utiliser une clé rangée ailleurs, indiquer le chemin du fichier `cle.properties` (et non du `.jks`) dans la variable `BALUCHON_CLE`. Dans `cle.properties`, `storeFile` doit être un chemin absolu.
 
 ## Les essais de développement, à part des vraies données
 

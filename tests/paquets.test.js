@@ -68,6 +68,29 @@ test('lireVersion refuse deux versions différentes', async () => {
   });
 });
 
+test('lireVersion refuse un Cargo.lock resté à l’ancienne version', async () => {
+  await avecDossier(async racine => {
+    await projet(racine, '0.1.1', '[package]\nname = "baluchon"\nversion = "0.1.1"\n');
+    await writeFile(
+      join(racine, 'src-tauri', 'Cargo.lock'),
+      '[[package]]\nname = "autre"\nversion = "9.9.9"\n\n[[package]]\nname = "baluchon"\nversion = "0.1.0"\n',
+    );
+    await assert.rejects(() => lireVersion(racine), /Cargo\.lock[\s\S]*cargo update -p baluchon/);
+    await writeFile(
+      join(racine, 'src-tauri', 'Cargo.lock'),
+      '[[package]]\nname = "autre"\nversion = "9.9.9"\n\n[[package]]\nname = "baluchon"\nversion = "0.1.1"\n',
+    );
+    assert.equal(await lireVersion(racine), '0.1.1');
+  });
+});
+
+test('la fenêtre de l’essai est celle du vrai projet, titre excepté', async () => {
+  const lire = async f => JSON.parse(await readFile(join('src-tauri', f), 'utf8')).app.windows;
+  const [vrai, essai] = [await lire('tauri.conf.json'), await lire('tauri.essai.conf.json')];
+  assert.equal(essai.length, vrai.length);
+  essai.forEach((fenetre, i) => assert.deepEqual({ ...fenetre, title: '' }, { ...vrai[i], title: '' }));
+});
+
 test('lireVersion lit la section [package], pas les versions des dépendances', async () => {
   await avecDossier(async racine => {
     await projet(

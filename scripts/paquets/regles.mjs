@@ -15,7 +15,7 @@ export const CIBLES_ANDROID = [
   { cible: 'armv7', architecture: 'arm', sorte: 'android-anciens' },
 ];
 
-// La version de référence est celle de package.json ; Cargo.toml (section [package]) doit la porter aussi.
+// La version de référence est celle de package.json ; Cargo.toml (section [package]) et Cargo.lock doivent la porter aussi.
 export async function lireVersion(racine) {
   const npm = JSON.parse(await readFile(join(racine, 'package.json'), 'utf8')).version;
   if (!VERSION.test(npm))
@@ -26,6 +26,14 @@ export async function lireVersion(racine) {
   if (!version || version[1] !== npm) {
     throw new Error(
       `Versions différentes : package.json porte ${npm}, src-tauri/Cargo.toml porte ${version ? version[1] : 'aucune version'}. Les aligner avant de fabriquer.`,
+    );
+  }
+  // Cargo.lock (commité) porte aussi la version du paquet : un oubli donnerait un dépôt qui change tout seul.
+  const verrou = await readFile(join(racine, 'src-tauri', 'Cargo.lock'), 'utf8').catch(() => null);
+  const dansVerrou = verrou && /^name\s*=\s*"baluchon"\s*\r?\nversion\s*=\s*"([^"]*)"/m.exec(verrou);
+  if (dansVerrou && dansVerrou[1] !== npm) {
+    throw new Error(
+      `Versions différentes : package.json porte ${npm}, src-tauri/Cargo.lock porte ${dansVerrou[1]} pour le paquet baluchon. Lancer « cargo update -p baluchon --manifest-path src-tauri/Cargo.toml » (ou une construction), puis commiter src-tauri/Cargo.lock.`,
     );
   }
   return npm;
@@ -55,16 +63,21 @@ export function nomPaquet(version, sorte) {
   return NOMS[sorte](version);
 }
 
-// Fautes de la clé de signature, avant toute fabrication. `contenu` est null si le fichier est absent.
-export function verifierCle(contenu, cheminProprietes) {
-  if (contenu === null) return [`Fichier de clé absent : ${cheminProprietes}`];
-  const valeurs = Object.fromEntries(
+// Les lignes `nom=valeur` du fichier de clé.
+export function lireProprietesCle(contenu) {
+  return Object.fromEntries(
     contenu
       .split(/\r?\n/)
       .map(ligne => /^\s*([^#=\s][^=]*?)\s*=(.*)$/.exec(ligne))
       .filter(Boolean)
       .map(m => [m[1], m[2].trim()]),
   );
+}
+
+// Fautes de la clé de signature, avant toute fabrication. `contenu` est null si le fichier est absent.
+export function verifierCle(contenu, cheminProprietes) {
+  if (contenu === null) return [`Fichier de clé absent : ${cheminProprietes}`];
+  const valeurs = lireProprietesCle(contenu);
   return ['storeFile', 'keyAlias', 'password']
     .filter(cle => !valeurs[cle])
     .map(cle => `Clé « ${cle} » manquante ou vide dans ${cheminProprietes}`);

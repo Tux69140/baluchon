@@ -1,14 +1,22 @@
 // `pnpm paquets` : fabrique sur cette machine tous les paquets de l'ordinateur de travail, dans artifacts/ :
 // les deux paquets Android signés, puis Debian, rpm et AppImage (recompressée en zstd). Windows se fabrique
 // à part, sous Windows. Rien n'est fabriqué si une garde échoue.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import { chmod, copyFile, mkdir, mkdtemp, open, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copierPersonnalisations, verifierPersonnalisations } from '../projet-android.mjs';
-import { CIBLES_ANDROID, codeVersionAndroid, lireVersion, nomPaquet, outilsAppimage, verifierCle } from './regles.mjs';
+import {
+  CIBLES_ANDROID,
+  codeVersionAndroid,
+  lireProprietesCle,
+  lireVersion,
+  nomPaquet,
+  outilsAppimage,
+  verifierCle,
+} from './regles.mjs';
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const artifacts = join(racine, 'artifacts');
@@ -140,11 +148,32 @@ const contenuCle = await readFile(cle, 'utf8').catch(() => null);
 const fautesCle = verifierCle(contenuCle, cle);
 if (fautesCle.length) echec(`Fabrication refusée : la clé de signature n’est pas prête.\n  ${fautesCle.join('\n  ')}`);
 
+// Le fichier de clé existe, le mot de passe et l'alias sont justes : vérifié par keytool, le mot de passe
+// passant par l'environnement (jamais en argument, donc jamais visible dans la liste des processus).
+{
+  const { storeFile, keyAlias, password } = lireProprietesCle(contenuCle);
+  if (!(await existe(storeFile)))
+    echec(`Fabrication refusée : le fichier de clé « ${storeFile} » (storeFile) est introuvable.`);
+  const essai = spawnSync(
+    'keytool',
+    ['-list', '-keystore', storeFile, '-alias', keyAlias, '-storepass:env', 'BALUCHON_MOT_DE_PASSE'],
+    {
+      env: { ...process.env, BALUCHON_MOT_DE_PASSE: password },
+      encoding: 'utf8',
+    },
+  );
+  if (essai.error) echec(`Fabrication refusée : keytool introuvable (${essai.error.message}).`);
+  if (essai.status !== 0)
+    echec(
+      `Fabrication refusée : la clé ne s'ouvre pas avec ce mot de passe et cet alias (« ${keyAlias} ») dans ${storeFile}.`,
+    );
+}
+
 // Outils d'AppImage vérifiés avant les ~13 minutes de fabrication ; seul un cache vraiment vide (toute
 // première fabrication) reporte la vérification après la fabrication Linux de Tauri, qui le remplit.
 let outils = null;
 // Le mot de passe en clair et le dossier temporaire des outils ne doivent jamais rester, même sur Ctrl-C.
-for (const signal of ['SIGINT', 'SIGTERM']) {
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
   process.on(signal, () => {
     rmSync(motDePasse, { force: true });
     if (outils) rmSync(outils.travail, { recursive: true, force: true });

@@ -40,7 +40,7 @@ const BLOC_JACKSON = [
 ].join('\n');
 
 // Version finale signée (phase 15) : la clé est lue dans keystore.properties, à la racine du projet
-// Android, s'il existe (scripts/paquets/android.mjs l'y dépose le temps de la construction). Sans lui,
+// Android, s'il existe (scripts/paquets/fabriquer.mjs l'y dépose le temps de la construction). Sans lui,
 // le bloc ne fait rien. Seul le type « release » est signé ; l'essai garde la clé de débogage.
 const BLOC_SIGNATURE = [
   '// Baluchon : signature de la version finale (scripts/projet-android.mjs).',

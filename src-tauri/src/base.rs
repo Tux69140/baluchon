@@ -141,7 +141,8 @@ impl Base {
 }
 
 // Essaie d'ouvrir la base, réessaie une fois après une courte pause ; après deux échecs, écrit la
-// cause sur la sortie d'erreur (journal d'Android) et rend une base en panne.
+// cause sur la sortie d'erreur et rend une base en panne ; sur Android, la cause n'arrive au journal que par
+// l'erreur rendue à la page (console.error de src/main.js).
 pub fn ouvrir_ou_signaler(ouvrir: impl Fn() -> Result<Base, String>) -> Base {
     match ouvrir() {
         Ok(base) => base,

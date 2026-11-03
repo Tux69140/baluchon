@@ -1,7 +1,7 @@
 // `pnpm paquets:windows` : fabrique l'installateur Windows (NSIS) dans artifacts/. À lancer sous Windows,
 // sur un dépôt cloné depuis GitHub ; ailleurs, le script refuse proprement.
 import { execFileSync } from 'node:child_process';
-import { copyFile, mkdir, readdir } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { lireVersion, nomPaquet, verifierAJourAvecGithub } from './regles.mjs';
@@ -15,6 +15,8 @@ async function fabriquerWindows() {
   verifierAJourAvecGithub(args =>
     execFileSync('git', args, { cwd: racine, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim(),
   );
+  // Tauri ne vide pas ce dossier : sans cela, l'installateur d'une version précédente fausserait le compte.
+  await rm(dossierNsis, { recursive: true, force: true });
   // Le CLI de Tauri est lancé par Node lui-même : sous Windows, `pnpm exec` passerait par un shell.
   execFileSync(
     process.execPath,

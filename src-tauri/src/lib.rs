@@ -268,16 +268,18 @@ fn garder_dans_le_voyage(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let contexte = tauri::generate_context!();
+    // Version de développement d'ordinateur : jamais sur les vraies données. Refusée avant de construire
+    // l'appli, donc sans qu'aucune fenêtre (ni son stockage) ne s'ouvre.
+    #[cfg(all(desktop, debug_assertions))]
+    if !contexte.config().identifier.ends_with(".essai") {
+        eprintln!(
+            "Version de développement : lancer avec « pnpm bureau » pour ne pas toucher aux vraies données"
+        );
+        std::process::exit(1);
+    }
     tauri::Builder::default()
         .setup(|app| {
-            // Version de développement d'ordinateur : jamais sur les vraies données.
-            #[cfg(all(desktop, debug_assertions))]
-            if !app.config().identifier.ends_with(".essai") {
-                return Err(
-                    "Version de développement : lancer avec « pnpm bureau » pour ne pas toucher aux vraies données"
-                        .into(),
-                );
-            }
             let base = match chemin_de_la_base(app.handle()) {
                 Ok(chemin) => ouvrir_ou_signaler(|| Base::ouvrir(&chemin)),
                 Err(cause) => {
@@ -328,6 +330,6 @@ pub fn run() {
             marquer_retire,
             garder_dans_le_voyage
         ])
-        .run(tauri::generate_context!())
+        .run(contexte)
         .expect("Baluchon n'a pas pu démarrer");
 }
