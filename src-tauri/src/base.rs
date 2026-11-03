@@ -485,3 +485,7 @@ mod tests {
         assert!(cause.contains("fichier abîmé"));
     }
 }
+
+#[cfg(test)]
+#[path = "base_essais_008.rs"]
+mod essais_008;
