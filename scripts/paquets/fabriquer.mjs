@@ -44,7 +44,7 @@ async function apksigner() {
   const versions = (await readdir(join(sdk, 'build-tools')).catch(() => [])).sort((a, b) =>
     a.localeCompare(b, undefined, { numeric: true }),
   );
-  if (!versions.length) echec(`Outils Android introuvables : aucun dossier build-tools dans ${sdk}.`);
+  if (!versions.length) throw new Error(`Outils Android introuvables : aucun dossier build-tools dans ${sdk}.`);
   return join(sdk, 'build-tools', versions.at(-1), 'apksigner');
 }
 
@@ -52,7 +52,7 @@ async function fabriquerAndroid(version, contenuCle) {
   if (!(await existe(projetAndroid))) tauri('android', 'init', '--ci', '--skip-targets-install');
   await copierPersonnalisations(racine);
   const fautes = await verifierPersonnalisations(racine);
-  if (fautes.length) echec(`Fabrication refusée : le projet Android n’a pas nos retouches.\n  ${fautes.join('\n  ')}`);
+  if (fautes.length) throw new Error(`Le projet Android n’a pas nos retouches.\n  ${fautes.join('\n  ')}`);
   const signer = await apksigner();
   await writeFile(motDePasse, contenuCle, { mode: 0o600 });
   try {
@@ -140,17 +140,17 @@ const contenuCle = await readFile(cle, 'utf8').catch(() => null);
 const fautesCle = verifierCle(contenuCle, cle);
 if (fautesCle.length) echec(`Fabrication refusée : la clé de signature n’est pas prête.\n  ${fautesCle.join('\n  ')}`);
 
-// Le mot de passe en clair ne doit jamais rester sur le disque, même sur Ctrl-C.
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => {
-    rmSync(motDePasse, { force: true });
-    process.exit(1);
-  });
-}
-
 // Outils d'AppImage vérifiés avant les ~13 minutes de fabrication ; seul un cache vraiment vide (toute
 // première fabrication) reporte la vérification après la fabrication Linux de Tauri, qui le remplit.
 let outils = null;
+// Le mot de passe en clair et le dossier temporaire des outils ne doivent jamais rester, même sur Ctrl-C.
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    rmSync(motDePasse, { force: true });
+    if (outils) rmSync(outils.travail, { recursive: true, force: true });
+    process.exit(1);
+  });
+}
 try {
   outils = await outilsAppimage();
 } catch (erreur) {
