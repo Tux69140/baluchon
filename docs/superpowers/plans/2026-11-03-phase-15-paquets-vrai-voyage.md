@@ -27,7 +27,7 @@
 
 ## Review Focus
 
-1. Clé absente, fichier de mots de passe incomplet ou mot de passe faux : `pnpm paquets:android` s'arrête **avant** la longue fabrication, avec un message qui dit où reposer la clé, et ne laisse aucun paquet non signé dans `artifacts/`.
+1. Clé absente, fichier de mots de passe incomplet ou mot de passe faux : `pnpm paquets` s'arrête **avant** la longue fabrication, avec un message qui dit où reposer la clé, et ne laisse aucun paquet non signé dans `artifacts/`.
 2. Version mal formée dans `package.json` (« 0.1 », « 0.1.0-beta ») ou différente de celle de `Cargo.toml` : erreur claire, aucun paquet fabriqué avec un numéro faux.
 3. Base illisible au démarrage (fichier abîmé, dossier non inscriptible) : l'appli ne plante pas, affiche « Vos voyages n'ont pas pu être lus… » et la cause exacte arrive dans la console de la page (donc dans le journal d'Android).
 4. Version d'essai et version signée sur le même appareil : elles coexistent, chacune avec ses données ; installer, effacer ou désinstaller l'essai ne touche pas la version signée.
@@ -101,7 +101,7 @@ Adapter `Dossier` / `chemin` aux aides réelles de `crate::essais` (`base_jetabl
   - `CIBLES_ANDROID` : `[{ cible: 'aarch64', architecture: 'arm64', sorte: 'android' }, { cible: 'armv7', architecture: 'arm', sorte: 'android-anciens' }]`.
   - `verifierCle(contenu: string | null, cheminProprietes: string) -> string[]` : fautes (fichier absent, clé `storeFile` / `keyAlias` / `password` manquante ou vide) ; chaque faute cite `cheminProprietes`.
   - `verifierAJourAvecGithub(git: (args: string[]) => string) -> void` : lève si la branche ne suit rien, si `git fetch` échoue (pas de réseau), ou si `HEAD..@{u}` compte des modifications en retard (reprendre la règle de Paré, `~/Documents/Evacuation/App_V2/appli/scripts/bundle-windows.mjs`).
-  - `CACHE_TAURI = ~/.cache/tauri` et `outilsAppimage(cache: string) -> Promise<{ appimagetool: string, dossierOutils: string }>` : lève avec « lancer d'abord `pnpm paquets:linux` une fois, réseau ouvert » si `linuxdeploy-plugin-appimage.AppImage` manque.
+  - `CACHE_TAURI = ~/.cache/tauri` et `outilsAppimage(cache: string) -> Promise<{ appimagetool: string, dossierOutils: string }>` : lève avec « lancer `pnpm paquets` avec le réseau ouvert : la première fabrication de Tauri remplit ce cache » si `linuxdeploy-plugin-appimage.AppImage` manque.
 
 - [ ] **Step 1 : Écrire les tests qui échouent** (`tests/paquets.test.js`) :
 
@@ -134,7 +134,7 @@ test('une clé absente ou incomplète est signalée avant toute fabrication', ()
   assert.deepEqual(verifierCle('storeFile=/a.jks\nkeyAlias=baluchon\npassword=s3cret\n', '/x'), []);
 });
 test('la fabrication Windows refuse un dépôt en retard ou hors ligne', /* faux git : sans amont, fetch en échec, 3 en retard → trois messages ; à jour → ne lève pas */);
-test('outilsAppimage dit quoi faire quand le cache de Tauri est vide', /* dossier vide → rejet /pnpm paquets:linux/ */);
+test('outilsAppimage dit quoi faire quand le cache de Tauri est vide', /* dossier vide → rejet /pnpm paquets/ */);
 ```
 
 - [ ] **Step 2 : Lancer** — `pnpm test` : échec (module absent).
@@ -162,39 +162,28 @@ test('outilsAppimage dit quoi faire quand le cache de Tauri est vide', /* dossie
 - [ ] **Step 4 : Lancer** — `pnpm test`, `pnpm verif` : vert. Puis `pnpm android:essai` construit (le contrôleur vérifie sur la SM-X210, à son passage, que « Baluchon essai » s'installe à côté d'une autre version sans la remplacer : point 4 du Review Focus).
 - [ ] **Step 5 : Commit** — `feat(android): signature de la version finale et essai installé à côté`.
 
-### Task 4 : `pnpm paquets:android`
+### Task 4 : `pnpm paquets` (Android et Linux, sur cette machine)
+
+Une seule commande fabrique tous les paquets de l'ordinateur de travail (demande du chef de projet, 2026-11-03) : les deux paquets Android signés, puis Debian, rpm et AppImage. Windows reste à part (tâche 5), car il se fabrique sous Windows.
 
 **Files:**
-- Create: `scripts/paquets/android.mjs`
-- Modify: `package.json` (script `"paquets:android": "node scripts/paquets/android.mjs"`), `src-tauri/Cargo.toml` (profil `[profile.release]` des Global Constraints)
+- Create: `scripts/paquets/fabriquer.mjs`
+- Modify: `package.json` (`"paquets": "node scripts/paquets/fabriquer.mjs"`), `src-tauri/Cargo.toml` (profil `[profile.release]` des Global Constraints)
 
 **Interfaces:**
-- Consumes : `lireVersion`, `codeVersionAndroid`, `nomPaquet`, `CIBLES_ANDROID`, `verifierCle` (tâche 2) ; `copierPersonnalisations`, `verifierPersonnalisations` (tâche 3).
-- Produces : `artifacts/baluchon-V.apk` et `artifacts/baluchon-V-anciens-appareils.apk`, signés, et leur poids affiché en Mo.
+- Consumes : `lireVersion`, `codeVersionAndroid`, `nomPaquet`, `CIBLES_ANDROID`, `verifierCle`, `outilsAppimage`, `CACHE_TAURI` (tâche 2) ; `copierPersonnalisations`, `verifierPersonnalisations` (tâche 3).
+- Produces : dans `artifacts/`, `baluchon-V.apk` et `baluchon-V-anciens-appareils.apk` (signés), `baluchon-V-amd64.deb`, `baluchon-V.x86_64.rpm`, `baluchon-V-x86_64.AppImage` (recompressée) ; à la fin, un tableau des cinq paquets et de leur poids en Mo.
 
-- [ ] **Step 1 : Écrire le script** dans cet ordre : `lireVersion` ; lire `~/.local/share/baluchon/cle.properties` et refuser si `verifierCle` rend des fautes (point 1 du Review Focus) ; recréer le projet Android s'il manque (comme `scripts/android.mjs`) ; copier `cle.properties` vers `src-tauri/gen/android/keystore.properties` ; `copierPersonnalisations` puis refuser sur faute ; pour chaque entrée de `CIBLES_ANDROID` : `pnpm exec tauri android build --apk --ci --target <cible> --config '{"bundle":{"android":{"versionCode":<code>}}}'`, puis `apksigner verify` (build-tools trouvés sous `$ANDROID_HOME` ou `~/Android/Sdk`, version la plus récente), copie vers `artifacts/<nomPaquet>` et affichage du poids. Effacer `src-tauri/gen/android/keystore.properties` à la fin, même en cas d'échec (`try/finally`). Si `apksigner verify` échoue, retirer le paquet copié.
-- [ ] **Step 2 : Essai sans clé** — lancer `pnpm paquets:android` alors que `~/.local/share/baluchon/cle.properties` n'existe pas encore. Attendu : arrêt immédiat, message citant le chemin, `artifacts/` sans `.apk` nouveau.
-- [ ] **Step 3 : `pnpm verif`** vert (contrôles de taille et d'exports compris).
-- [ ] **Step 4 : Commit** — `feat(paquets): pnpm paquets:android fabrique les deux paquets signés`.
+- [ ] **Step 1 : Gardes, avant toute fabrication** : `lireVersion` ; lire `~/.local/share/baluchon/cle.properties` et refuser si `verifierCle` rend des fautes (point 1 du Review Focus) ; `outilsAppimage(CACHE_TAURI)` seulement après la fabrication Linux de Tauri (le premier passage remplit le cache). Rien n'est fabriqué si une garde échoue.
+- [ ] **Step 2 : Partie Android** : recréer le projet Android s'il manque (comme `scripts/android.mjs`) ; copier `cle.properties` vers `src-tauri/gen/android/keystore.properties` ; `copierPersonnalisations` puis refuser sur faute ; pour chaque entrée de `CIBLES_ANDROID` : `pnpm exec tauri android build --apk --ci --target <cible> --config '{"bundle":{"android":{"versionCode":<code>}}}'`, puis `apksigner verify` (build-tools sous `$ANDROID_HOME` ou `~/Android/Sdk`, version la plus récente), copie vers `artifacts/<nomPaquet>` ; si la vérification échoue, retirer le paquet copié. Effacer `src-tauri/gen/android/keystore.properties` à la fin, même en cas d'échec (`try/finally`).
+- [ ] **Step 3 : Partie Linux** : vider `src-tauri/target/release/bundle/{deb,rpm,appimage}` ; `pnpm exec tauri build --bundles deb,rpm,appimage` ; copier deb et rpm sous leurs noms ; AppImage : `--appimage-extract` dans un dossier temporaire, lanceur = les `--appimage-offset` premiers octets du fichier de Tauri, puis `appimagetool --runtime-file <lanceur> --comp zstd --mksquashfs-opt -Xcompression-level --mksquashfs-opt 22 --mksquashfs-opt -b --mksquashfs-opt 1M <dossier> <artifacts/nom>` avec `ARCH=x86_64` et le dossier des outils en tête de `PATH` ; nettoyer le temporaire (`try/finally`).
+- [ ] **Step 4 : Essai sans clé** — lancer `pnpm paquets` alors que `~/.local/share/baluchon/cle.properties` n'existe pas encore. Attendu : arrêt immédiat, message citant le chemin, rien de nouveau dans `artifacts/`.
+- [ ] **Step 5 : Essai de la partie Linux** avec une clé jetable du dossier temporaire (passée par la variable d'environnement `BALUCHON_CLE`, chemin d'un autre `cle.properties` qui remplace celui par défaut ; à prévoir dans le script), puis effacer la clé et les deux paquets Android qu'elle a signés. Attendu : deb et rpm autour de 2,3 Mo, AppImage autour de 96 Mo, paquets Android autour de 7,0 et 5,5 Mo (essai jetable). Vérifier `dpkg-deb -f artifacts/baluchon-*-amd64.deb Depends` = `libwebkit2gtk-4.1-0, libgtk-3-0` (Debian 13 : `libgtk-3-0t64` fournit `libgtk-3-0`, aucune correction à faire). Inspecter le rpm (`rpm -qip` et `rpm -qlp` : nom, version, dépendances, fichiers ; choix 27). Lancer l'AppImage produite et constater que la fenêtre s'ouvre sur « Mes voyages ».
+- [ ] **Step 6 : `pnpm verif`** vert (taille des fichiers et exports compris) ; **Commit** — `feat(paquets): pnpm paquets fabrique les paquets Android signés et Linux`.
 
-La fabrication signée réelle se fait à la tâche 8, une fois la vraie clé créée.
+La fabrication signée réelle se fait à la tâche 7, une fois la vraie clé créée.
 
-### Task 5 : `pnpm paquets:linux` (Debian, rpm, AppImage allégée)
-
-**Files:**
-- Create: `scripts/paquets/linux.mjs`
-- Modify: `package.json` (`"paquets:linux": "node scripts/paquets/linux.mjs"`)
-
-**Interfaces:**
-- Consumes : `lireVersion`, `nomPaquet`, `outilsAppimage`, `CACHE_TAURI` (tâche 2) ; profil de poids (tâche 4).
-- Produces : `artifacts/baluchon-V-amd64.deb`, `baluchon-V.x86_64.rpm`, `baluchon-V-x86_64.AppImage` (recompressée), poids affichés.
-
-- [ ] **Step 1 : Écrire le script** : `lireVersion` ; vider `src-tauri/target/release/bundle/{deb,rpm,appimage}` ; `pnpm exec tauri build --bundles deb,rpm,appimage` ; copier deb et rpm sous leurs noms ; AppImage : `--appimage-extract` dans un dossier temporaire, lanceur = les `--appimage-offset` premiers octets du fichier de Tauri, puis `appimagetool --runtime-file <lanceur> --comp zstd --mksquashfs-opt -Xcompression-level --mksquashfs-opt 22 --mksquashfs-opt -b --mksquashfs-opt 1M <dossier> <artifacts/nom>` avec `ARCH=x86_64` et le dossier des outils en tête de `PATH` ; nettoyer le temporaire (`try/finally`).
-- [ ] **Step 2 : Lancer** `pnpm paquets:linux`. Attendu : trois paquets ; deb et rpm autour de 2,3 Mo, AppImage autour de 96 Mo (essai jetable). Vérifier `dpkg-deb -f artifacts/baluchon-*-amd64.deb Depends` = `libwebkit2gtk-4.1-0, libgtk-3-0` (Debian 13 : `libgtk-3-0t64` fournit `libgtk-3-0`, aucune correction à faire). Inspecter le rpm (`rpm -qip` et `rpm -qlp` : nom, version, dépendances, fichiers ; choix 27). Lancer l'AppImage produite et constater que la fenêtre s'ouvre sur « Mes voyages ».
-- [ ] **Step 3 : `pnpm verif`** vert.
-- [ ] **Step 4 : Commit** — `feat(paquets): pnpm paquets:linux, AppImage recompressée`.
-
-### Task 6 : `pnpm paquets:windows`
+### Task 5 : `pnpm paquets:windows`
 
 **Files:**
 - Create: `scripts/paquets/windows.mjs`
@@ -208,7 +197,7 @@ La fabrication signée réelle se fait à la tâche 8, une fois la vraie clé cr
 - [ ] **Step 2 : Essai sous Debian** : `pnpm paquets:windows` s'arrête sur le message « sous Windows ». `pnpm verif` vert.
 - [ ] **Step 3 : Commit** — `feat(paquets): pnpm paquets:windows (à lancer sous Windows)`.
 
-### Task 7 : Essais à part sur l'ordinateur, documentation des paquets
+### Task 6 : Essais à part sur l'ordinateur, documentation des paquets
 
 **Files:**
 - Create: `src-tauri/tauri.essai.conf.json`, `docs/PAQUETS.md`, `docs/RECETTE.md`
@@ -223,38 +212,38 @@ La fabrication signée réelle se fait à la tâche 8, une fois la vraie clé cr
 - [ ] **Step 4 : Documentation** :
   - `docs/PAQUETS.md`, en français, pour le chef de projet : chaque commande et ce qu'elle dépose dans `artifacts/` ; où vit la clé (chemins des Global Constraints) et comment la remettre en place depuis KeePass ; ce qu'il faut sous Windows (Git, Node, pnpm, Rust, dépôt cloné sur `phase-15` puis main, `pnpm install`) ; quel paquet Android prendre (normal, sinon « anciens appareils » si Android refuse).
   - `docs/RECETTE.md` : un tableau d'une ligne par user story US-1 à US-40 (numéro, intitulé court repris du PRD, appareil, date, résultat), et l'en-tête de la recette (mode avion vérifié, appareils, version).
-  - `CLAUDE.md`, ligne « Commandes » : `pnpm bureau` remplace `pnpm tauri dev` ; ajouter `pnpm paquets:android`, `pnpm paquets:linux`, `pnpm paquets:windows` (« seulement sur demande du chef de projet »).
+  - `CLAUDE.md`, ligne « Commandes » : `pnpm bureau` remplace `pnpm tauri dev` ; ajouter `pnpm paquets` (Android et Linux) et `pnpm paquets:windows` (« seulement sur demande du chef de projet »).
 - [ ] **Step 5 : `pnpm verif`** vert ; **Commit** — `feat(bureau): essais à part des vraies données ; docs des paquets et de la recette`.
 
 ---
 
-Les tâches 8 à 12 reviennent au contrôleur, avec le chef de projet et les appareils ; elles ne se confient pas à un sous-agent.
+Les tâches 7 à 11 reviennent au contrôleur, avec le chef de projet et les appareils ; elles ne se confient pas à un sous-agent.
 
-### Task 8 : Vraie clé, envoi sur GitHub, fabrication de la 0.1.0
+### Task 7 : Vraie clé, envoi sur GitHub, fabrication de la 0.1.0
 
 - [ ] Créer la clé (`keytool -genkeypair`, RSA 4096, validité 10 000 jours, alias `baluchon`, mot de passe aléatoire) et `cle.properties` dans `~/.local/share/baluchon/` (droits 600). Dire au chef de projet où sont les deux fichiers, sans jamais afficher le mot de passe ; il les joint à une entrée KeePass et confirme (critère 3 du plan).
-- [ ] `pnpm paquets:android` et `pnpm paquets:linux` ; annoncer les poids.
+- [ ] `pnpm paquets` ; annoncer les poids.
 - [ ] Annoncer puis envoyer `phase-15` sur GitHub ; le chef de projet lance `pnpm paquets:windows` sous Windows (`docs/PAQUETS.md`) et rapporte le poids.
 
-### Task 9 : Installation de la 0.1.0
+### Task 8 : Installation de la 0.1.0
 
 - [ ] SM-T550 au premier branchement : désinstaller la version de l'essai jetable et retirer `/sdcard/Download/baluchon-2026-11-03-09h52.json`.
 - [ ] Ordinateur (choix 26) : copier `~/.local/share/fr.biovibralyon.baluchon/` dans le scratchpad, puis le vider ; installer le `.deb`.
 - [ ] Installer le paquet normal sur la SM-X210, l'ASUS et le Xiaomi (appuyer « Installer » sur le Xiaomi), le paquet de secours sur la SM-T550 ; vérifier que `pnpm android:essai` installe « Baluchon essai » **à côté** (point 4 du Review Focus).
 
-### Task 10 : Mise à jour sans perte (critère 2 du plan, choix 20)
+### Task 9 : Mise à jour sans perte (critère 2 du plan, choix 20)
 
 - [ ] Sur la SM-X210, le Xiaomi et l'ordinateur (.deb et AppImage) : saisir un jeu qui touche tout (deux voyages, coches et pièces dans le sac, achats, objet écarté, catégorie et objet modèles modifiés, étiquette ajoutée, thème sombre), puis « Sauvegarder ».
 - [ ] Passer la version à 0.1.1 (`package.json` et `Cargo.toml`), commit `chore: version 0.1.1` ; refabriquer ; installer par-dessus sans désinstaller.
 - [ ] Refaire une sauvegarde et comparer les deux fichiers : identiques hormis la date de la sauvegarde. Le chef de projet fait de même sous Windows.
 
-### Task 11 : Recette en mode avion (critère 1 du plan, choix 21)
+### Task 10 : Recette en mode avion (critère 1 du plan, choix 21)
 
 - [ ] Mode avion activé et vérifié ; dérouler `docs/RECETTE.md` ligne par ligne sur la SM-X210, le Xiaomi, l'ASUS et la SM-T550 ; remettre l'état d'origine des appareils.
 - [ ] Le chef de projet refait la recette à la main sur l'appareil du voyage (SM-X210 ou Xiaomi).
 - [ ] Effacer les données de test de l'appareil du voyage par « Effacer les données » d'Android, le dire au chef de projet. À partir de son annonce, ses données sont vraies (choix 23).
 
-### Task 12 : Vrai voyage et clôture
+### Task 11 : Vrai voyage et clôture
 
 - [ ] Le chef de projet prépare son prochain voyage avec Baluchon et désinstalle BagPacker (critère 4 du plan).
 - [ ] Cocher les critères de la phase 15 dans `docs/PLAN.md` à sa demande, mettre à jour l'état dans `CLAUDE.md`, commit ; fusion et envoi sur main seulement sur son accord.
