@@ -399,3 +399,23 @@ Un paquet Android signé (tablette et téléphone) et les paquets Debian, rpm, a
 
 - Phase 12
 - Phase 13
+
+---
+
+## Phase 16 : Dons
+
+**User stories** : aucune dans le PRD pour l'instant ; elle y sera ajoutée à la conception de la phase (décision du chef de projet, 2026-11-03).
+
+### Ce qu'on livre
+
+« À propos » gagne un lien « Faire un don » qui ouvre dans le navigateur la page de dons du chef de projet ; la page web de présentation propose le même don. Le service de paiement (Stripe, PayPal, Liberapay…) se choisit à la conception de la phase. L'appli reste hors ligne et sans traceur : rien ne se connecte tant qu'on n'appuie pas sur le lien. Une future version pour le Play Store, dont les règles interdisent souvent les liens de paiement vers l'extérieur, pourra être livrée sans ce lien : on le décidera au moment de publier là-bas.
+
+### Critères d'acceptation
+
+- [ ] « Faire un don » ouvre la page de dons dans le navigateur, sur ordinateur comme sur Android.
+- [ ] La page web de présentation propose le même don.
+- [ ] Le texte du lien vient du fichier de langue et peut être traduit.
+
+## Bloquée par
+
+- Phase 15
