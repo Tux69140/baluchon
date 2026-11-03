@@ -28,6 +28,7 @@ async function avecProjet(fichiers, travail) {
 }
 
 const NOS_ICONES = 'src-tauri/icons/android';
+const NOS_ESSAI = 'src-tauri/android/debug/res';
 const NOTRE_JAVA = 'src-tauri/android/java';
 const GEN = 'src-tauri/gen/android/app/src/main';
 const ACTIVITE = 'fr/biovibralyon/baluchon/MainActivity.kt';
@@ -44,6 +45,7 @@ const SOURCES = {
   [`${NOTRE_JAVA}/${ACTIVITE}`]: 'class MainActivity /* recolore les barres */',
   [GRADLE]: GRADLE_TAURI,
   [MANIFESTE]: MANIFESTE_TAURI,
+  [`${NOS_ESSAI}/values/strings.xml`]: '<resources/>',
 };
 const PIECES_JACKSON = [
   'com.fasterxml.jackson.core:jackson-databind',
@@ -268,3 +270,44 @@ test('l’activité ne demande l’autorisation que si aucune demande n’est d�
   assert.match(source, /if \(aucuneDemandeEnCours\) \{\s*runOnUiThread \{\s*requestPermissions\(/);
   assert.equal(source.match(/requestPermissions\(/g).length, 1);
 });
+
+// Version finale signée (phase 15) : la clé est lue dans keystore.properties, à la racine du projet
+// Android, s'il existe (le script de paquets l'y dépose le temps de la construction). Sans lui, rien
+// n'est signé et la construction d'essai n'en a pas besoin.
+test('le projet Android signe la version finale avec keystore.properties, une seule fois', () =>
+  avecProjet(SOURCES, async racine => {
+    const { readFile } = await import('node:fs/promises');
+    assert.match((await verifierPersonnalisations(racine)).join('\n'), /build\.gradle\.kts : signature absente/);
+    await copierPersonnalisations(racine);
+    const gradle = await readFile(join(racine, GRADLE), 'utf8');
+    assert.equal(gradle.match(/rootProject\.file\("keystore\.properties"\)/g).length, 1);
+    // Rien ne se passe si le fichier manque : tout est sous le test d'existence.
+    assert.match(gradle, /if \(keystore\.exists\(\)\) \{[\s\S]*signingConfigs \{/);
+    for (const cle of ['storeFile', 'keyAlias', 'password'])
+      assert.match(gradle, new RegExp(`getProperty\\("${cle}"\\)`));
+    assert.match(gradle, /storePassword = motDePasse/);
+    assert.match(gradle, /keyPassword = motDePasse/);
+    // Seul le type « release » est signé.
+    assert.match(gradle, /getByName\("release"\) \{\s*signingConfig = signingConfigs\.getByName\("release"\)/);
+    assert.equal(gradle.match(/signingConfig = /g).length, 1);
+    await copierPersonnalisations(racine);
+    assert.equal(await readFile(join(racine, GRADLE), 'utf8'), gradle);
+    assert.deepEqual(await verifierPersonnalisations(racine), []);
+  }));
+
+// L'essai (identifiant « .essai ») s'installe à côté de la vraie appli : il porte son propre nom.
+test('l’essai Android porte le nom « Baluchon essai » et un identifiant à part', () =>
+  avecProjet(SOURCES, async racine => {
+    const { readFile } = await import('node:fs/promises');
+    const fautes = (await verifierPersonnalisations(racine)).join('\n');
+    assert.match(fautes, /strings\.xml : absent/);
+    // Le contenu vient de nos vraies sources, recopiées telles quelles.
+    const strings = await readFile(new URL(`../${NOS_ESSAI}/values/strings.xml`, import.meta.url), 'utf8');
+    await copierPersonnalisations(racine);
+    const copie = await readFile(join(racine, 'src-tauri/gen/android/app/src/debug/res/values/strings.xml'), 'utf8');
+    assert.equal(copie, '<resources/>');
+    assert.match(strings, /<string name="app_name">Baluchon essai<\/string>/);
+    assert.match(strings, /<string name="main_activity_title">Baluchon essai<\/string>/);
+    const conf = JSON.parse(await readFile(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'));
+    assert.equal(conf.bundle.android.debugApplicationIdSuffix, '.essai');
+  }));

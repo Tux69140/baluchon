@@ -5,11 +5,14 @@ import { cp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
 const PRINCIPAL = join('src-tauri', 'gen', 'android', 'app', 'src', 'main');
+const DEBUG = join('src-tauri', 'gen', 'android', 'app', 'src', 'debug');
 // Chaque source (dans nos fichiers) et sa place dans le projet Android.
 const PERSONNALISATIONS = [
   // Icônes produites par `pnpm icones` depuis src-tauri/icons/source/.
   { source: join('src-tauri', 'icons', 'android'), cible: join(PRINCIPAL, 'res') },
   { source: join('src-tauri', 'android', 'java'), cible: join(PRINCIPAL, 'java') },
+  // Nom de l'essai (identifiant « .essai », tauri.conf.json), installé à côté de la vraie appli.
+  { source: join('src-tauri', 'android', 'debug', 'res'), cible: join(DEBUG, 'res') },
 ];
 
 const enClair = chemin => chemin.split(sep).join('/');
@@ -36,10 +39,42 @@ const BLOC_JACKSON = [
   '',
 ].join('\n');
 
-function imposerJackson(gradle) {
-  if (gradle.includes(BLOC_JACKSON)) return gradle;
+// Version finale signée (phase 15) : la clé est lue dans keystore.properties, à la racine du projet
+// Android, s'il existe (scripts/paquets/android.mjs l'y dépose le temps de la construction). Sans lui,
+// le bloc ne fait rien. Seul le type « release » est signé ; l'essai garde la clé de débogage.
+const BLOC_SIGNATURE = [
+  '// Baluchon : signature de la version finale (scripts/projet-android.mjs).',
+  'val keystore = rootProject.file("keystore.properties")',
+  'if (keystore.exists()) {',
+  '    val cle = Properties().apply { keystore.inputStream().use { load(it) } }',
+  '    val motDePasse = cle.getProperty("password")',
+  '    android {',
+  '        signingConfigs {',
+  '            create("release") {',
+  '                storeFile = rootProject.file(cle.getProperty("storeFile"))',
+  '                keyAlias = cle.getProperty("keyAlias")',
+  '                storePassword = motDePasse',
+  '                keyPassword = motDePasse',
+  '            }',
+  '        }',
+  '        buildTypes {',
+  '            getByName("release") {',
+  '                signingConfig = signingConfigs.getByName("release")',
+  '            }',
+  '        }',
+  '    }',
+  '}',
+  '',
+].join('\n');
+
+function poserAvantRust(gradle, bloc) {
+  if (gradle.includes(bloc)) return gradle;
   if (!gradle.includes('\nrust {')) throw new Error(`${enClair(GRADLE)} : repère « rust { » introuvable.`);
-  return gradle.replace('\nrust {', `\n${BLOC_JACKSON}\nrust {`);
+  return gradle.replace('\nrust {', `\n${bloc}\nrust {`);
+}
+
+function imposerJackson(gradle) {
+  return poserAvantRust(gradle, BLOC_JACKSON);
 }
 
 // Déposer un fichier dans Téléchargements (phase 12) : jusqu'à Android 9, écrire demande l'autorisation
@@ -76,7 +111,7 @@ export async function copierPersonnalisations(racine) {
     await cp(join(racine, source), join(racine, cible), { recursive: true, force: true });
   }
   const gradle = await readFile(join(racine, GRADLE), 'utf8');
-  await writeFile(join(racine, GRADLE), imposerJackson(gradle));
+  await writeFile(join(racine, GRADLE), poserAvantRust(imposerJackson(gradle), BLOC_SIGNATURE));
   const manifeste = await readFile(join(racine, MANIFESTE), 'utf8');
   await writeFile(join(racine, MANIFESTE), ajouterPermissions(manifeste));
 }
@@ -96,6 +131,7 @@ export async function verifierPersonnalisations(racine) {
   }
   const gradle = await readFile(join(racine, GRADLE), 'utf8').catch(() => '');
   if (!gradle.includes(BLOC_JACKSON)) fautes.push('build.gradle.kts : Jackson n’est pas imposé (Android 7)');
+  if (!gradle.includes(BLOC_SIGNATURE)) fautes.push('build.gradle.kts : signature absente (version finale)');
   const manifeste = await readFile(join(racine, MANIFESTE), 'utf8').catch(() => '');
   for (const permission of PERMISSIONS)
     if (!manifeste.includes(permission))
