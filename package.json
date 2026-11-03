@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "icones": "node scripts/icones.mjs",
     "android:essai": "node scripts/android.mjs",
+    "paquets": "node scripts/paquets/fabriquer.mjs",
     "test": "node --test tests/*.test.js",
     "test:ecrans": "node tests/ecrans.mjs",
     "test:base": "cargo test --manifest-path src-tauri/Cargo.toml --quiet",
