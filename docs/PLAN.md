@@ -403,7 +403,7 @@ Un paquet Android signé (tablette et téléphone) et les paquets Debian, rpm, a
 
 ---
 
-## Phase 16 : Pages web et dons
+## Phase 16 : Pages web, dons et étude des mises à jour
 
 **User stories** : aucune dans le PRD pour l'instant ; elle y sera ajoutée à la conception de la phase (décision du chef de projet, 2026-11-03).
 
