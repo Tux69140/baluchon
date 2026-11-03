@@ -11,6 +11,7 @@ import { copierPersonnalisations, verifierPersonnalisations } from '../projet-an
 import {
   CIBLES_ANDROID,
   codeVersionAndroid,
+  fichierSignature,
   lireProprietesCle,
   lireVersion,
   nomPaquet,
@@ -46,6 +47,37 @@ async function fichiers(dossier) {
   return suites.flat();
 }
 
+// Demande le mot de passe dans le terminal, sans l'afficher (ni écho, ni étoiles). Ctrl-C ou Ctrl-D abandonne.
+function demanderMotDePasse(question) {
+  if (!process.stdin.isTTY)
+    echec('Fabrication refusée : le mot de passe de la clé se tape dans un terminal (pnpm paquets lancé à la main).');
+  return new Promise(resolve => {
+    let saisie = '';
+    process.stderr.write(question);
+    process.stdin.setRawMode(true);
+    process.stdin.setEncoding('utf8');
+    process.stdin.resume();
+    const touche = morceau => {
+      for (const caractere of morceau) {
+        if (caractere === '\u0003' || caractere === '\u0004') {
+          process.stdin.setRawMode(false);
+          process.stderr.write('\n');
+          echec('Fabrication abandonnée.');
+        } else if (caractere === '\r' || caractere === '\n') {
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.stdin.off('data', touche);
+          process.stderr.write('\n');
+          resolve(saisie);
+          return;
+        } else if (caractere === '\u007f' || caractere === '\b') saisie = saisie.slice(0, -1);
+        else saisie += caractere;
+      }
+    };
+    process.stdin.on('data', touche);
+  });
+}
+
 // apksigner de la version la plus récente des build-tools.
 async function apksigner() {
   const sdk = process.env.ANDROID_HOME || join(homedir(), 'Android', 'Sdk');
@@ -56,13 +88,15 @@ async function apksigner() {
   return join(sdk, 'build-tools', versions.at(-1), 'apksigner');
 }
 
-async function fabriquerAndroid(version, contenuCle) {
+async function fabriquerAndroid(version, signature) {
   if (!(await existe(projetAndroid))) tauri('android', 'init', '--ci', '--skip-targets-install');
   await copierPersonnalisations(racine);
   const fautes = await verifierPersonnalisations(racine);
   if (fautes.length) throw new Error(`Le projet Android n’a pas nos retouches.\n  ${fautes.join('\n  ')}`);
   const signer = await apksigner();
-  await writeFile(motDePasse, contenuCle, { mode: 0o600 });
+  // Un reste d'une fabrication tuée net garderait d'autres droits : le fichier est toujours recréé.
+  await rm(motDePasse, { force: true });
+  await writeFile(motDePasse, signature, { mode: 0o600, flag: 'wx' });
   try {
     for (const { cible, architecture, sorte } of CIBLES_ANDROID) {
       const code = codeVersionAndroid(version, architecture);
@@ -148,12 +182,19 @@ const contenuCle = await readFile(cle, 'utf8').catch(() => null);
 const fautesCle = verifierCle(contenuCle, cle);
 if (fautesCle.length) echec(`Fabrication refusée : la clé de signature n’est pas prête.\n  ${fautesCle.join('\n  ')}`);
 
-// Le fichier de clé existe, le mot de passe et l'alias sont justes : vérifié par keytool, le mot de passe
+// Le fichier de clé existe, le mot de passe tapé et l'alias sont justes : vérifié par keytool, le mot de passe
 // passant par l'environnement (jamais en argument, donc jamais visible dans la liste des processus).
+let signature;
 {
-  const { storeFile, keyAlias, password } = lireProprietesCle(contenuCle);
+  const { storeFile, keyAlias } = lireProprietesCle(contenuCle);
   if (!(await existe(storeFile)))
     echec(`Fabrication refusée : le fichier de clé « ${storeFile} » (storeFile) est introuvable.`);
+  const password = await demanderMotDePasse('Mot de passe de la clé de signature (rien ne s’affiche) : ');
+  try {
+    signature = fichierSignature(contenuCle, password);
+  } catch (erreur) {
+    echec(`Fabrication refusée : ${erreur.message}`);
+  }
   const essai = spawnSync(
     'keytool',
     ['-list', '-keystore', storeFile, '-alias', keyAlias, '-storepass:env', 'BALUCHON_MOT_DE_PASSE'],
@@ -190,7 +231,7 @@ try {
 }
 try {
   await mkdir(artifacts, { recursive: true });
-  await fabriquerAndroid(version, contenuCle);
+  await fabriquerAndroid(version, signature);
   await fabriquerLinux(version, outils);
   outils = null;
 } catch (erreur) {

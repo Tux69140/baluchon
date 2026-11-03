@@ -75,12 +75,28 @@ export function lireProprietesCle(contenu) {
 }
 
 // Fautes de la clé de signature, avant toute fabrication. `contenu` est null si le fichier est absent.
+// Le mot de passe n'est jamais écrit dans ce fichier : il est tapé à chaque fabrication (choix du chef de projet).
 export function verifierCle(contenu, cheminProprietes) {
   if (contenu === null) return [`Fichier de clé absent : ${cheminProprietes}`];
   const valeurs = lireProprietesCle(contenu);
-  return ['storeFile', 'keyAlias', 'password']
+  const fautes = ['storeFile', 'keyAlias']
     .filter(cle => !valeurs[cle])
     .map(cle => `Clé « ${cle} » manquante ou vide dans ${cheminProprietes}`);
+  if (contenu.split(/\r?\n/).some(ligne => /^\s*[#!]?\s*password\b/i.test(ligne)))
+    fautes.push(`Le mot de passe ne doit pas être écrit dans ${cheminProprietes} : retirer la ligne « password ».`);
+  return fautes;
+}
+
+// Contenu du fichier lu par Android pour signer : la clé de `contenuCle` et le mot de passe tapé. Android lit
+// ce fichier en format « properties » de Java (\ y est un échappement, les espaces des bords sont perdus) et
+// la clé PKCS12 n'accepte que l'ASCII : un tel mot de passe ne pourrait pas être celui de la clé.
+export function fichierSignature(contenuCle, motDePasse) {
+  if (!/^[!-~](?:[ -~]*[!-~])?$/.test(motDePasse) || motDePasse.includes('\\'))
+    throw new Error(
+      'Mot de passe illisible pour Android (vide, accent, \\ ou espace au bord) : ce ne peut pas être celui de la clé.',
+    );
+  const { storeFile, keyAlias } = lireProprietesCle(contenuCle);
+  return `storeFile=${storeFile}\nkeyAlias=${keyAlias}\npassword=${motDePasse}\n`;
 }
 
 // La première fabrication de Paré (22/10/2026) s'est faite sur un dépôt en retard sur GitHub. La fabrication

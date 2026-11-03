@@ -8,6 +8,7 @@ import {
   nomPaquet,
   lireVersion,
   verifierCle,
+  fichierSignature,
   verifierAJourAvecGithub,
   outilsAppimage,
   CIBLES_ANDROID,
@@ -111,8 +112,39 @@ test('lireVersion refuse une version qui n’est pas x.y.z', async () => {
 
 test('une clé absente ou incomplète est signalée avant toute fabrication', () => {
   assert.match(verifierCle(null, '/x/cle.properties')[0], /\/x\/cle\.properties/);
+  assert.equal(verifierCle('storeFile=/a.jks\nkeyAlias=\n', '/x').length, 1);
+  assert.equal(verifierCle('keyAlias=baluchon\n', '/x').length, 1);
+  assert.deepEqual(verifierCle('storeFile=/a.jks\nkeyAlias=baluchon\n', '/x'), []);
+});
+
+test('le mot de passe ne doit jamais être écrit dans le fichier de clé', () => {
+  const fautes = verifierCle('storeFile=/a.jks\nkeyAlias=baluchon\npassword=s3cret\n', '/x/cle.properties');
+  assert.equal(fautes.length, 1);
+  assert.match(fautes[0], /password/);
+  assert.doesNotMatch(fautes[0], /s3cret/);
   assert.equal(verifierCle('storeFile=/a.jks\nkeyAlias=baluchon\npassword=\n', '/x').length, 1);
-  assert.deepEqual(verifierCle('storeFile=/a.jks\nkeyAlias=baluchon\npassword=s3cret\n', '/x'), []);
+  for (const ligne of ['password: s3cret', 'password s3cret', '# password=s3cret', '  Password=s3cret'])
+    assert.equal(verifierCle(`storeFile=/a.jks\nkeyAlias=baluchon\n${ligne}\n`, '/x').length, 1, ligne);
+});
+
+test('le fichier de signature passé à Android porte la clé et le mot de passe tapé', () => {
+  const contenu = fichierSignature('storeFile=/a.jks\nkeyAlias=baluchon\n', 'Ab3!x?z@#');
+  assert.equal(contenu, 'storeFile=/a.jks\nkeyAlias=baluchon\npassword=Ab3!x?z@#\n');
+});
+
+test('un mot de passe illisible par Android est refusé, sans être répété', () => {
+  for (const mauvais of ['', 'zzQ\\cd', 'zzQéf', ' zzQdef', 'zzQdef ', 'zzQ\ncd', 'zzQ\tcd', 'zzQ\rcd', 'zzQ\x7f']) {
+    assert.throws(
+      () => fichierSignature('storeFile=/a.jks\nkeyAlias=baluchon\n', mauvais),
+      erreur => /illisible/.test(erreur.message) && !erreur.message.includes('zzQ'),
+      JSON.stringify(mauvais),
+    );
+  }
+});
+
+test('un mot de passe ASCII avec espaces intérieurs et signes est accepté', () => {
+  for (const bon of ['a', 'a b', '#ab', '!ab', 'a=b:c'])
+    assert.match(fichierSignature('storeFile=/a.jks\nkeyAlias=baluchon\n', bon), new RegExp(`password=${bon}\n$`));
 });
 
 const fauxGit = reponses => args => {

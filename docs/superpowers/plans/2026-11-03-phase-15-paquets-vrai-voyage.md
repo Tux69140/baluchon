@@ -20,7 +20,7 @@
   `baluchon-V.apk` (64 bits, cible Tauri `aarch64`), `baluchon-V-anciens-appareils.apk` (32 bits, cible `armv7`), `baluchon-V-amd64.deb`, `baluchon-V.x86_64.rpm`, `baluchon-V-x86_64.AppImage`, `baluchon-V-x64-setup.exe`.
 - Réglages de poids (choix 14), profil `[profile.release]` de `src-tauri/Cargo.toml` : `strip = true`, `lto = true`, `codegen-units = 1`, `opt-level = "s"`. **Pas** de `panic = "abort"` : une panique dans une commande ne doit pas fermer l'appli.
 - AppImage (choix 15) : recompression zstd niveau 22, blocs de 1 Mo, même lanceur (runtime) que l'AppImage de Tauri. Rien d'autre retiré.
-- Clé de signature réelle (choix 24) : `~/.local/share/baluchon/baluchon.jks` et `~/.local/share/baluchon/cle.properties` (clés `storeFile`, `keyAlias`, `password`), droits 600, jamais dans le dépôt ni dans la conversation. Alias `baluchon`.
+- Clé de signature réelle (choix 24) : `~/.local/share/baluchon/baluchon.jks` et `~/.local/share/baluchon/cle.properties` (clés `storeFile` et `keyAlias`), droits 600, jamais dans le dépôt ni dans la conversation. Le mot de passe est choisi par le chef de projet, tapé à chaque `pnpm paquets` et gardé seulement dans KeePass (décision du 2026-11-03, après la première fabrication). Alias `baluchon`.
 - Essais à part (choix 16) : identifiant `fr.biovibralyon.baluchon.essai`, nom affiché « Baluchon essai », pour `pnpm bureau` (ordinateur) et `pnpm android:essai` (Android, installée à côté de la version signée).
 - Les vraies données du chef de projet ne sont jamais touchées sans sa demande (anti-objectifs ; choix 23).
 - Annoncer l'appareil piloté au moment où on le pilote, jamais avant (mémoire « annonces »).
@@ -221,7 +221,7 @@ Les tâches 7 à 11 reviennent au contrôleur, avec le chef de projet et les app
 
 ### Task 7 : Vraie clé, envoi sur GitHub, fabrication de la 0.1.0
 
-- [ ] Créer la clé (`keytool -genkeypair`, RSA 4096, validité 10 000 jours, alias `baluchon`, mot de passe aléatoire) et `cle.properties` dans `~/.local/share/baluchon/` (droits 600). Dire au chef de projet où sont les deux fichiers, sans jamais afficher le mot de passe ; il les joint à une entrée KeePass et confirme (critère 3 du plan).
+- [ ] Créer la clé (`keytool -genkeypair`, RSA 4096, validité 10 000 jours, alias `baluchon`, mot de passe choisi et tapé par le chef de projet dans son terminal) et `cle.properties` dans `~/.local/share/baluchon/` (droits 600). Dire au chef de projet où sont les deux fichiers, sans jamais afficher le mot de passe ; il les joint à une entrée KeePass et confirme (critère 3 du plan).
 - [ ] `pnpm paquets` ; annoncer les poids.
 - [ ] Annoncer puis envoyer `phase-15` sur GitHub ; le chef de projet lance `pnpm paquets:windows` sous Windows (`docs/PAQUETS.md`) et rapporte le poids.
 

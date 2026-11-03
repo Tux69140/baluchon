@@ -20,7 +20,7 @@ Une seule commande fabrique tout ce qui se construit sur cet ordinateur :
 
 Quel paquet Android prendre : toujours le normal (`baluchon-V.apk`) d'abord. Si Android refuse de l'installer, prendre celui des « anciens appareils ».
 
-La commande refuse de démarrer tout de suite si la clé de signature est introuvable (voir plus bas). Elle demande un peu de temps : plusieurs constructions se suivent.
+Au lancement, elle demande le mot de passe de la clé de signature, sans l'afficher (Ctrl-C abandonne). Elle refuse de démarrer tout de suite si la clé est introuvable ou si le mot de passe ne l'ouvre pas (voir plus bas). Elle demande ensuite un peu de temps : plusieurs constructions se suivent.
 
 ## Sous Windows : `pnpm paquets:windows`
 
@@ -50,9 +50,11 @@ Un paquet Android doit être signé, et toutes les versions doivent l'être avec
 Elle vit hors du projet, dans deux fichiers :
 
 - `~/.local/share/baluchon/baluchon.jks` : la clé elle-même (alias `baluchon`) ;
-- `~/.local/share/baluchon/cle.properties` : trois lignes `storeFile`, `keyAlias` et `password`.
+- `~/.local/share/baluchon/cle.properties` : deux lignes, `storeFile` (emplacement de `baluchon.jks`) et `keyAlias`.
 
-Ces deux fichiers doivent être joints à une entrée KeePass. Pour les remettre en place sur un autre ordinateur : créer le dossier `~/.local/share/baluchon/`, y enregistrer les deux pièces jointes de l'entrée, puis restreindre les droits (`chmod 600` sur chacun) et vérifier que `storeFile` dans `cle.properties` désigne bien l'emplacement de `baluchon.jks`. Pour utiliser une clé rangée ailleurs, indiquer le chemin du fichier `cle.properties` (et non du `.jks`) dans la variable `BALUCHON_CLE`. Dans `cle.properties`, `storeFile` doit être un chemin absolu.
+Le mot de passe n'est écrit nulle part ailleurs que dans KeePass : `pnpm paquets` le demande à chaque fabrication et refuse un `cle.properties` qui contiendrait une ligne `password`. Il ne peut contenir que des lettres sans accent, des chiffres et les signes du clavier américain, sans `\` ni espace au début ou à la fin.
+
+Ces deux fichiers doivent être joints à l'entrée KeePass qui garde le mot de passe. Pour les remettre en place sur un autre ordinateur : créer le dossier `~/.local/share/baluchon/`, y enregistrer les deux pièces jointes de l'entrée, puis restreindre les droits (`chmod 600` sur chacun) et vérifier que `storeFile` dans `cle.properties` désigne bien l'emplacement de `baluchon.jks`. Pour utiliser une clé rangée ailleurs, indiquer le chemin du fichier `cle.properties` (et non du `.jks`) dans la variable `BALUCHON_CLE`. Dans `cle.properties`, `storeFile` doit être un chemin absolu.
 
 ## Les essais de développement, à part des vraies données
 
