@@ -24,24 +24,86 @@ Au lancement, elle demande le mot de passe de la clé de signature, sans l'affic
 
 ## Sous Windows : `pnpm paquets:windows`
 
-Le paquet Windows ne se fabrique que sous Windows. Il donne `baluchon-V-x64-setup.exe`, un installateur en français. La commande refuse de fabriquer si la copie locale du projet est en retard sur GitHub : il faut donc que tout ce qui doit y figurer y soit déjà publié.
+Le paquet Windows ne se fabrique que sous Windows. Il donne `baluchon-V-x64-setup.exe`, un installateur en français. Il n'est pas signé et ne demande aucun mot de passe. La commande refuse de fabriquer si la copie locale du projet est en retard sur GitHub : il faut donc que tout ce qui doit y figurer y soit déjà publié.
 
-Ce qu'il faut installer une fois sur la machine Windows :
+Toutes les commandes ci-dessous se tapent dans PowerShell. Aucune n'a pu être essayée depuis l'ordinateur Debian : en cas d'arrêt, copier le message affiché.
 
-1. Git.
-2. Node.
-3. pnpm.
-4. Rust avec la chaîne « MSVC » (les outils de compilation C++ de Visual Studio).
+### Installer les outils (une seule fois)
 
-Puis, à chaque fabrication :
+Passer les outils déjà présents. Si Paré se fabrique déjà sur ce poste, il ne manque que pnpm : aller directement à « Installer pnpm ».
 
-1. Cloner le projet depuis GitHub sur la branche à fabriquer (une première fois : `git clone`, puis se placer sur la branche voulue).
-2. Lancer `pnpm install`.
-3. Lancer `pnpm paquets:windows`.
+```powershell
+winget install --id Git.Git -e
+winget install --id OpenJS.NodeJS.LTS -e
+winget install --id Rustlang.Rustup -e
+winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
 
-Les fois suivantes, dans le dossier déjà cloné : `git pull`, puis `pnpm install`, puis `pnpm paquets:windows`.
+La dernière installation dure longtemps et ouvre sa propre fenêtre. Quand tout est fini, fermer PowerShell et le rouvrir, pour que les nouveaux outils soient reconnus.
 
-Le fichier arrive dans `artifacts/`.
+Installer pnpm, dans la version fixée par le projet :
+
+```powershell
+npm install -g pnpm@10.33.4
+```
+
+Si PowerShell répond que l'exécution de scripts est désactivée, taper cette commande, répondre oui, puis recommencer :
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+Choisir la bonne version de Rust et vérifier que tout répond (chaque commande affiche un numéro de version) :
+
+```powershell
+rustup default stable-msvc
+git --version
+node --version
+pnpm --version
+rustc --version
+```
+
+### Récupérer le projet (une seule fois)
+
+Le dépôt est public : aucune connexion à GitHub n'est nécessaire. Remplacer `phase-15` par la branche à fabriquer.
+
+```powershell
+cd $HOME
+git clone -b phase-15 https://github.com/Tux69140/baluchon.git
+```
+
+Le dossier personnel évite OneDrive, qui gêne les constructions.
+
+### Fabriquer
+
+La première fabrication est longue : tout se compile. Les suivantes vont plus vite.
+
+```powershell
+cd $HOME\baluchon
+git pull
+pnpm install --frozen-lockfile
+pnpm paquets:windows
+```
+
+`--frozen-lockfile` installe exactement les versions testées, sans rien changer dans le projet.
+
+Pour fabriquer une autre branche, par exemple `main`, taper `git fetch` puis `git switch main` avant `git pull`.
+
+### Retrouver et essayer l'installateur
+
+Le fichier arrive dans `artifacts/`. Cette commande affiche son poids en Mo :
+
+```powershell
+Get-ChildItem artifacts\*.exe | Select-Object Name, @{ Name = 'Mo'; Expression = { [math]::Round($_.Length / 1MB, 1) } }
+```
+
+Celle-ci ouvre le dossier ; un double-clic sur le fichier lance l'installation :
+
+```powershell
+explorer artifacts
+```
+
+Comme l'installateur n'est pas signé, Windows peut afficher un avertissement : « Informations complémentaires », puis « Exécuter quand même ».
 
 ## La clé de signature Android
 
